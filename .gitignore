@@ -1,0 +1,29 @@
+# Dependencies and generated artifacts
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Environment and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Logs and temporary files
+*.log
+npm-debug.log*
+.cache/
+.tmp/
+tmp/
+temp/
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

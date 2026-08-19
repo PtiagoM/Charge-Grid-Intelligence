@@ -1,0 +1,33 @@
+{
+  "name": "chargegrid-intelligence",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Baseline técnica do ChargeGrid Intelligence MVP.",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build:shared": "npm run build --workspace @chargegrid/shared",
+    "dev": "npm run build:shared && concurrently -n admin,pwa,api -c magenta,cyan,green \"npm run dev --workspace @chargegrid/admin-web\" \"npm run dev --workspace @chargegrid/driver-pwa\" \"npm run dev --workspace @chargegrid/api\"",
+    "dev:admin": "npm run build:shared && npm run dev --workspace @chargegrid/admin-web",
+    "dev:pwa": "npm run build:shared && npm run dev --workspace @chargegrid/driver-pwa",
+    "dev:api": "npm run build:shared && npm run dev --workspace @chargegrid/api",
+    "build": "npm run build:shared && npm run build --workspace @chargegrid/admin-web && npm run build --workspace @chargegrid/driver-pwa && npm run build --workspace @chargegrid/api",
+    "pretest": "npm run build:shared",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "eslint ."
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.33.0",
+    "concurrently": "^9.2.0",
+    "eslint": "^9.33.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^16.3.0",
+    "typescript-eslint": "^8.39.1"
+  }
+}

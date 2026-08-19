@@ -1,0 +1,19 @@
+{
+  "name": "ChargeGrid Intelligence",
+  "short_name": "ChargeGrid",
+  "description": "Experiência mobile de recarga do ChargeGrid.",
+  "lang": "pt-BR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F1F2F3",
+  "theme_color": "#FF3049",
+  "icons": [
+    {
+      "src": "/chargegrid-mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
