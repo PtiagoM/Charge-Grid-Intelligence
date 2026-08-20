@@ -91,7 +91,7 @@
   - [11.3 Segurança e responsabilidade](#113-segurança-e-responsabilidade)
 - [12. Fila, prioridade e ausência de reserva](#12-fila-prioridade-e-ausência-de-reserva)
 - [13. Ociosidade](#13-ociosidade)
-- [14. Mapa e experiência PWA](#14-mapa-e-experiência-pwa)
+- [14. Mapa: descoberta PWA e operação administrativa](#14-mapa-descoberta-pwa-e-operação-administrativa)
   - [14.1 Descoberta](#141-descoberta)
   - [14.2 Recomendação](#142-recomendação)
 - [15. Onboarding de uma planta](#15-onboarding-de-uma-planta)
@@ -528,11 +528,13 @@ energia confirmadamente encerrada -> 15 min gratuitos -> avisos
 
 - Saldo insuficiente pode gerar OUTSTANDING_BALANCE; cadastrado fica bloqueado para novas sessões até regularização.
 
-## 14. Mapa e experiência PWA
+## 14. Mapa: descoberta PWA e operação administrativa
 
 ### 14.1 Descoberta
 
-O mapa é exclusivo da experiência do motorista. Ele se inspira na lógica de navegação do SEMS+ mobile, mas responde a uma pergunta comercial: qual é a melhor opção para carregar agora? A web GoodWe não duplica o mapa técnico existente do SEMS+.
+O mapa de descoberta é exclusivo da experiência do motorista. Ele se inspira na lógica de navegação do SEMS+ mobile, mas responde a uma pergunta comercial: qual é a melhor opção para carregar agora?
+
+O Admin Web também possui mapa operacional próprio para plantas comerciais vinculadas à conta. A GoodWe visualiza a rede autorizada; o estabelecimento visualiza as próprias plantas. Essa superfície não duplica telemetria bruta nem a jornada de descoberta do motorista: consolida escopo comercial, disponibilidade, alertas e oportunidade de expansão.
 
 - Marcador por estabelecimento/planta comercial, com clusters em zoom afastado.
 
@@ -768,6 +770,24 @@ As decisões de produto estão fechadas. Os itens abaixo permanecem configuráve
 
 - Limiares numéricos de normal, alerta e crítico por planta.
 
+## Adendo de direção aprovado — 20 de agosto de 2026
+
+Este adendo substitui, onde houver conflito, orientações anteriores sobre a identidade visual do Admin e sobre a ausência de mapa administrativo. As demais decisões de produto v1.0 permanecem inalteradas.
+
+### ChargeGrid como extensão comercial do SEMS+
+
+O ChargeGrid passa a ser apresentado como uma extensão comercial e operacional nativa do ecossistema SEMS+, e não apenas como uma interface inspirada nele. A planta energética cadastrada no SEMS+ é a origem da informação técnica; o ChargeGrid a habilita comercialmente e acrescenta somente dados que o SEMS+ não cobre: disponibilidade comercial, tarifas, sessões, pagamentos, fila, ociosidade, comissão e indicadores comerciais.
+
+### Conta de estabelecimento e múltiplas plantas
+
+Não há um tipo de conta distinto para redes. Uma mesma conta de estabelecimento pode ter uma ou várias plantas SEMS+ vinculadas. A diferença entre uma unidade e uma rede é apenas a cardinalidade de plantas visíveis no mesmo dashboard, filtros, KPIs e mapa. As permissões e a visão comercial continuam sendo as da conta autenticada.
+
+### Mapa administrativo de plantas comerciais
+
+Além do mapa de descoberta da PWA, o Admin Web passa a ter um mapa operacional real do Google Maps. Ele mostra as plantas vinculadas ao escopo da conta: a GoodWe visualiza a rede autorizada e o estabelecimento visualiza apenas suas próprias plantas. Marcadores e clusters comunicam disponibilidade comercial, alertas, falhas, saturação e oportunidade de expansão; o mapa administrativo não substitui a descoberta do motorista.
+
+O mapa usa uma chave de API de demonstração somente por variável de ambiente local. A ausência da chave deve produzir uma experiência de fallback clara; nenhuma chave é versionada, exposta em documentação ou tratada como integração GoodWe.
+
 - Contrato detalhado do GoodWe Adapter e mapeamento de campos do mock.
 
 - Política de idempotência, retentativas, reconciliação e auditoria.
@@ -780,7 +800,7 @@ As decisões de produto estão fechadas. Os itens abaixo permanecem configuráve
 
 | **ID** | **Tema**   | **Decisão**                                                                | **Status** |
 |--------|------------|----------------------------------------------------------------------------|------------|
-| D01    | Produto    | Plataforma GoodWe separada do SEMS+, dentro do mesmo ecossistema.          | FECHADO    |
+| D01    | Produto    | Camada comercial nativa do ecossistema SEMS+, sem substituir SEMS+ ou SolarGo. | ATUALIZADO |
 | D02    | Integração | GoodWe Adapter com mock compatível agora e OpenAPI real futuramente.       | FECHADO    |
 | D03    | Negócio    | Comissão demonstrativa parametrizável de 5% sobre receita bruta liquidada. | FECHADO    |
 | D04    | Aquisição  | Visitante usa QR sem conta; conta melhora recorrência.                     | FECHADO    |
@@ -790,7 +810,7 @@ As decisões de produto estão fechadas. Os itens abaixo permanecem configuráve
 | D08    | Fila       | Por estabelecimento; cadastrado antes; FIFO; janela de 10 min.             | FECHADO    |
 | D09    | Reserva    | Fora da v1.                                                                | FECHADO    |
 | D10    | Ociosidade | 15 min; R$ 0,50/min demonstrativo; teto de 60 min.                        | FECHADO    |
-| D11    | Mapa       | Somente na PWA; marcador por estabelecimento; decisão comercial.           | FECHADO    |
+| D11    | Mapa       | PWA para descoberta do motorista; Admin para operação das plantas autorizadas. | ATUALIZADO |
 | D12    | Suporte    | ChargeGrid organiza incidente; atendimento segue GoodWe/integrador.        | FECHADO    |
 | D13    | Onboarding | Habilitação comercial de planta GoodWe já existente.                       | FECHADO    |
 | D14    | IA         | Prevê/recomenda; regras validam; não bloqueia documento.                   | FECHADO    |

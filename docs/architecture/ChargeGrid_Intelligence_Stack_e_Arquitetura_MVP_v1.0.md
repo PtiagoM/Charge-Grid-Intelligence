@@ -539,6 +539,14 @@ A arquitetura é considerada pronta para o Spec-Driven Development quando os pon
 7.  Documento de Design System GoodWe iniciado separadamente.
 8.  Primeira spec funcional escolhida para implementação vertical.
 
+## Adendo de implementação aprovado — 20 de agosto de 2026
+
+O Admin Web adota a composição visual e os assets SEMS+ autorizados pelo projeto como referência final. A migração preserva a arquitetura congelada: os componentes são portados para `apps/admin-web` em React + TypeScript; não se incorpora o aplicativo JavaScript independente, suas fixtures isoladas nem regras críticas no navegador.
+
+O Admin Web inclui um módulo de mapa operacional com Google Maps JavaScript API. A chave é lida exclusivamente de `VITE_GOOGLE_MAPS_API_KEY`; a variável é pública por natureza do navegador, deve ter restrições configuradas no Google Cloud e nunca é versionada. A ausência ou falha do SDK mantém um fallback de demonstração, sem bloquear o restante do Admin.
+
+O mapa recebe projeções da API/`packages/shared`, agrupadas pelo escopo da conta autenticada. Não há uma arquitetura especial para redes: uma conta pode receber uma ou muitas plantas SEMS+ vinculadas. Dados técnicos continuam na fronteira `GoodWeProvider`; os campos comerciais são produzidos pelo ChargeGrid Core.
+
 # Apêndice A. Registro de decisões arquiteturais
 
 | **ID** | **Decisão**                                                                   | **Status** |
@@ -555,6 +563,8 @@ A arquitetura é considerada pronta para o Spec-Driven Development quando os pon
 | A10    | Polling 3-5 s como padrão; Realtime pontual.                                  | CONGELADO  |
 | A11    | Sem Redis, filas distribuídas, microserviços ou Kubernetes.                   | CONGELADO  |
 | A12    | Design System GoodWe documentado separadamente.                               | CONGELADO  |
+| A13    | Admin Web usa Google Maps por chave local/restrita e fallback sem SDK.         | APROVADO   |
+| A14    | Conta de estabelecimento opera sobre uma ou várias plantas vinculadas.         | APROVADO   |
 
 # Apêndice B. Relação com o Documento Final de Produto
 

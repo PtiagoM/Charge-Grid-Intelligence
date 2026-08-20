@@ -1,4 +1,5 @@
 import { ChargerCommercialStatus, PlantEnergyStatus } from "@chargegrid/shared";
+import { PageHeading } from "../components/PageHeading";
 import { StatusBadge } from "../components/StatusBadge";
 import { getInitialDemoSnapshot } from "../services/demo";
 
@@ -28,14 +29,7 @@ export function HomePage() {
 
   return (
     <>
-      <header className="page-heading">
-        <div>
-          <p className="eyebrow">ChargeGrid Intelligence</p>
-          <h1>Fundação administrativa</h1>
-          <p>Leitura compartilhada da fotografia oficial D0, sem regras de produto no navegador.</p>
-        </div>
-        <StatusBadge label={demo.plant.energyStatus === PlantEnergyStatus.NORMAL ? "Energia normal" : demo.plant.energyStatus} tone="success" />
-      </header>
+      <PageHeading eyebrow="ChargeGrid Intelligence" title="Visão operacional" description="Leitura compartilhada da fotografia oficial D0, sem regras críticas no navegador." action={<StatusBadge label={demo.plant.energyStatus === PlantEnergyStatus.NORMAL ? "Energia normal" : demo.plant.energyStatus} tone="success" />} />
 
       <section className="kpi-grid" aria-label="Resumo de demonstração">
         <article className="kpi-card"><span>Sessões ativas</span><strong>{demo.dashboardKpis.activeSessions}</strong><small>2 carregando, 1 em tolerância</small></article>

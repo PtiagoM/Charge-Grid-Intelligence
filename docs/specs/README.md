@@ -21,6 +21,8 @@ Toda feature começa com uma pasta própria baseada em `_template`. A spec detal
 8. `queue-management`
 9. `pricing`
 10. `ai-prediction-contract`
+11. `admin-network-map`
+12. `sems-commercial-plant-enablement`
 
 ## Ownership sugerido
 

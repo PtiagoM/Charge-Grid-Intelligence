@@ -373,6 +373,12 @@ Para evitar sobrecarga de `ChargerTechnicalStatus`, este contrato introduz `Char
 - Compatibilidade por conector/veículo, limite financeiro min/max e políticas por estabelecimento.
 - Projeções exatas de dados por papel e política de retenção/LGPD.
 
+### Adendo aprovado — conta multi-planta e projeção de mapa
+
+`Establishment.plantIds` já representa a cardinalidade oficial de uma conta comercial: uma conta pode ter uma ou várias plantas vinculadas, sem novo `UserRole`, enum ou tipo de conta. Uma implementação deve filtrar toda projeção pelo `organizationId` e pelas plantas autorizadas do perfil.
+
+O mapa administrativo consome uma projeção derivada por planta, nunca payload bruto da GoodWe. A spec de mapa definirá o DTO opcional com `plantId`, coordenadas autorizadas, nome exibível, `CommercialAvailability`, `PlantEnergyStatus`, contadores de carregadores e `observedAt`. Nenhuma informação financeira privada, identificador de motorista ou segredo de integração deve aparecer no marcador.
+
 ## Apêndice A — Tabela consolidada de enums
 
 | Enum | Valores |

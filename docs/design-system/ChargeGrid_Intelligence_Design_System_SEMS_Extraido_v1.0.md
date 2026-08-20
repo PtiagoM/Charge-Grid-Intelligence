@@ -352,9 +352,15 @@ O mesmo sistema visual deve manter a identidade ChargeGrid/SEMS+, mas a PWA não
 4. Superfícies usam raio predominantemente de 10px; controles pequenos usam 7–11px; estados usam badges suaves.
 5. Desktop é a prioridade; tabelas usam rolagem horizontal em vez de remoção silenciosa de colunas.
 
+### Direção visual aprovada — 20 de agosto de 2026
+
+O Admin ChargeGrid adota esta linguagem SEMS+ como identidade visual final do protótipo apresentado à GoodWe. Os ícones e PNGs fornecidos no projeto de referência são assets aprovados para esta demonstração e serão portados como dependência visual explícita do Admin Web.
+
+O mapa operacional administrativo segue a mesma linguagem dark do sistema de referência: canvas escuro, marcadores vermelhos GoodWe, clusters e estado de fallback claro. Isso não transforma o mapa em fonte técnica: seus estados sempre são projeções comerciais e energéticas normalizadas pelo ChargeGrid.
+
 ### Pendências para SDD/design
 
-- Confirmar se a nova aplicação poderá reutilizar legalmente os PNGs atuais ou se deve receber assets oficiais equivalentes.
+- Para qualquer publicação além da demonstração, revalidar a licença, a origem e as restrições de uso dos PNGs/ícones com a GoodWe.
 - Consolidar tokens em código sem perder os tons hoje dispersos no CSS.
 - Definir estados de interação completos e critérios de contraste.
 - Adaptar a barra inferior e os padrões mobile observados à arquitetura de navegação específica da Driver PWA, sem assumir que todos os destinos do SEMS+ serão reproduzidos.
