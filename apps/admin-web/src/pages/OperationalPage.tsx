@@ -1,105 +1,57 @@
-import {
-  ChargerCommercialStatus,
-  ChargerTechnicalStatus,
-  CommercialSessionStatus,
-  PaymentStatus
-} from "@chargegrid/shared";
-import { PageHeading } from "../components/PageHeading";
+import { ChargerCommercialStatus, ChargerTechnicalStatus, CommercialSessionStatus, PaymentStatus, UserRole } from "@chargegrid/shared";
+import { useAuth } from "../auth/AuthContext";
+import { KpiCard, SectionHeader, StatusTabs } from "../components/SemsUi";
 import { StatusBadge } from "../components/StatusBadge";
-import {
-  commercialStatusLabel,
-  demoScenarioD0,
-  money,
-  paymentStatusLabel,
-  sessionStatusLabel,
-  shortDate,
-  technicalStatusLabel
-} from "../services/adminDemo";
+import { commercialStatusLabel, demoScenarioD0, money, paymentStatusLabel, sessionStatusLabel, shortDate, technicalStatusLabel } from "../services/adminDemo";
 
 export type OperationalSection = "chargers" | "sessions" | "energy" | "financial";
 
-const sectionCopy: Record<OperationalSection, { eyebrow: string; title: string; description: string }> = {
-  chargers: { eyebrow: "Operação", title: "Carregadores", description: "Estado técnico GoodWe e disponibilidade comercial ChargeGrid." },
-  sessions: { eyebrow: "Operação", title: "Sessões comerciais", description: "Acompanhamento auditável de energia, estado e garantia financeira." },
-  energy: { eyebrow: "Energia", title: "Energia e demanda", description: "Telemetria da planta SEMS+ usada para decisões comerciais." },
-  financial: { eyebrow: "Financeiro", title: "Tarifas e resultados", description: "Dados comerciais sintéticos do D0, separados da fonte energética." }
-};
-
-function toneForCharger(status: ChargerCommercialStatus) {
-  if (status === ChargerCommercialStatus.AVAILABLE_TO_START) return "success" as const;
-  if (status === ChargerCommercialStatus.FAULTED) return "danger" as const;
-  if (status === ChargerCommercialStatus.OCCUPIED || status === ChargerCommercialStatus.RESTRICTED_BY_ENERGY) return "warning" as const;
-  return "neutral" as const;
-}
-
-function toneForTechnical(status: ChargerTechnicalStatus) {
-  if (status === ChargerTechnicalStatus.FAULT || status === ChargerTechnicalStatus.OFFLINE) return "danger" as const;
-  if (status === ChargerTechnicalStatus.CHARGING || status === ChargerTechnicalStatus.STARTING) return "info" as const;
-  return "success" as const;
-}
-
-function toneForSession(status: CommercialSessionStatus) {
-  if (status === CommercialSessionStatus.FAULTED || status === CommercialSessionStatus.START_FAILED) return "danger" as const;
-  if (status === CommercialSessionStatus.IDLE_GRACE_PERIOD || status === CommercialSessionStatus.SUSPENDED_BY_DEMAND) return "warning" as const;
-  if (status === CommercialSessionStatus.CHARGING) return "info" as const;
-  return "success" as const;
-}
-
-function toneForPayment(status: PaymentStatus) {
-  if (status === PaymentStatus.FAILED || status === PaymentStatus.DISPUTED) return "danger" as const;
-  if (status === PaymentStatus.AUTHORIZED || status === PaymentStatus.PENDING) return "warning" as const;
-  return "success" as const;
-}
+function chargerTone(status: ChargerCommercialStatus) { if (status === ChargerCommercialStatus.AVAILABLE_TO_START) return "success" as const; if (status === ChargerCommercialStatus.FAULTED) return "danger" as const; if (status === ChargerCommercialStatus.OCCUPIED || status === ChargerCommercialStatus.RESTRICTED_BY_ENERGY) return "warning" as const; return "neutral" as const; }
+function technicalTone(status: ChargerTechnicalStatus) { if (status === ChargerTechnicalStatus.FAULT || status === ChargerTechnicalStatus.OFFLINE) return "danger" as const; if (status === ChargerTechnicalStatus.CHARGING || status === ChargerTechnicalStatus.STARTING) return "info" as const; return "success" as const; }
+function sessionTone(status: CommercialSessionStatus) { if (status === CommercialSessionStatus.FAULTED || status === CommercialSessionStatus.START_FAILED) return "danger" as const; if (status === CommercialSessionStatus.IDLE_GRACE_PERIOD || status === CommercialSessionStatus.SUSPENDED_BY_DEMAND) return "warning" as const; if (status === CommercialSessionStatus.CHARGING) return "info" as const; return "success" as const; }
+function paymentTone(status: PaymentStatus) { if (status === PaymentStatus.FAILED || status === PaymentStatus.DISPUTED) return "danger" as const; if (status === PaymentStatus.AUTHORIZED || status === PaymentStatus.PENDING) return "warning" as const; return "success" as const; }
 
 function ChargersSection() {
-  return (
-    <section className="admin-panel table-panel">
-      <div className="panel-heading"><div><h2>Estado por equipamento</h2><p>Não confundir telemetria técnica com elegibilidade comercial.</p></div><span>{demoScenarioD0.chargers.length} HCA G2</span></div>
-      <div className="table-wrap"><table><thead><tr><th>Carregador</th><th>Vaga</th><th>Técnico</th><th>Comercial</th><th>Potência</th><th>Atualizado</th></tr></thead><tbody>
-        {demoScenarioD0.chargers.map((charger) => <tr key={charger.id}><td><strong>{charger.commercialName}</strong><small>{charger.id}</small></td><td>{charger.parkingSpot}</td><td><StatusBadge label={technicalStatusLabel[charger.technicalStatus]} tone={toneForTechnical(charger.technicalStatus)} /></td><td><StatusBadge label={commercialStatusLabel[charger.commercialStatus]} tone={toneForCharger(charger.commercialStatus)} /></td><td>{charger.currentPowerKw ?? 0} / {charger.nominalPowerKw} kW</td><td>{shortDate(charger.lastTechnicalUpdateAt)}</td></tr>)}
-      </tbody></table></div>
+  const { account } = useAuth();
+  const selected = demoScenarioD0.chargers[0];
+  const available = demoScenarioD0.chargers.filter((item) => item.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START).length;
+  const occupied = demoScenarioD0.chargers.filter((item) => item.commercialStatus === ChargerCommercialStatus.OCCUPIED).length;
+  const faulted = demoScenarioD0.chargers.filter((item) => item.commercialStatus === ChargerCommercialStatus.FAULTED).length;
+  return <>
+    <section className="surface panel sems-list-page">
+      <SectionHeader title={account?.role === UserRole.GOODWE_ADMIN ? "Carregadores administrados pela GoodWe" : "Carregadores das minhas plantas"} subtitle="Estado técnico e disponibilidade comercial são apresentados separadamente." />
+      <div className="sems-device-tabs"><span className="is-active">Carregador AC/DC</span><span>Gateway</span><span>Medidor</span><span>Terceiros</span></div>
+      <form onSubmit={(event) => event.preventDefault()}><div className="sems-filter-toolbar"><button type="button" className="sems-filter-button"><span>Filter</span></button><label className="sems-filter-field"><span>Planta</span><select><option>Hub Solar Aurora</option></select></label><label className="sems-filter-field"><span>Status</span><select><option>Todos</option></select></label><button type="submit" className="sems-icon-action" aria-label="Pesquisar">⌕</button><button type="button" className="sems-icon-action" aria-label="Atualizar">↻</button>{account?.role === UserRole.GOODWE_ADMIN ? <button type="button" className="sems-primary-action">+ Novo carregador</button> : null}</div></form>
+      <StatusTabs items={[{ label: "Todos", count: 6, tone: "info" }, { label: "Em operação", count: available, tone: "good" }, { label: "Em uso", count: occupied, tone: "danger" }, { label: "Em espera", count: 1, tone: "warn" }, { label: "Falha", count: faulted, tone: "danger" }]} />
+      <div className="sems-table-wrap table-wrap"><table className="data-table"><thead><tr><th>Equipamento</th><th>Planta</th><th>Técnico</th><th>Comercial</th><th>Potência</th><th>Sessão atual</th><th>Última leitura</th><th>Detalhe</th></tr></thead><tbody>{demoScenarioD0.chargers.map((charger) => <tr key={charger.id}><td><strong>{charger.commercialName}</strong><span>{charger.id}</span></td><td>Hub Solar Aurora</td><td><StatusBadge label={technicalStatusLabel[charger.technicalStatus]} tone={technicalTone(charger.technicalStatus)} /></td><td><StatusBadge label={commercialStatusLabel[charger.commercialStatus]} tone={chargerTone(charger.commercialStatus)} /></td><td>{charger.currentPowerKw ?? 0} / {charger.nominalPowerKw} kW</td><td>{charger.activeSessionId ?? "Sem sessão"}</td><td>{shortDate(charger.lastTechnicalUpdateAt)}</td><td><button type="button" className="ghost-button">Selecionar</button></td></tr>)}</tbody></table></div>
     </section>
-  );
+    {selected ? <section className="surface panel"><SectionHeader title={`Detalhes ${selected.commercialName}`} subtitle="Dados operacionais do equipamento selecionado." /><div className="detail-grid"><article><h3>Identificação</h3><p>{selected.id}</p><p>Vaga {selected.parkingSpot}</p></article><article><h3>Planta</h3><p>Hub Solar Aurora</p><p>{selected.plantId}</p></article><article><h3>Status técnico</h3><p>{technicalStatusLabel[selected.technicalStatus]}</p><p>Potência nominal {selected.nominalPowerKw} kW</p></article><article><h3>Sessão atual</h3><p>{selected.activeSessionId ?? "Sem sessão ativa"}</p></article><article><h3>Potência atual</h3><p>{selected.currentPowerKw ?? 0} kW</p></article><article><h3>Última comunicação</h3><p>{shortDate(selected.lastTechnicalUpdateAt)}</p></article></div></section> : null}
+    {account?.role === UserRole.GOODWE_ADMIN ? <section className="surface panel sems-panel"><SectionHeader title="Cadastrar carregador" subtitle="Vínculo obrigatório a uma planta SEMS+ comercialmente habilitada." /><form className="simulator-grid" onSubmit={(event) => event.preventDefault()}><label>Identificação<input required /></label><label>Número de série<input required /></label><label>Modelo<input defaultValue="HCA G2" required /></label><label>Potência nominal (kW)<input type="number" defaultValue="7" required /></label><label>Planta<select><option>Hub Solar Aurora</option></select></label><label>Vaga<input required /></label><button type="submit">Cadastrar carregador</button></form></section> : null}
+  </>;
 }
 
 function SessionsSection() {
-  return (
-    <section className="admin-panel table-panel">
-      <div className="panel-heading"><div><h2>Ciclo comercial</h2><p>StartCharge e StopCharge permanecem comandos assíncronos da API.</p></div><span>{demoScenarioD0.dashboardKpis.activeSessions} ativas</span></div>
-      <div className="table-wrap"><table><thead><tr><th>Sessão</th><th>Carregador</th><th>Estado</th><th>Energia</th><th>Estimativa</th><th>Pagamento</th></tr></thead><tbody>
-        {demoScenarioD0.sessions.map((session) => {
-          const payment = demoScenarioD0.payments[session.sessionId];
-          return <tr key={session.sessionId}><td><strong>{session.driverRef}</strong><small>{shortDate(session.startedAt)}</small></td><td>{session.chargerId.replace("charger_demo_", "Aurora ")}</td><td><StatusBadge label={sessionStatusLabel[session.status]} tone={toneForSession(session.status)} /></td><td>{session.energyDeliveredKwh} kWh</td><td>{money(session.costEstimate.amount)}</td><td>{payment ? <StatusBadge label={paymentStatusLabel[payment.paymentStatus]} tone={toneForPayment(payment.paymentStatus)} /> : "—"}</td></tr>;
-        })}
-      </tbody></table></div>
-    </section>
-  );
+  const active = demoScenarioD0.sessions.filter((item) => item.status !== CommercialSessionStatus.COMPLETED && item.status !== CommercialSessionStatus.FAULTED);
+  const finished = demoScenarioD0.sessions.filter((item) => !active.includes(item));
+  return <>
+    <section className="surface panel sems-list-page"><SectionHeader title="Sessões ativas" subtitle="Acompanhamento em tempo real por planta e carregador." /><StatusTabs items={[{ label: "Todos", count: 6, tone: "info" }, { label: "Em ocorrência", count: active.length, tone: "danger" }, { label: "Resolvidos", count: finished.length, tone: "good" }, { label: "Fila", count: demoScenarioD0.queue.activeCount, tone: "warn" }]} /><div className="intel-grid">{active.map((session) => <article className="intel-card" key={session.sessionId}><h3>{session.sessionId}</h3><p>{session.chargerId} · Hub Solar Aurora</p><p>{session.durationMinutes} min · {session.energyDeliveredKwh} kWh</p><p>{money(session.tariffPerKwh)}/kWh · {money(session.costEstimate.amount)}</p><StatusBadge label={sessionStatusLabel[session.status]} tone={sessionTone(session.status)} /></article>)}</div></section>
+    <section className="surface panel sems-list-page"><SectionHeader title="Histórico de sessões" subtitle="Registro consolidado da operação comercial." /><div className="sems-table-wrap table-wrap"><table className="data-table"><thead><tr><th>ID</th><th>Planta</th><th>Carregador</th><th>Usuário</th><th>Início</th><th>Duração</th><th>Energia</th><th>Valor</th><th>Pagamento</th></tr></thead><tbody>{demoScenarioD0.sessions.map((session) => { const payment = demoScenarioD0.payments[session.sessionId]; return <tr key={session.sessionId}><td>{session.sessionId}</td><td>Hub Solar Aurora</td><td>{session.chargerId}</td><td>{session.driverRef}</td><td>{shortDate(session.startedAt)}</td><td>{session.durationMinutes} min</td><td>{session.energyDeliveredKwh} kWh</td><td>{money(session.costEstimate.amount)}</td><td>{payment ? <StatusBadge label={paymentStatusLabel[payment.paymentStatus]} tone={paymentTone(payment.paymentStatus)} /> : "—"}</td></tr>; })}</tbody></table></div></section>
+  </>;
 }
 
 function EnergySection() {
   const plant = demoScenarioD0.plant;
   const supply = plant.pvKw + plant.gridImportKw + (plant.batteryDischargeKw ?? 0);
   const demand = plant.buildingLoadKw + plant.evLoadKw + (plant.batteryChargeKw ?? 0) + (plant.gridExportKw ?? 0);
-  return <>
-    <section className="energy-hero"><div><p className="eyebrow">Estado energético</p><h2>{plant.energyStatus}</h2><p>Envelope comercial disponível para novas sessões.</p></div><strong>{plant.operationalEvLimitKw - plant.evLoadKw} <small>kW de margem EV</small></strong></section>
-    <section className="metric-cards"><article><span>Oferta</span><strong>{supply} kW</strong><small>Solar + rede + bateria</small></article><article><span>Demanda</span><strong>{demand} kW</strong><small>Edificação + EV</small></article><article><span>Solar</span><strong>{plant.pvKw} kW</strong><small>Telemetria SEMS+</small></article><article><span>Carga EV</span><strong>{plant.evLoadKw} kW</strong><small>de {plant.operationalEvLimitKw} kW</small></article></section>
-    <section className="admin-panel"><div className="panel-heading"><div><h2>Leitura confirmada</h2><p>O ChargeGrid não inventa consumo além da última telemetria.</p></div><span>{shortDate(plant.observedAt)}</span></div><div className="energy-track"><i style={{ width: `${(plant.evLoadKw / plant.operationalEvLimitKw) * 100}%` }} /></div></section>
-  </>;
+  const margin = plant.operationalEvLimitKw - plant.evLoadKw;
+  return <><section className="surface panel"><SectionHeader title="Demanda e Energia" subtitle="Telemetria SEMS+ recebida pela camada de integração." /><div className="kpi-grid four-cols"><KpiCard label="Demanda atual" value={`${demand} kW`} help="consumo total instantâneo" /><KpiCard label="Oferta" value={`${supply} kW`} help="solar + rede + bateria" /><KpiCard label="Carga dos carregadores" value={`${plant.evLoadKw} kW`} help="consumo de recarga" /><KpiCard label="Margem EV" value={`${margin} kW`} help={plant.energyStatus} accent="good" /><KpiCard label="Solar" value={`${plant.pvKw} kW`} help="geração renovável" /><KpiCard label="Limite operacional EV" value={`${plant.operationalEvLimitKw} kW`} help="regra ChargeGrid" /><KpiCard label="Sessões em andamento" value={demoScenarioD0.dashboardKpis.activeSessions} help="tempo real" /><KpiCard label="Fila" value={demoScenarioD0.queue.activeCount} help="aguardando vaga" /></div></section><section className="surface panel"><SectionHeader title="Fila de espera" subtitle="Disponibilidade e condição energética não alteram a tarifa." /><article className="assistant-card"><p>Não há motoristas aguardando no cenário D0. A fila será implementada em spec própria e não representa surge pricing.</p></article></section></>;
 }
 
 function FinancialSection() {
   const settled = demoScenarioD0.financials.filter((item) => item.settlementState === "SETTLED");
   const gross = settled.reduce((sum, item) => sum + (item.grossSettledRevenue ?? 0), 0);
   const commission = settled.reduce((sum, item) => sum + (item.chargegridCommission ?? 0), 0);
-  const net = settled.reduce((sum, item) => sum + (item.netFinancialAmount ?? 0), 0);
-  return <>
-    <section className="metric-cards"><article><span>Tarifa atual</span><strong>{money(demoScenarioD0.tariff.currentPricePerKwh)}</strong><small>por kWh</small></article><article><span>Receita liquidada</span><strong>{money(gross)}</strong><small>sessões confirmadas</small></article><article><span>Comissão ChargeGrid</span><strong>{money(commission)}</strong><small>{demoScenarioD0.chargegridCommissionRate * 100}% oficial</small></article><article><span>Líquido previsto</span><strong>{money(net)}</strong><small>após taxas demonstrativas</small></article></section>
-    <section className="admin-panel table-panel"><div className="panel-heading"><div><h2>Política tarifária</h2><p>Fila e lotação não são mecanismos de surge pricing.</p></div><span>{demoScenarioD0.tariff.nextChangeAt.slice(11, 16)} próxima mudança</span></div><div className="table-wrap"><table><thead><tr><th>Faixa</th><th>Horário</th><th>Preço</th><th>Origem</th></tr></thead><tbody>{demoScenarioD0.tariff.segments.map((segment) => <tr key={segment.id}><td>{segment.id.replaceAll("_", " ")}</td><td>{segment.start} — {segment.end}</td><td>{money(segment.pricePerKwh)}/kWh</td><td>ChargeGrid comercial</td></tr>)}</tbody></table></div></section>
-  </>;
+  return <><section className="surface panel"><SectionHeader title="Tarifação e Pagamentos" subtitle="Regras comerciais aplicadas à fonte compartilhada D0." /><div className="detail-grid"><article><h3>Tarifa atual</h3><p>{money(demoScenarioD0.tariff.currentPricePerKwh)}/kWh</p></article><article><h3>Receita liquidada</h3><p>{money(gross)}</p></article><article><h3>Comissão ChargeGrid</h3><p>{money(commission)} · 5%</p></article><article><h3>Próxima faixa</h3><p>{money(2.3)}/kWh às 18:00</p></article></div><article className="assistant-card"><p>Pagamento permanece simulado. A tarifa é definida por faixa horária; fila e lotação não são mecanismos de precificação dinâmica.</p></article></section><section className="surface panel sems-list-page"><SectionHeader title="Cobrança das recargas" subtitle="Histórico financeiro por sessão." /><div className="sems-table-wrap table-wrap"><table className="data-table"><thead><tr><th>Sessão</th><th>Método</th><th>Limite</th><th>Valor</th><th>Status</th></tr></thead><tbody>{demoScenarioD0.sessions.map((session) => { const payment = demoScenarioD0.payments[session.sessionId]; return <tr key={session.sessionId}><td>{session.sessionId}</td><td>{payment?.method ?? "—"}</td><td>{payment ? money(payment.financialLimit.amount) : "—"}</td><td>{payment ? money(payment.amountDue.amount) : "—"}</td><td>{payment ? <StatusBadge label={paymentStatusLabel[payment.paymentStatus]} tone={paymentTone(payment.paymentStatus)} /> : "—"}</td></tr>; })}</tbody></table></div></section></>;
 }
 
-export function OperationalPage({ section }: { section: OperationalSection }) {
-  const copy = sectionCopy[section];
-  const content = section === "chargers" ? <ChargersSection /> : section === "sessions" ? <SessionsSection /> : section === "energy" ? <EnergySection /> : <FinancialSection />;
-  return <><PageHeading {...copy} />{content}</>;
-}
+export function OperationalPage({ section }: { section: OperationalSection }) { return section === "chargers" ? <ChargersSection /> : section === "sessions" ? <SessionsSection /> : section === "energy" ? <EnergySection /> : <FinancialSection />; }

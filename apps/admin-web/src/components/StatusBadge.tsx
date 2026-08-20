@@ -6,5 +6,6 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ label, tone }: StatusBadgeProps) {
-  return <span className={`status-badge status-${tone}`}>{label}</span>;
+  const semsTone = { success: "good", info: "info", warning: "warn", danger: "danger", neutral: "muted" }[tone];
+  return <span className={`badge tone-${semsTone}`}>{label}</span>;
 }

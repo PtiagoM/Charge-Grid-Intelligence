@@ -3,12 +3,16 @@ import { AdminShell } from "../layouts/AdminShell";
 import { HomePage } from "../pages/HomePage";
 import { NetworkMapPage } from "../pages/NetworkMapPage";
 import { OperationalPage } from "../pages/OperationalPage";
+import { LoginPage } from "../pages/LoginPage";
+import { EstablishmentsPage } from "../pages/EstablishmentsPage";
 
 export function AppRouter() {
   return (
     <Routes>
+      <Route path="login" element={<LoginPage />} />
       <Route element={<AdminShell />}>
         <Route index element={<HomePage />} />
+        <Route path="establishments" element={<EstablishmentsPage />} />
         <Route path="plants" element={<NetworkMapPage />} />
         <Route path="chargers" element={<OperationalPage section="chargers" />} />
         <Route path="sessions" element={<OperationalPage section="sessions" />} />
