@@ -11,7 +11,7 @@ const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "
 export function EstablishmentCard({ establishment, nominalPowerKw }: EstablishmentCardProps) {
   return (
     <article className="establishment-card">
-      <div className="card-visual" aria-hidden="true"><span>☀</span><span>⚡</span></div>
+      <div className="card-visual"><img src="/assets/sems/plants/136287ad-ae2c-4034-bb53-015701b5fe9d.jpg" alt="Vista demonstrativa do Hub Solar Aurora" /><span>Hub Solar Aurora · Demo D0</span></div>
       <div className="card-title-row">
         <div><p>Recarga pública · dados sintéticos</p><h2>{establishment.name}</h2></div>
         <StatusChip label="Parcial" tone="warning" />

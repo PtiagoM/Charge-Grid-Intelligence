@@ -210,7 +210,7 @@ O único pacote compartilhado inicial deve conter somente contratos que realment
 
 ## 5.2 Design System
 
-A identidade visual seguirá a GoodWe. O trabalho de extração de cores, tipografia, spacing, componentes, ícones e padrões de interface será consolidado em um documento de Design System separado. Este documento apenas reserva o diretório docs/design-system/ como fonte de verdade visual.
+A identidade visual oficial é a linguagem escura SEMS+/GoodWe homologada no Admin Web e descrita em `docs/design-system/`. O Design System v2, o guia de consistência visual, a especificação mobile e o catálogo de assets são as fontes de verdade para cores, tipografia, spacing, componentes, ícones, responsividade e acessibilidade. Admin e PWA compartilham tokens e assinatura visual, mas mantêm componentes e densidades próprios.
 
 # 6. Frontends
 
@@ -536,12 +536,14 @@ A arquitetura é considerada pronta para o Spec-Driven Development quando os pon
 4.  Primeira migration com entidades essenciais ou esqueleto suficiente para a primeira feature.
 5.  GoodWeProvider e MockGoodWeProvider definidos, mesmo que com poucos métodos iniciais.
 6.  Contrato mínimo de comunicação com a AI API acordado ou um stub disponível.
-7.  Documento de Design System GoodWe iniciado separadamente.
+7.  Design System SEMS+/GoodWe v2 e documentos de consistência visual mantidos em `docs/design-system/`.
 8.  Primeira spec funcional escolhida para implementação vertical.
 
 ## Adendo de implementação aprovado — 20 de agosto de 2026
 
 O Admin Web adota a composição visual e os assets SEMS+ autorizados pelo projeto como referência final. A migração preserva a arquitetura congelada: os componentes são portados para `apps/admin-web` em React + TypeScript; não se incorpora o aplicativo JavaScript independente, suas fixtures isoladas nem regras críticas no navegador.
+
+Os tokens portáveis vivem em `packages/shared`; componentes permanecem nos apps. A Driver PWA reutiliza a identidade, sem copiar sidebar, topbar, tabelas ou densidade do Admin. Assets estáticos podem ser distribuídos por app conforme a necessidade da feature, preservando arquivo e mapeamento tipado.
 
 O Admin Web inclui um módulo de mapa operacional com Google Maps JavaScript API. A chave é lida exclusivamente de `VITE_GOOGLE_MAPS_API_KEY`; a variável é pública por natureza do navegador, deve ter restrições configuradas no Google Cloud e nunca é versionada. A ausência ou falha do SDK mantém um fallback de demonstração, sem bloquear o restante do Admin.
 

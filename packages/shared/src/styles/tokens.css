@@ -1,23 +1,35 @@
 :root {
-  --cg-brand-primary: #ff3049;
-  --cg-brand-primary-hover: #df1c35;
-  --cg-canvas: #f1f2f3;
-  --cg-surface: #ffffff;
-  --cg-text-primary: #08111f;
-  --cg-text-muted: #7d8696;
-  --cg-border: #e7e9ed;
-  --cg-success: #42c95a;
-  --cg-success-subtle: #effbf1;
-  --cg-info: #2f80ff;
-  --cg-info-subtle: #eaf2ff;
-  --cg-warning: #eba900;
-  --cg-warning-subtle: #fff7da;
-  --cg-danger: #ff4d5e;
-  --cg-danger-subtle: #fff0f2;
-  --cg-neutral-strong: #080f1f;
-  --cg-neutral-subtle: #f8f9fa;
-  --cg-neutral-disabled: #969da7;
-  --cg-font-sans: "Segoe UI", Arial, Helvetica, sans-serif;
+  color-scheme: dark;
+
+  --cg-canvas: #0d0d0f;
+  --cg-surface-1: #1f2123;
+  --cg-surface-2: #202224;
+  --cg-surface-3: #2c2d30;
+  --cg-surface-4: #3a3a3c;
+  --cg-field: #3a3a3c;
+
+  --cg-text-primary: #ffffff;
+  --cg-text-secondary: rgba(245, 246, 248, 0.6);
+  --cg-text-muted: rgba(245, 246, 248, 0.5);
+  --cg-border-soft: rgba(255, 255, 255, 0.08);
+  --cg-border-strong: rgba(255, 255, 255, 0.16);
+
+  --cg-brand-primary: #ff323a;
+  --cg-brand-primary-hover: #d8212d;
+  --cg-brand-subtle: rgba(255, 50, 58, 0.14);
+  --cg-brand-border: rgba(255, 50, 58, 0.42);
+  --cg-success: #4ecb57;
+  --cg-success-subtle: rgba(78, 203, 87, 0.16);
+  --cg-info: #2f86ff;
+  --cg-info-subtle: rgba(47, 134, 255, 0.16);
+  --cg-warning: #f6c443;
+  --cg-warning-subtle: rgba(246, 196, 67, 0.16);
+  --cg-danger: #ff323a;
+  --cg-danger-subtle: rgba(255, 50, 58, 0.16);
+  --cg-neutral-subtle: rgba(245, 246, 248, 0.08);
+  --cg-neutral-disabled: rgba(245, 246, 248, 0.5);
+
+  --cg-font-sans: Poppins, "Segoe UI", Arial, Helvetica, sans-serif;
   --cg-space-1: 4px;
   --cg-space-2: 8px;
   --cg-space-3: 12px;
@@ -27,9 +39,18 @@
   --cg-space-7: 32px;
   --cg-radius-xs: 6px;
   --cg-radius-sm: 8px;
-  --cg-radius-md: 10px;
-  --cg-radius-lg: 12px;
-  --cg-radius-mobile: 22px;
-  --cg-radius-pill: 999px;
-  --cg-border-default: 1px solid var(--cg-border);
+  --cg-radius-md: 12px;
+  --cg-radius-lg: 16px;
+  --cg-radius-mobile: 16px;
+  --cg-radius-pill: 100px;
+
+  --cg-shadow-soft: 0 18px 60px rgba(0, 0, 0, 0.28);
+  --cg-shadow-card: 8px 8px 16px rgba(0, 0, 0, 0.2), inset 0 0 40px rgba(255, 255, 255, 0.12);
+  --cg-shadow-brand: 0 0 0 1px rgba(255, 50, 58, 0.25), 0 10px 26px rgba(255, 50, 58, 0.22);
+
+  /* Aliases de compatibilidade; todos apontam para a identidade escura v2. */
+  --cg-surface: var(--cg-surface-2);
+  --cg-border: var(--cg-border-soft);
+  --cg-neutral-strong: var(--cg-text-primary);
+  --cg-border-default: 1px solid var(--cg-border-soft);
 }

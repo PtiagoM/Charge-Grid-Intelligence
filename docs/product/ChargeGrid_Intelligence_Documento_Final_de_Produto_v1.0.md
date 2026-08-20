@@ -774,6 +774,10 @@ As decisões de produto estão fechadas. Os itens abaixo permanecem configuráve
 
 Este adendo substitui, onde houver conflito, orientações anteriores sobre a identidade visual do Admin e sobre a ausência de mapa administrativo. As demais decisões de produto v1.0 permanecem inalteradas.
 
+### Identidade visual SEMS+/GoodWe
+
+O tema grafite escuro, a composição, a iconografia e os assets SEMS+ homologados passam a ser a identidade visual oficial do ChargeGrid. O Admin preserva a densidade operacional do SEMS+; a Driver PWA reutiliza tokens, semântica e assets em composição mobile-first. A fonte normativa é o conjunto vigente em `docs/design-system/`.
+
 ### ChargeGrid como extensão comercial do SEMS+
 
 O ChargeGrid passa a ser apresentado como uma extensão comercial e operacional nativa do ecossistema SEMS+, e não apenas como uma interface inspirada nele. A planta energética cadastrada no SEMS+ é a origem da informação técnica; o ChargeGrid a habilita comercialmente e acrescenta somente dados que o SEMS+ não cobre: disponibilidade comercial, tarifas, sessões, pagamentos, fila, ociosidade, comissão e indicadores comerciais.
