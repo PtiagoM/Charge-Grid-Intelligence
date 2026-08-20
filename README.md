@@ -110,6 +110,8 @@ Código
 
 Uma camada inferior não pode alterar silenciosamente uma decisão superior. Os documentos oficiais preservados em `docs/` são as fontes de verdade.
 
+O diretório `docs/design-system/` contém o Design System SEMS+/GoodWe v2, sua aplicação mobile, o guia de consistência visual e o catálogo de assets. A identidade oficial usa tema grafite escuro e assets SEMS+.
+
 ## Processo de desenvolvimento
 
 1. Escolher uma feature candidata em `docs/specs/README.md`.
@@ -130,4 +132,4 @@ Uma camada inferior não pode alterar silenciosamente uma decisão superior. Os 
 - A IA será integrada posteriormente e nunca deve bloquear a operação determinística.
 - D0–D15 são dados/cenários de demonstração, não telemetria, cobranças ou pessoas reais.
 
-Não estão implementados nesta baseline: login, Supabase Auth/RLS, dashboard completo, mapa, QR, checkout, sessão executável, fila, tarifação, relatórios, IA, OpenAPI real, notificações ou Demo Controller.
+O login atual é demonstrativo; Supabase Auth/RLS ainda não está integrado. O Admin possui shell, dashboard e mapa como base visual/funcional, mas jornadas completas de QR, checkout, sessão executável, fila, tarifação, relatórios, IA, OpenAPI real, notificações e Demo Controller continuam fora desta baseline.
