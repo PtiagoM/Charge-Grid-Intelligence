@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { QueueStatus } from "@chargegrid/shared";
 import { useDriverApp } from "../app/DriverAppContext";
 import { AppIcon } from "../components/AppIcon";
 import { assets } from "../constants/assets";
@@ -25,7 +26,7 @@ function routeTitle(pathname: string) {
 export function MobileShell() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, isOnline, notifications, selectedEstablishmentId, session, setTheme, theme } = useDriverApp();
+  const { isAuthenticated, isOnline, notifications, queue, selectedEstablishmentId, session, setTheme, theme } = useDriverApp();
   const hasAccountNavigation = isAuthenticated && !accountEntryExclusions.includes(location.pathname);
   const showBack = location.pathname !== "/" && location.pathname !== "/explore";
   const unreadCount = notifications.filter((item) => !item.read).length;
@@ -62,6 +63,9 @@ export function MobileShell() {
         </div>
       </header>
       {!isOnline ? <div className="offline-banner" role="status"><AppIcon name="wifi-off" size={18} /> Você está offline. Novas autorizações estão indisponíveis.</div> : null}
+      {isAuthenticated && queue && !location.pathname.startsWith("/queue") ? <button type="button" className={`active-queue-banner${queue.status === QueueStatus.CALLED ? " is-called" : ""}`} onClick={() => navigate("/queue")}>
+        <AppIcon name="clock" size={19} /><span><strong>{queue.status === QueueStatus.CALLED ? "Sua vaga está disponível" : `Você está na fila · posição #${queue.position}`}</strong><small>{queue.status === QueueStatus.CALLED ? "Toque para ver o carregador atribuído" : `${queue.establishmentName} · acompanhe a qualquer momento`}</small></span><AppIcon name="chevron-right" size={18} />
+      </button> : null}
       <main className="mobile-content"><Outlet /></main>
       {hasAccountNavigation ? <nav className="bottom-nav" aria-label="Navegação do motorista">
         <NavLink to="/explore"><img src={assets.icons.explore} alt="" /><strong>Explorar</strong></NavLink>

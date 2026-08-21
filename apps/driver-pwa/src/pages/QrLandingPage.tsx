@@ -1,8 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ChargerCommercialStatus } from "@chargegrid/shared";
 import { useDriverApp } from "../app/DriverAppContext";
 import { AppIcon } from "../components/AppIcon";
+import { QueueJoinConfirmation } from "../components/QueueJoinConfirmation";
 import { StatusChip } from "../components/StatusChip";
 import { InfoRow, PageIntro } from "../components/Ui";
 import { getChargingPointBySlug } from "../data/commercialPlants";
@@ -13,8 +14,8 @@ export function QrLandingPage() {
   const { chargerSlug } = useParams();
   const navigate = useNavigate();
   const point = getChargingPointBySlug(chargerSlug);
-  const { isAuthenticated, joinQueue, selectChargingPoint } = useDriverApp();
-  const queuedFromQr = useRef(false);
+  const { getQueueJoinPreview, isAuthenticated, joinQueue, queue, selectChargingPoint } = useDriverApp();
+  const [showQueueConfirmation, setShowQueueConfirmation] = useState(false);
   const plantId = point?.plant.id;
   const chargerId = point?.charger.id;
   const isAvailable = point?.charger.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START;
@@ -22,13 +23,6 @@ export function QrLandingPage() {
   useEffect(() => {
     if (plantId && chargerId) selectChargingPoint(plantId, chargerId);
   }, [chargerId, plantId, selectChargingPoint]);
-
-  useEffect(() => {
-    if (!point || isAvailable || queuedFromQr.current) return;
-    queuedFromQr.current = true;
-    joinQueue(point.plant.id);
-    navigate("/queue", { replace: true });
-  }, [isAuthenticated, isAvailable, joinQueue, navigate, point]);
 
   if (!point) return <section className="empty-state"><AppIcon name="qr" size={38} /><h1>QR Code não reconhecido</h1><p>Confira se o código pertence a uma vaga ChargeGrid ou faça uma nova leitura.</p><Link className="primary-link" to="/scan">Escanear novamente</Link></section>;
 
@@ -45,8 +39,9 @@ export function QrLandingPage() {
       <InfoRow icon="clock" label="Ociosidade" value="15 min gratuitos" detail="depois R$ 0,50/min, máximo 60 min" />
     </section>
     <section className="mobile-card consent-summary"><h2>O que acontece agora</h2><ol className="step-list"><li><span>1</span>Você define um limite financeiro.</li><li><span>2</span>O pagamento é autorizado com segurança.</li><li><span>3</span>O carregador confirma o início da energia.</li><li><span>4</span>Você acompanha consumo e custo durante a sessão.</li></ol></section>
-    {isAvailable ? <Link className="primary-link" to={`/checkout?mode=${isAuthenticated ? "driver" : "guest"}`}><AppIcon name="chevron-right" size={20} /> {isAuthenticated ? "Continuar com minha conta" : "Continuar como visitante"}</Link> : <Link className="primary-link" to="/queue"><AppIcon name="chevron-right" size={20} /> Acompanhar fila da planta</Link>}
+    {isAvailable ? <Link className="primary-link" to={`/checkout?mode=${isAuthenticated ? "driver" : "guest"}`}><AppIcon name="chevron-right" size={20} /> {isAuthenticated ? "Continuar com minha conta" : "Continuar como visitante"}</Link> : isAuthenticated ? <button type="button" className="primary-link" onClick={() => queue ? navigate("/queue") : setShowQueueConfirmation(true)}><AppIcon name="clock" size={20} /> {queue ? "Acompanhar minha fila" : "Entrar na fila da planta"}</button> : <Link className="primary-link" to="/login"><AppIcon name="user" size={20} /> Entre para usar a fila</Link>}
     {!isAuthenticated ? <><Link className="secondary-link" to="/login">Entrar na minha conta</Link><Link className="text-link" to="/signup">Criar conta de motorista</Link></> : null}
     <p className="privacy-note centered">Visitantes têm acesso somente à sessão atual e ao comprovante correspondente.</p>
+    {showQueueConfirmation ? <QueueJoinConfirmation {...getQueueJoinPreview(plant.id)} onCancel={() => setShowQueueConfirmation(false)} onConfirm={() => { joinQueue(plant.id); setShowQueueConfirmation(false); navigate("/queue"); }} /> : null}
   </>;
 }

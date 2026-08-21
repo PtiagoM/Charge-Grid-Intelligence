@@ -1,5 +1,5 @@
 import { CommercialSessionStatus } from "@chargegrid/shared";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDriverApp } from "../app/DriverAppContext";
 import { AppIcon } from "../components/AppIcon";
@@ -21,41 +21,18 @@ const statusCopy: Partial<Record<CommercialSessionStatus, { label: string; title
 
 const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
+function formatRemainingTime(minutes: number) {
+  if (minutes < 1) return "menos de 1 min";
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = Math.ceil(minutes % 60);
+  return hours ? `${hours} h${remainingMinutes ? ` ${remainingMinutes} min` : ""}` : `${remainingMinutes} min`;
+}
+
 export function SessionPage() {
   const navigate = useNavigate();
-  const { session, receipts, setSessionStatus, tickSession, finishEnergy, applyIdleFee, settleSession } = useDriverApp();
+  const { session, receipts, setSessionStatus, finishEnergy, applyIdleFee } = useDriverApp();
   const [settling, setSettling] = useState(false);
   const [settlementError, setSettlementError] = useState("");
-
-  useEffect(() => {
-    if (!session) return;
-    if (session.status === CommercialSessionStatus.AUTHORIZED) {
-      const timer = window.setTimeout(() => setSessionStatus(CommercialSessionStatus.WAITING_START), 700);
-      return () => window.clearTimeout(timer);
-    }
-    if (session.status === CommercialSessionStatus.WAITING_START) {
-      const timer = window.setTimeout(() => setSessionStatus(CommercialSessionStatus.STARTING), 800);
-      return () => window.clearTimeout(timer);
-    }
-    if (session.status === CommercialSessionStatus.STARTING) {
-      const timer = window.setTimeout(() => setSessionStatus(CommercialSessionStatus.CHARGING), 1400);
-      return () => window.clearTimeout(timer);
-    }
-    if (session.status === CommercialSessionStatus.ENERGY_FINISHED) {
-      const timer = window.setTimeout(() => setSessionStatus(CommercialSessionStatus.IDLE_GRACE_PERIOD), 1200);
-      return () => window.clearTimeout(timer);
-    }
-    if (session.status === CommercialSessionStatus.SETTLING) {
-      const timer = window.setTimeout(settleSession, 1400);
-      return () => window.clearTimeout(timer);
-    }
-  }, [session, setSessionStatus, settleSession]);
-
-  useEffect(() => {
-    if (session?.status !== CommercialSessionStatus.CHARGING) return;
-    const timer = window.setInterval(tickSession, 3000);
-    return () => window.clearInterval(timer);
-  }, [session?.status, tickSession]);
 
   if (!session) return <section className="empty-state"><AppIcon name="plug" size={36} /><h1>Nenhuma sessão ativa</h1><p>Use o mapa com uma conta ou escaneie o QR Code no carregador.</p><PrimaryButton onClick={() => navigate("/")}>Voltar ao início</PrimaryButton></section>;
 
@@ -63,6 +40,11 @@ export function SessionPage() {
   const total = session.energyAmount + session.idleAmount;
   const completedReceipt = receipts[0];
   const isPendingStart = [CommercialSessionStatus.AUTHORIZED, CommercialSessionStatus.WAITING_START, CommercialSessionStatus.STARTING].includes(session.status);
+  const charging = session.status === CommercialSessionStatus.CHARGING;
+  const creditProgress = Math.min(100, Math.round((session.energyAmount / session.financialLimit) * 100));
+  const remainingCredit = Math.max(0, session.financialLimit - session.energyAmount);
+  const remainingKwh = session.tariffPerKwh > 0 ? remainingCredit / session.tariffPerKwh : 0;
+  const estimatedMinutesRemaining = session.currentPowerKw > 0 ? (remainingKwh / session.currentPowerKw) * 60 : 0;
 
   async function beginSettlement() {
     if (!session) return;
@@ -92,8 +74,8 @@ export function SessionPage() {
     <PageIntro eyebrow={`${session.chargerName} · vaga ${session.parkingSpot}`} title={presentation.title}><p>{presentation.detail}</p></PageIntro>
     <section className={`session-hero state-${presentation.tone}`} aria-live="polite">
       <div className="session-state-row"><StatusChip label={presentation.label} tone={presentation.tone} /><span>Atualizado agora</span></div>
-      {isPendingStart ? <div className="starting-visual"><span className="spinner" /><strong>{session.status === CommercialSessionStatus.STARTING ? "Confirmando energia" : "Preparando carregador"}</strong></div> : <div className="session-main-metric"><span>Energia confirmada</span><strong>{session.energyKwh.toFixed(2).replace(".", ",")} <small>kWh</small></strong></div>}
-      <div className="session-metrics"><div><span>Potência agora</span><strong>{session.currentPowerKw.toFixed(1).replace(".", ",")} kW</strong></div><div><span>Custo estimado</span><strong>{currency.format(total)}</strong></div><div><span>Limite</span><strong>{currency.format(session.financialLimit)}</strong></div><div><span>Tarifa</span><strong>R$ 1,90/kWh</strong></div></div>
+      {isPendingStart ? <div className="starting-visual"><span className="spinner" /><strong>{session.status === CommercialSessionStatus.STARTING ? "Confirmando energia" : "Preparando carregador"}</strong></div> : charging ? <div className="charging-limit-progress" aria-label={`${creditProgress}% do limite de crédito utilizado`}><div className="charging-progress-heading"><span>Limite utilizado</span><strong>{creditProgress}%</strong></div><div className="charging-progress-track"><span style={{ width: `${creditProgress}%` }} /></div><div className="charging-progress-summary"><span>{currency.format(session.energyAmount)} de {currency.format(session.financialLimit)}</span><strong>Restam {currency.format(remainingCredit)}</strong></div><p>Estimativa até o limite: <strong>{formatRemainingTime(estimatedMinutesRemaining)}</strong></p></div> : <div className="session-main-metric"><span>Energia confirmada</span><strong>{session.energyKwh.toFixed(2).replace(".", ",")} <small>kWh</small></strong></div>}
+      <div className="session-metrics"><div><span>Energia confirmada</span><strong>{session.energyKwh.toFixed(2).replace(".", ",")} kWh</strong></div><div><span>Potência agora</span><strong>{session.currentPowerKw.toFixed(1).replace(".", ",")} kW</strong></div><div><span>Custo estimado</span><strong>{currency.format(total)}</strong></div><div><span>Tarifa</span><strong>{currency.format(session.tariffPerKwh)}/kWh</strong></div></div>
       {session.status === CommercialSessionStatus.IDLE_FEE ? <div className="idle-alert"><AppIcon name="warning" /><div><strong>{session.idleMinutes} min cobrados · {currency.format(session.idleAmount)}</strong><span>Retire e desconecte o veículo para encerrar.</span></div></div> : null}
     </section>
 

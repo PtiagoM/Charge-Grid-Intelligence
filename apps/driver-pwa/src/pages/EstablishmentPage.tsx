@@ -1,8 +1,9 @@
 import { ChargerCommercialStatus, CommercialAvailability } from "@chargegrid/shared";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Navigate, Link, useNavigate, useParams } from "react-router-dom";
 import { useDriverApp } from "../app/DriverAppContext";
 import { AppIcon } from "../components/AppIcon";
+import { QueueJoinConfirmation } from "../components/QueueJoinConfirmation";
 import { StatusChip } from "../components/StatusChip";
 import { InfoRow, PageIntro, PrimaryButton, SecondaryButton } from "../components/Ui";
 import { getPlantById } from "../data/commercialPlants";
@@ -23,7 +24,8 @@ export function EstablishmentPage() {
   const { establishmentId } = useParams();
   const navigate = useNavigate();
   const plant = getPlantById(establishmentId);
-  const { isAuthenticated, joinQueue, selectedChargerId, selectedEstablishmentId, selectChargingPoint } = useDriverApp();
+  const { isAuthenticated, getQueueJoinPreview, joinQueue, queue, selectedChargerId, selectedEstablishmentId, selectChargingPoint } = useDriverApp();
+  const [showQueueConfirmation, setShowQueueConfirmation] = useState(false);
   const availableChargers = plant?.chargers.filter((charger) => charger.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START) ?? [];
   const defaultCharger = availableChargers[0] ?? plant?.chargers[0];
   const selectedCharger = selectedEstablishmentId === plant?.id
@@ -44,8 +46,11 @@ export function EstablishmentPage() {
   function continueRegistered() {
     if (!plant) return;
     if (isFull) {
-      joinQueue(plant.id);
-      navigate("/queue");
+      if (queue) {
+        navigate("/queue");
+        return;
+      }
+      setShowQueueConfirmation(true);
       return;
     }
     if (!selectedCharger || selectedCharger.commercialStatus !== ChargerCommercialStatus.AVAILABLE_TO_START) return;
@@ -95,5 +100,6 @@ export function EstablishmentPage() {
       {!isAuthenticated ? <Link className="text-link" to="/login">Entrar para usar fila e histórico</Link> : null}
       <SecondaryButton onClick={() => navigate(isAuthenticated ? "/explore" : "/")}><AppIcon name="map" size={20} /> Voltar</SecondaryButton>
     </div>
+    {showQueueConfirmation ? <QueueJoinConfirmation {...getQueueJoinPreview(plant.id)} onCancel={() => setShowQueueConfirmation(false)} onConfirm={() => { joinQueue(plant.id); setShowQueueConfirmation(false); navigate("/queue"); }} /> : null}
   </>;
 }

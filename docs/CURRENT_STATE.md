@@ -30,6 +30,9 @@ Estas decisões foram dadas depois dos documentos v1.0 e, portanto, têm preced�
 8. Pagamentos usam Stripe real em modo de teste, acima de qualquer premissa antiga de gateway demonstrativo.
 9. A interface não deve exibir rótulos como “dados simulados”, “cenário demo” ou equivalentes. A natureza de fixtures deve permanecer documentada e testável, sem poluir a experiência do usuário.
 10. Supabase Auth é a identidade remota do motorista quando configurado. O fallback local existe somente para desenvolvimento sem credenciais.
+11. A fila é exclusiva para motoristas autenticados. A entrada exige confirmação explícita, informa posição/espera previstas e explica que o primeiro carregador compatível liberado na planta será atribuído.
+12. Fila e sessão comercial são estados globais persistidos no contexto do motorista: devem continuar durante a navegação. Busca, filtros e estados transitórios de interface permanecem locais à tela.
+13. O limite financeiro autorizado é um teto de recarga: ao atingi-lo, a sessão encerra a energia sem ultrapassar o valor e informa o motorista. Durante a recarga, o principal indicador é uma barra verde de consumo do limite, saldo e tempo estimado restante.
 
 ## 3. Estado implementado
 
@@ -44,13 +47,15 @@ Estas decisões foram dadas depois dos documentos v1.0 e, portanto, têm preced�
 | Pagamento | Stripe Payment Element e PaymentIntents em modo teste | `apps/driver-pwa/src/pages/CheckoutPage.tsx` |
 | API financeira | Criar, consultar, capturar e reembolsar PaymentIntent | `apps/api/src/payments/` |
 | Webhook Stripe | Assinatura validada sobre corpo bruto; eventos relevantes registrados | `apps/api/src/payments/routes.ts` |
-| Fila/sessão | Jornadas de UI e estado local implementadas | `apps/driver-pwa/src/app/DriverAppContext.tsx` |
+| Fila/sessão | Estado global persistido, entrada confirmada, aviso global da fila, ciclo de sessão independente da tela e limite financeiro aplicado | `apps/driver-pwa/src/app/DriverAppContext.tsx` |
+| Progresso de recarga | Barra verde de uso do limite, saldo e estimativa até o teto financeiro | `apps/driver-pwa/src/pages/SessionPage.tsx` |
 | Notificações | Permissão e notificações locais pelo service worker | `apps/driver-pwa/src/services/browserNotifications.ts` |
 | PWA | Manifest, service worker, ícone, instalação e safe areas | `apps/driver-pwa/public/` |
 | Admin Web | Shell e mapa operacional SEMS+/GoodWe | `apps/admin-web/` |
 | GoodWe | Contrato e `MockGoodWeProvider`; OpenAPI real ainda não conectada | `apps/api/src/goodwe/` |
 | Persistência comercial | Estrutura prevista; migrations, RLS e repositories ainda não implementados | `supabase/` |
 | IA externa | Apenas fronteira documental | `apps/api/src/ai/README.md` |
+| Produção Vercel | Driver PWA e API publicados; API Express adaptada ao runtime serverless | `apps/api/src/app.ts`, `apps/api/src/server.ts` |
 
 ## 4. Fronteiras que não devem ser confundidas
 
@@ -102,11 +107,22 @@ O arquivo local é `.env` na raiz e nunca deve ser versionado. Consulte `docs/sp
 
 ### Google Maps
 
-A chave configurada em 20 de agosto de 2026 foi identificada pelo próprio SDK como **Maps Demo Key** e atingiu a cota diária. O componente está estável diante dessa recusa, mas nenhum código consegue contornar uma cota externa. Para exibir o mapa continuamente é obrigatório usar um projeto Google Cloud com faturamento, Maps JavaScript API habilitada, cota disponível e referrers corretos.
+A variável `VITE_GOOGLE_MAPS_API_KEY` está configurada no projeto de produção da Vercel. Em 21 de agosto de 2026, a carga direta do SDK com o domínio de produção como referer respondeu com sucesso, sem marcadores de chave inválida, billing, cota ou referrer negado. Isso não elimina a necessidade de monitorar o Console do navegador e a cota do Google Cloud caso o mapa falhe para um usuário.
+
+Trocar a chave diretamente na Vercel é permitido, mas requer novo deploy do **PWA**: variáveis `VITE_*` são incorporadas no bundle durante o build. A API não precisa ser republicada para uma troca exclusiva de chave do Maps. A chave deve ter Maps JavaScript API, faturamento, cota e restrição de website para `https://chargegrid-driver-pwa.vercel.app/*`.
 
 ### Stripe
 
-O gateway chama a API Stripe em modo teste. O webhook atual valida a assinatura e registra os tipos acompanhados, mas ainda não persiste nem reconcilia automaticamente o estado comercial da sessão. O segredo do `stripe listen` é próprio do listener local e pode ser diferente do segredo criado no Dashboard.
+O gateway chama a API Stripe em modo teste. A API de produção está configurada e respondeu `configured: true`. Existe um endpoint Stripe de teste apontando para `https://chargegrid-api.vercel.app/payments/webhook`; seu segredo está somente nas variáveis protegidas da Vercel. O webhook valida assinatura e registra os tipos acompanhados, mas ainda não persiste nem reconcilia automaticamente o estado comercial da sessão. O segredo do `stripe listen` é próprio do listener local e pode ser diferente do segredo do endpoint de produção.
+
+### Publicação na Vercel
+
+- PWA: `https://chargegrid-driver-pwa.vercel.app`
+- API: `https://chargegrid-api.vercel.app`
+- Health: `GET https://chargegrid-api.vercel.app/health`
+- Pagamentos: `GET https://chargegrid-api.vercel.app/payments/config`
+
+O monorepo possui dois projetos Vercel, ambos com raiz configurada em `apps/`. O PWA usa Vite e recebe somente variáveis públicas `VITE_*`; a API Express recebe `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` e `CHARGEGRID_ALLOWED_ORIGINS` como variáveis protegidas. Não documentar valores de chaves, segredos ou IDs de webhook.
 
 ### Supabase
 

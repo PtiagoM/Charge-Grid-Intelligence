@@ -16,6 +16,7 @@ import { remoteAuthConfigured, signInDriver, signOutDriver, signUpDriver, subscr
 export type DriverMode = "guest" | "driver";
 export type PaymentMethod = "CARD" | "PIX";
 export type AppTheme = "light" | "dark";
+export type SessionCompletionReason = "MANUAL" | "LIMIT_REACHED";
 
 export interface DriverProfile {
   id: string;
@@ -76,6 +77,7 @@ export interface DriverSessionState {
   energyAmount: number;
   idleMinutes: number;
   idleAmount: number;
+  completionReason?: SessionCompletionReason;
 }
 
 export interface DriverQueueState {
@@ -88,6 +90,12 @@ export interface DriverQueueState {
   chargerName?: string;
   chargerId?: string;
   parkingSpot?: string;
+}
+
+export interface QueueJoinPreview {
+  establishmentName: string;
+  position: number;
+  estimatedWaitMinutes: number;
 }
 
 interface PersistedState {
@@ -140,6 +148,7 @@ interface DriverAppContextValue extends PersistedState {
   finishEnergy(): void;
   applyIdleFee(): void;
   settleSession(): void;
+  getQueueJoinPreview(establishmentId: string): QueueJoinPreview;
   joinQueue(establishmentId: string): void;
   callQueue(): void;
   leaveQueue(): void;
@@ -335,21 +344,30 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
 
   const tickSession = useCallback(() => setState((current) => {
     if (!current.session || current.session.status !== CommercialSessionStatus.CHARGING) return current;
-    const energyKwh = Number((current.session.energyKwh + 0.5).toFixed(2));
+    const session = current.session;
+    const maxEnergyKwh = session.tariffPerKwh > 0 ? session.financialLimit / session.tariffPerKwh : session.energyKwh + 0.5;
+    const energyKwh = Number(Math.min(session.energyKwh + 0.5, maxEnergyKwh).toFixed(2));
+    const energyAmount = Number(Math.min(session.financialLimit, energyKwh * session.tariffPerKwh).toFixed(2));
+    const reachedLimit = energyAmount >= session.financialLimit;
     return {
       ...current,
       session: {
-        ...current.session,
+        ...session,
         energyKwh,
-        currentPowerKw: Math.max(current.session.currentPowerKw, 7),
-        energyAmount: Number((energyKwh * current.session.tariffPerKwh).toFixed(2))
-      }
+        currentPowerKw: reachedLimit ? 0 : Math.max(current.session.currentPowerKw, 7),
+        energyAmount,
+        status: reachedLimit ? CommercialSessionStatus.ENERGY_FINISHED : session.status,
+        completionReason: reachedLimit ? "LIMIT_REACHED" : session.completionReason
+      },
+      notifications: reachedLimit
+        ? [notification("Limite de recarga atingido", `A recarga em ${session.chargerName} foi encerrada ao atingir ${session.financialLimit.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}.`, "/session"), ...current.notifications]
+        : current.notifications
     };
   }), []);
 
   const finishEnergy = useCallback(() => setState((current) => current.session ? {
     ...current,
-    session: { ...current.session, status: CommercialSessionStatus.ENERGY_FINISHED, currentPowerKw: 0 },
+    session: { ...current.session, status: CommercialSessionStatus.ENERGY_FINISHED, currentPowerKw: 0, completionReason: "MANUAL" },
     notifications: [notification("Energia finalizada", "Retire o veículo em até 15 minutos para evitar cobrança de ociosidade.", "/session"), ...current.notifications]
   } : current), []);
 
@@ -388,7 +406,17 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
     };
   }), []);
 
+  const getQueueJoinPreview = useCallback((establishmentId: string): QueueJoinPreview => {
+    const plant = getPlantById(establishmentId) ?? defaultPlant;
+    return {
+      establishmentName: plant.name,
+      position: Math.max(1, plant.queueSummary.activeCount + 1),
+      estimatedWaitMinutes: plant.queueSummary.estimatedWaitMinutes ?? 18
+    };
+  }, []);
+
   const joinQueue = useCallback((establishmentId: string) => setState((current) => {
+    if (!current.isAuthenticated || current.queue || (current.session && current.session.status !== CommercialSessionStatus.COMPLETED)) return current;
     const plant = getPlantById(establishmentId) ?? defaultPlant;
     return {
       ...current,
@@ -429,6 +457,38 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
   const markNotificationsRead = useCallback(() => setState((current) => ({ ...current, notifications: current.notifications.map((item) => ({ ...item, read: true })) })), []);
   const addNotification = useCallback((title: string, body: string, url?: string) => setState((current) => ({ ...current, notifications: [notification(title, body, url), ...current.notifications] })), []);
 
+  useEffect(() => {
+    const status = state.session?.status;
+    if (!status) return;
+    const nextStatus: Partial<Record<CommercialSessionStatus, CommercialSessionStatus>> = {
+      [CommercialSessionStatus.AUTHORIZED]: CommercialSessionStatus.WAITING_START,
+      [CommercialSessionStatus.WAITING_START]: CommercialSessionStatus.STARTING,
+      [CommercialSessionStatus.STARTING]: CommercialSessionStatus.CHARGING,
+      [CommercialSessionStatus.ENERGY_FINISHED]: CommercialSessionStatus.IDLE_GRACE_PERIOD
+    };
+    const delay: Partial<Record<CommercialSessionStatus, number>> = {
+      [CommercialSessionStatus.AUTHORIZED]: 700,
+      [CommercialSessionStatus.WAITING_START]: 800,
+      [CommercialSessionStatus.STARTING]: 1400,
+      [CommercialSessionStatus.ENERGY_FINISHED]: 1200,
+      [CommercialSessionStatus.SETTLING]: 1400
+    };
+    if (status === CommercialSessionStatus.SETTLING) {
+      const timer = window.setTimeout(settleSession, delay[status]);
+      return () => window.clearTimeout(timer);
+    }
+    const next = nextStatus[status];
+    if (!next) return;
+    const timer = window.setTimeout(() => setSessionStatus(next), delay[status]);
+    return () => window.clearTimeout(timer);
+  }, [setSessionStatus, settleSession, state.session?.status]);
+
+  useEffect(() => {
+    if (state.session?.status !== CommercialSessionStatus.CHARGING) return;
+    const timer = window.setInterval(tickSession, 3000);
+    return () => window.clearInterval(timer);
+  }, [state.session?.status, tickSession]);
+
   const value = useMemo<DriverAppContextValue>(() => ({
     ...state,
     profile: state.account?.profile ?? null,
@@ -445,12 +505,13 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
     finishEnergy,
     applyIdleFee,
     settleSession,
+    getQueueJoinPreview,
     joinQueue,
     callQueue,
     leaveQueue,
     markNotificationsRead,
     addNotification
-  }), [addNotification, applyIdleFee, authorizeSession, callQueue, clearLocalData, finishEnergy, isOnline, joinQueue, leaveQueue, login, logout, markNotificationsRead, register, selectChargingPoint, setSessionStatus, setTheme, settleSession, state, tickSession]);
+  }), [addNotification, applyIdleFee, authorizeSession, callQueue, clearLocalData, finishEnergy, getQueueJoinPreview, isOnline, joinQueue, leaveQueue, login, logout, markNotificationsRead, register, selectChargingPoint, setSessionStatus, setTheme, settleSession, state, tickSession]);
 
   return <DriverAppContext.Provider value={value}>{children}</DriverAppContext.Provider>;
 }

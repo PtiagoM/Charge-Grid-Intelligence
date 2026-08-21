@@ -28,8 +28,9 @@ Reinicie Vite/API após alterar o ambiente. Nunca coloque `sb_secret_...`, servi
 3. Habilite faturamento e confira a cota do projeto.
 4. Restrinja a chave por API e por HTTP referrer.
 5. Em desenvolvimento, permita explicitamente `http://localhost:5173/*`, `http://localhost:5174/*`, `http://127.0.0.1:5173/*` e `http://127.0.0.1:5174/*` se essas origens forem usadas.
-6. Adicione os domínios HTTPS de produção.
+6. Adicione os domínios HTTPS de produção, incluindo `https://chargegrid-driver-pwa.vercel.app/*`.
 7. Defina `VITE_GOOGLE_MAPS_API_KEY` e reinicie os dois Vites.
+8. Na Vercel, atualize a mesma variável somente no projeto `chargegrid-driver-pwa` e faça novo deploy do PWA; o Vite incorpora `VITE_*` no bundle de build. A API não precisa de deploy para essa troca isolada.
 
 Diagnóstico conhecido: `Maps Demo Key limit reached` significa cota da chave demo, não bug de React. O app trata a recusa sem flicker e mantém a lista, mas uma chave faturada com cota é necessária para o mapa real.
 
@@ -76,6 +77,14 @@ stripe trigger payment_intent.payment_failed
 ```
 
 O segredo do listener local não deve ser confundido com o segredo do endpoint criado no Dashboard. Use o segredo correspondente ao emissor que está sendo testado.
+
+### Produção na Vercel
+
+- PWA: `https://chargegrid-driver-pwa.vercel.app`
+- API: `https://chargegrid-api.vercel.app`
+- Webhook Stripe de teste: `https://chargegrid-api.vercel.app/payments/webhook`
+
+As variáveis `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_GOOGLE_MAPS_API_KEY`, `VITE_STRIPE_PUBLISHABLE_KEY` e `VITE_CHARGEGRID_API_URL` pertencem ao projeto do PWA. `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` e `CHARGEGRID_ALLOWED_ORIGINS` pertencem apenas ao projeto da API. Atualizar uma variável requer redeploy somente do projeto que a consome.
 
 Eventos acompanhados pelo código atual:
 
