@@ -14,6 +14,7 @@ interface DriverDiscoveryMapProps {
   places: readonly MapPlace[];
   selectedPlaceId: string | null;
   userPosition?: { lat: number; lng: number } | null;
+  theme: "light" | "dark";
   onSelectPlace(placeId: string): void;
 }
 
@@ -22,6 +23,7 @@ interface GoogleMapInstance {
   setCenter(position: { lat: number; lng: number }): void;
   setZoom(zoom: number): void;
   fitBounds(bounds: GoogleBounds): void;
+  setOptions(options: Record<string, unknown>): void;
 }
 
 interface GoogleBounds {
@@ -70,6 +72,35 @@ declare global {
 let mapsPromise: Promise<GoogleMapsApi> | undefined;
 const MAPS_SCRIPT_ID = "chargegrid-google-maps-sdk";
 const MAPS_LOAD_TIMEOUT_MS = 15_000;
+
+const LIGHT_MAP_STYLES = [
+  { elementType: "geometry", stylers: [{ color: "#f3f5f6" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#505a60" }] },
+  { featureType: "poi", elementType: "geometry", stylers: [{ color: "#ebeff1" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#cfe1ed" }] }
+];
+
+const DARK_MAP_STYLES = [
+  { elementType: "geometry", stylers: [{ color: "#1b1f22" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#c4cbd0" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#1b1f22" }] },
+  { featureType: "administrative", elementType: "geometry.stroke", stylers: [{ color: "#485158" }] },
+  { featureType: "poi", elementType: "geometry", stylers: [{ color: "#242a2e" }] },
+  { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#1f2b24" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#2c3338" }] },
+  { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#384147" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#4c3a3c" }] },
+  { featureType: "transit", elementType: "geometry", stylers: [{ color: "#273036" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#122633" }] }
+];
+
+function mapVisualOptions(theme: "light" | "dark") {
+  return {
+    backgroundColor: theme === "dark" ? "#1b1f22" : "#edf0f2",
+    styles: theme === "dark" ? DARK_MAP_STYLES : LIGHT_MAP_STYLES
+  };
+}
 
 function loadGoogleMaps() {
   if (window.google?.maps && typeof window.google.maps.importLibrary === "function") return Promise.resolve(window.google.maps);
@@ -150,17 +181,19 @@ function markerStyle(maps: GoogleMapsApi, places: readonly MapPlace[], selectedP
   };
 }
 
-export function DriverDiscoveryMap({ places, selectedPlaceId, userPosition, onSelectPlace }: DriverDiscoveryMapProps) {
+export function DriverDiscoveryMap({ places, selectedPlaceId, userPosition, theme, onSelectPlace }: DriverDiscoveryMapProps) {
   const mapElement = useRef<HTMLDivElement>(null);
   const runtime = useRef<{ maps: GoogleMapsApi; map: GoogleMapInstance; dataLayer: GoogleDataLayer } | null>(null);
   const selectedPlaceIdRef = useRef(selectedPlaceId);
   const onSelectPlaceRef = useRef(onSelectPlace);
+  const themeRef = useRef(theme);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [errorCode, setErrorCode] = useState("");
   const [attempt, setAttempt] = useState(0);
 
   selectedPlaceIdRef.current = selectedPlaceId;
   onSelectPlaceRef.current = onSelectPlace;
+  themeRef.current = theme;
 
   useEffect(() => {
     if (!mapElement.current || places.length === 0) return;
@@ -195,7 +228,7 @@ export function DriverDiscoveryMap({ places, selectedPlaceId, userPosition, onSe
         center: places[0]?.position ?? { lat: -23.55052, lng: -46.63331 },
         zoom: 11,
         minZoom: 4,
-        backgroundColor: "#edf0f2",
+        ...mapVisualOptions(themeRef.current),
         disableDefaultUI: true,
         zoomControl: true,
         mapTypeControl: false,
@@ -280,6 +313,11 @@ export function DriverDiscoveryMap({ places, selectedPlaceId, userPosition, onSe
       current.map.setZoom(14);
     }
   }, [places, selectedPlaceId]);
+
+  useEffect(() => {
+    const current = runtime.current;
+    if (current) current.map.setOptions(mapVisualOptions(theme));
+  }, [theme]);
 
   const providerRejected = errorCode === "MAPS_PROVIDER_ERROR" || errorCode === "MAPS_AUTH_FAILED";
 

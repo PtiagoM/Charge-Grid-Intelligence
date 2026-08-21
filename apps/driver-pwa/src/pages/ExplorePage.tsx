@@ -8,7 +8,7 @@ import { PageIntro } from "../components/Ui";
 import { commercialPlants, distanceBetweenKm } from "../data/commercialPlants";
 
 export function ExplorePage() {
-  const { isAuthenticated, profile } = useDriverApp();
+  const { isAuthenticated, profile, theme } = useDriverApp();
   const [query, setQuery] = useState("");
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [userPosition, setUserPosition] = useState<{ lat: number; lng: number } | null>(null);
@@ -71,7 +71,7 @@ export function ExplorePage() {
         <input id="place-search" type="search" placeholder="Buscar local ou endereço" value={query} onChange={(event) => { setQuery(event.target.value); setSelectedPlaceId(null); }} />
         <button type="button" className="locate-button" onClick={locateUser} aria-label="Usar minha localização"><AppIcon name="location" size={21} /></button>
       </div>
-      {mapPlaces.length ? <DriverDiscoveryMap places={mapPlaces} selectedPlaceId={selectedPlaceId} userPosition={userPosition} onSelectPlace={selectPlace} /> : <div className="map-no-results"><AppIcon name="search" size={32} /><strong>Nenhum ponto encontrado</strong></div>}
+      {mapPlaces.length ? <DriverDiscoveryMap places={mapPlaces} selectedPlaceId={selectedPlaceId} userPosition={userPosition} theme={theme} onSelectPlace={selectPlace} /> : <div className="map-no-results"><AppIcon name="search" size={32} /><strong>Nenhum ponto encontrado</strong></div>}
     </div>
 
     {locationState === "denied" ? <p className="field-message warning-message" role="status">Não foi possível usar sua localização. A busca manual continua disponível.</p> : null}

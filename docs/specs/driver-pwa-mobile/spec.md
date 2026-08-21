@@ -58,6 +58,7 @@ Entregar uma PWA exclusivamente mobile para recarga de veículos elétricos, com
 - Data Layer e ícones vetoriais representam estabelecimentos com disponibilidade.
 - Busca filtra mapa e cards; geolocalização recalcula distância e ordenação.
 - Selecionar marcador atualiza estilo, centralização, zoom e card sem recriar o mapa inteiro. Abrir uma planta preserva-a como contexto da aba Sessão até que outra seja escolhida.
+- O tema visual da PWA também atualiza o estilo cartográfico do Google Maps sem recriar a instância, preservando marcadores, seleção e enquadramento.
 - A página da planta permite escolher explicitamente um dos carregadores. A fila é compartilhada pela planta, não por vaga; quando chamado, o app direciona para uma vaga disponível.
 - O catálogo inicial possui seis plantas na Grande São Paulo.
 - A chave demo usada no desenvolvimento atingiu a cota; funcionamento contínuo exige chave Google Cloud faturada e restrita corretamente.
