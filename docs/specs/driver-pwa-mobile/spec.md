@@ -24,7 +24,7 @@ Entregar uma PWA exclusivamente mobile para recarga de veículos elétricos, com
 | `/explore` | motorista | Google Maps, geolocalização, busca e catálogo |
 | `/place/:establishmentId` | motorista | detalhe, carregadores, rota externa e fila |
 | `/checkout` | público | limite, meio e Stripe Payment Element |
-| `/queue` | motorista | posição, estimativa, chamada e saída |
+| `/queue` | público | posição, estimativa, chamada e saída da fila da planta |
 | `/session` | público | autorização, energia, retirada e liquidação |
 | `/receipt/:receiptId` | público | comprovante |
 | `/history` | motorista | histórico próprio |
@@ -37,7 +37,7 @@ Entregar uma PWA exclusivamente mobile para recarga de veículos elétricos, com
 - As três ações principais são escanear QR, criar conta e entrar.
 - O scanner usa `getUserMedia` e ZXing carregado sob demanda; imagem e código manual são alternativas obrigatórias.
 - O QR válido resolve um `chargerSlug`, seleciona planta/carregador e exibe disponibilidade, potência, vaga, tarifa e ociosidade antes do checkout.
-- Carregador disponível permite seguir como visitante ou com conta. Ao ler um carregador ocupado, o motorista autenticado entra na fila única da planta; visitante recebe o caminho de cadastro para usar a fila.
+- Carregador disponível permite seguir como visitante ou com conta. Ao ler um carregador ocupado, visitante ou motorista entra na fila única da planta; a vaga é atribuída quando houver disponibilidade.
 
 ## Cadastro e autenticação
 
@@ -76,7 +76,7 @@ Entregar uma PWA exclusivamente mobile para recarga de veículos elétricos, com
 
 ## Sessão e fila
 
-- A fila local suporta `WAITING`, `CALLED` e saída, com janela de dez minutos após chamada.
+- A fila local suporta `WAITING`, `CALLED` e saída, com janela de dez minutos após chamada. Visitante também pode participar e, quando chamado, segue ao checkout em modo visitante.
 - A jornada visual implementada é `AUTHORIZED → WAITING_START → STARTING → CHARGING → ENERGY_FINISHED → IDLE_GRACE_PERIOD → IDLE_FEE opcional → SETTLING → COMPLETED`.
 - Energia só aparece após `CHARGING`.
 - Em `SETTLING`, cartão é capturado ou saldo Pix é reembolsado pela API antes do comprovante.
