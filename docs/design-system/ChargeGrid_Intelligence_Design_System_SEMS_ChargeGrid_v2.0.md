@@ -2,7 +2,7 @@
 
 **Status:** aprovado e normativo
 
-**Superfícies:** Admin Web, fundação compartilhada e futuras interfaces ChargeGrid
+**Superfícies:** Admin Web e fundação compartilhada; a Driver PWA aplica a variante clara definida no documento mobile
 
 **Implementação homologada:** `apps/admin-web/src/styles/app.css`
 
@@ -12,18 +12,18 @@
 
 ## 1. Decisão visual
 
-O ChargeGrid usa a mesma linguagem visual do SEMS+: tema grafite escuro, navegação compacta, superfícies por profundidade, vermelho GoodWe como acento, iconografia PNG do ecossistema e alta densidade informacional no Admin.
+O Admin Web usa a linguagem grafite escura do SEMS+: navegação compacta, superfícies por profundidade, vermelho GoodWe como acento, iconografia do ecossistema e alta densidade. A Driver PWA preserva a identidade, mas usa tema claro por padrão conforme sua decisão posterior de produto.
 
 A adaptação de produto altera conteúdo, dados, permissões e destinos — não a identidade visual. Uma tela ChargeGrid deve parecer pertencente ao mesmo conjunto de produtos, sem fingir que regra comercial é telemetria SEMS+.
 
 ## 2. Princípios
 
 1. **Continuidade SEMS+.** Shell, ritmo, iconografia, contraste e comportamento visual mantêm familiaridade com o produto GoodWe.
-2. **Grafite como ambiente.** O canvas nunca é branco na identidade aprovada. Hierarquia vem de superfícies escuras graduais.
+2. **Tema por superfície.** O Admin usa grafite como ambiente; a Driver PWA usa canvas claro por padrão e grafite como opção. Hierarquia e contraste permanecem coerentes em ambos.
 3. **Vermelho com intenção.** Vermelho identifica marca, seleção, CTA principal e perigo; contexto e label distinguem esses usos.
 4. **Dados primeiro.** KPIs, tabelas, mapas e estados têm alta legibilidade e baixa ornamentação gratuita.
 5. **Estado não depende só de cor.** Todo status combina texto e, quando útil, ícone ou motivo.
-6. **Uma linguagem, densidades diferentes.** Admin é denso; Driver PWA é tátil e progressivo. Ambos compartilham tokens e assinatura visual.
+6. **Uma linguagem, densidades e temas adequados.** Admin é denso e escuro; Driver PWA é tátil, progressiva e clara por padrão. Ambos compartilham marca e semântica.
 7. **Assets reais, não substitutos improvisados.** Não usar emoji ou ícone genérico quando existe asset aprovado.
 8. **Produto permanece soberano.** Design não cria comandos GoodWe, estados, dados ou jornadas inexistentes.
 

@@ -1,155 +1,127 @@
-# ChargeGrid Intelligence — Design System SEMS+/GoodWe Mobile v2.0
+# ChargeGrid Intelligence — Design System SEMS+/GoodWe Mobile v2.0 (revisado)
 
-**Status:** aprovado como fundação da Driver PWA
-
-**Dependência:** Design System SEMS+/GoodWe v2.0
-
-**Escopo:** composição mobile; não define jornadas ou regras de produto
+**Status:** normativo para a Driver PWA  
+**Atualizado:** 21 de agosto de 2026  
+**Dependência:** fundação SEMS+/GoodWe v2.0 e decisões da spec `driver-pwa-mobile`
 
 ## 1. Direção
 
-A Driver PWA deve parecer parte do mesmo ecossistema do Admin e do SEMS+, sem reproduzir sua densidade ou sidebar. A assinatura permanece grafite escura, vermelha GoodWe e baseada nos mesmos assets. A experiência mobile prioriza toque, uma ação por etapa e leitura rápida.
+A Driver PWA pertence ao mesmo ecossistema do Admin Web, mas não copia seu canvas escuro ou densidade. O padrão mobile é claro, predominantemente branco, com vermelho GoodWe, tipografia, iconografia e semântica de estados compartilhadas. O tema escuro é uma preferência opcional.
 
-A PWA utiliza exclusivamente a fundação visual v2 descrita neste conjunto documental.
+## 2. Invariantes
 
-## 2. Invariantes compartilhados
-
-- Canvas `#0D0D0F`.
-- Superfícies `#1F2123`, `#202224`, `#2C2D30` e `#3A3A3C`.
-- Texto branco, secondary com 60% e muted com 50%.
-- GoodWe red `#FF323A`; pressed `#D8212D`.
-- Mesma matriz de success/info/warning/danger/neutral do Admin.
-- Família `Poppins, "Segoe UI", Arial, Helvetica, sans-serif`.
-- Assets SEMS+ aprovados, sem emoji final.
-- Status técnico e comercial continuam distintos.
+- Marca GoodWe em vermelho e assets homologados.
+- Tema claro inicial: canvas `#F5F6F7`, superfícies `#FFFFFF`, texto `#1F2123` e bordas cinza suaves.
+- Tema escuro opcional: tokens grafite da fundação compartilhada.
+- Vermelho primário próximo a `#EF3238`; pressed/strong conforme tokens.
+- Success, info, warning, danger e neutral mantêm o mesmo significado do Admin.
+- Tipografia da implementação: Inter/system-ui com fallbacks seguros; não introduzir família por tela.
+- Status técnico e comercial permanecem distintos.
+- Nenhum emoji substitui logo, ícone, marcador ou asset final.
 
 ## 3. Escala mobile
 
 | Papel | Regra |
-|---|---|
-| Viewport mínimo | 320px |
-| Conteúdo | 100%, máximo 720px, padding lateral 16–20px |
-| Área de toque | mínimo 44×44px; CTA preferencial 52–60px |
-| Header | 64–72px + `safe-area-inset-top` |
-| Bottom navigation | 72–82px + `safe-area-inset-bottom` |
-| Título de página | 28–34px, peso 700–800 |
-| Título de card | 18–24px, peso 700 |
-| Corpo | 14–16px |
-| Label | 12–13px |
-| Card | raio 16px, padding 16–20px |
-| Campo | raio 12px, altura mínima 52px |
-| CTA | pill 100px, largura total quando representa próxima etapa |
+| --- | --- |
+| Viewport mínimo | 320 px |
+| Conteúdo | 100%, máximo 720 px, padding lateral 16–20 px |
+| Área de toque | mínimo 44×44 px; CTA preferencial 52–60 px |
+| Header | 64–72 px + `safe-area-inset-top` |
+| Bottom navigation | 72–82 px + `safe-area-inset-bottom` |
+| Card | raio 16 px, padding 16–20 px |
+| Campo | raio 12 px, altura mínima 52 px |
+| CTA | pill, largura total quando representa a próxima etapa |
 
-## 4. Chrome mobile
+## 4. Chrome e navegação
 
-### 4.1 Header
+- Header compacto com marca/título contextual e somente ações indispensáveis.
+- Bottom navigation tem até quatro destinos e aparece apenas para motorista autenticado.
+- Fluxos de QR, checkout e sessão priorizam a ação corrente e podem ocultar navegação concorrente.
+- Safe areas são obrigatórias.
 
-- Marca GoodWe/ChargeGrid compacta, título contextual e ação indispensável.
-- Fundo `surface.1` ou transparente sobre canvas; divisor suave.
-- Em fluxo profundo, usar back button de asset coerente e título curto.
-- Não transportar promoção, avatar completo ou quatro ações da topbar desktop.
-
-### 4.2 Navegação inferior
-
-- Até quatro destinos persistentes, definidos pela spec da PWA.
-- Ícone aprovado acima e label sempre visível.
-- Ativo: vermelho GoodWe + texto branco; inativo: muted.
-- Desaparece em QR, pagamento, sessão crítica ou fluxo com CTA fixo quando competir por espaço.
-- Nunca usar itens administrativos do SEMS+ apenas por semelhança visual.
-
-## 5. Componentes mobile
-
-### `MobilePage`
-
-Canvas, safe areas, header opcional, região principal e espaço reservado para navegação/CTA. Centraliza comportamento de viewport; não contém regra comercial.
+## 5. Componentes
 
 ### `MobileCard`
 
-Superfície escura, borda suave, raio 16px. Pode ter miniatura real, header, metadados, métricas e ação. Evitar vários níveis aninhados.
+Superfície branca no tema claro, borda suave e sombra discreta. No tema escuro, usa superfície grafite equivalente. Evitar aninhamento excessivo.
 
 ### `EstablishmentCard`
 
-- Foto/asset real ou mapa, nunca ilustração por emoji.
-- Nome, distância/endereço, horário e `CommercialAvailability`.
-- Disponíveis, potência nominal, tarifa e fila com labels explícitos.
-- CTA coerente com o estado: detalhes, entrar na fila ou indisponível.
+Foto/asset real, nome, distância/endereço, horário, disponibilidade, potência, tarifa e fila. A ação corresponde ao estado comercial.
 
 ### `StatusChip`
 
-Pill compacta com texto; ponto/ícone opcional. Cores vêm da matriz compartilhada. O chip não reduz `FAULT` e `CLOSED` ao mesmo significado.
+Texto obrigatório e cor semântica; cor nunca é o único indicador.
 
 ### `PrimaryCTA`
 
-Vermelho, pill, altura 52–60px, peso 700. Uma ação primária por contexto. Disabled usa superfície/contraste reduzido e mensagem que explica o requisito.
+Vermelho GoodWe, pill, alto contraste e uma ação dominante por contexto.
 
 ### `Field`
 
-Label externa, campo em `surface.4`, foco visível, erro textual e ajuda associada. Teclado/tipo do campo deve corresponder ao dado.
-
-### `BottomSheet`
-
-Superfície `surface.2`, raio superior 20–24px, handle discreto, scroll interno seguro e CTA fora da área obstruída. Usado para detalhes de local/mapa e escolhas curtas.
+Label externa, fundo claro/cinza no tema claro, foco visível, ajuda e erro associados.
 
 ### `SessionHero`
 
-Estado textual, tempo/energia/custo destacados e próxima ação. Nunca comunica energia iniciada antes da confirmação assíncrona.
+Estado textual, energia, potência, custo e próxima ação. Nunca mostra energia antes de confirmação.
 
 ## 6. Descoberta e mapa
 
-- Mapa escuro alinhado ao Admin, mas orientado à descoberta do motorista.
-- Busca sobreposta em `surface.3/4`, marcador vermelho e clusters com contagem.
-- Seleção abre bottom sheet com nome, disponibilidade comercial, distância, horário, tarifa, fila e potência.
-- Marcador representa estabelecimento/planta comercial, não identidade de sessão.
-- `OPEN_PARTIAL`, `FULL_QUEUE`, `CLOSED`, `MAINTENANCE` e `FAULT` mantêm tratamentos e labels distintos.
-- Oferecer busca manual equivalente quando localização for negada.
+- Google Maps real com estilo padrão legível no tema claro; não usar desenho cartográfico alternativo.
+- Busca flutuante branca, sombra discreta e controles de toque.
+- Marcador vermelho/semântico com disponibilidade numérica.
+- Marcador representa estabelecimento/planta, não sessão.
+- Cards permanecem utilizáveis quando a API externa falhar.
+- O canvas do mapa só aparece após tiles reais; erro do provider não deve gerar flicker.
+- Localização negada mantém busca manual equivalente.
 
 ## 7. Sessão e pagamento
 
-| Estado | Tratamento visual mínimo |
-|---|---|
-| `AWAITING_PAYMENT` | card/foco de pagamento, valor/limite e CTA seguro |
-| `AUTHORIZED` | confirmação success sem alegar início da energia |
-| `STARTING` | info, progresso e texto “Iniciando recarga” |
-| `CHARGING` | hero, kWh, potência, custo estimado, tempo e encerrar |
-| `SUSPENDED_BY_DEMAND` | warning, motivo e próxima atualização; não usar ícone de pause nativo |
-| `ENERGY_FINISHED` | conclusão energética + instrução de retirada |
-| `IDLE_GRACE_PERIOD` | warning + contador e tarifa futura |
-| `IDLE_FEE` | danger/warning conforme urgência + valor/minuto e acumulado |
-| `SETTLING` | estado intermediário; não chamar de concluído |
-| `COMPLETED` | recibo, energia, ociosidade, total e devolução quando aplicável |
-| falha | danger, causa, valor confirmado e próximo passo |
+| Estado | Tratamento mínimo |
+| --- | --- |
+| `AUTHORIZED` | sucesso da garantia sem alegar energia |
+| `WAITING_START` | informação e preparação |
+| `STARTING` | progresso e confirmação técnica |
+| `CHARGING` | hero com kWh, potência, custo e encerrar |
+| `ENERGY_FINISHED` | conclusão energética e retirada |
+| `IDLE_GRACE_PERIOD` | warning e tolerância |
+| `IDLE_FEE` | urgência, valor/minuto e acumulado |
+| `SETTLING` | intermediário; nunca concluído |
+| `COMPLETED` | comprovante e eventual devolução |
+| falha | causa, impacto e próximo passo |
+
+Stripe deve aparecer como ambiente de teste no checkout quando o sandbox estiver ativo, sem sugerir cobrança live.
 
 ## 8. Movimento e feedback
 
-- Transições de 120–220ms para pressão, entrada de sheet e mudança de estado.
-- Respeitar `prefers-reduced-motion`.
-- Loading preserva layout e, quando houver, última leitura confirmada com timestamp.
+- Transições de 120–220 ms e respeito a `prefers-reduced-motion`.
+- Loading preserva layout.
 - Toast não substitui erro persistente ou confirmação financeira.
-- Mudança crítica de sessão usa live region moderada e não repete atualizações de telemetria continuamente.
+- Mudanças críticas usam live region moderada.
 
 ## 9. Acessibilidade
 
-- Texto funcional em contraste WCAG AA.
-- Zoom de 200% e fontes ampliadas não podem ocultar CTA ou valor.
-- Ordem de foco segue leitura visual.
+- Contraste WCAG AA, foco visível e labels acessíveis.
+- Zoom de 200% não oculta CTA, valor ou erro.
+- Ordem de foco acompanha a leitura.
 - Botões de ícone têm nome acessível.
-- Cor nunca é único indicador.
-- Safe areas são obrigatórias em header, CTA fixo, bottom nav e sheet.
+- Teclado aberto e safe areas não cobrem ações.
 
-## 10. O que não transportar do Admin
+## 10. Não transportar do Admin
 
-- Sidebar, topbar densa, tabelas largas ou grids de quatro KPIs.
+- Sidebar, topbar densa, tabelas largas e grid de quatro KPIs.
 - Formulário administrativo multi-coluna.
-- Controles técnicos de planta, telemetria bruta e filtros de rede.
-- Orb flutuante quando conflitar com CTA, navegação ou bottom sheet.
+- Telemetria bruta e controles técnicos de planta.
+- Tema grafite como obrigação no primeiro acesso.
 
-## 11. Checklist para specs mobile
+## 11. Checklist
 
-- [ ] A tela usa tokens v2 sem cores claras aposentadas.
-- [ ] Assets finais não são emoji ou placeholder genérico.
-- [ ] Existe uma única ação primária clara.
-- [ ] Estados usam enum oficial, label e semântica correta.
-- [ ] Preço, ociosidade, limite e caráter estimado aparecem antes da autorização quando aplicável.
-- [ ] A tela funciona em 320px, safe area e teclado aberto.
-- [ ] Loading, vazio, offline, erro e permissão negada estão especificados.
-- [ ] A spec registra quando header, bottom nav e CTA fixo aparecem.
+- [ ] Tema claro é o estado inicial e usa tokens compartilhados.
+- [ ] Tema escuro é opcional e não altera semântica.
+- [ ] Existe uma ação primária clara.
+- [ ] Estados usam enum e label oficiais.
+- [ ] Preço, limite e ociosidade aparecem antes da autorização.
+- [ ] Funciona em 320 px, safe area, teclado e zoom.
+- [ ] Loading, vazio, offline, erro e permissão negada estão previstos.
+- [ ] Mapa é real e sua falha não bloqueia a lista.
+- [ ] Nenhum texto técnico sobre fixtures aparece na experiência final.

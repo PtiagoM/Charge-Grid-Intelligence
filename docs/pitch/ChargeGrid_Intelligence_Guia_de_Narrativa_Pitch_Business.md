@@ -6,6 +6,8 @@
 **Escopo:** problema de negócio, contexto empresarial, aderência estratégica, proposta de valor, diferenciais e inovação.  
 **Não é:** resumo do Documento Final de Produto, especificação funcional ou roteiro definitivo com falas e minutagem.
 
+> **Estado de implementação:** para qualquer afirmação sobre o que já funciona, consulte `docs/CURRENT_STATE.md`. Hoje a Driver PWA, Google Maps, Supabase Auth e Stripe em modo teste estão implementados; GoodWe real, persistência comercial completa e cobrança live não estão.
+
 ---
 
 ## 1. O pitch em uma frase

@@ -1,8 +1,8 @@
-# Configuração das integrações da Driver PWA
+# Integrações da Driver PWA
 
-## Preparação
+## Arquivo de ambiente
 
-Copie `.env.example` para `.env` na raiz do monorepo e mantenha esse arquivo fora do Git. O Vite do Driver PWA lê o ambiente da raiz; a API carrega o mesmo arquivo no processo Node.
+Copie `.env.example` para `.env` na raiz. O Vite e a API leem esse arquivo; ele é ignorado pelo Git.
 
 ```dotenv
 VITE_GOOGLE_MAPS_API_KEY=
@@ -10,93 +10,116 @@ VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
 VITE_CHARGEGRID_API_URL=http://localhost:3333
 VITE_STRIPE_PUBLISHABLE_KEY=pk_test_...
+
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 CHARGEGRID_ALLOWED_ORIGINS=http://localhost:5174,http://127.0.0.1:5174
 PORT=3333
 ```
 
+Reinicie Vite/API após alterar o ambiente. Nunca coloque `sb_secret_...`, service role, `sk_test_...` ou `whsec_...` em variável `VITE_*`.
+
 ## Google Maps
 
-1. Crie ou selecione um projeto no Google Cloud.
-2. Habilite Maps JavaScript API e faturamento para o projeto.
-3. Crie uma chave de navegador e restrinja os HTTP referrers aos domínios do PWA.
-4. Restrinja a chave à Maps JavaScript API.
-5. Defina `VITE_GOOGLE_MAPS_API_KEY`.
-6. Reinicie a aplicação e confirme no console do Google Cloud que as requisições pertencem à chave restrita. A Data Layer não exige Map ID adicional.
+1. Use um projeto Google Cloud próprio, não uma Demo Key temporária.
+2. Habilite **Maps JavaScript API**.
+3. Habilite faturamento e confira a cota do projeto.
+4. Restrinja a chave por API e por HTTP referrer.
+5. Em desenvolvimento, permita explicitamente `http://localhost:5173/*`, `http://localhost:5174/*`, `http://127.0.0.1:5173/*` e `http://127.0.0.1:5174/*` se essas origens forem usadas.
+6. Adicione os domínios HTTPS de produção.
+7. Defina `VITE_GOOGLE_MAPS_API_KEY` e reinicie os dois Vites.
 
-Reinicie o Vite após alterar qualquer variável `VITE_*`.
+Diagnóstico conhecido: `Maps Demo Key limit reached` significa cota da chave demo, não bug de React. O app trata a recusa sem flicker e mantém a lista, mas uma chave faturada com cota é necessária para o mapa real.
 
 ## Supabase Auth
 
-1. Crie um projeto Supabase e habilite o provedor de e-mail/senha.
-2. Cadastre as URLs de desenvolvimento e produção em Authentication → URL Configuration.
-3. Defina a Site URL e os redirect URLs usados pelo PWA.
-4. Copie a Project URL para `VITE_SUPABASE_URL`.
-5. Copie a chave pública/anon para `VITE_SUPABASE_ANON_KEY`.
-6. Decida se o ambiente exigirá confirmação de e-mail; a interface suporta os dois comportamentos.
+Mapeamento das chaves atuais do Supabase:
 
-A chave service role nunca deve ser adicionada ao PWA. Persistência de perfis em tabela própria e políticas RLS devem ser criadas antes de armazenar dados além de `user_metadata`.
+| Dashboard/entrada | Variável do projeto | Exposição |
+| --- | --- | --- |
+| Project URL | `VITE_SUPABASE_URL` e `SUPABASE_URL` | pública |
+| `sb_publishable_...` | `VITE_SUPABASE_ANON_KEY` | pública |
+| `sb_secret_...` | `SUPABASE_SERVICE_ROLE_KEY` | somente servidor |
+| JWKS URL | não usada atualmente | futura validação JWT na API |
 
-## Stripe sandbox
+Passos:
 
-1. Ative o modo de teste no Dashboard Stripe.
-2. Habilite cartão e Pix nos métodos de pagamento disponíveis para a conta.
-3. Defina a chave publicável `pk_test_...` em `VITE_STRIPE_PUBLISHABLE_KEY`.
-4. Defina a chave secreta `sk_test_...` em `STRIPE_SECRET_KEY`.
-5. Para desenvolvimento local, instale e autentique a Stripe CLI.
-6. Encaminhe eventos para a API:
+1. Habilite e-mail/senha em Authentication.
+2. Configure Site URL e Redirect URLs de desenvolvimento/produção.
+3. Decida se signup exige confirmação de e-mail.
+4. Preencha URL e publishable key no PWA.
+5. Mantenha a secret key apenas no servidor.
+
+O PWA já usa Auth. Tabelas de `profiles`/`vehicles`, migrations, RLS e verificação JWT da API permanecem pendentes.
+
+## Stripe em modo teste
+
+1. Ative o modo de teste.
+2. Habilite cartão e Pix para a conta/região de teste.
+3. Configure `pk_test_...` no PWA e `sk_test_...` na API.
+4. Instale a Stripe CLI e faça login no contexto de teste.
+5. Inicie `npm run dev:api`.
+6. Em outro terminal, execute:
 
 ```bash
-stripe listen --forward-to localhost:3333/payments/webhook
+stripe listen --events payment_intent.amount_capturable_updated,payment_intent.succeeded,payment_intent.payment_failed,payment_intent.canceled,refund.created,refund.updated,refund.failed --forward-to http://localhost:3333/payments/webhook
 ```
 
-7. Copie o segredo `whsec_...` exibido pela CLI para `STRIPE_WEBHOOK_SECRET`.
-8. Inicie novamente API e PWA.
+7. Copie o `whsec_...` exibido pela CLI para `STRIPE_WEBHOOK_SECRET` e reinicie a API.
+8. Dispare eventos em outro terminal:
 
-Cartão de sucesso para teste: `4242 4242 4242 4242`, validade futura e qualquer CVC de três dígitos. Nunca use dados financeiros reais no sandbox.
+```bash
+stripe trigger payment_intent.succeeded
+stripe trigger payment_intent.payment_failed
+```
 
-### Modelo financeiro
+O segredo do listener local não deve ser confundido com o segredo do endpoint criado no Dashboard. Use o segredo correspondente ao emissor que está sendo testado.
 
-- cartão: autoriza o limite com `capture_method=manual`; `POST /payments/:id/capture` captura o total da sessão;
-- Pix: paga o limite antecipadamente; `POST /payments/:id/refund` devolve a diferença;
-- metadata: `sessionId`, `establishmentId` e `chargerId` vinculam o pagamento à jornada;
-- idempotência: a criação da intenção usa a sessão como chave;
-- webhook: a assinatura é validada antes do processamento.
+Eventos acompanhados pelo código atual:
+
+- `payment_intent.amount_capturable_updated`
+- `payment_intent.succeeded`
+- `payment_intent.payment_failed`
+- `payment_intent.canceled`
+- `refund.created`
+- `refund.updated`
+- `refund.failed`
+
+`checkout.session.completed` e eventos de subscription não são usados porque o produto atual cria PaymentIntents diretamente.
 
 ### Endpoints
 
 | Método | Endpoint | Uso |
 | --- | --- | --- |
-| `GET` | `/payments/config` | informa se Stripe e webhook estão configurados |
-| `POST` | `/payments/intents` | cria a intenção e retorna client secret |
-| `GET` | `/payments/:paymentIntentId` | normaliza o estado atual |
-| `POST` | `/payments/:paymentIntentId/capture` | captura o total do cartão |
-| `POST` | `/payments/:paymentIntentId/refund` | devolve saldo do Pix |
-| `POST` | `/payments/webhook` | recebe eventos assinados |
+| `GET` | `/payments/config` | provider, modo e configuração |
+| `POST` | `/payments/intents` | criar PaymentIntent |
+| `GET` | `/payments/:paymentIntentId` | consultar estado |
+| `POST` | `/payments/:paymentIntentId/capture` | capturar cartão |
+| `POST` | `/payments/:paymentIntentId/refund` | reembolsar Pix |
+| `POST` | `/payments/webhook` | validar e receber eventos |
 
-## Notificações e recursos PWA
+Cartão de teste: `4242 4242 4242 4242`, validade futura e CVC de três dígitos. Nunca use dados financeiros reais no sandbox.
 
-- Localhost é aceito durante o desenvolvimento; produção requer HTTPS.
-- A permissão de notificação é solicitada na central ou na conta, após gesto do motorista.
-- Câmera e geolocalização possuem permissões independentes.
-- Se uma permissão for negada permanentemente, ela precisa ser reativada nas configurações do navegador.
-- O service worker está em `apps/driver-pwa/public/sw.js` e é atualizado pelo navegador quando o conteúdo muda.
+## PWA e permissões
 
-## Execução e verificação
+- Localhost é aceito em desenvolvimento; produção exige HTTPS.
+- Câmera, localização e notificações têm permissões independentes.
+- Notificações locais usam `apps/driver-pwa/public/sw.js`.
+- Push remoto exige Web Push/FCM e não faz parte da implementação atual.
+
+## Verificação
 
 ```bash
-npm install
 npm run dev
 npm run lint
 npm run test
 npm run build
 ```
 
-Endereços locais:
-
 - Driver PWA: `http://localhost:5174`
 - Admin Web: `http://localhost:5173`
 - API: `http://localhost:3333`
-- Saúde da API: `http://localhost:3333/health`
-- Configuração Stripe: `http://localhost:3333/payments/config`
+- Health: `http://localhost:3333/health`
+- Stripe config: `http://localhost:3333/payments/config`

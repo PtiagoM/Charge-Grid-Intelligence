@@ -3,19 +3,21 @@
 **Status:** baseline funcional para SDD  
 **Público:** desenvolvimento Admin Web, Driver PWA, ChargeGrid API, QA e demonstração  
 **Data:** 19 de agosto de 2026  
-**Precedência:** este documento operacionaliza o Documento Final de Produto v1.0. Em conflito, prevalecem: (1) Produto, (2) Stack e Arquitetura MVP, (3) este contrato.
+**Precedência:** decisões posteriores e `docs/CURRENT_STATE.md` prevalecem; depois Produto, Arquitetura e este contrato.
+
+> **Estado executável:** enums e contratos centrais já existem em `packages/shared`. A API financeira usa Stripe em modo teste; fixtures continuam válidas para Admin e testes, mas não representam o provider financeiro ativo da Driver PWA.
 
 > **Natureza deste artefato.** Esta é a especificação da linguagem comum do MVP, e não código, banco de dados ou contrato HTTP. Ela deve ser convertida posteriormente em enums, tipos, DTOs, fixtures e validações compartilhadas, sem reinterpretar regras de negócio.
 
 ## 1. Objetivo e escopo
 
-O ChargeGrid possui duas experiências independentes — Admin Web e Driver PWA — e uma futura API que concentra as regras críticas. Os três consumidores precisam interpretar exatamente da mesma maneira o estado de uma sessão, uma cobrança, um carregador, uma fila e a condição energética da planta. Este documento evita que cada tela ou mock crie seu próprio significado para termos idênticos.
+O ChargeGrid possui duas experiências independentes — Admin Web e Driver PWA — e uma API Express que concentra o gateway financeiro e evoluirá para as demais regras críticas. Os três consumidores precisam interpretar exatamente da mesma maneira o estado de uma sessão, uma cobrança, um carregador, uma fila e a condição energética da planta. Este documento evita que cada tela ou fixture crie seu próprio significado para termos idênticos.
 
 ### 1.1 Camadas que dependem do contrato
 
 | Camada | Uso do contrato | Não é responsabilidade desta camada |
 |---|---|---|
-| `packages/shared` futuro | Enums, tipos públicos, DTOs, constantes e erros sem segredo | Regra executável, acesso a banco ou credenciais |
+| `packages/shared` | Enums, tipos públicos, DTOs, constantes e fixtures sem segredo | Regra executável, acesso a banco ou credenciais |
 | ChargeGrid API | Valida entrada/saída, produz estados e aplica regras | Expor payload bruto de fornecedor |
 | Admin Web | Renderiza operação, financeiro, incidentes e configuração permitida | Decidir estados comerciais por conta própria |
 | Driver PWA | Renderiza descoberta, fila, pagamento e somente a própria sessão | Ver dados administrativos ou de terceiros |

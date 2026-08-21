@@ -11,8 +11,8 @@ Garantir que Admin Web, Driver PWA e futuras superfícies pareçam partes do mes
 | Dimensão | Regra comum |
 |---|---|
 | Marca | vermelho GoodWe `#FF323A`; logos e ícones aprovados |
-| Ambiente | canvas grafite `#0D0D0F`; não usar tema claro como padrão |
-| Hierarquia | profundidade por quatro superfícies escuras e bordas suaves |
+| Ambiente | Admin usa canvas grafite; Driver PWA usa tema claro e predominância branca por padrão |
+| Hierarquia | profundidade por superfícies e bordas suaves adequadas ao tema ativo |
 | Tipo | Poppins com fallback obrigatório Segoe UI/Arial |
 | Forma | raio 8/12/16px; pill para CTA/chip |
 | Estado | success verde, info azul, warning amarelo, danger vermelho, neutral cinza |
@@ -30,7 +30,7 @@ Garantir que Admin Web, Driver PWA e futuras superfícies pareçam partes do mes
 | formulários multi-coluna | formulários de uma coluna |
 | mapa operacional de rede | mapa de descoberta e bottom sheet |
 
-Variação de composição não autoriza variação de paleta, tipografia, iconografia ou significado de status.
+Admin e PWA compartilham marca, vermelho, iconografia e significado de status. A paleta de superfícies varia por decisão explícita: escura no Admin e clara por padrão na PWA.
 
 ## 4. Nomenclatura visual
 
@@ -48,10 +48,10 @@ Variação de composição não autoriza variação de paleta, tipografia, icono
 | CTA primário | vermelho, pill, uma ação dominante por contexto |
 | Ação secundária | grafite e borda/contraste suave |
 | Badge | texto obrigatório; fundo semântico sutil |
-| Card | superfície escura + borda suave; sombra apenas quando elevada |
-| Campo | `surface.4`, label externa e foco visível |
+| Card | superfície correspondente ao tema + borda suave; sombra apenas quando elevada |
+| Campo | superfície contrastante, label externa e foco visível |
 | Tabela | header `surface.4`, linhas `surface.1`, scroll horizontal |
-| Mapa | tema escuro, marcador vermelho, estado/fallback consistente |
+| Mapa | Google Maps real; Admin pode usar tema escuro e PWA prioriza legibilidade clara; marcador e fallback consistentes |
 | Vazio | explicação e próxima ação; nunca gráfico falso de zeros |
 | Erro | causa, impacto e recuperação; não apenas toast/cor |
 
