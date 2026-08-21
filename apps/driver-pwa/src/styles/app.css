@@ -259,6 +259,18 @@ a { color: inherit; }
 :root[data-theme="dark"] .guest-hero .eyebrow { color: #f2a6aa; }
 :root[data-theme="dark"] .guest-hero > p:last-child { color: rgba(255,255,255,.72); }
 
+/* Mobile text below 12px was difficult to read on physical phone screens. */
+.header-title small, .eyebrow, .bottom-nav a, .status-chip, .privacy-note, .field-help, .test-payment-help, .security-note { font-size: 11px; }
+.notification-button > span, .map-loading, .map-mode, .map-district { font-size: 10px; }
+.info-row span:not(.info-icon), .info-row small, .section-heading > span, .charger-row small, .entry-option small, .guest-benefits span, .auth-form > label, .auth-form-grid label, .manual-code-form label, .checkout-summary span, .terms-check, .receipt-details dt, .receipt-footnote, .notification-list small, .account-row small, .history-card small, .history-card span:not(.history-icon) { font-size: 11px; }
+.info-row strong, .charger-row strong, .checkout-summary strong, .payment-choices strong, .history-card strong, .notification-list strong, .account-row strong, .session-metrics strong { font-size: 13px; }
+.rule-list, .qr-identity-card p, .step-list li, .form-error, .info-notice p, .notification-list p, .empty-state p, .empty-inline p { font-size: 12px; }
+.session-state-row > span:last-child, .session-metrics span, .session-timeline strong, .session-timeline small, .receipt-success p { font-size: 11px; }
+.divider, .pix-mark { font-size: 10px; }
+.charger-choice { width: 100%; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.charger-choice.is-selected { border-color: var(--cg-brand-primary); background: var(--cg-brand-subtle); box-shadow: 0 0 0 1px var(--cg-brand-border); }
+.charger-choice:focus-visible { outline: 3px solid rgba(47, 134, 255, .9); outline-offset: 3px; }
+
 @keyframes spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 380px) {

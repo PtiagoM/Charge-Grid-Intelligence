@@ -7,6 +7,6 @@ config({ path: resolve(process.cwd(), "../../.env") });
 const port = Number(process.env.PORT ?? 3333);
 const app = createApp();
 
-app.listen(port, () => {
+app.listen(port, "0.0.0.0", () => {
   console.log(JSON.stringify({ level: "info", service: "chargegrid-api", port, message: "API listening" }));
 });

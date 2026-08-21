@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { ChargerCommercialStatus } from "@chargegrid/shared";
 import { useDriverApp } from "../app/DriverAppContext";
 import { AppIcon } from "../components/AppIcon";
@@ -11,19 +11,28 @@ const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "
 
 export function QrLandingPage() {
   const { chargerSlug } = useParams();
+  const navigate = useNavigate();
   const point = getChargingPointBySlug(chargerSlug);
-  const { isAuthenticated, selectChargingPoint } = useDriverApp();
+  const { isAuthenticated, joinQueue, selectChargingPoint } = useDriverApp();
+  const queuedFromQr = useRef(false);
   const plantId = point?.plant.id;
   const chargerId = point?.charger.id;
+  const isAvailable = point?.charger.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START;
 
   useEffect(() => {
     if (plantId && chargerId) selectChargingPoint(plantId, chargerId);
   }, [chargerId, plantId, selectChargingPoint]);
 
+  useEffect(() => {
+    if (!point || isAvailable || !isAuthenticated || queuedFromQr.current) return;
+    queuedFromQr.current = true;
+    joinQueue(point.plant.id);
+    navigate("/queue", { replace: true });
+  }, [isAuthenticated, isAvailable, joinQueue, navigate, point]);
+
   if (!point) return <section className="empty-state"><AppIcon name="qr" size={38} /><h1>QR Code não reconhecido</h1><p>Confira se o código pertence a uma vaga ChargeGrid ou faça uma nova leitura.</p><Link className="primary-link" to="/scan">Escanear novamente</Link></section>;
 
   const { plant, charger } = point;
-  const isAvailable = charger.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START;
   return <>
     <PageIntro eyebrow={plant.name} title={charger.commercialName}><p>Vaga {charger.parkingSpot} identificada e pronta para validação.</p></PageIntro>
     <section className="qr-identity-card">

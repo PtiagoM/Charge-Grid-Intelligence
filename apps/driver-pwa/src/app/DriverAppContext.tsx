@@ -1,4 +1,4 @@
-import { CommercialSessionStatus, PaymentStatus, QueueStatus } from "@chargegrid/shared";
+import { ChargerCommercialStatus, CommercialSessionStatus, PaymentStatus, QueueStatus } from "@chargegrid/shared";
 import {
   createContext,
   useCallback,
@@ -406,7 +406,7 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
   const callQueue = useCallback(() => setState((current) => {
     if (!current.queue) return current;
     const plant = getPlantById(current.queue.establishmentId) ?? defaultPlant;
-    const charger = plant.chargers[0] ?? defaultCharger;
+    const charger = plant.chargers.find((item) => item.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START) ?? plant.chargers[0] ?? defaultCharger;
     return {
       ...current,
       selectedEstablishmentId: plant.id,

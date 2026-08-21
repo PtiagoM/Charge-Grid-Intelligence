@@ -65,7 +65,7 @@ export function MobileShell() {
       <main className="mobile-content"><Outlet /></main>
       {hasAccountNavigation ? <nav className="bottom-nav" aria-label="Navegação do motorista">
         <NavLink to="/explore"><img src={assets.icons.explore} alt="" /><strong>Explorar</strong></NavLink>
-        <NavLink to={session ? "/session" : `/place/${selectedEstablishmentId}`}><img src={assets.icons.session} alt="" /><strong>Sessão</strong></NavLink>
+        <NavLink to={session ? "/session" : `/place/${selectedEstablishmentId}`} className={({ isActive }) => isActive || location.pathname.startsWith("/place/") ? "active" : undefined}><img src={assets.icons.session} alt="" /><strong>Sessão</strong></NavLink>
         <NavLink to="/history"><img src={assets.icons.history} alt="" /><strong>Histórico</strong></NavLink>
         <NavLink to="/account"><img src={assets.icons.account} alt="" /><strong>Conta</strong></NavLink>
       </nav> : null}

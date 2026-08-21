@@ -1,4 +1,5 @@
 import { ChargerCommercialStatus, CommercialAvailability } from "@chargegrid/shared";
+import { useEffect } from "react";
 import { Navigate, Link, useNavigate, useParams } from "react-router-dom";
 import { useDriverApp } from "../app/DriverAppContext";
 import { AppIcon } from "../components/AppIcon";
@@ -22,11 +23,22 @@ export function EstablishmentPage() {
   const { establishmentId } = useParams();
   const navigate = useNavigate();
   const plant = getPlantById(establishmentId);
-  const { isAuthenticated, joinQueue, selectChargingPoint } = useDriverApp();
+  const { isAuthenticated, joinQueue, selectedChargerId, selectedEstablishmentId, selectChargingPoint } = useDriverApp();
+  const availableChargers = plant?.chargers.filter((charger) => charger.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START) ?? [];
+  const defaultCharger = availableChargers[0] ?? plant?.chargers[0];
+  const selectedCharger = selectedEstablishmentId === plant?.id
+    ? plant?.chargers.find((charger) => charger.id === selectedChargerId) ?? defaultCharger
+    : defaultCharger;
+
+  useEffect(() => {
+    if (plant && defaultCharger && (selectedEstablishmentId !== plant.id || !plant.chargers.some((charger) => charger.id === selectedChargerId))) {
+      selectChargingPoint(plant.id, defaultCharger.id);
+    }
+  }, [defaultCharger, plant, selectedChargerId, selectedEstablishmentId, selectChargingPoint]);
+
   if (!plant) return <Navigate to={isAuthenticated ? "/explore" : "/"} replace />;
 
-  const available = plant.chargers.find((charger) => charger.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START);
-  const isFull = plant.commercialAvailability === CommercialAvailability.FULL_QUEUE || !available;
+  const isFull = plant.commercialAvailability === CommercialAvailability.FULL_QUEUE || availableChargers.length === 0;
   const tariff = plant.tariffFrom?.amount ?? 0;
 
   function continueRegistered() {
@@ -36,7 +48,7 @@ export function EstablishmentPage() {
       navigate("/queue");
       return;
     }
-    if (available) selectChargingPoint(plant.id, available.id);
+    if (!selectedCharger || selectedCharger.commercialStatus !== ChargerCommercialStatus.AVAILABLE_TO_START) return;
     navigate("/checkout?mode=driver");
   }
 
@@ -57,18 +69,19 @@ export function EstablishmentPage() {
     <a className="route-link" href={`https://www.google.com/maps/dir/?api=1&destination=${plant.position.lat},${plant.position.lng}&destination_place_id=${encodeURIComponent(plant.name)}`} target="_blank" rel="noreferrer"><AppIcon name="route" size={20} /> Abrir rota no Google Maps</a>
 
     <section className="mobile-card section-card">
-      <div className="section-heading"><div><p className="eyebrow">Oferta pública</p><h2>Carregadores</h2></div><span>{plant.chargerCount} no total</span></div>
+      <div className="section-heading"><div><p className="eyebrow">Sessão desta planta</p><h2>Escolha o carregador</h2></div><span>{plant.chargerCount} no total</span></div>
       <div className="charger-list">
         {plant.chargers.map((charger) => {
           const presentation = statusPresentation[charger.commercialStatus];
-          return <article className="charger-row" key={charger.id}>
+          const isSelected = selectedCharger?.id === charger.id;
+          return <button type="button" className={`charger-row charger-choice${isSelected ? " is-selected" : ""}`} aria-pressed={isSelected} onClick={() => selectChargingPoint(plant.id, charger.id)} key={charger.id}>
             <span className="charger-icon"><AppIcon name="plug" /></span>
             <div><strong>{charger.commercialName}</strong><small>Vaga {charger.parkingSpot} · até {charger.nominalPowerKw} kW</small></div>
             <StatusChip label={presentation.label} tone={presentation.tone} />
-          </article>;
+          </button>;
         })}
       </div>
-      <p className="privacy-note">O mapa indica o estabelecimento. A vaga é confirmada no início do atendimento.</p>
+      <p className="privacy-note">{isFull ? "A fila é única para toda a planta e a vaga será indicada quando chegar sua vez." : selectedCharger?.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START ? `${selectedCharger.commercialName} está selecionado para sua recarga.` : "Escolha um carregador disponível para continuar."}</p>
     </section>
 
     <section className="mobile-card tariff-card">
@@ -78,7 +91,7 @@ export function EstablishmentPage() {
     </section>
 
     <div className="sticky-action-space">
-      {isAuthenticated ? <PrimaryButton onClick={continueRegistered}>{isFull ? "Entrar na fila" : `Recarregar no ${available?.commercialName}`}</PrimaryButton> : <Link className="primary-link" to={`/qr/${plant.qrSlug}`}><AppIcon name="qr" size={20} /> Acessar pelo QR Code</Link>}
+      {isAuthenticated ? <PrimaryButton onClick={continueRegistered} disabled={!isFull && selectedCharger?.commercialStatus !== ChargerCommercialStatus.AVAILABLE_TO_START}>{isFull ? "Entrar na fila da planta" : selectedCharger?.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START ? `Recarregar no ${selectedCharger.commercialName}` : "Escolha um carregador disponível"}</PrimaryButton> : <Link className="primary-link" to={`/qr/${plant.qrSlug}`}><AppIcon name="qr" size={20} /> Acessar pelo QR Code</Link>}
       {!isAuthenticated ? <Link className="text-link" to="/login">Entrar para usar fila e histórico</Link> : null}
       <SecondaryButton onClick={() => navigate(isAuthenticated ? "/explore" : "/")}><AppIcon name="map" size={20} /> Voltar</SecondaryButton>
     </div>

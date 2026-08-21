@@ -1,6 +1,16 @@
 import type { PaymentMethod } from "../app/DriverAppContext";
 
-const apiBaseUrl = (import.meta.env.VITE_CHARGEGRID_API_URL || "/api").replace(/\/$/, "");
+const configuredApiBaseUrl = (import.meta.env.VITE_CHARGEGRID_API_URL || "/api").replace(/\/$/, "");
+
+function apiBaseUrl() {
+  if (typeof window === "undefined" || !configuredApiBaseUrl.startsWith("http")) return configuredApiBaseUrl;
+  const configuredUrl = new URL(configuredApiBaseUrl);
+  const isLocalApi = configuredUrl.hostname === "localhost" || configuredUrl.hostname === "127.0.0.1";
+  const isRemoteDevice = window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1";
+  if (!isLocalApi || !isRemoteDevice) return configuredApiBaseUrl;
+  configuredUrl.hostname = window.location.hostname;
+  return configuredUrl.toString().replace(/\/$/, "");
+}
 
 interface ApiErrorBody {
   message?: string;
@@ -8,10 +18,21 @@ interface ApiErrorBody {
 }
 
 async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${apiBaseUrl}${path}`, init);
-  const payload = await response.json().catch(() => ({})) as T & ApiErrorBody;
-  if (!response.ok) throw new Error(payload.message || "O gateway de pagamento não respondeu como esperado.");
-  return payload;
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 15_000);
+  try {
+    const response = await fetch(`${apiBaseUrl()}${path}`, { ...init, signal: controller.signal });
+    const payload = await response.json().catch(() => ({})) as T & ApiErrorBody;
+    if (!response.ok) throw new Error(payload.message || "O gateway de pagamento não respondeu como esperado.");
+    return payload;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("A API de pagamento não respondeu. Confirme que a API ChargeGrid está acessível nesta rede.");
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
+  }
 }
 
 export interface PaymentIntentResult {

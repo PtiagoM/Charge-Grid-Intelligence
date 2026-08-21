@@ -37,7 +37,7 @@ Entregar uma PWA exclusivamente mobile para recarga de veículos elétricos, com
 - As três ações principais são escanear QR, criar conta e entrar.
 - O scanner usa `getUserMedia` e ZXing carregado sob demanda; imagem e código manual são alternativas obrigatórias.
 - O QR válido resolve um `chargerSlug`, seleciona planta/carregador e exibe disponibilidade, potência, vaga, tarifa e ociosidade antes do checkout.
-- Carregador disponível permite seguir como visitante ou com conta; indisponibilidade oferece fila ao motorista autenticado ou criação de conta.
+- Carregador disponível permite seguir como visitante ou com conta. Ao ler um carregador ocupado, o motorista autenticado entra na fila única da planta; visitante recebe o caminho de cadastro para usar a fila.
 
 ## Cadastro e autenticação
 
@@ -57,7 +57,8 @@ Entregar uma PWA exclusivamente mobile para recarga de veículos elétricos, com
 - Falha de chave, cota, billing, referrer ou rede mantém a lista utilizável e apresenta erro estável.
 - Data Layer e ícones vetoriais representam estabelecimentos com disponibilidade.
 - Busca filtra mapa e cards; geolocalização recalcula distância e ordenação.
-- Selecionar marcador atualiza estilo, centralização, zoom e card sem recriar o mapa inteiro.
+- Selecionar marcador atualiza estilo, centralização, zoom e card sem recriar o mapa inteiro. Abrir uma planta preserva-a como contexto da aba Sessão até que outra seja escolhida.
+- A página da planta permite escolher explicitamente um dos carregadores. A fila é compartilhada pela planta, não por vaga; quando chamado, o app direciona para uma vaga disponível.
 - O catálogo inicial possui seis plantas na Grande São Paulo.
 - A chave demo usada no desenvolvimento atingiu a cota; funcionamento contínuo exige chave Google Cloud faturada e restrita corretamente.
 
@@ -71,6 +72,7 @@ Entregar uma PWA exclusivamente mobile para recarga de veículos elétricos, com
 - Metadata vincula `sessionId`, estabelecimento e carregador; operações usam idempotência.
 - Retorno por redirecionamento recupera o PaymentIntent pendente e consulta o estado.
 - O webhook valida assinatura sobre corpo bruto e registra eventos acompanhados; persistência/reconciliação comercial automática ainda é pendência.
+- Em desenvolvimento na mesma rede, uma URL de API configurada como `localhost` é resolvida para o host aberto pelo celular. A API aceita origens IPv4 privadas somente fora de produção e o cliente interrompe a espera após 15 segundos com erro acionável.
 
 ## Sessão e fila
 
@@ -106,4 +108,3 @@ Entregar uma PWA exclusivamente mobile para recarga de veículos elétricos, com
 - telemetria e comandos GoodWe reais;
 - publicação em lojas nativas;
 - IA externa operacional.
-

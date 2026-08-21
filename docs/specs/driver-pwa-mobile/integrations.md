@@ -105,6 +105,7 @@ Cartão de teste: `4242 4242 4242 4242`, validade futura e CVC de três dígitos
 ## PWA e permissões
 
 - Localhost é aceito em desenvolvimento; produção exige HTTPS.
+- Para testar o PWA em outro aparelho na mesma rede, inicie PWA e API, acesse o IP LAN do computador na porta `5174` e confirme que o firewall permite a porta `3333`. Quando `VITE_CHARGEGRID_API_URL` estiver em `localhost:3333`, o PWA substitui somente em desenvolvimento esse host pelo IP usado no celular. A API aceita essa origem IPv4 privada apenas fora de produção.
 - Câmera, localização e notificações têm permissões independentes.
 - Notificações locais usam `apps/driver-pwa/public/sw.js`.
 - Push remoto exige Web Push/FCM e não faz parte da implementação atual.

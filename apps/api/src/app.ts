@@ -7,7 +7,8 @@ export function createApp() {
 
   app.disable("x-powered-by");
   const allowedOrigins = (process.env.CHARGEGRID_ALLOWED_ORIGINS ?? "http://localhost:5174,http://127.0.0.1:5174").split(",").map((origin) => origin.trim());
-  app.use(cors({ origin: (origin, callback) => callback(null, !origin || allowedOrigins.includes(origin)), methods: ["GET", "POST", "OPTIONS"], allowedHeaders: ["Content-Type", "Idempotency-Key", "Stripe-Signature"] }));
+  const isDevelopmentLanOrigin = (origin: string) => process.env.NODE_ENV !== "production" && /^http:\/\/(?:192\.168\.|10\.|172\.(?:1[6-9]|2\d|3[0-1])\.)\d+\.\d+(?::\d+)?$/.test(origin);
+  app.use(cors({ origin: (origin, callback) => callback(null, !origin || allowedOrigins.includes(origin) || isDevelopmentLanOrigin(origin)), methods: ["GET", "POST", "OPTIONS"], allowedHeaders: ["Content-Type", "Idempotency-Key", "Stripe-Signature"] }));
   app.post("/payments/webhook", express.raw({ type: "application/json" }), stripeWebhook);
   app.use(express.json());
 
