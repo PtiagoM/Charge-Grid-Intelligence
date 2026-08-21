@@ -54,6 +54,9 @@ interface GoogleMapsApi {
   Size: new (width: number, height: number) => unknown;
   Point: new (x: number, y: number) => unknown;
   importLibrary(name: string): Promise<unknown>;
+  event: {
+    addListenerOnce(instance: GoogleMapInstance, event: "tilesloaded", handler: () => void): { remove(): void };
+  };
 }
 
 declare global {
@@ -65,6 +68,8 @@ declare global {
 }
 
 let mapsPromise: Promise<GoogleMapsApi> | undefined;
+const MAPS_SCRIPT_ID = "chargegrid-google-maps-sdk";
+const MAPS_LOAD_TIMEOUT_MS = 15_000;
 
 function loadGoogleMaps() {
   if (window.google?.maps && typeof window.google.maps.importLibrary === "function") return Promise.resolve(window.google.maps);
@@ -72,29 +77,35 @@ function loadGoogleMaps() {
   const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   if (!key) return Promise.reject(new Error("MAPS_KEY_MISSING"));
   mapsPromise = new Promise<GoogleMapsApi>((resolve, reject) => {
+    document.getElementById(MAPS_SCRIPT_ID)?.remove();
     const script = document.createElement("script");
+    script.id = MAPS_SCRIPT_ID;
+    let settled = false;
+    const finish = (callback: () => void) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeoutId);
+      delete window.__chargeGridMapsReady;
+      delete window.gm_authFailure;
+      callback();
+    };
+    const timeoutId = window.setTimeout(() => finish(() => reject(new Error("MAPS_LOAD_TIMEOUT"))), MAPS_LOAD_TIMEOUT_MS);
     window.__chargeGridMapsReady = () => {
       const maps = window.google?.maps;
-      if (maps && typeof maps.importLibrary === "function") resolve(maps);
-      else reject(new Error("MAPS_SDK_UNAVAILABLE"));
-      delete window.__chargeGridMapsReady;
-      delete window.gm_authFailure;
+      finish(() => maps && typeof maps.importLibrary === "function" ? resolve(maps) : reject(new Error("MAPS_SDK_UNAVAILABLE")));
     };
     window.gm_authFailure = () => {
-      reject(new Error("MAPS_AUTH_FAILED"));
-      delete window.__chargeGridMapsReady;
-      delete window.gm_authFailure;
+      finish(() => reject(new Error("MAPS_AUTH_FAILED")));
     };
     script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly&loading=async&language=pt-BR&region=BR&callback=__chargeGridMapsReady`;
     script.async = true;
     script.onerror = () => {
-      delete window.__chargeGridMapsReady;
-      delete window.gm_authFailure;
-      reject(new Error("MAPS_LOAD_FAILED"));
+      finish(() => reject(new Error("MAPS_LOAD_FAILED")));
     };
     document.head.append(script);
   }).catch((error) => {
     mapsPromise = undefined;
+    document.getElementById(MAPS_SCRIPT_ID)?.remove();
     throw error;
   });
   return mapsPromise;
@@ -124,25 +135,57 @@ function dataMarkerIcon(maps: GoogleMapsApi, label: string, color: string, activ
   };
 }
 
+function markerStyle(maps: GoogleMapsApi, places: readonly MapPlace[], selectedPlaceId: string | null, feature: GoogleDataFeature) {
+  const kind = feature.getProperty("kind");
+  if (kind === "driver") return { clickable: false, icon: dataMarkerIcon(maps, "•", "#2f86ff"), title: "Sua localização", zIndex: 20 };
+  const placeId = String(feature.getProperty("placeId") ?? "");
+  const place = places.find((item) => item.id === placeId);
+  if (!place) return { visible: false };
+  const active = place.id === selectedPlaceId;
+  return {
+    clickable: true,
+    icon: dataMarkerIcon(maps, String(place.availableChargers), place.availableChargers > 0 ? "#ef3238" : "#697279", active),
+    title: String(feature.getProperty("title") ?? place.name),
+    zIndex: active ? 10 : 1
+  };
+}
+
 export function DriverDiscoveryMap({ places, selectedPlaceId, userPosition, onSelectPlace }: DriverDiscoveryMapProps) {
   const mapElement = useRef<HTMLDivElement>(null);
+  const runtime = useRef<{ maps: GoogleMapsApi; map: GoogleMapInstance; dataLayer: GoogleDataLayer } | null>(null);
+  const selectedPlaceIdRef = useRef(selectedPlaceId);
+  const onSelectPlaceRef = useRef(onSelectPlace);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [errorCode, setErrorCode] = useState("");
   const [attempt, setAttempt] = useState(0);
 
+  selectedPlaceIdRef.current = selectedPlaceId;
+  onSelectPlaceRef.current = onSelectPlace;
+
   useEffect(() => {
     if (!mapElement.current || places.length === 0) return;
     let cancelled = false;
+    let providerFailed = false;
     let infoWindow: InfoWindowInstance | undefined;
     let dataLayer: GoogleDataLayer | undefined;
     let dataClickListener: { remove(): void } | undefined;
+    let tilesLoadedListener: { remove(): void } | undefined;
+    let renderTimeoutId: number | undefined;
+    const fail = (code: string) => {
+      if (cancelled || providerFailed) return;
+      providerFailed = true;
+      if (renderTimeoutId) window.clearTimeout(renderTimeoutId);
+      tilesLoadedListener?.remove();
+      setErrorCode(code);
+      setStatus("error");
+    };
     const failureObserver = new MutationObserver(() => {
       if (mapElement.current?.querySelector(".gm-err-container")) {
-        setErrorCode("MAPS_PROVIDER_ERROR");
-        setStatus("error");
+        fail("MAPS_PROVIDER_ERROR");
       }
     });
     failureObserver.observe(mapElement.current, { childList: true, subtree: true });
+    mapElement.current.replaceChildren();
     setStatus("loading");
     setErrorCode("");
 
@@ -164,6 +207,7 @@ export function DriverDiscoveryMap({ places, selectedPlaceId, userPosition, onSe
       const bounds = new maps.LatLngBounds();
       infoWindow = new maps.InfoWindow();
       dataLayer = map.data;
+      runtime.current = { maps, map, dataLayer };
 
       for (const place of places) {
         dataLayer.add({
@@ -183,20 +227,7 @@ export function DriverDiscoveryMap({ places, selectedPlaceId, userPosition, onSe
         bounds.extend(userPosition);
       }
 
-      dataLayer.setStyle((feature) => {
-        const kind = feature.getProperty("kind");
-        if (kind === "driver") return { clickable: false, icon: dataMarkerIcon(maps, "•", "#2f86ff"), title: "Sua localização", zIndex: 20 };
-        const placeId = String(feature.getProperty("placeId") ?? "");
-        const place = places.find((item) => item.id === placeId);
-        if (!place) return { visible: false };
-        const active = place.id === selectedPlaceId;
-        return {
-          clickable: true,
-          icon: dataMarkerIcon(maps, String(place.availableChargers), place.availableChargers > 0 ? "#ef3238" : "#697279", active),
-          title: String(feature.getProperty("title") ?? place.name),
-          zIndex: active ? 10 : 1
-        };
-      });
+      dataLayer.setStyle((feature) => markerStyle(maps, places, selectedPlaceIdRef.current, feature));
 
       dataClickListener = dataLayer.addListener("click", (event) => {
         const placeId = String(event.feature.getProperty("placeId") ?? "");
@@ -206,36 +237,55 @@ export function DriverDiscoveryMap({ places, selectedPlaceId, userPosition, onSe
         map.setZoom(14);
         infoWindow?.setContent(infoContent(place));
         infoWindow?.open({ map, position: place.position });
-        onSelectPlace(place.id);
+        onSelectPlaceRef.current(place.id);
       });
 
-      const selected = places.find((place) => place.id === selectedPlaceId);
+      const selected = places.find((place) => place.id === selectedPlaceIdRef.current);
       if (selected) {
         map.setCenter(selected.position);
         map.setZoom(14);
       } else {
         map.fitBounds(bounds);
       }
-      setStatus("ready");
+      tilesLoadedListener = maps.event.addListenerOnce(map, "tilesloaded", () => {
+        if (cancelled || providerFailed) return;
+        if (renderTimeoutId) window.clearTimeout(renderTimeoutId);
+        setStatus("ready");
+      });
+      renderTimeoutId = window.setTimeout(() => fail("MAPS_RENDER_TIMEOUT"), MAPS_LOAD_TIMEOUT_MS);
     }).catch((error: unknown) => {
-      if (!cancelled) {
-        setErrorCode(error instanceof Error ? error.message : "MAPS_UNKNOWN_ERROR");
-        setStatus("error");
-      }
+      fail(error instanceof Error ? error.message : "MAPS_UNKNOWN_ERROR");
     });
 
     return () => {
       cancelled = true;
+      if (renderTimeoutId) window.clearTimeout(renderTimeoutId);
       infoWindow?.close();
       failureObserver.disconnect();
+      tilesLoadedListener?.remove();
       dataClickListener?.remove();
       dataLayer?.forEach((feature) => dataLayer?.remove(feature));
+      if (runtime.current?.dataLayer === dataLayer) runtime.current = null;
+      mapElement.current?.replaceChildren();
     };
-  }, [attempt, onSelectPlace, places, selectedPlaceId, userPosition]);
+  }, [attempt, places, userPosition]);
+
+  useEffect(() => {
+    const current = runtime.current;
+    if (!current) return;
+    current.dataLayer.setStyle((feature) => markerStyle(current.maps, places, selectedPlaceId, feature));
+    const selected = places.find((place) => place.id === selectedPlaceId);
+    if (selected) {
+      current.map.setCenter(selected.position);
+      current.map.setZoom(14);
+    }
+  }, [places, selectedPlaceId]);
+
+  const providerRejected = errorCode === "MAPS_PROVIDER_ERROR" || errorCode === "MAPS_AUTH_FAILED";
 
   return <div className="discovery-map" data-testid="driver-discovery-map" data-map-error={errorCode || undefined}>
     <div ref={mapElement} className={`google-discovery-map ${status === "ready" ? "is-loaded" : ""}`} />
     {status === "loading" ? <div className="map-loading-state"><span className="spinner" /><strong>Carregando Google Maps…</strong></div> : null}
-    {status === "error" ? <div className="map-error-state" role="alert"><AppIcon name="map" size={34} /><strong>Não foi possível carregar o mapa</strong><p>Verifique sua conexão e tente novamente.</p><button type="button" onClick={() => setAttempt((current) => current + 1)}>Tentar novamente</button></div> : null}
+    {status === "error" ? <div className="map-error-state" role="alert"><AppIcon name="map" size={34} /><strong>Não foi possível carregar o mapa</strong><p>{providerRejected ? "O Google Maps está temporariamente indisponível. Use a lista de pontos abaixo." : "Verifique sua conexão e tente novamente."}</p><button type="button" onClick={() => setAttempt((current) => current + 1)}>Tentar novamente</button></div> : null}
   </div>;
 }
