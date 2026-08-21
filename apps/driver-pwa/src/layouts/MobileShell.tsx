@@ -3,7 +3,7 @@ import { useDriverApp } from "../app/DriverAppContext";
 import { AppIcon } from "../components/AppIcon";
 import { assets } from "../constants/assets";
 
-const flowPrefixes = ["/qr", "/scan", "/checkout", "/queue", "/session", "/receipt", "/login", "/signup"];
+const accountEntryExclusions = ["/", "/login", "/signup"];
 
 function routeTitle(pathname: string) {
   if (pathname.startsWith("/place")) return "Detalhes";
@@ -26,15 +26,23 @@ export function MobileShell() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, isOnline, notifications, selectedEstablishmentId, session, setTheme, theme } = useDriverApp();
-  const isFlow = location.pathname === "/" || flowPrefixes.some((prefix) => location.pathname.startsWith(prefix));
+  const hasAccountNavigation = isAuthenticated && !accountEntryExclusions.includes(location.pathname);
   const showBack = location.pathname !== "/" && location.pathname !== "/explore";
   const unreadCount = notifications.filter((item) => !item.read).length;
 
+  function goBack() {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate(isAuthenticated ? "/explore" : "/", { replace: true });
+  }
+
   return (
-    <div className="mobile-shell">
+    <div className={`mobile-shell${hasAccountNavigation ? " has-account-navigation" : ""}`}>
       <header className="mobile-header">
         {showBack ? (
-          <button type="button" className="icon-button header-back" aria-label="Voltar" onClick={() => navigate(-1)}>
+          <button type="button" className="icon-button header-back" aria-label="Voltar" onClick={goBack}>
             <AppIcon name="arrow-left" />
           </button>
         ) : (
@@ -45,7 +53,7 @@ export function MobileShell() {
           <button type="button" className="icon-button theme-button" aria-label={theme === "light" ? "Ativar tema escuro" : "Ativar tema claro"} onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
             <AppIcon name={theme === "light" ? "moon" : "sun"} size={21} />
           </button>
-          {!isFlow && isAuthenticated ? (
+          {hasAccountNavigation ? (
             <button type="button" className="icon-button notification-button" aria-label={`Notificações${unreadCount ? `, ${unreadCount} não lidas` : ""}`} onClick={() => navigate("/notifications")}>
               <AppIcon name="bell" />
               {unreadCount ? <span>{Math.min(unreadCount, 9)}</span> : null}
@@ -55,7 +63,7 @@ export function MobileShell() {
       </header>
       {!isOnline ? <div className="offline-banner" role="status"><AppIcon name="wifi-off" size={18} /> Você está offline. Novas autorizações estão indisponíveis.</div> : null}
       <main className="mobile-content"><Outlet /></main>
-      {!isFlow && isAuthenticated ? <nav className="bottom-nav" aria-label="Navegação do motorista">
+      {hasAccountNavigation ? <nav className="bottom-nav" aria-label="Navegação do motorista">
         <NavLink to="/explore"><img src={assets.icons.explore} alt="" /><strong>Explorar</strong></NavLink>
         <NavLink to={session ? "/session" : `/place/${selectedEstablishmentId}`}><img src={assets.icons.session} alt="" /><strong>Sessão</strong></NavLink>
         <NavLink to="/history"><img src={assets.icons.history} alt="" /><strong>Histórico</strong></NavLink>
