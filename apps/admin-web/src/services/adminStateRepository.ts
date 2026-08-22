@@ -31,10 +31,13 @@ export function normalizeAdminState(candidate: AdminState, fallback: AdminState)
       ...(candidate.plantOnboardingDraft ?? {})
     },
     chargers,
+    chargerTelemetry: Array.isArray(candidate.chargerTelemetry) ? candidate.chargerTelemetry : fallback.chargerTelemetry,
+    chargerCommands: Array.isArray(candidate.chargerCommands) ? candidate.chargerCommands : fallback.chargerCommands,
     sessions: candidate.sessions.map((item) => chargerIds.has(item.chargerId) ? item : {
       ...item,
       chargerId: chargers.find((charger) => charger.establishmentId === item.establishmentId)?.id ?? item.chargerId
     }),
+    sessionEvents: Array.isArray(candidate.sessionEvents) ? candidate.sessionEvents : fallback.sessionEvents,
     energy
   };
 }

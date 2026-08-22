@@ -7,8 +7,9 @@ import { Badge, DataTable, KpiCard, SectionHeader, money, number } from "../../c
 import { WorldMap } from "../map/WorldMap";
 import { assets } from "../../constants/assets";
 import { PlantDetailPage, PlantOnboardingPage, PlantsPortfolioPage } from "../plants/PlantPages";
+import { ChargerDetailPage, ChargersInventoryPage, SessionDetailPage, SessionsPage as OperationsSessionsPage } from "../operations/ChargerPages";
 
-const establishmentTabs = new Set(["overview", "locations", "location", "charger", "chargers", "sessions", "operations", "energy", "pricing", "finance", "invoices", "contract", "support", "ticket", "documents", "ai", "reports", "settings"]);
+const establishmentTabs = new Set(["overview", "locations", "location", "charger", "chargers", "sessions", "session", "operations", "energy", "pricing", "finance", "invoices", "contract", "support", "ticket", "documents", "ai", "reports", "settings"]);
 
 function EntityCell({ title, subtitle }: { title: string; subtitle: string }) {
   return <div><strong>{title}</strong><span>{subtitle}</span></div>;
@@ -279,8 +280,10 @@ export function AdminDashboardPage() {
       case "locations": return <LocationsPage establishmentId={establishmentId || undefined} />;
       case "new-location": return <NewLocationPage establishmentId={establishmentId} />;
       case "location": return <LocationDetail establishmentId={establishmentId} locationId={locationId} canManage={account.profile === "GOODWE"} />;
-      case "chargers": return <ChargersPage establishmentId={establishmentId || undefined} />;
-      case "sessions": return <SessionsPage establishmentId={establishmentId || undefined} />;
+      case "chargers": return <ChargersInventoryPage establishmentId={establishmentId || undefined} />;
+      case "charger": return <ChargerDetailPage chargerId={query.get("charger") ?? ""} establishmentId={establishmentId || undefined} />;
+      case "sessions": return <OperationsSessionsPage establishmentId={establishmentId || undefined} />;
+      case "session": return <SessionDetailPage sessionId={query.get("session") ?? ""} establishmentId={establishmentId || undefined} />;
       case "pricing": return <PricingPage establishmentId={establishmentId || undefined} />;
       case "energy": return <EnergyPage establishmentId={establishmentId || undefined} />;
       case "ai": return <AiPage />;

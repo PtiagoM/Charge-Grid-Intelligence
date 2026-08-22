@@ -11,10 +11,13 @@ export function number(value: number) {
 }
 
 export function statusLabel(value: string) {
-  return ({ available: "Disponivel", charging: "Carregando", limited: "Limitado", offline: "Offline", active: "Ativa", finished: "Finalizada", waiting: "Aguardando", released: "Liberado" } as Record<string, string>)[value] ?? value;
+  return ({ available: "Disponivel", charging: "Em recarga", limited: "Limitado", offline: "Offline", authorized: "Autorizada", starting: "Iniciando", active: "Ativa", finished: "Finalizada", start_failed: "Falha no inicio", REQUESTED: "Solicitado", ACCEPTED: "Aceito", CONFIRMED: "Confirmado", FAILED: "Falhou", EXPIRED: "Expirado", waiting: "Aguardando", released: "Liberado" } as Record<string, string>)[value] ?? value;
 }
 
 export function tone(value: string) {
+  if (["CONFIRMED"].includes(value)) return "good";
+  if (["start_failed", "FAILED"].includes(value)) return "danger";
+  if (["authorized", "starting", "REQUESTED", "ACCEPTED", "EXPIRED"].includes(value)) return "warn";
   if (["available", "finished", "Aprovado", "Ativo", "Favorável", "released"].includes(value)) return "good";
   if (["charging", "Recusado", "Crítico", "Alta"].includes(value)) return "danger";
   if (["limited", "Pendente", "Alerta", "waiting", "Implantação"].includes(value)) return "warn";

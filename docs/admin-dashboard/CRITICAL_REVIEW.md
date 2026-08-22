@@ -146,7 +146,7 @@ O assistente apresenta textos fixos e previsões sem fonte, confiança ou fallba
 | M0 — fundação | árvore, fixtures e serviço de estado consolidados; contratos reais ainda dependem da API | preservar uma única arquitetura e substituir mocks por repositories sem reabrir a fronteira PWA |
 | M1 — shell/RBAC | seis domínios primários, navegação contextual, escopo em URL e capability map tipado | conectar capacidades a autorização de ação/API; tema claro e papéis adicionais permanecem pendentes |
 | M2 — planta/onboarding | portfólio, detalhe somente leitura e wizard de vínculo implementados sobre catálogo GoodWe mockado | homologar provider/SSO reais e mover publicação/autorização para a API |
-| M3 — carregadores/sessões | listas superficiais, sem comandos/timeline | primeira vertical slice funcional |
+| M3 — carregadores/sessões | vertical funcional local: inventário, detalhe, telemetria, sessão/timeline e comandos auditáveis | homologar provider GoodWe real e mover autorização para a API sem perder idempotência/frescor |
 | M4 — fila | tabela demonstrativa | integrar ao contexto de planta/sessão |
 | M5 — energia | KPIs visualmente coerentes, mas parcialmente fixos | usar snapshot tipado, frescor, limiares e impacto operacional |
 | M6 — financeiro | percentuais e rateio tratados como definitivos | parametrizar e separar hipótese de dado confirmado |
@@ -154,7 +154,7 @@ O assistente apresenta textos fixos e previsões sem fonte, confiança ou fallba
 | M8 — acesso/relatórios | telas cenográficas | implementar por capacidade e tarefas reais |
 | M9 — validação | boa cobertura de demo em viewport amplo | matriz por papel, estado e 1280/1440/desktop amplo |
 
-O estado atual deve ser tratado como **fundação M0 consolidada, baseline de interface M1 concluída e vertical M2 funcional sobre provider local**, ainda sem autorização backend. As telas de M3–M8 continuam protótipos e não significam conclusão funcional desses marcos.
+O estado atual deve ser tratado como **fundação M0 consolidada, baseline de interface M1 concluída e verticais M2/M3 funcionais sobre providers locais**, ainda sem autorização backend. As telas de M4–M8 continuam protótipos e não significam conclusão funcional desses marcos.
 
 ## Fundação corrigida nesta etapa
 
@@ -178,8 +178,8 @@ O estado atual deve ser tratado como **fundação M0 consolidada, baseline de in
 
 1. **M1 hardening:** aplicar o capability map também a ações e respostas da API quando os endpoints entrarem; não criar controles locais fictícios.
 2. **M2 concluído no mock:** portfólio, detalhe, pré-condições, rascunho retomável e publicação derivada da planta GoodWe; integração real permanece pendente.
-3. **M3 — próximo incremento funcional:** carregadores, detalhe, comandos e sessões/timeline.
-4. **M4/M5:** fila e energia dentro do contexto da planta.
+3. **M3 concluído no mock:** carregadores, telemetria fresca, start/stop com motivo, idempotência, confirmação assíncrona e sessões/timeline.
+4. **M4/M5 — próximos incrementos:** fila e energia dentro do contexto da planta.
 5. **M6:** tarifa, pagamento, conciliação e financeiro parametrizados.
 6. **M7/M8:** incidentes, recomendações, acesso, auditoria e relatórios.
 7. **M9:** validação visual e funcional completa.

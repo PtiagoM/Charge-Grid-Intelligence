@@ -36,6 +36,7 @@ test('MVP mostra carregadores, sessões e tarifação', async ({ page }) => {
 
   await page.goto('/#/mvp/chargers');
   await expect(page.getByTestId('mvp-chargers-panel')).toBeVisible();
+  await page.getByRole('link', { name: 'Abrir carregador' }).first().click();
   await expect(page.getByTestId('mvp-charger-detail')).toBeVisible();
 
   await page.goto('/#/mvp/sessions');

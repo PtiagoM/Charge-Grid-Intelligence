@@ -298,7 +298,7 @@ Disponibilidade técnica ≠ comercial. Um carregador online pode estar fechado,
 | API financeira | Criar, consultar, capturar e reembolsar PaymentIntent | `apps/api/src/payments/` |
 | Fila/sessão | Estado global persistido, entrada confirmada e limite financeiro aplicado | `apps/driver-pwa/src/app/DriverAppContext.tsx` |
 | Notificações | Permissão e notificações locais pelo service worker | `apps/driver-pwa/src/pages/NotificationsPage.tsx` |
-| Dashboard Admin | **RECONSTRUÇÃO FUNCIONAL EM M2**: fundação consolidada; shell M1 com seis domínios; portfólio, detalhe e onboarding de plantas funcionais sobre catálogo GoodWe mockado | `apps/admin-web/`, `docs/admin-dashboard/CRITICAL_REVIEW.md` |
+| Dashboard Admin | **RECONSTRUÇÃO FUNCIONAL EM M3**: fundação e shell consolidados; plantas/onboarding e operação de carregadores/sessões funcionais sobre providers locais, com confirmação por telemetria e auditoria de comandos | `apps/admin-web/`, `docs/admin-dashboard/CRITICAL_REVIEW.md` |
 | GoodWe | contrato e `MockGoodWeProvider`; OpenAPI real ainda não conectada | `apps/api/src/goodwe/` |
 | Persistência comercial | estrutura prevista; migrations, RLS e repositories ainda não implementados | `supabase/` |
 | IA externa | fronteira documental | `apps/api/src/ai/README.md` |
@@ -575,7 +575,7 @@ produto/contexto → arquitetura → contratos → demo
 | Progresso | **LOCAL**: teto, barra verde, saldo e estimativa | `SessionPage.tsx` |
 | Notificações | **LOCAL**: navegador/service worker | `browserNotifications.ts` |
 | PWA | **IMPLEMENTADO**: manifest, SW, ícone, instalação/safe areas | `public/` |
-| Dashboard Admin | **EM RECONSTRUÇÃO**: M0/M1 consolidados na interface; M2 local implementado com catálogo técnico somente leitura, vínculo comercial retomável e publicação sem recadastro; provider/autorização reais pendentes e telas M3–M8 ainda são protótipos | `apps/admin-web/`, `docs/admin-dashboard/CRITICAL_REVIEW.md` |
+| Dashboard Admin | **EM RECONSTRUÇÃO**: M0/M1 consolidados; M2 e M3 locais implementados com onboarding derivado da GoodWe, telemetria, comandos auditáveis e sessões/timeline; providers/autorização reais pendentes e telas M4–M8 ainda são protótipos | `apps/admin-web/`, `docs/admin-dashboard/CRITICAL_REVIEW.md` |
 | GoodWe | **SIMULADO** | `apps/api/src/goodwe/` |
 | Persistência comercial | **NÃO IMPLEMENTADO**: migrations/repositories/RLS | `supabase/` |
 | IA | **NÃO IMPLEMENTADO** | `apps/api/src/ai/README.md` |

@@ -1,4 +1,4 @@
-import type { AdminState, Charger, CommercialPlantLink, Establishment, Location } from "../domain/admin";
+import type { AdminState, Charger, CommercialPlantLink, Establishment, Location, SessionEvent } from "../domain/admin";
 
 const establishments: Establishment[] = [
   { id: "est-fiap", clientId: "cli-fiap", name: "Shopping FIAP", city: "Sao Paulo", state: "SP", address: "Av. Lins de Vasconcelos, 1222", pricePerKwh: 2.95, contractCode: "CG-CTR-2026-001" },
@@ -44,6 +44,19 @@ const fiapChargers: Charger[] = [
   id: String(id), establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", identifier: String(id), internalId: String(internalId), serial: `GWFIAP000${index + 1}`, model: "GoodWe AC 22", powerKw: Number(powerKw), installationDate: "2026-01-15", status: status as Charger["status"], todayEnergyKwh: Number(todayEnergyKwh), revenueToday: Number(revenueToday)
 }));
 
+const sessionEvents: SessionEvent[] = [
+  { id: "event-1001-payment", sessionId: "CG-2026-1001", type: "PAYMENT_AUTHORIZED", label: "Pagamento autorizado", at: "2026-08-18T17:18:00-03:00", source: "PAYMENT", detail: "Limite autorizado de R$ 100,00" },
+  { id: "event-1001-start", sessionId: "CG-2026-1001", type: "START_ACCEPTED", label: "Comando aceito pelo provedor", at: "2026-08-18T17:19:00-03:00", source: "GOODWE" },
+  { id: "event-1001-energy", sessionId: "CG-2026-1001", type: "ENERGY_CONFIRMED", label: "Energia confirmada no conector", at: "2026-08-18T17:20:00-03:00", source: "GOODWE", detail: "18,4 kW observados" },
+  { id: "event-1001-charging", sessionId: "CG-2026-1001", type: "CHARGING", label: "Recarga em andamento", at: "2026-08-18T17:20:10-03:00", source: "CHARGEGRID" },
+  { id: "event-0998-payment", sessionId: "CG-2026-0998", type: "PAYMENT_AUTHORIZED", label: "Pagamento autorizado", at: "2026-08-18T14:08:00-03:00", source: "PAYMENT" },
+  { id: "event-0998-energy", sessionId: "CG-2026-0998", type: "ENERGY_CONFIRMED", label: "Energia confirmada no conector", at: "2026-08-18T14:10:00-03:00", source: "GOODWE" },
+  { id: "event-0998-finished", sessionId: "CG-2026-0998", type: "ENERGY_FINISHED", label: "Fluxo de energia encerrado", at: "2026-08-18T15:12:00-03:00", source: "GOODWE" },
+  { id: "event-0998-captured", sessionId: "CG-2026-0998", type: "PAYMENT_CAPTURED", label: "Pagamento capturado", at: "2026-08-18T15:13:00-03:00", source: "PAYMENT", detail: "R$ 55,17" },
+  { id: "event-1002-payment", sessionId: "CG-2026-1002", type: "PAYMENT_AUTHORIZED", label: "Pagamento autorizado", at: "2026-08-18T18:02:00-03:00", source: "PAYMENT", detail: "Aguardando inicio no carregador" },
+  { id: "event-1003-payment", sessionId: "CG-2026-1003", type: "PAYMENT_AUTHORIZED", label: "Pagamento autorizado", at: "2026-08-18T18:06:00-03:00", source: "PAYMENT", detail: "Aguardando inicio no carregador" }
+];
+
 export function createInitialState(): AdminState {
   return {
     accounts: [
@@ -76,10 +89,23 @@ export function createInitialState(): AdminState {
       { id: "CG-DE-01", establishmentId: "est-goodwe-europe", locationId: "loc-goodwe-europe", identifier: "GW-EUROPE-01", internalId: "DE-CENTER-01", serial: "GWDE0001", model: "GoodWe AC 22", powerKw: 22, installationDate: "2026-04-07", status: "charging", todayEnergyKwh: 24.7, revenueToday: 12.1 },
       { id: "CG-CN-01", establishmentId: "est-goodwe-shanghai", locationId: "loc-goodwe-shanghai", identifier: "GW-SHANGHAI-01", internalId: "CN-LAB-01", serial: "GWCN0001", model: "GoodWe DC 120", powerKw: 120, installationDate: "2026-05-12", status: "available", todayEnergyKwh: 48.9, revenueToday: 38.14 }
     ],
+    chargerTelemetry: [
+      { chargerId: "CG-FIAP-01", connectorState: "CHARGING", currentPowerKw: 18.4, observedAt: "2026-08-18T18:00:00-03:00", vehicleConnected: true },
+      { chargerId: "CG-FIAP-03", connectorState: "CONNECTED", currentPowerKw: 0, observedAt: "2026-08-18T18:00:00-03:00", vehicleConnected: true },
+      { chargerId: "CG-FIAP-05", connectorState: "CONNECTED", currentPowerKw: 0, observedAt: "2026-08-18T18:00:00-03:00", vehicleConnected: true },
+      { chargerId: "CG-MX-01", connectorState: "OFFLINE", currentPowerKw: 0, observedAt: "2026-08-18T16:30:00-03:00", vehicleConnected: false, faultCode: "COMMUNICATION_LOST" },
+      { chargerId: "CG-US-01", connectorState: "AVAILABLE", currentPowerKw: 0, observedAt: "2026-08-18T18:00:00-03:00", vehicleConnected: false },
+      { chargerId: "CG-DE-01", connectorState: "CHARGING", currentPowerKw: 20.1, observedAt: "2026-08-18T18:00:00-03:00", vehicleConnected: true },
+      { chargerId: "CG-CN-01", connectorState: "AVAILABLE", currentPowerKw: 0, observedAt: "2026-08-18T18:00:00-03:00", vehicleConnected: false }
+    ],
+    chargerCommands: [],
     sessions: [
       { id: "CG-2026-1001", chargerId: "CG-FIAP-01", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverId: "driver-ana", driverName: "Ana Souza", vehicle: "Volvo EX30", status: "active", startedAt: "2026-08-18T17:20:00-03:00", durationMinutes: 40, energyKwh: 13.4, tariffPerKwh: 2.95, consumedAmount: 39.53, payment: { status: "Aprovado", method: "Cartao", limitAmount: 100 } },
-      { id: "CG-2026-0998", chargerId: "CG-FIAP-01", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverId: "driver-paulo", driverName: "Paulo Lima", vehicle: "BYD Dolphin", status: "finished", startedAt: "2026-08-18T14:10:00-03:00", durationMinutes: 62, energyKwh: 18.7, tariffPerKwh: 2.95, consumedAmount: 55.17, finalAmount: 55.17, payment: { status: "Aprovado", method: "Pix", limitAmount: 80 } }
+      { id: "CG-2026-0998", chargerId: "CG-FIAP-01", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverId: "driver-paulo", driverName: "Paulo Lima", vehicle: "BYD Dolphin", status: "finished", startedAt: "2026-08-18T14:10:00-03:00", durationMinutes: 62, energyKwh: 18.7, tariffPerKwh: 2.95, consumedAmount: 55.17, finalAmount: 55.17, payment: { status: "Aprovado", method: "Pix", limitAmount: 80 } },
+      { id: "CG-2026-1002", chargerId: "CG-FIAP-03", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverId: "driver-luiza", driverName: "Luiza Prado", vehicle: "Renault Kwid E-Tech", status: "authorized", startedAt: "2026-08-18T18:02:00-03:00", durationMinutes: 0, energyKwh: 0, tariffPerKwh: 2.95, consumedAmount: 0, payment: { status: "Aprovado", method: "Cartao", limitAmount: 90 } },
+      { id: "CG-2026-1003", chargerId: "CG-FIAP-05", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverId: "driver-marcos", driverName: "Marcos Silva", vehicle: "GWM Ora 03", status: "authorized", startedAt: "2026-08-18T18:06:00-03:00", durationMinutes: 0, energyKwh: 0, tariffPerKwh: 2.95, consumedAmount: 0, payment: { status: "Aprovado", method: "Pix", limitAmount: 75 } }
     ],
+    sessionEvents,
     queue: [
       { id: "Q-001", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverName: "Marcos Silva", vehicle: "GWM Ora 03", status: "waiting" },
       { id: "Q-002", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverName: "Luiza Prado", vehicle: "Renault Kwid E-Tech", status: "waiting" }

@@ -1,9 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { Account, AdminState, NewChargerInput, NewClientInput, NewLocationInput, PlantOnboardingDraft, PlantOnboardingPublishResult, SupportTicket } from "../domain/admin";
+import type { Account, AdminState, NewChargerInput, NewClientInput, NewLocationInput, PlantOnboardingDraft, PlantOnboardingPublishResult, RequestChargerCommandInput, RequestChargerCommandResult, SupportTicket } from "../domain/admin";
 import { createInitialState } from "../fixtures/adminDemo";
 import { GOODWE_PLANT_CATALOG } from "../fixtures/goodwePlantCatalog";
 import { createEmptyPlantOnboardingDraft, publishPlantOnboarding as publishPlantDraft } from "../domain/plantOnboarding";
 import { browserAdminStateRepository } from "../services/adminStateRepository";
+import { acceptChargerCommand, requestChargerCommand as requestCommand, resolveChargerCommand } from "../domain/chargerOperations";
+import { demoAdminChargerCommandRepository } from "../services/adminChargerCommandRepository";
 
 function slugify(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -21,6 +23,7 @@ interface AdminContextValue {
   createClient: (input: NewClientInput) => string;
   createLocation: (input: NewLocationInput) => string;
   createCharger: (input: NewChargerInput) => void;
+  requestChargerCommand: (input: RequestChargerCommandInput) => Promise<RequestChargerCommandResult>;
   createTicket: (establishmentId: string, title: string, description: string) => string;
   updatePlantOnboardingDraft: (patch: Partial<PlantOnboardingDraft>) => void;
   resetPlantOnboardingDraft: () => void;
@@ -63,9 +66,29 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const createCharger = useCallback((input: NewChargerInput) => {
     setState((current) => ({
       ...current,
-      chargers: [...current.chargers, { id: input.identifier, ...input, status: "available", todayEnergyKwh: 0, revenueToday: 0 }]
+      chargers: [...current.chargers, { id: input.identifier, ...input, status: "available", todayEnergyKwh: 0, revenueToday: 0 }],
+      chargerTelemetry: [...current.chargerTelemetry, { chargerId: input.identifier, connectorState: "AVAILABLE", currentPowerKw: 0, observedAt: new Date().toISOString(), vehicleConnected: false }]
     }));
   }, []);
+
+  const requestChargerCommand = useCallback(async (input: RequestChargerCommandInput) => {
+    const requested = requestCommand(state, account, input);
+    if (!requested.ok || !requested.command) return requested;
+    setState(requested.state);
+
+    const provider = await demoAdminChargerCommandRepository.submit(requested.command);
+    const accepted = acceptChargerCommand(requested.state, requested.command.id, provider.providerCommandId, provider.acceptedAt);
+    if (!accepted.ok || !accepted.command) {
+      setState(accepted.state);
+      return accepted;
+    }
+    setState(accepted.state);
+
+    const observation = await demoAdminChargerCommandRepository.observe(accepted.command);
+    const resolved = resolveChargerCommand(accepted.state, accepted.command.id, observation.outcome, observation.observedAt);
+    setState(resolved.state);
+    return resolved;
+  }, [account, state]);
 
   const createTicket = useCallback((establishmentId: string, title: string, description: string) => {
     const id = `ticket-${Date.now().toString(36)}`;
@@ -95,7 +118,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     return publication.result;
   }, [state]);
 
-  const value = useMemo(() => ({ state, account, login, logout, createClient, createLocation, createCharger, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding }), [state, account, login, logout, createClient, createLocation, createCharger, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding]);
+  const value = useMemo(() => ({ state, account, login, logout, createClient, createLocation, createCharger, requestChargerCommand, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding }), [state, account, login, logout, createClient, createLocation, createCharger, requestChargerCommand, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding]);
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
 }
 

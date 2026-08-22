@@ -2381,6 +2381,293 @@ button[data-action="finish-session"]:hover {
 /* ============================================================
    Responsivo
    ============================================================ */
+.operations-page,
+.operations-detail {
+  display: grid;
+  gap: 20px;
+}
+
+.operations-filter {
+  display: grid;
+  grid-template-columns: minmax(280px, 1.5fr) 1fr 1fr;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.operations-filter label,
+.command-form label:not(.command-confirm) {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.operations-filter input,
+.operations-filter select,
+.command-form textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(8, 9, 10, 0.58);
+  color: var(--text);
+  padding: 11px 12px;
+}
+
+.operations-page .data-table td span,
+.operations-detail .data-table td span {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.operations-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px 30px;
+  border-left: 4px solid var(--danger);
+}
+
+.operations-hero h2 {
+  margin: 6px 0;
+  font-size: clamp(25px, 3vw, 38px);
+}
+
+.operations-hero p,
+.operations-hero-status span,
+.operations-empty,
+.command-policy {
+  color: var(--muted);
+}
+
+.operations-hero-status {
+  display: grid;
+  justify-items: end;
+  gap: 7px;
+  min-width: 220px;
+}
+
+.operations-hero-status strong {
+  font-size: 24px;
+}
+
+.operations-anchor-nav {
+  position: sticky;
+  top: 68px;
+  z-index: 4;
+  background: rgba(18, 19, 21, 0.96);
+  backdrop-filter: blur(10px);
+}
+
+.operations-session-summary {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.2fr) minmax(180px, .7fr) auto;
+  gap: 22px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 18px;
+}
+
+.operations-session-summary h3 {
+  margin: 10px 0 5px;
+}
+
+.operations-session-summary > div:nth-child(2) {
+  display: grid;
+  gap: 5px;
+}
+
+.operations-session-summary > div:nth-child(2) strong {
+  font-size: 22px;
+}
+
+.command-panel {
+  border-color: rgba(233, 63, 69, 0.38);
+  box-shadow: inset 3px 0 0 rgba(233, 63, 69, 0.72);
+}
+
+.command-form {
+  display: grid;
+  grid-template-columns: minmax(250px, .8fr) minmax(320px, 1.2fr);
+  gap: 18px 24px;
+  align-items: start;
+}
+
+.command-intent {
+  grid-row: span 2;
+  border: 1px solid rgba(233, 63, 69, 0.3);
+  border-radius: 12px;
+  padding: 18px;
+  background: rgba(233, 63, 69, 0.06);
+}
+
+.command-intent span {
+  color: var(--danger);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-size: 11px;
+}
+
+.command-intent strong,
+.operations-empty strong,
+.operations-empty span {
+  display: block;
+  margin-top: 8px;
+}
+
+.command-form textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+
+.command-confirm {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.command-form button {
+  justify-self: start;
+  min-width: 210px;
+}
+
+.command-form button:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.command-feedback {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border-radius: 9px;
+  font-weight: 700;
+}
+
+.command-feedback.tone-good {
+  color: #8fe0ae;
+  background: rgba(52, 168, 91, .12);
+}
+
+.command-feedback.tone-danger {
+  color: #ff9da1;
+  background: rgba(233, 63, 69, .12);
+}
+
+.command-policy {
+  margin: 15px 0 0;
+  font-size: 12px;
+}
+
+.operations-view-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.operations-view-tabs button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  padding: 9px 14px;
+}
+
+.operations-view-tabs button.is-active {
+  border-color: rgba(233, 63, 69, .55);
+  background: rgba(233, 63, 69, .12);
+  color: var(--text);
+}
+
+.operations-view-tabs b {
+  margin-left: 6px;
+}
+
+.operations-state-guide {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.operations-state-guide article {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.operations-state-guide p {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.session-timeline {
+  position: relative;
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.session-timeline::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 12px;
+  bottom: 12px;
+  width: 1px;
+  background: var(--line);
+}
+
+.session-timeline li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: 16px;
+  padding: 0 0 22px;
+}
+
+.session-timeline li > i {
+  z-index: 1;
+  width: 15px;
+  height: 15px;
+  margin-top: 4px;
+  border: 3px solid var(--panel);
+  border-radius: 50%;
+  background: var(--danger);
+  box-shadow: 0 0 0 1px rgba(233, 63, 69, .5);
+}
+
+.session-timeline h3 {
+  margin: 4px 0;
+  font-size: 15px;
+}
+
+.session-timeline span,
+.session-timeline small,
+.session-timeline p {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.operations-empty {
+  padding: 20px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+}
+
 @media (max-width: 1200px) {
   .kpi-grid.four-cols,
   .simulator-grid,
@@ -4821,6 +5108,10 @@ body.layout-auth {
     grid-template-columns: 1fr 1fr;
   }
 
+  .operations-state-guide {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
 }
 
 @media (max-width: 920px) {
@@ -4944,6 +5235,27 @@ body.layout-auth {
 
   .sems-filter-toolbar {
     grid-template-columns: 1fr;
+  }
+
+  .operations-filter,
+  .command-form,
+  .operations-session-summary,
+  .operations-state-guide {
+    grid-template-columns: 1fr;
+  }
+
+  .operations-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .operations-hero-status {
+    justify-items: start;
+  }
+
+  .operations-anchor-nav {
+    top: 58px;
+    overflow-x: auto;
   }
 
   .assistant-orb-button {

@@ -13,7 +13,7 @@ test('sessão ativa referencia um carregador existente e abre seu detalhe', asyn
 
   await page.goto('/#/mvp/sessions');
   await expect(page.getByTestId('mvp-sessions-active')).toContainText('CG-FIAP-01');
-  await page.getByRole('button', { name: 'Abrir sessao' }).first().click();
+  await page.getByRole('link', { name: 'Abrir sessao' }).first().click();
   await expect(page.getByTestId('mvp-session-detail')).toContainText('CG-FIAP-01');
 
   await page.goto('/#/logout');

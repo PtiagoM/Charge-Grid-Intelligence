@@ -1,6 +1,9 @@
 export type Profile = "GOODWE" | "ESTABELECIMENTO";
 export type ChargerStatus = "available" | "charging" | "limited" | "offline";
-export type SessionStatus = "active" | "finished";
+export type SessionStatus = "authorized" | "starting" | "active" | "finished" | "start_failed";
+export type ChargerCommandType = "START_CHARGE" | "STOP_CHARGE";
+export type ChargerCommandStatus = "REQUESTED" | "ACCEPTED" | "CONFIRMED" | "FAILED" | "EXPIRED";
+export type ChargerConnectorState = "AVAILABLE" | "CONNECTED" | "CHARGING" | "FAULT" | "OFFLINE";
 export type PlantAccessPolicy = "PUBLIC" | "PRIVATE" | "MIXED";
 
 export interface GoodWePlantCharger {
@@ -139,6 +142,35 @@ export interface Charger {
   revenueToday: number;
 }
 
+export interface ChargerTelemetry {
+  chargerId: string;
+  connectorState: ChargerConnectorState;
+  currentPowerKw: number;
+  observedAt: string;
+  vehicleConnected: boolean;
+  faultCode?: string;
+}
+
+export interface ChargerCommand {
+  id: string;
+  providerCommandId?: string;
+  idempotencyKey: string;
+  correlationId: string;
+  chargerId: string;
+  sessionId?: string;
+  type: ChargerCommandType;
+  status: ChargerCommandStatus;
+  reason: string;
+  requestedBy: string;
+  requestedByProfile: Profile;
+  requestedAt: string;
+  acceptedAt?: string;
+  completedAt?: string;
+  telemetryObservedAt?: string;
+  failureCode?: "START_FAILED" | "PROVIDER_REJECTED" | "TELEMETRY_TIMEOUT";
+  failureReason?: string;
+}
+
 export interface Payment {
   status: "Aprovado" | "Pendente" | "Recusado";
   method: "Cartao" | "Pix";
@@ -161,6 +193,44 @@ export interface Session {
   consumedAmount: number;
   finalAmount?: number;
   payment: Payment;
+}
+
+export type SessionEventType =
+  | "PAYMENT_AUTHORIZED"
+  | "START_REQUESTED"
+  | "START_ACCEPTED"
+  | "ENERGY_CONFIRMED"
+  | "CHARGING"
+  | "START_FAILED"
+  | "COMMAND_EXPIRED"
+  | "STOP_REQUESTED"
+  | "STOP_ACCEPTED"
+  | "ENERGY_FINISHED"
+  | "PAYMENT_CAPTURED"
+  | "SETTLEMENT_PENDING";
+
+export interface SessionEvent {
+  id: string;
+  sessionId: string;
+  type: SessionEventType;
+  label: string;
+  at: string;
+  source: "PAYMENT" | "CHARGEGRID" | "GOODWE";
+  commandId?: string;
+  detail?: string;
+}
+
+export interface RequestChargerCommandInput {
+  chargerId: string;
+  type: ChargerCommandType;
+  reason: string;
+  idempotencyKey: string;
+}
+
+export interface RequestChargerCommandResult {
+  ok: boolean;
+  issues: string[];
+  command?: ChargerCommand;
 }
 
 export interface QueueEntry {
@@ -208,7 +278,10 @@ export interface AdminState {
   plantOnboardingDraft: PlantOnboardingDraft;
   locations: Location[];
   chargers: Charger[];
+  chargerTelemetry: ChargerTelemetry[];
+  chargerCommands: ChargerCommand[];
   sessions: Session[];
+  sessionEvents: SessionEvent[];
   queue: QueueEntry[];
   supportTickets: SupportTicket[];
   audit: AuditEntry[];

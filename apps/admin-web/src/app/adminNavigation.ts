@@ -63,7 +63,7 @@ export const ADMIN_DOMAINS: readonly AdminDomain[] = [
       { route: "sessions", label: "Sessões", capability: "operations:monitor" },
       { route: "support", label: "Chamados", capability: "operations:monitor" }
     ],
-    relatedRoutes: ["ticket"]
+    relatedRoutes: ["session", "ticket"]
   },
   {
     id: "energy",
