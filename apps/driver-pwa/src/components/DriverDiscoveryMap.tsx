@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { AppIcon } from "./AppIcon";
 
 export interface MapPlace {
@@ -44,16 +45,9 @@ interface GoogleDataLayer {
   remove(feature: GoogleDataFeature): void;
 }
 
-interface InfoWindowInstance {
-  setContent(content: Node): void;
-  open(options: { map: GoogleMapInstance; position: { lat: number; lng: number } }): void;
-  close(): void;
-}
-
 interface GoogleMapsApi {
   Map: new (element: HTMLElement, options: Record<string, unknown>) => GoogleMapInstance;
   LatLngBounds: new () => GoogleBounds;
-  InfoWindow: new () => InfoWindowInstance;
   Geocoder: new () => {
     geocode(request: { address: string; region?: string }, callback: (results: Array<{ geometry: { location: { lat(): number; lng(): number } } }> | null, status: string) => void): void;
   };
@@ -162,21 +156,6 @@ export async function geocodeMapAddress(address: string) {
   });
 }
 
-function infoContent(place: MapPlace) {
-  const content = document.createElement("article");
-  content.className = "map-info-window";
-  const title = document.createElement("strong");
-  title.textContent = place.name;
-  const availability = document.createElement("span");
-  availability.textContent = `${place.availableChargers} de ${place.chargerCount} disponíveis`;
-  const power = document.createElement("small");
-  power.textContent = `Potência de até ${place.nominalPowerKw} kW`;
-  const tariff = document.createElement("small");
-  tariff.textContent = `A partir de ${place.tariff.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/kWh`;
-  content.append(title, availability, power, tariff);
-  return content;
-}
-
 function dataMarkerIcon(maps: GoogleMapsApi, label: string, color: string, active = false) {
   const size = active ? 48 : 42;
   const safeLabel = label.replace(/[^0-9•]/g, "");
@@ -212,6 +191,7 @@ export function DriverDiscoveryMap({ places, selectedPlaceId, userPosition, focu
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [errorCode, setErrorCode] = useState("");
   const [attempt, setAttempt] = useState(0);
+  const [previewPlaceId, setPreviewPlaceId] = useState<string | null>(null);
 
   selectedPlaceIdRef.current = selectedPlaceId;
   onSelectPlaceRef.current = onSelectPlace;
@@ -222,7 +202,6 @@ export function DriverDiscoveryMap({ places, selectedPlaceId, userPosition, focu
     if (!element || places.length === 0) return;
     let cancelled = false;
     let providerFailed = false;
-    let infoWindow: InfoWindowInstance | undefined;
     let dataLayer: GoogleDataLayer | undefined;
     let dataClickListener: { remove(): void } | undefined;
     let tilesLoadedListener: { remove(): void } | undefined;
@@ -261,7 +240,6 @@ export function DriverDiscoveryMap({ places, selectedPlaceId, userPosition, focu
         gestureHandling: "greedy"
       });
       const bounds = new maps.LatLngBounds();
-      infoWindow = new maps.InfoWindow();
       dataLayer = map.data;
       runtime.current = { maps, map, dataLayer };
 
@@ -291,8 +269,11 @@ export function DriverDiscoveryMap({ places, selectedPlaceId, userPosition, focu
         if (!place) return;
         map.setCenter(place.position);
         map.setZoom(14);
-        infoWindow?.setContent(infoContent(place));
-        infoWindow?.open({ map, position: place.position });
+        if (selectedPlaceIdRef.current === place.id) {
+          setPreviewPlaceId(place.id);
+          return;
+        }
+        setPreviewPlaceId(null);
         onSelectPlaceRef.current(place.id);
       });
 
@@ -316,7 +297,6 @@ export function DriverDiscoveryMap({ places, selectedPlaceId, userPosition, focu
     return () => {
       cancelled = true;
       if (renderTimeoutId) window.clearTimeout(renderTimeoutId);
-      infoWindow?.close();
       failureObserver.disconnect();
       tilesLoadedListener?.remove();
       dataClickListener?.remove();
@@ -350,10 +330,23 @@ export function DriverDiscoveryMap({ places, selectedPlaceId, userPosition, focu
   }, [focusPosition]);
 
   const providerRejected = errorCode === "MAPS_PROVIDER_ERROR" || errorCode === "MAPS_AUTH_FAILED" || errorCode === "MAPS_KEY_MISSING";
+  const previewPlace = previewPlaceId === selectedPlaceId ? places.find((place) => place.id === previewPlaceId) : undefined;
+  const selectedPlace = places.find((place) => place.id === selectedPlaceId);
 
   return <div className="discovery-map" data-testid="driver-discovery-map" data-map-error={errorCode || undefined}>
     <div ref={mapElement} className={`google-discovery-map ${status === "ready" ? "is-loaded" : ""}`} />
     {status === "loading" ? <div className="map-loading-state"><span className="spinner" /><strong>Carregando Google Maps…</strong></div> : null}
     {status === "error" ? <div className="map-error-state" role="alert"><AppIcon name="map" size={34} /><strong>Não foi possível carregar o mapa</strong><p>{providerRejected ? "O Google Maps está temporariamente indisponível. As plantas continuam disponíveis na aba Sessão." : "Verifique sua conexão e tente novamente."}</p><button type="button" onClick={() => setAttempt((current) => current + 1)}>Tentar novamente</button></div> : null}
+    {status === "ready" && selectedPlace && !previewPlace ? <p className="map-selection-hint" role="status">Toque novamente no pino para ver as informações</p> : null}
+    {status === "ready" && previewPlace ? <article className="map-place-preview" aria-live="polite">
+      <button type="button" className="map-preview-close" aria-label="Fechar informações da planta" onClick={() => setPreviewPlaceId(null)}>×</button>
+      <div className="map-preview-heading"><span><AppIcon name="plug" size={20} /></span><div><small>Charge Grid selecionada</small><strong>{previewPlace.name}</strong></div></div>
+      <div className="map-preview-metrics">
+        <div><span>Potência</span><strong>até {previewPlace.nominalPowerKw} kW</strong></div>
+        <div><span>Disponibilidade</span><strong className={previewPlace.availableChargers > 0 ? "is-available" : "is-unavailable"}>{previewPlace.availableChargers} de {previewPlace.chargerCount}</strong></div>
+        <div><span>Tarifa</span><strong>{previewPlace.tariff.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}/kWh</strong></div>
+      </div>
+      <Link className="map-preview-link" to={`/place/${previewPlace.id}`}>Ver esta planta <AppIcon name="chevron-right" size={18} /></Link>
+    </article> : null}
   </div>;
 }

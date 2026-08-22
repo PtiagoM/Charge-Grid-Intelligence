@@ -8,7 +8,7 @@ Este é o primeiro documento que uma pessoa ou IA sem contexto deve ler. Ele des
 
 ## Registro da entrega atual — 21 de agosto de 2026
 
-- `Explorar` combina prévia do mapa, abertura imersiva por busca e recomendações explícitas de locais.
+- `Explorar` combina prévia do mapa, abertura imersiva por busca e recomendações explícitas de locais. No mapa, o primeiro toque aproxima o pino e o segundo abre o card com dados essenciais e acesso à planta.
 - O catálogo compacto permanece em `Sessão` quando não há recarga ativa.
 - O contexto de sessão fica ativo na navegação do motorista durante detalhe, QR, fila, checkout e comprovante.
 - Estados de sessão e notificações foram humanizados e verificados em navegador, lint, testes e build.
@@ -43,7 +43,7 @@ Estas decisões foram dadas depois dos documentos v1.0 e, portanto, têm preced�
 13. O limite financeiro autorizado é um teto de recarga: ao atingi-lo, a sessão encerra a energia sem ultrapassar o valor e informa o motorista. Durante a recarga, o principal indicador é uma barra verde de consumo do limite, saldo e tempo estimado restante.
 14. `Explorar` preserva uma prévia do mapa antes das recomendações determinísticas e explicáveis. Acionar a barra de busca abre o mapa imersivo; a ordenação das recomendações prioriza disponibilidade comercial, fila/espera, distância, potência, tarifa e condição energética favorável e não deve alegar uso de IA.
 15. Sem sessão ativa, a aba `Sessão` é a origem do catálogo completo de plantas, busca e filtros compactos. Com sessão ativa, preserva o contexto comercial corrente.
-16. O mapa de descoberta usa a rota imersiva `/map`: ocupa a área visual completa, mantém somente busca, navegação de retorno e previews essenciais dos pinos. Enter geocodifica e centraliza o local pesquisado.
+16. O mapa de descoberta usa a rota imersiva `/map`: ocupa a área visual completa e mantém somente busca, retorno e previews essenciais. O primeiro toque seleciona e aproxima; o segundo toque no mesmo pino abre potência, disponibilidade, tarifa e CTA para a planta. Enter geocodifica e centraliza o local pesquisado.
 17. Estados de sessão nunca exibem enums ou códigos técnicos ao motorista. Tolerância de ociosidade usa contador visual e muda para urgência quando encerrada.
 18. A central mostra por padrão notificações dos últimos sete dias e oferece acesso explícito às anteriores.
 19. Em todos os destinos autenticados que pertencem ao fluxo comercial (detalhe, QR, fila, checkout, sessão e comprovante), a navegação inferior permanece visível e marca `Sessão` como ativa.

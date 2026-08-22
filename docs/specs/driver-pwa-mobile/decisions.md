@@ -109,3 +109,9 @@
 - **Decisão:** a linguagem de ilustrações próprias fica documentada somente como roadmap até que os assets sejam fornecidos separadamente.
 - **Impacto:** nenhum asset ilustrado adicional é gerado nem incorporado à PWA nesta etapa.
 
+## DPR-019 — Seleção do pino em duas etapas
+
+- **Data:** 2026-08-21
+- **Decisão:** o primeiro toque em um pino seleciona, centraliza e aproxima a região; o segundo toque no mesmo pino abre um card compacto do ChargeGrid com potência, disponibilidade, tarifa e CTA para o detalhe da planta.
+- **Impacto:** o preview deixa de depender do balão nativo do Google Maps e passa a ter comportamento, acessibilidade e navegação controlados pela PWA.
+

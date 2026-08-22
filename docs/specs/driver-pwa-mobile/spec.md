@@ -62,8 +62,9 @@ Entregar uma PWA exclusivamente mobile para recarga de veículos elétricos, com
 - O canvas só é revelado após `tilesloaded`, evitando o relance de um mapa posteriormente rejeitado.
 - Falha de chave, cota, billing, referrer ou rede mantém a lista utilizável e apresenta erro estável.
 - Data Layer e ícones vetoriais representam estabelecimentos com disponibilidade.
-- O preview do pino contém somente nome, disponibilidade, potência nominal e tarifa.
-- Selecionar marcador atualiza estilo, centralização, zoom e preview essencial sem recriar o mapa inteiro. Abrir uma planta preserva-a como contexto da aba Sessão até que outra seja escolhida.
+- No primeiro toque, o pino é selecionado e o mapa centraliza e aproxima a região. Um segundo toque no mesmo pino abre o preview compacto.
+- O preview contém somente nome, disponibilidade, potência nominal, tarifa e a ação `Ver esta planta`, que leva ao detalhe comercial.
+- Selecionar marcador atualiza estilo, centralização e zoom sem recriar o mapa inteiro. Abrir uma planta preserva-a como contexto da aba Sessão até que outra seja escolhida.
 - O tema visual da PWA também atualiza o estilo cartográfico do Google Maps sem recriar a instância, preservando marcadores, seleção e enquadramento.
 - A página da planta permite escolher explicitamente um dos carregadores. A fila é compartilhada pela planta, não por vaga; quando chamado, o app direciona para uma vaga disponível.
 - Para motorista autenticado, detalhe da planta, QR, fila, checkout, sessão e comprovante mantêm a navegação inferior e a aba `Sessão` ativa.

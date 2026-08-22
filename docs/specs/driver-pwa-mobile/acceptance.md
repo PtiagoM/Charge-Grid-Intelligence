@@ -21,7 +21,7 @@
 - [x] O mapa possui rota imersiva e não mistura filtros ou catálogo no canvas.
 - [x] `Explorar` mostra a prévia do mapa antes das recomendações e abre o mapa imersivo ao tocar na busca.
 - [x] Pressionar Enter na busca geocodifica e centraliza o local pesquisado.
-- [x] Preview de pino mostra nome, disponibilidade, potência nominal e tarifa.
+- [x] Primeiro toque no pino aproxima a região; o segundo abre preview com nome, disponibilidade, potência, tarifa e CTA para a planta.
 - [x] Seis plantas, cards, busca, bounds, geolocalização e marcadores são sincronizados.
 - [x] Seleção de marcador não recria a instância do mapa.
 - [x] Canvas só aparece após tiles carregados.
