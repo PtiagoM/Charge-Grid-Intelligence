@@ -45,9 +45,9 @@ export const ADMIN_DOMAINS: readonly AdminDomain[] = [
       { route: "establishments", label: "Estabelecimentos", capability: "network:portfolio" },
       { route: "locations", label: "Pontos de recarga", capability: "network:assets" },
       { route: "chargers", label: "Carregadores", capability: "network:assets" },
-      { route: "installations", label: "Implantações", capability: "network:onboard" }
+      { route: "plants", label: "Plantas e onboarding", capability: "network:onboard" }
     ],
-    relatedRoutes: ["client", "new-client", "establishment", "location", "new-location", "charger"]
+    relatedRoutes: ["client", "new-client", "establishment", "location", "new-location", "charger", "plant", "plant-onboarding", "installations"]
   },
   {
     id: "operations",

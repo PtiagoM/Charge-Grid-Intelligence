@@ -6,6 +6,7 @@ import type { Charger, Client, Session } from "../../domain/admin";
 import { Badge, DataTable, KpiCard, SectionHeader, money, number } from "../../components/AdminUi";
 import { WorldMap } from "../map/WorldMap";
 import { assets } from "../../constants/assets";
+import { PlantDetailPage, PlantOnboardingPage, PlantsPortfolioPage } from "../plants/PlantPages";
 
 const establishmentTabs = new Set(["overview", "locations", "location", "charger", "chargers", "sessions", "operations", "energy", "pricing", "finance", "invoices", "contract", "support", "ticket", "documents", "ai", "reports", "settings"]);
 
@@ -272,6 +273,9 @@ export function AdminDashboardPage() {
       case "client": return <ClientDetail client={state.clients.find((item) => item.id === query.get("client"))} />;
       case "establishments": return <EstablishmentsPage />;
       case "establishment": return <EstablishmentDetail establishmentId={establishmentId} />;
+      case "plants": return <PlantsPortfolioPage />;
+      case "plant": return <PlantDetailPage plantId={query.get("plant") ?? ""} />;
+      case "plant-onboarding": return <PlantOnboardingPage />;
       case "locations": return <LocationsPage establishmentId={establishmentId || undefined} />;
       case "new-location": return <NewLocationPage establishmentId={establishmentId} />;
       case "location": return <LocationDetail establishmentId={establishmentId} locationId={locationId} canManage={account.profile === "GOODWE"} />;

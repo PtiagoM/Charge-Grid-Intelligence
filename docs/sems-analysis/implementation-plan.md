@@ -1,6 +1,6 @@
 # Plano de implementação do Dashboard Admin
 
-**Status:** execução iniciada. M0 está consolidado e M1 possui baseline de shell, seis domínios, navegação contextual, escopo e capability map; autorização backend, tema claro e papéis adicionais permanecem pendentes. Os protótipos visuais existentes de M2–M8 não significam que esses marcos foram concluídos. A revisão crítica vigente está em `docs/admin-dashboard/CRITICAL_REVIEW.md`.
+**Status:** execução iniciada. M0 está consolidado; M1 possui baseline de shell, navegação, escopo e capabilities; M2 possui portfólio, detalhe e onboarding funcional sobre catálogo GoodWe mockado. Autorização backend, provider real, tema claro e papéis adicionais permanecem pendentes. Os protótipos visuais existentes de M3–M8 não significam que esses marcos foram concluídos. A revisão crítica vigente está em `docs/admin-dashboard/CRITICAL_REVIEW.md`.
 
 **Estimativas:** dias úteis de desenvolvimento e validação para uma pessoa experiente, usadas apenas para ordenar e dimensionar. Integrações não homologadas podem ampliar os intervalos.
 
@@ -33,6 +33,8 @@
 - **Estimativa:** 4–6 dias.
 
 ## M2 — Planta comercial e onboarding
+
+**Estado atual:** baseline local concluída. O catálogo técnico é somente leitura; o vínculo comercial persiste rascunho, valida duplicidade/autorização/dados/EV e projeta ponto e carregadores sem recadastro. Provider GoodWe real, SSO e autorização na API seguem pendentes.
 
 - **Objetivo:** vincular planta GoodWe existente e publicar perfil comercial mínimo.
 - **Páginas/fluxos:** portfólio, detalhe e onboarding comercial.

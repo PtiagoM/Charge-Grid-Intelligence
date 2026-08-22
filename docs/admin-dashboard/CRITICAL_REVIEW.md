@@ -145,7 +145,7 @@ O assistente apresenta textos fixos e previsões sem fonte, confiança ou fallba
 | --- | --- | --- |
 | M0 — fundação | árvore, fixtures e serviço de estado consolidados; contratos reais ainda dependem da API | preservar uma única arquitetura e substituir mocks por repositories sem reabrir a fronteira PWA |
 | M1 — shell/RBAC | seis domínios primários, navegação contextual, escopo em URL e capability map tipado | conectar capacidades a autorização de ação/API; tema claro e papéis adicionais permanecem pendentes |
-| M2 — planta/onboarding | formulários independentes e recadastro técnico | reconstruir como vínculo de planta GoodWe |
+| M2 — planta/onboarding | portfólio, detalhe somente leitura e wizard de vínculo implementados sobre catálogo GoodWe mockado | homologar provider/SSO reais e mover publicação/autorização para a API |
 | M3 — carregadores/sessões | listas superficiais, sem comandos/timeline | primeira vertical slice funcional |
 | M4 — fila | tabela demonstrativa | integrar ao contexto de planta/sessão |
 | M5 — energia | KPIs visualmente coerentes, mas parcialmente fixos | usar snapshot tipado, frescor, limiares e impacto operacional |
@@ -154,7 +154,7 @@ O assistente apresenta textos fixos e previsões sem fonte, confiança ou fallba
 | M8 — acesso/relatórios | telas cenográficas | implementar por capacidade e tarefas reais |
 | M9 — validação | boa cobertura de demo em viewport amplo | matriz por papel, estado e 1280/1440/desktop amplo |
 
-O estado atual deve ser tratado como **fundação M0 consolidada e baseline de interface M1 concluída, ainda sem autorização backend**, com protótipos visuais de M2–M8. Esses protótipos não significam conclusão funcional dos marcos.
+O estado atual deve ser tratado como **fundação M0 consolidada, baseline de interface M1 concluída e vertical M2 funcional sobre provider local**, ainda sem autorização backend. As telas de M3–M8 continuam protótipos e não significam conclusão funcional desses marcos.
 
 ## Fundação corrigida nesta etapa
 
@@ -177,8 +177,8 @@ O estado atual deve ser tratado como **fundação M0 consolidada e baseline de i
 ## Ordem da reconstrução funcional
 
 1. **M1 hardening:** aplicar o capability map também a ações e respostas da API quando os endpoints entrarem; não criar controles locais fictícios.
-2. **M2 — próximo incremento funcional:** portfólio e onboarding de planta vinculada.
-3. **M3:** carregadores, detalhe, comandos e sessões/timeline.
+2. **M2 concluído no mock:** portfólio, detalhe, pré-condições, rascunho retomável e publicação derivada da planta GoodWe; integração real permanece pendente.
+3. **M3 — próximo incremento funcional:** carregadores, detalhe, comandos e sessões/timeline.
 4. **M4/M5:** fila e energia dentro do contexto da planta.
 5. **M6:** tarifa, pagamento, conciliação e financeiro parametrizados.
 6. **M7/M8:** incidentes, recomendações, acesso, auditoria e relatórios.
