@@ -4,6 +4,7 @@ dist/
 build/
 coverage/
 *.tsbuildinfo
+.vercel/
 
 # Environment and credentials
 .env

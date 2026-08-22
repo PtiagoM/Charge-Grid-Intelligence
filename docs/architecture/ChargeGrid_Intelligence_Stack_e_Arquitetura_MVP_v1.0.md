@@ -7,9 +7,11 @@ ChargeGrid Intelligence v1.0
 
 **Baseline técnica para o Spec-Driven Development**
 
+> **Atualização de implementação — 21/08/2026:** leia primeiro `docs/CURRENT_STATE.md`. A Driver PWA, Google Maps real, Supabase Auth e Stripe em modo teste foram implementados depois desta baseline. Esses incrementos prevalecem sobre referências abaixo a pagamento mock, gateway futuro, tema mobile escuro ou PWA apenas demonstrativa.
+
 **Objetivo:** congelar uma arquitetura simples, colaborativa e suficiente para demonstrar o produto de ponta a ponta, sem introduzir complexidade de produção que não agrega valor ao MVP.
 
-| **Status**         | ARQUITETURA CONGELADA PARA O MVP                           |
+| **Status**         | BASELINE MVP COM EMENDAS EM `docs/CURRENT_STATE.md`        |
 |--------------------|------------------------------------------------------------|
 | **Versão**         | 1.0                                                        |
 | **Data**           | 19 de agosto de 2026                                       |
@@ -32,7 +34,7 @@ ChargeGrid Intelligence v1.0
 - Admin Web e Driver PWA são aplicações React separadas para permitir trabalho paralelo e UXs independentes.
 - Supabase é o BaaS principal: PostgreSQL, Auth, Row Level Security e Realtime opcional.
 - ChargeGrid API é um backend Node.js + TypeScript + Express, responsável por todas as regras críticas de negócio.
-- GoodWe e pagamento usam adapters simples dentro da API; mocks são usados no MVP.
+- GoodWe usa adapter com mock substituível; pagamentos usam Stripe PaymentIntents real em modo teste dentro da API.
 - A IA é um serviço externo em Python/FastAPI e nunca bloqueia a operação principal.
 - Polling simples é o padrão para atualizações; Realtime só entra quando reduzir complexidade de forma clara.
 - Nenhum microserviço, Redis, fila distribuída, Kubernetes, Kafka ou arquitetura event-driven é necessário na v1 do MVP.
@@ -97,7 +99,7 @@ Figura 1 - Arquitetura de software congelada para o ChargeGrid MVP.
 ├── REST ──&gt; ChargeGrid API ──&gt; Supabase<br />
 Driver PWA ────────┘ │<br />
 ├── MockGoodWeProvider / futura OpenAPI<br />
-├── MockPaymentProvider / gateway futuro<br />
+├── StripePaymentProvider / modo teste<br />
 └── AI API (Python/FastAPI)</th>
 </tr>
 </thead>
@@ -210,7 +212,7 @@ O único pacote compartilhado inicial deve conter somente contratos que realment
 
 ## 5.2 Design System
 
-A identidade visual oficial é a linguagem escura SEMS+/GoodWe homologada no Admin Web e descrita em `docs/design-system/`. O Design System v2, o guia de consistência visual, a especificação mobile e o catálogo de assets são as fontes de verdade para cores, tipografia, spacing, componentes, ícones, responsividade e acessibilidade. Admin e PWA compartilham tokens e assinatura visual, mas mantêm componentes e densidades próprios.
+A identidade visual parte do SEMS+/GoodWe. O Admin mantém a linguagem grafite homologada; a Driver PWA usa tema claro e predominância branca por padrão, com escuro opcional. Ambos compartilham marca, tokens semânticos e assets, mas mantêm componentes e densidades próprios.
 
 # 6. Frontends
 
@@ -225,7 +227,7 @@ A identidade visual oficial é a linguagem escura SEMS+/GoodWe homologada no Adm
 
 - Aplicação separada, mobile-first, acessível por URL/QR sem instalação obrigatória.
 - Jornada visitante e jornada cadastrada convivem no mesmo app.
-- Mapa, fila, sessão, limite financeiro, pagamento demonstrativo, notificações e histórico.
+- Google Maps real, fila, sessão, limite financeiro, Stripe sandbox, notificações e histórico.
 - PWA pode utilizar manifest/service worker para instalação opcional; detalhes ficam na spec da aplicação.
 
 ## 6.3 O que os dois frontends compartilham
@@ -345,7 +347,7 @@ A identidade visual oficial é a linguagem escura SEMS+/GoodWe homologada no Adm
 
 ## 9.1 Auth e papéis
 
-- Supabase Auth é a única fonte de identidade do MVP.
+- Supabase Auth é a fonte remota de identidade. O fallback local da PWA existe somente para desenvolvimento sem credenciais.
 - profiles.id referencia auth.users.id.
 - Papéis de negócio: GOODWE_ADMIN, ESTABLISHMENT_ADMIN, ESTABLISHMENT_OPERATOR e DRIVER.
 - Visitante pode usar identidade anônima/temporária ou token de sessão conforme a spec da PWA.
@@ -413,17 +415,17 @@ A identidade visual oficial é a linguagem escura SEMS+/GoodWe homologada no Adm
 <thead>
 <tr class="header">
 <th>PaymentProvider<br />
-├── MockPaymentProvider # MVP<br />
-└── GatewayRealProvider # futuro</th>
+├── StripePaymentProvider # ativo em modo teste<br />
+└── MockPaymentProvider # testes unitários/isolados</th>
 </tr>
 </thead>
 <tbody>
 </tbody>
 </table>
 
-- O MVP simula pré-autorização, captura, Pix, devolução e estados de erro suficientes para demonstrar o produto.
-- Nenhum gateway real é requisito de arquitetura v1.
-- Regras comerciais de limite, settlement e comissão continuam no ChargeGrid, não dentro do mock.
+- O MVP chama a Stripe em modo teste para autorização, captura, Pix, devolução e webhook assinado.
+- Live é bloqueado até homologação financeira, fiscal e operacional.
+- Regras comerciais de limite, settlement e comissão continuam no ChargeGrid, não no provider.
 
 ## 10.3 AI API
 
@@ -456,7 +458,7 @@ Em vez de infraestrutura de observabilidade avançada, eventos importantes devem
 | **Responsável principal** | **Área**        | **Entregas**                                                                                          |
 |---------------------------|-----------------|-------------------------------------------------------------------------------------------------------|
 | Dev 1                     | Admin Web       | GoodWe, estabelecimento, dashboards, configurações e relatórios.                                      |
-| Dev 2                     | Driver PWA      | QR, mapa, fila, sessão, pagamento demonstrativo, histórico e UX mobile.                               |
+| Dev 2                     | Driver PWA      | QR, mapa, fila, sessão, Stripe sandbox, histórico e UX mobile.                                        |
 | Dev 3                     | Core API        | Sessões, estados, fila, ociosidade, autorização, regras e persistência central.                       |
 | Dev 4                     | Integrações/API | GoodWe mock/adapter, pagamento, tarifação, demanda, relatórios e integração com IA.                   |
 | Responsável IA            | AI API          | Dataset, treinamento, avaliação, artefato do modelo e endpoint de inferência combinado com o backend. |
@@ -507,7 +509,7 @@ Em vez de infraestrutura de observabilidade avançada, eventos importantes devem
 | REST como contrato principal              | Rotas, DTOs, paginação e códigos HTTP.                     |
 | Polling como baseline                     | Intervalo específico por tela; adoção pontual de Realtime. |
 | GoodWe Adapter com mock no MVP            | Interface exata, payload interno e cenários do simulador.  |
-| Payment Adapter com mock                  | Gateway futuro e detalhes de idempotência produtiva.       |
+| Stripe Payment Adapter em modo teste      | Live, conciliação persistida e idempotência produtiva.      |
 | AI externa em Python/FastAPI              | Endpoints, features, modelo, timeout e fallback preciso.   |
 | Monorepo npm workspaces                   | Scripts, lint, CI e convenções de branch.                  |
 | Identidade visual GoodWe                  | Design System detalhado em documento separado.             |

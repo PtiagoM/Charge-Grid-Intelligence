@@ -1,11 +1,13 @@
 # ChargeGrid Intelligence — Cenário Compartilhado de Demonstração v1.0
 
-**Status:** fonte de verdade de demonstração para Admin Web e Driver PWA  
+**Status:** fonte das fixtures D0–D15 para Admin/testes e referência de domínio para a Driver PWA  
 **Contrato relacionado:** Contratos e Enums Compartilhados v1.0  
 **Data-base do replay:** 19 de agosto de 2026, `America/Sao_Paulo` (`-03:00`)  
 **Natureza:** dados e eventos simulados; não são operação, cobrança ou telemetria produtiva.
 
-> **Regra central:** Admin Web e Driver PWA contam a mesma história a partir deste cenário. Se o Admin mostra uma sessão, um carregador, uma fila ou um valor, a PWA deve refletir o mesmo fato dentro do seu escopo de visibilidade. O Mock GoodWe e o Mock Payment Adapter são apenas fontes de demonstração; o comportamento preserva as regras do produto, sem alegar integração real.
+> **Aplicabilidade atual — 21/08/2026:** este documento continua sendo a fonte das fixtures D0–D15 do Admin e dos testes compartilhados. A Driver PWA possui um catálogo comercial próprio com seis plantas e usa Stripe real em modo teste. A natureza de fixture deve permanecer em documentação/código e não deve ser exibida como aviso na interface do usuário.
+
+> **Regra central histórica:** o cenário preserva coerência de domínio entre Admin, contratos e testes. Ele não obriga o catálogo atual da Driver PWA a reproduzir cada registro D0. O Mock GoodWe continua sendo a fonte técnica de referência; pagamentos da PWA usam Stripe sandbox.
 
 ## 1. Objetivo, limites e modo de uso
 
@@ -14,7 +16,7 @@ Este documento define uma única fotografia inicial (`D0`) e uma biblioteca de t
 - Os dados devem ser coerentes entre si, mas todos os IDs, nomes, endereços e transações são fictícios.
 - A telemetria de planta e carregadores é **simulada no protótipo**, ainda que sua estrutura siga o domínio documentado da GoodWe.
 - `StartCharge` e `StopCharge` são as únicas intenções técnicas demonstráveis como capacidades GoodWe documentadas; no cenário, os resultados e delays são simulados.
-- Pagamento, fila, tarifação, ociosidade, comissão, liquidação e disponibilidade comercial são capacidades ChargeGrid simuladas no MVP.
+- As tabelas deste cenário para pagamento, fila, tarifação, ociosidade, comissão, liquidação e disponibilidade são fixtures de referência. A Driver PWA chama Stripe em modo teste; fila, tarifa e sessão ainda usam estado local.
 - Nenhum cenário representa `PauseCharge`, `ResumeCharge`, ajuste contínuo de potência ou `SetPowerLimit` como recurso existente da GoodWe.
 
 ## 2. Estabelecimento principal
@@ -519,7 +521,8 @@ O futuro controlador recebe comandos de demonstração, aplica a transição val
 |---|---|---|
 | Estrutura de planta, carregador, telemetria e comando Start/Stop | domínio GoodWe documentado, com execução ainda a validar | mock compatível e rótulo de simulação quando não conectado |
 | `vehConnectStatus`, potência, energia e duração | referência de telemetria GoodWe | valores sintéticos coerentes no demo |
-| Pagamento, Pix, pré-autorização, captura, fila, tarifa, comissão e ociosidade | produto ChargeGrid simulado | interface completa, sem alegar gateway produtivo |
+| Pagamento, Pix, pré-autorização, captura | Stripe sandbox na PWA; fixture D0 no Admin/testes | integração de teste, sem alegar gateway produtivo/live |
+| Fila, tarifa, comissão e ociosidade | fixtures e estado local | interface completa; persistência produtiva ainda ausente |
 | `SUSPENDED_BY_DEMAND` | estado comercial ChargeGrid | mostra StopCharge assíncrono, não pausa nativa |
 | IA/previsão | futura/não validada | recomendação opcional, fallback determinístico |
 | Ajuste contínuo de potência, OCPP, multi-fabricante e split real | futuro/não validado | não demonstrar como capacidade atual |
@@ -575,4 +578,3 @@ O futuro controlador recebe comandos de demonstração, aplica a transição val
 | D13 | pendência | pagamento não confirmado não vira receita final |
 | D14 | Pix | devolução de saldo não usado |
 | D15 | fechado/online | técnica ≠ disponibilidade comercial |
-

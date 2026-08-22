@@ -6,6 +6,8 @@
 
 *Definição funcional e de negócio para uma operação comercial de recarga integrada ao ecossistema GoodWe*
 
+> **Atualização de implementação — 21/08/2026:** `docs/CURRENT_STATE.md` registra a realidade atual e prevalece em conflitos. O produto agora possui Driver PWA mobile com tema claro, Google Maps real, Supabase Auth e Stripe real em modo teste. A integração GoodWe, persistência comercial completa e cobrança live continuam pendentes.
+
 - **Status:** Baseline funcional aprovada para especificação
 - **Versão:** 1.0
 - **Data:** 19 de agosto de 2026
@@ -36,6 +38,8 @@
 | **Selo**              | **Significado**                                                                  | **Tratamento no v1.0**                                                                                       |
 |-----------------------|----------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------|
 | REAL / DOCUMENTADO    | Capacidade observada no ecossistema GoodWe ou descrita na OpenAPI de referência. | Pode orientar a arquitetura; o uso real ainda depende de credenciais, permissões e validação no equipamento. |
+| REAL EM SANDBOX       | Integração externa verdadeira executada em ambiente de teste do provedor.        | Pode validar protocolo e jornada, mas não representa operação live, fiscal ou produtiva.                     |
+| IMPLEMENTAÇÃO LOCAL   | Fluxo executável no app com estado/fixtures locais e sem persistência produtiva.  | Valida UX e regra; não deve ser apresentado como backend operacional completo.                               |
 | SIMULADO NO PROTÓTIPO | Comportamento reproduzido com dados, estados e fluxos sintéticos coerentes.      | Deve ser apresentado como demonstração, sem alegar conexão operacional com a nuvem ou o HCA G2.              |
 | FUTURO / NÃO VALIDADO | Capacidade desejada de produto, sem suporte confirmado nas fontes disponíveis.   | Permanece no roadmap e não pode ser atribuída à OpenAPI atual.                                               |
 
@@ -224,7 +228,8 @@ No protótipo, o GoodWe Adapter aponta para uma Mock OpenAPI. Em produção, apo
 | StartCharge e StopCharge para EV Charger                           | REAL / DOCUMENTADO    | Ações documentadas; execução no HCA G2 específico ainda requer validação e resposta assíncrona.  |
 | Campos de estado, potência, energia e duração de carga             | REAL / DOCUMENTADO    | Podem estruturar o mock; disponibilidade por modelo/planta deve ser validada.                    |
 | Mock OpenAPI e dados de cenário                                    | SIMULADO NO PROTÓTIPO | Valores e eventos são sintéticos; contrato e nomenclatura devem seguir a referência.             |
-| Pagamentos, tarifa, fila, ociosidade e comissão                    | SIMULADO NO PROTÓTIPO | São capacidades do ChargeGrid, não da OpenAPI GoodWe.                                            |
+| Stripe PaymentIntents, Payment Element, captura e reembolso em teste | REAL EM SANDBOX       | Integração externa real em modo teste; não equivale a cobrança live ou operação fiscal produtiva. |
+| Tarifa, fila, ociosidade e comissão                                | IMPLEMENTAÇÃO LOCAL   | Jornadas e regras locais; persistência e conciliação produtivas ainda não existem.                |
 | SetPowerLimit, PauseCharge, ResumeCharge ou balanceamento fino     | FUTURO / NÃO VALIDADO | Não atribuir à OpenAPI atual; demonstrar separadamente apenas como conceito de produto/hardware. |
 | OCPP no HCA G2 de referência                                       | FUTURO / NÃO VALIDADO | Não assumir suporte. Interoperabilidade multi-fabricante fica fora da v1.                        |
 | Operação financeira real e split                                   | FUTURO / NÃO VALIDADO | Depende de gateway, contratos, fiscalidade, risco e homologação.                                 |
@@ -259,7 +264,7 @@ A tarifa ao motorista é o preço final do serviço definido pelo estabeleciment
 
 - **GoodWe / ChargeGrid:** fornece ecossistema tecnológico, plataforma, integrações, inteligência e visão agregada
 
-- **Gateway:** garante e liquida o pagamento segundo suas capacidades; não é escolhido neste documento
+- **Gateway:** Stripe é o provider escolhido para o MVP em modo teste; produção exige homologação própria
 
 - **Integrador:** implanta e apoia o ciclo técnico, sem interface ChargeGrid própria na v1
 

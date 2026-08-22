@@ -1,6 +1,6 @@
 interface StatusChipProps {
   label: string;
-  tone: "success" | "warning" | "danger" | "neutral";
+  tone: "success" | "info" | "warning" | "danger" | "neutral";
 }
 
 export function StatusChip({ label, tone }: StatusChipProps) {

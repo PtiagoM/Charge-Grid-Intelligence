@@ -1,37 +1,32 @@
 # Especificações do ChargeGrid
 
-Toda feature começa com uma pasta própria baseada em `_template`. A spec detalha a implementação sem alterar decisões congeladas de Produto, Arquitetura ou Contratos.
+Leia primeiro `docs/CURRENT_STATE.md`. Uma spec descreve comportamento implementável e não pode reabrir silenciosamente uma decisão posterior de produto.
 
-## Fluxo mínimo
+## Specs atuais
 
-1. Copiar `_template` para `docs/specs/<nome-da-feature>`.
-2. Preencher `spec.md`, `acceptance.md` e `decisions.md` antes da implementação.
-3. Referenciar os documentos superiores e os dados Demo afetados.
-4. Manter critérios de aceite e decisões locais atualizados no PR.
+| Spec | Estado | Escopo |
+| --- | --- | --- |
+| [`driver-pwa-mobile`](driver-pwa-mobile/spec.md) | implementada, com dependências externas | visitante, motorista, mapa, Supabase Auth, Stripe sandbox, fila, sessão e notificações |
 
-## Candidatos iniciais
+## Fluxo para novas features
 
-1. `driver-qr-charge-flow`
-2. `driver-discovery-map`
-3. `admin-operational-dashboard`
-4. `session-lifecycle`
-5. `goodwe-mock-adapter`
-6. `payment-mock`
-7. `demand-control`
-8. `queue-management`
-9. `pricing`
-10. `ai-prediction-contract`
-11. `admin-network-map`
-12. `sems-commercial-plant-enablement`
+1. Copiar `_template` para `docs/specs/<feature>`.
+2. Preencher `spec.md`, `acceptance.md` e `decisions.md`.
+3. Referenciar `docs/CURRENT_STATE.md` e os contratos afetados.
+4. Distinguir implementação local, integração real em sandbox e dependência ainda ausente.
+5. Atualizar a spec no mesmo commit que muda o comportamento.
 
-## Ownership sugerido
+## Backlog documental atual
 
-| Responsável | Área principal |
-|---|---|
-| Dev 1 | Admin Web |
-| Dev 2 | Driver PWA |
-| Dev 3 | Core / Session Lifecycle |
-| Dev 4 | GoodWe / Payment / Demand / integrações |
-| Responsável IA | AI contract + treinamento/inferência |
+1. `supabase-commercial-persistence`
+2. `stripe-webhook-reconciliation`
+3. `goodwe-openapi-adapter`
+4. `remote-web-push`
+5. `admin-operational-api`
+6. `session-lifecycle-server`
+7. `queue-persistence`
+8. `pricing-persistence`
+9. `ai-prediction-contract`
 
-Ownership reduz conflitos, mas não cria exclusividade: contratos e revisão pertencem ao time.
+Os nomes antigos `payment-mock` e `driver-discovery-map` não representam mais o estado atual: o mapa e o gateway Stripe sandbox já fazem parte da spec consolidada da Driver PWA.
+
