@@ -9,6 +9,7 @@ export type AdminCapability =
   | "queue:manage"
   | "chargers:command"
   | "energy:monitor"
+  | "incidents:manage"
   | "commercial:read"
   | "commercial:self-service"
   | "commercial:manage"
@@ -27,6 +28,7 @@ const CAPABILITIES_BY_PROFILE = {
     "queue:manage",
     "chargers:command",
     "energy:monitor",
+    "incidents:manage",
     "commercial:read",
     "commercial:manage",
     "finance:manage",
@@ -41,6 +43,7 @@ const CAPABILITIES_BY_PROFILE = {
     "queue:manage",
     "chargers:command",
     "energy:monitor",
+    "incidents:manage",
     "commercial:read",
     "commercial:self-service",
     "intelligence:read"

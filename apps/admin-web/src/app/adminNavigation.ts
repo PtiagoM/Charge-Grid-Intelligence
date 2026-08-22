@@ -62,9 +62,10 @@ export const ADMIN_DOMAINS: readonly AdminDomain[] = [
       { route: "operations", label: "Central operacional", capability: "operations:monitor" },
       { route: "sessions", label: "Sessões", capability: "operations:monitor" },
       { route: "queue", label: "Fila", capability: "queue:manage" },
+      { route: "incidents", label: "Incidentes", capability: "incidents:manage" },
       { route: "support", label: "Chamados", capability: "operations:monitor" }
     ],
-    relatedRoutes: ["session", "ticket"]
+    relatedRoutes: ["session", "incident", "ticket"]
   },
   {
     id: "energy",
@@ -105,7 +106,7 @@ export const ADMIN_DOMAINS: readonly AdminDomain[] = [
       ESTABELECIMENTO: "Recomendações e relatórios para melhorar a operação do estabelecimento."
     },
     links: [
-      { route: "ai", label: "Assistente", capability: "intelligence:read" },
+      { route: "ai", label: "Recomendações", capability: "intelligence:read" },
       { route: "reports", label: "Relatórios", capability: "intelligence:read" },
       { route: "expansion", label: "Expansão", capability: "intelligence:portfolio" },
       { route: "audit", label: "Auditoria", capability: "governance:audit" }

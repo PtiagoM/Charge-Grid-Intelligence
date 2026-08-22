@@ -19,6 +19,9 @@ describe('normalizeAdminState', () => {
     delete stale.tariffPolicies;
     delete stale.paymentTransactions;
     delete stale.financialEvents;
+    delete stale.incidents;
+    delete stale.incidentEvents;
+    delete stale.recommendations;
     stale.sessions[0].chargerId = 'charger-that-does-not-exist';
 
     const result = normalizeAdminState(stale, fallback);
@@ -37,5 +40,8 @@ describe('normalizeAdminState', () => {
     expect(result.tariffPolicies).toEqual(fallback.tariffPolicies);
     expect(result.paymentTransactions).toEqual(fallback.paymentTransactions);
     expect(result.financialEvents).toEqual(fallback.financialEvents);
+    expect(result.incidents).toEqual(fallback.incidents);
+    expect(result.incidentEvents).toEqual(fallback.incidentEvents);
+    expect(result.recommendations).toEqual(fallback.recommendations);
   });
 });

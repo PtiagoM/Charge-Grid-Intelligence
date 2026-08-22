@@ -141,6 +141,16 @@ export function createInitialState(): AdminState {
       { id: "financial-authorized-1001", transactionId: "pay-CG-2026-1001", type: "AUTHORIZED", at: "2026-08-18T17:18:00-03:00", actor: "STRIPE_SANDBOX", amountCents: 10000 },
       { id: "financial-authorized-0998", transactionId: "pay-CG-2026-0998", type: "AUTHORIZED", at: "2026-08-18T14:08:00-03:00", actor: "STRIPE_SANDBOX", amountCents: 8000 },
       { id: "financial-captured-0998", transactionId: "pay-CG-2026-0998", type: "CAPTURED", at: "2026-08-18T15:13:00-03:00", actor: "STRIPE_SANDBOX", amountCents: 5517 }
+    ],
+    incidents: [
+      { id: "incident-goodwe-CG-MX-01-offline", establishmentId: "est-mercadox", locationId: "loc-mercadox-pinheiros", chargerId: "CG-MX-01", source: "GOODWE", sourceEventId: "CG-MX-01-2026-08-18T16:30:00-03:00", correlationKey: "charger-CG-MX-01-availability", category: "COMMUNICATION", severity: "HIGH", status: "OPEN", title: "CG-MX-01 offline", summary: "GoodWe reportou COMMUNICATION_LOST.", occurrences: 1, createdAt: "2026-08-18T16:30:00-03:00", updatedAt: "2026-08-18T16:30:00-03:00" }
+    ],
+    incidentEvents: [
+      { id: "incident-event-CG-MX-01-created", incidentId: "incident-goodwe-CG-MX-01-offline", sourceEventId: "CG-MX-01-2026-08-18T16:30:00-03:00", type: "CREATED", at: "2026-08-18T16:30:00-03:00", actor: "GOODWE", detail: "GoodWe reportou COMMUNICATION_LOST." }
+    ],
+    recommendations: [
+      { id: "rec-incident-goodwe-CG-MX-01-offline", establishmentId: "est-mercadox", incidentId: "incident-goodwe-CG-MX-01-offline", title: "Investigar equipamento afetado", rationale: "GoodWe reportou COMMUNICATION_LOST.", evidence: ["Origem GOODWE.", "1 ocorrencia correlacionada.", "Severidade HIGH."], expectedImpact: "Reduzir indisponibilidade e evitar novas sessoes afetadas.", proposedAction: "OPEN_CHARGER", targetId: "CG-MX-01", confidence: "HIGH", deterministic: true, status: "OPEN", createdAt: "2026-08-18T16:30:00-03:00" },
+      { id: "rec-energy-est-fiap", establishmentId: "est-fiap", title: "Monitorar margem antes da proxima admissao", rationale: "Margem reduzida; monitorar antes de ampliar a carga.", evidence: ["76,0 kW de 100,0 kW contratados.", "Limiar critico em 90%."], expectedImpact: "Preservar a operacao dentro da politica energetica.", proposedAction: "OPEN_ENERGY", targetId: "est-fiap", confidence: "MEDIUM", deterministic: true, status: "OPEN", createdAt: observedAt }
     ]
   };
 }

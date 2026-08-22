@@ -2993,6 +2993,143 @@ button[data-action="finish-session"]:hover {
   background: rgba(52, 168, 91, .07);
 }
 
+.incident-recommendation {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 14px;
+  align-items: center;
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid rgba(224, 163, 51, .32);
+  border-radius: 11px;
+  background: rgba(224, 163, 51, .06);
+}
+
+.incident-recommendation h3 {
+  margin: 0 0 5px;
+}
+
+.incident-recommendation p,
+.recommendation-card > p,
+.recommendation-evidence p,
+.recommendation-evidence li,
+.recommendation-result,
+.recommendation-card footer > span {
+  color: var(--muted);
+}
+
+.incident-workflow-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.incident-workflow-grid form,
+.recommendation-decision label {
+  display: grid;
+  gap: 10px;
+}
+
+.incident-workflow-grid label,
+.recommendation-decision label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.incident-workflow-grid input,
+.incident-workflow-grid textarea,
+.recommendation-decision textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(8, 9, 10, .58);
+  color: var(--text);
+  padding: 11px 12px;
+}
+
+.incident-workflow-grid textarea,
+.recommendation-decision textarea {
+  min-height: 82px;
+  resize: vertical;
+}
+
+.incident-workflow-grid button {
+  justify-self: start;
+}
+
+.recommendation-list {
+  display: grid;
+  gap: 16px;
+}
+
+.recommendation-card {
+  padding: 24px;
+}
+
+.recommendation-card > header,
+.recommendation-card > footer,
+.recommendation-card > header > div,
+.recommendation-decision > div {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.recommendation-card > header,
+.recommendation-card > footer {
+  justify-content: space-between;
+}
+
+.recommendation-card > header > div > span:not(.badge) {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.recommendation-card h2 {
+  margin: 20px 0 8px;
+}
+
+.recommendation-evidence {
+  display: grid;
+  grid-template-columns: 1.2fr .8fr;
+  gap: 14px;
+  margin: 18px 0;
+}
+
+.recommendation-evidence > div,
+.recommendation-result {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.recommendation-evidence h3 {
+  margin-top: 0;
+}
+
+.recommendation-decision {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: end;
+  margin: 18px 0;
+}
+
+.recommendation-card footer {
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.recommendation-toast {
+  position: sticky;
+  bottom: 20px;
+  z-index: 5;
+  box-shadow: var(--shadow-card);
+  background: var(--panel);
+}
+
 @media (max-width: 1200px) {
   .kpi-grid.four-cols,
   .simulator-grid,
@@ -5458,6 +5595,10 @@ body.layout-auth {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .recommendation-decision {
+    grid-template-columns: 1fr;
+  }
+
 }
 
 @media (max-width: 920px) {
@@ -5628,6 +5769,12 @@ body.layout-auth {
   .financial-editor .financial-reason,
   .financial-breakdown .financial-net {
     grid-column: auto;
+  }
+
+  .incident-recommendation,
+  .incident-workflow-grid,
+  .recommendation-evidence {
+    grid-template-columns: 1fr;
   }
 
   .operations-hero {

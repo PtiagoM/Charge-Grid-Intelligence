@@ -365,6 +365,64 @@ export interface FinancialActionResult {
   tariffPolicy?: TariffPolicy;
 }
 
+export interface Incident {
+  id: string;
+  establishmentId: string;
+  locationId?: string;
+  chargerId?: string;
+  sessionId?: string;
+  source: "GOODWE" | "CHARGEGRID" | "PAYMENT";
+  sourceEventId: string;
+  correlationKey: string;
+  category: "COMMUNICATION" | "CHARGER_FAULT" | "SESSION_START" | "PAYMENT" | "DEMAND";
+  severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  status: "OPEN" | "ACKNOWLEDGED" | "IN_PROGRESS" | "RESOLVED";
+  title: string;
+  summary: string;
+  occurrences: number;
+  createdAt: string;
+  updatedAt: string;
+  assignee?: string;
+  resolvedAt?: string;
+  resolution?: string;
+}
+
+export interface IncidentEvent {
+  id: string;
+  incidentId: string;
+  sourceEventId?: string;
+  type: "CREATED" | "CORRELATED" | "ACKNOWLEDGED" | "ASSIGNED" | "RESOLVED" | "REOPENED";
+  at: string;
+  actor: string;
+  detail?: string;
+}
+
+export interface Recommendation {
+  id: string;
+  establishmentId: string;
+  incidentId?: string;
+  title: string;
+  rationale: string;
+  evidence: string[];
+  expectedImpact: string;
+  proposedAction: "OPEN_CHARGER" | "OPEN_ENERGY" | "OPEN_FINANCE" | "MONITOR";
+  targetId?: string;
+  confidence: "LOW" | "MEDIUM" | "HIGH";
+  deterministic: boolean;
+  status: "OPEN" | "ACCEPTED" | "DEFERRED" | "REJECTED";
+  createdAt: string;
+  decidedAt?: string;
+  decidedBy?: string;
+  decisionReason?: string;
+}
+
+export interface IncidentActionResult {
+  ok: boolean;
+  issues: string[];
+  incident?: Incident;
+  recommendation?: Recommendation;
+}
+
 export interface AdminState {
   accounts: Account[];
   currentAccountId: string | null;
@@ -387,6 +445,9 @@ export interface AdminState {
   tariffPolicies: TariffPolicy[];
   paymentTransactions: PaymentTransaction[];
   financialEvents: FinancialEvent[];
+  incidents: Incident[];
+  incidentEvents: IncidentEvent[];
+  recommendations: Recommendation[];
 }
 
 export interface NewClientInput {

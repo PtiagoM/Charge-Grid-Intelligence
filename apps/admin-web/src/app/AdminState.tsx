@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { Account, AdminState, FinancialActionResult, NewChargerInput, NewClientInput, NewLocationInput, PlantOnboardingDraft, PlantOnboardingPublishResult, QueueActionResult, RequestChargerCommandInput, RequestChargerCommandResult, SupportTicket } from "../domain/admin";
+import type { Account, AdminState, FinancialActionResult, IncidentActionResult, NewChargerInput, NewClientInput, NewLocationInput, PlantOnboardingDraft, PlantOnboardingPublishResult, QueueActionResult, Recommendation, RequestChargerCommandInput, RequestChargerCommandResult, SupportTicket } from "../domain/admin";
 import { createInitialState } from "../fixtures/adminDemo";
 import { GOODWE_PLANT_CATALOG } from "../fixtures/goodwePlantCatalog";
 import { createEmptyPlantOnboardingDraft, publishPlantOnboarding as publishPlantDraft } from "../domain/plantOnboarding";
@@ -8,6 +8,7 @@ import { acceptChargerCommand, requestChargerCommand as requestCommand, resolveC
 import { demoAdminChargerCommandRepository } from "../services/adminChargerCommandRepository";
 import { callNextDriver, confirmQueueArrival as confirmArrival, markQueueNoShow as noShow, releaseQueueEntry as releaseEntry } from "../domain/queueOperations";
 import { activateTariffPolicy as activateTariff, refundPayment as refundTransaction, settlePayment as settleTransaction, type ActivateTariffInput } from "../domain/financialOperations";
+import { acknowledgeIncident as acknowledgeOperationalIncident, correlateOperationalSignals, decideRecommendation as decideOperationalRecommendation, resolveIncident as resolveOperationalIncident } from "../domain/incidentOperations";
 
 function slugify(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -33,6 +34,9 @@ interface AdminContextValue {
   activateTariffPolicy: (input: ActivateTariffInput) => FinancialActionResult;
   refundPayment: (transactionId: string, amountCents: number, reason: string, idempotencyKey: string) => FinancialActionResult;
   settlePayment: (transactionId: string) => FinancialActionResult;
+  acknowledgeIncident: (incidentId: string, assignee: string) => IncidentActionResult;
+  resolveIncident: (incidentId: string, resolution: string) => IncidentActionResult;
+  decideRecommendation: (recommendationId: string, decision: Extract<Recommendation["status"], "ACCEPTED" | "DEFERRED" | "REJECTED">, reason: string) => IncidentActionResult;
   createTicket: (establishmentId: string, title: string, description: string) => string;
   updatePlantOnboardingDraft: (patch: Partial<PlantOnboardingDraft>) => void;
   resetPlantOnboardingDraft: () => void;
@@ -95,7 +99,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
     const observation = await demoAdminChargerCommandRepository.observe(accepted.command);
     const resolved = resolveChargerCommand(accepted.state, accepted.command.id, observation.outcome, observation.observedAt);
-    setState(resolved.state);
+    setState(correlateOperationalSignals(resolved.state, observation.observedAt));
     return resolved;
   }, [account, state]);
 
@@ -141,6 +145,24 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     return transition;
   }, [account, state]);
 
+  const acknowledgeIncident = useCallback((incidentId: string, assignee: string) => {
+    const transition = acknowledgeOperationalIncident(state, account, incidentId, assignee);
+    if (transition.ok) setState(transition.state);
+    return transition;
+  }, [account, state]);
+
+  const resolveIncident = useCallback((incidentId: string, resolution: string) => {
+    const transition = resolveOperationalIncident(state, account, incidentId, resolution);
+    if (transition.ok) setState(transition.state);
+    return transition;
+  }, [account, state]);
+
+  const decideRecommendation = useCallback((recommendationId: string, decision: Extract<Recommendation["status"], "ACCEPTED" | "DEFERRED" | "REJECTED">, reason: string) => {
+    const transition = decideOperationalRecommendation(state, account, recommendationId, decision, reason);
+    if (transition.ok) setState(transition.state);
+    return transition;
+  }, [account, state]);
+
   const createTicket = useCallback((establishmentId: string, title: string, description: string) => {
     const id = `ticket-${Date.now().toString(36)}`;
     const ticket: SupportTicket = { id, establishmentId, code: `SUP-2026-${String(Date.now()).slice(-4)}`, title, description, status: "Aberto", createdAt: new Date().toISOString() };
@@ -169,7 +191,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     return publication.result;
   }, [state]);
 
-  const value = useMemo(() => ({ state, account, login, logout, createClient, createLocation, createCharger, requestChargerCommand, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, activateTariffPolicy, refundPayment, settlePayment, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding }), [state, account, login, logout, createClient, createLocation, createCharger, requestChargerCommand, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, activateTariffPolicy, refundPayment, settlePayment, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding]);
+  const value = useMemo(() => ({ state, account, login, logout, createClient, createLocation, createCharger, requestChargerCommand, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, activateTariffPolicy, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding }), [state, account, login, logout, createClient, createLocation, createCharger, requestChargerCommand, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, activateTariffPolicy, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding]);
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
 }
 

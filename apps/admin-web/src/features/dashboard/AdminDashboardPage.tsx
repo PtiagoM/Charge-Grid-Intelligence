@@ -11,8 +11,9 @@ import { ChargerDetailPage, ChargersInventoryPage, SessionDetailPage, SessionsPa
 import { OperationsCenterPage, QueueOperationsPage } from "../operations/QueuePages";
 import { EnergyOperationsPage } from "../energy/EnergyOperationsPage";
 import { FinanceDashboardPage, FinancialSessionPage, TariffPoliciesPage } from "../finance/FinancialPages";
+import { IncidentDetailPage, IncidentInboxPage, RecommendationsPage } from "../incidents/IncidentPages";
 
-const establishmentTabs = new Set(["overview", "locations", "location", "charger", "chargers", "sessions", "session", "operations", "queue", "energy", "pricing", "finance", "financial-session", "invoices", "contract", "support", "ticket", "documents", "ai", "reports", "settings"]);
+const establishmentTabs = new Set(["overview", "locations", "location", "charger", "chargers", "sessions", "session", "operations", "queue", "incidents", "incident", "energy", "pricing", "finance", "financial-session", "invoices", "contract", "support", "ticket", "documents", "ai", "recommendations", "reports", "settings"]);
 
 function EntityCell({ title, subtitle }: { title: string; subtitle: string }) {
   return <div><strong>{title}</strong><span>{subtitle}</span></div>;
@@ -290,11 +291,14 @@ export function AdminDashboardPage() {
       case "session": return <SessionDetailPage sessionId={query.get("session") ?? ""} establishmentId={establishmentId || undefined} />;
       case "operations": return <OperationsCenterPage establishmentId={establishmentId || undefined} />;
       case "queue": return <QueueOperationsPage establishmentId={establishmentId || undefined} />;
+      case "incidents": return <IncidentInboxPage establishmentId={establishmentId || undefined} />;
+      case "incident": return <IncidentDetailPage incidentId={query.get("incident") ?? ""} establishmentId={establishmentId || undefined} />;
       case "pricing": return <TariffPoliciesPage establishmentId={establishmentId || undefined} />;
       case "finance": return <FinanceDashboardPage establishmentId={establishmentId || undefined} />;
       case "financial-session": return <FinancialSessionPage transactionId={query.get("transaction") ?? ""} establishmentId={establishmentId || undefined} />;
       case "energy": return <EnergyOperationsPage establishmentId={establishmentId || undefined} />;
-      case "ai": return <AiPage />;
+      case "ai": return <RecommendationsPage establishmentId={establishmentId || undefined} />;
+      case "recommendations": return <RecommendationsPage establishmentId={establishmentId || undefined} />;
       case "reports": return <ReportsPage establishmentId={establishmentId || undefined} />;
       case "contract": return <ContractPage establishmentId={establishmentId} />;
       case "support": return <SupportPage establishmentId={account.profile === "ESTABELECIMENTO" ? establishmentId : undefined} />;

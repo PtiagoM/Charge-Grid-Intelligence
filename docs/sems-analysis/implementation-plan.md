@@ -1,6 +1,6 @@
 # Plano de implementação do Dashboard Admin
 
-**Status:** execução em M6. M0–M5 possuem verticais locais funcionais; M6 adiciona tarifa versionada, cálculo em centavos, estados financeiros, reembolso idempotente e conciliação sobre Stripe sandbox simulado. Autorização backend, providers e lifecycle financeiro reais permanecem pendentes. Os protótipos de M7–M8 não significam conclusão. A revisão crítica vigente está em `docs/admin-dashboard/CRITICAL_REVIEW.md`.
+**Status:** execução em M7 concluída localmente. M0–M7 possuem verticais locais funcionais; incidentes correlacionam sinais GoodWe, ChargeGrid e financeiros com deduplicação, responsabilidade e resolução auditável, enquanto recomendações determinísticas exibem evidência e exigem decisão humana sem autoexecução. Autorização backend, providers reais, notificações e SLA permanecem pendentes. M8–M9 seguem em execução. A revisão crítica vigente está em `docs/admin-dashboard/CRITICAL_REVIEW.md`.
 
 **Estimativas:** dias úteis de desenvolvimento e validação para uma pessoa experiente, usadas apenas para ordenar e dimensionar. Integrações não homologadas podem ampliar os intervalos.
 
@@ -105,6 +105,8 @@
 - **Estimativa:** 6–10 dias.
 
 ## M7 — Incidentes e recomendações
+
+**Estado atual:** vertical local concluída. A inbox aplica escopo, severidade e estado; o detalhe preserva origem, correlação, timeline, responsável e resolução; recomendações mostram evidência, impacto e confiança e registram aceitar/adiar/rejeitar sem disparar a ação proposta. Integrações, SLA e governança de modelos externos seguem pendentes.
 
 - **Objetivo:** transformar sinais técnicos em acompanhamento operacional e orientação explicável.
 - **Páginas/fluxos:** inbox/detalhe de incidente e recomendações.

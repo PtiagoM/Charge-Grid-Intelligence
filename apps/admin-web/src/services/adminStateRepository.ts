@@ -52,7 +52,10 @@ export function normalizeAdminState(candidate: AdminState, fallback: AdminState)
     energyPolicies: Array.isArray(candidate.energyPolicies) ? candidate.energyPolicies : fallback.energyPolicies,
     tariffPolicies: Array.isArray(candidate.tariffPolicies) ? candidate.tariffPolicies : fallback.tariffPolicies,
     paymentTransactions: Array.isArray(candidate.paymentTransactions) ? candidate.paymentTransactions : fallback.paymentTransactions,
-    financialEvents: Array.isArray(candidate.financialEvents) ? candidate.financialEvents : fallback.financialEvents
+    financialEvents: Array.isArray(candidate.financialEvents) ? candidate.financialEvents : fallback.financialEvents,
+    incidents: Array.isArray(candidate.incidents) ? candidate.incidents : fallback.incidents,
+    incidentEvents: Array.isArray(candidate.incidentEvents) ? candidate.incidentEvents : fallback.incidentEvents,
+    recommendations: Array.isArray(candidate.recommendations) ? candidate.recommendations : fallback.recommendations
   };
 }
 

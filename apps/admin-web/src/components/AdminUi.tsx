@@ -11,13 +11,13 @@ export function number(value: number) {
 }
 
 export function statusLabel(value: string) {
-  return ({ available: "Disponivel", charging: "Em recarga", limited: "Limitado", offline: "Offline", authorized: "Autorizada", starting: "Iniciando", active: "Ativa", finished: "Finalizada", start_failed: "Falha no inicio", REQUESTED: "Solicitado", ACCEPTED: "Aceito", CONFIRMED: "Confirmado", FAILED: "Falhou", EXPIRED: "Expirado", NORMAL: "Normal", ALERT: "Alerta", CRITICAL: "Critico", STALE: "Desatualizado", UNAVAILABLE: "Indisponivel", DRAFT: "Rascunho", ACTIVE: "Vigente", RETIRED: "Encerrada", AUTHORIZED: "Autorizado", CAPTURED: "Capturado", PARTIALLY_REFUNDED: "Reembolso parcial", REFUNDED: "Reembolsado", DISPUTED: "Em disputa", PENDING: "Pendente", AVAILABLE: "Disponivel", PAID: "Liquidado", waiting: "Aguardando", called: "Em chamada", assigned: "Admitido", no_show: "Nao compareceu", expired: "Expirado", released: "Concluido" } as Record<string, string>)[value] ?? value;
+  return ({ available: "Disponivel", charging: "Em recarga", limited: "Limitado", offline: "Offline", authorized: "Autorizada", starting: "Iniciando", active: "Ativa", finished: "Finalizada", start_failed: "Falha no inicio", REQUESTED: "Solicitado", ACCEPTED: "Aceito", CONFIRMED: "Confirmado", FAILED: "Falhou", EXPIRED: "Expirado", NORMAL: "Normal", ALERT: "Alerta", CRITICAL: "Critico", STALE: "Desatualizado", UNAVAILABLE: "Indisponivel", DRAFT: "Rascunho", ACTIVE: "Vigente", RETIRED: "Encerrada", AUTHORIZED: "Autorizado", CAPTURED: "Capturado", PARTIALLY_REFUNDED: "Reembolso parcial", REFUNDED: "Reembolsado", DISPUTED: "Em disputa", PENDING: "Pendente", AVAILABLE: "Disponivel", PAID: "Liquidado", OPEN: "Aberto", ACKNOWLEDGED: "Reconhecido", IN_PROGRESS: "Em andamento", RESOLVED: "Resolvido", DEFERRED: "Adiado", REJECTED: "Rejeitado", HIGH: "Alta", MEDIUM: "Media", LOW: "Baixa", waiting: "Aguardando", called: "Em chamada", assigned: "Admitido", no_show: "Nao compareceu", expired: "Expirado", released: "Concluido" } as Record<string, string>)[value] ?? value;
 }
 
 export function tone(value: string) {
-  if (["CONFIRMED", "NORMAL", "ACTIVE", "CAPTURED", "AVAILABLE", "PAID", "assigned", "released"].includes(value)) return "good";
-  if (["start_failed", "FAILED", "CRITICAL", "DISPUTED", "no_show"].includes(value)) return "danger";
-  if (["authorized", "starting", "REQUESTED", "ACCEPTED", "EXPIRED", "ALERT", "STALE", "UNAVAILABLE", "AUTHORIZED", "PARTIALLY_REFUNDED", "REFUNDED", "PENDING", "called"].includes(value)) return "warn";
+  if (["CONFIRMED", "NORMAL", "ACTIVE", "CAPTURED", "AVAILABLE", "PAID", "RESOLVED", "assigned", "released"].includes(value)) return "good";
+  if (["start_failed", "FAILED", "CRITICAL", "DISPUTED", "HIGH", "REJECTED", "no_show"].includes(value)) return "danger";
+  if (["authorized", "starting", "REQUESTED", "ACCEPTED", "EXPIRED", "ALERT", "STALE", "UNAVAILABLE", "AUTHORIZED", "PARTIALLY_REFUNDED", "REFUNDED", "PENDING", "OPEN", "ACKNOWLEDGED", "IN_PROGRESS", "DEFERRED", "MEDIUM", "called"].includes(value)) return "warn";
   if (["available", "finished", "Aprovado", "Ativo", "Favorável", "released"].includes(value)) return "good";
   if (["charging", "Recusado", "Crítico", "Alta"].includes(value)) return "danger";
   if (["limited", "Pendente", "Alerta", "waiting", "Implantação"].includes(value)) return "warn";
