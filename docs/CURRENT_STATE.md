@@ -139,6 +139,8 @@ O gateway chama a API Stripe em modo teste. A API de produção está configurad
 - Health: `GET https://chargegrid-api.vercel.app/health`
 - Pagamentos: `GET https://chargegrid-api.vercel.app/payments/config`
 
+A PWA possui fallback de SPA em `apps/driver-pwa/vercel.json`, permitindo abrir ou recarregar diretamente rotas do React Router como `/explore`, `/map` e `/place/:id` sem receber 404 da Vercel.
+
 O monorepo possui dois projetos Vercel, ambos com raiz configurada em `apps/`. O PWA usa Vite e recebe somente variáveis públicas `VITE_*`; a API Express recebe `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` e `CHARGEGRID_ALLOWED_ORIGINS` como variáveis protegidas. Não documentar valores de chaves, segredos ou IDs de webhook.
 
 ### Supabase
