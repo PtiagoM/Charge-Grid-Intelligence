@@ -1,15 +1,17 @@
 # ChargeGrid Intelligence
 
-O ChargeGrid Intelligence é a camada comercial e operacional de recarga do ecossistema GoodWe. Este monorepo reúne o Admin Web, a Driver PWA mobile, a ChargeGrid API e contratos compartilhados.
+O ChargeGrid Intelligence é a camada comercial e operacional de recarga incorporada à experiência do SEMS+. Este monorepo reúne a implementação administrativa anterior, a Driver PWA mobile, a ChargeGrid API e contratos compartilhados; a próxima etapa reconstruirá o Dashboard em um novo projeto como módulo do SEMS+.
 
-> Comece por [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md). Esse documento registra o estado real, as decisões mais recentes, integrações ativas, limitações e a ordem de precedência para continuidade por pessoas ou IAs sem contexto prévio.
+> Comece por [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md). Ele é a fonte única de verdade do projeto e consolida contexto GoodWe, produto, negócio, operação, histórico, decisões vigentes, implementação, integrações e limitações.
 
 ## Superfícies
 
-- **Admin Web:** React, TypeScript e Vite; interface desktop SEMS+/GoodWe para rede, plantas e estabelecimentos.
+- **Admin Web atual:** implementação anterior usada como referência de regras e conteúdo; deixou de ser a arquitetura administrativa final após a decisão de incorporar o ChargeGrid ao SEMS+.
 - **Driver PWA:** React, TypeScript e Vite; app mobile para visitante e motorista cadastrado, com QR, Google Maps, Supabase Auth, Stripe sandbox, fila, sessão, histórico e notificações.
 - **ChargeGrid API:** Node.js, Express e TypeScript; gateway Stripe e fronteira para regras críticas.
 - **Shared:** enums, contratos, tokens visuais e fixtures D0.
+
+O plano da reconstrução está em [`docs/sems-reconstruction/`](docs/sems-reconstruction/). A Driver PWA não faz parte desse escopo e não deve ser alterada.
 
 ## Estrutura
 
@@ -82,4 +84,3 @@ O procedimento completo está em [`docs/specs/driver-pwa-mobile/integrations.md`
 5. Código e testes devem refletir essa hierarquia; divergências precisam ser documentadas e corrigidas.
 
 Fixtures e cenários de referência devem continuar identificados na documentação e nos testes. A interface final não deve exibir avisos de “dados simulados” ao usuário.
-

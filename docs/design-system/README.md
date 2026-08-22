@@ -2,10 +2,10 @@
 
 Este diretório define a identidade SEMS+/GoodWe aplicada em densidades diferentes:
 
-- Admin Web: tema grafite escuro e alta densidade.
-- Driver PWA: tema claro por padrão, predominância branca, vermelho GoodWe e composição mobile; tema escuro opcional.
+- Admin Web: temas claro e escuro, alta densidade e composição operacional desktop.
+- Driver PWA: temas claro e escuro, predominância branca no estado inicial, vermelho GoodWe e composição mobile.
 
-O tema claro mobile é uma decisão posterior de produto e prevalece sobre frases antigas que tratavam o grafite como padrão universal.
+Claro e escuro são opções nas duas superfícies. A decisão posterior de produto impede tratar o grafite como tema único do Admin ou como padrão universal de todo o ChargeGrid.
 
 ## Documentos normativos
 
@@ -22,4 +22,3 @@ O tema claro mobile é uma decisão posterior de produto e prevalece sobre frase
 - Assets: `apps/admin-web/public/assets/sems/` e `apps/driver-pwa/public/assets/sems/`.
 
 Leia também `docs/CURRENT_STATE.md`. Se documentação e implementação divergirem, registre a decisão e corrija ambas; não crie uma terceira linguagem local.
-

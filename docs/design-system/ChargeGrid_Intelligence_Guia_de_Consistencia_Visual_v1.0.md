@@ -11,7 +11,7 @@ Garantir que Admin Web, Driver PWA e futuras superfícies pareçam partes do mes
 | Dimensão | Regra comum |
 |---|---|
 | Marca | vermelho GoodWe `#FF323A`; logos e ícones aprovados |
-| Ambiente | Admin usa canvas grafite; Driver PWA usa tema claro e predominância branca por padrão |
+| Ambiente | Admin e Driver PWA oferecem temas claro e escuro; cada superfície preserva sua própria densidade e composição |
 | Hierarquia | profundidade por superfícies e bordas suaves adequadas ao tema ativo |
 | Tipo | Poppins com fallback obrigatório Segoe UI/Arial |
 | Forma | raio 8/12/16px; pill para CTA/chip |
@@ -51,7 +51,7 @@ Admin e PWA compartilham marca, vermelho, iconografia e significado de status. A
 | Card | superfície correspondente ao tema + borda suave; sombra apenas quando elevada |
 | Campo | superfície contrastante, label externa e foco visível |
 | Tabela | header `surface.4`, linhas `surface.1`, scroll horizontal |
-| Mapa | Google Maps real; Admin pode usar tema escuro e PWA prioriza legibilidade clara; marcador e fallback consistentes |
+| Mapa | Google Maps real e coerente com o tema ativo em Admin e PWA; marcador e fallback consistentes |
 | Vazio | explicação e próxima ação; nunca gráfico falso de zeros |
 | Erro | causa, impacto e recuperação; não apenas toast/cor |
 
