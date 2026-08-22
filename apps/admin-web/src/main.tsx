@@ -1,16 +1,11 @@
-import { StrictMode, useEffect } from "react";
+import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-
-function ChargeGridIntelligenceApp() {
-  useEffect(() => {
-    void import("./chargegrid-app/src/main");
-  }, []);
-
-  return <div id="app" />;
-}
+import "@chargegrid/shared/styles/tokens.css";
+import "./styles/app.css";
+import { NativeApp } from "./native/NativeApp";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ChargeGridIntelligenceApp />
+    <NativeApp />
   </StrictMode>
 );

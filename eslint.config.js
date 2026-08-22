@@ -8,12 +8,17 @@ export default tseslint.config(
     ignores: [
       "**/dist/**",
       "**/coverage/**",
-      "node_modules/**",
-      "apps/admin-web/src/chargegrid-app/**"
+      "node_modules/**"
     ]
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
+  {
+    files: ["**/*.{js,mjs,cjs}"],
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.node }
+    }
+  },
   {
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
