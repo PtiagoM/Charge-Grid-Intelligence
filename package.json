@@ -17,6 +17,7 @@
     "build": "npm run build:shared && npm run build --workspace @chargegrid/admin-web && npm run build --workspace @chargegrid/driver-pwa && npm run build --workspace @chargegrid/api",
     "pretest": "npm run build:shared",
     "test": "npm run test --workspaces --if-present",
+    "test:e2e": "playwright test",
     "lint": "eslint ."
   },
   "engines": {
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
+    "@playwright/test": "^1.62.1",
     "concurrently": "^9.2.0",
     "eslint": "^9.33.0",
     "eslint-plugin-react-hooks": "^5.2.0",

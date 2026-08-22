@@ -1,0 +1,19 @@
+[
+  {
+    "id": "plant-lab-fiap",
+    "name": "LAB FIAP Eco Smart Home",
+    "shortName": "LAB FIAP Eco Smar...",
+    "address": "Av. Lins de Vasconcelos, 1222 - Cambuci, São Paulo",
+    "image": "/assets/sems/plants/136287ad-ae2c-4034-bb53-015701b5fe9d.jpg",
+    "status": "offline",
+    "statusLabel": "Offline",
+    "shared": true,
+    "todayGenerationKwh": 5,
+    "totalGenerationKwh": 3251.5,
+    "pvPowerKw": 0.1,
+    "installedPowerKw": 11.1,
+    "observation": "Planta de geração fotovoltaica distribuída",
+    "commercialEnabled": true,
+    "chargeGridEnabled": true
+  }
+]

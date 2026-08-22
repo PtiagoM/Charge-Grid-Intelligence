@@ -1,0 +1,25 @@
+{
+  "plantId": "plant-lab-fiap",
+  "snapshot": {
+    "plantLimitKw": 90,
+    "buildingDemandKw": 54,
+    "chargersPowerKw": 29,
+    "pvPowerKw": 32,
+    "gridPowerKw": 51,
+    "batterySocPercent": 73,
+    "batteryReservePercent": 40,
+    "powerMarginPercent": 24,
+    "solarAvailableKwh": 32,
+    "batteryAvailableKwh": 16.4,
+    "gridEnergyKwh": 51,
+    "highSolarGeneration": false,
+    "peakHour": true
+  },
+  "sustainability": {
+    "renewableEnergyKwh": 26.15,
+    "avoidedGridEnergyKwh": 18.7,
+    "avoidedCo2Kg": 31.8,
+    "solarFavoredSessions": 2,
+    "shiftedSessions": 1
+  }
+}

@@ -1,0 +1,35 @@
+[
+  {
+    "id": "Q-001",
+    "plantId": "plant-lab-fiap",
+    "chargerId": "CG-EV-01",
+    "chargerName": "Grupo rápido 22 kW",
+    "cardId": "CARD-009",
+    "enteredAt": "2026-06-14T18:12:00",
+    "status": "waiting",
+    "reason": "Carregadores rápidos ocupados",
+    "recommendation": "Direcionar para CG-EV-02 quando liberado"
+  },
+  {
+    "id": "Q-002",
+    "plantId": "plant-lab-fiap",
+    "chargerId": "CG-EV-03",
+    "chargerName": "Qualquer carregador",
+    "cardId": "CARD-017",
+    "enteredAt": "2026-06-14T18:19:00",
+    "status": "waiting",
+    "reason": "Preferência por menor tarifa",
+    "recommendation": "Priorizar janela fora do pico"
+  },
+  {
+    "id": "Q-003",
+    "plantId": "plant-lab-fiap",
+    "chargerId": "CG-EV-05",
+    "chargerName": "Grupo 11 kW",
+    "cardId": "CARD-023",
+    "enteredAt": "2026-06-14T18:31:00",
+    "status": "waiting",
+    "reason": "Potência temporariamente limitada",
+    "recommendation": "Aguardar margem energética"
+  }
+]
