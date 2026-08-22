@@ -6,6 +6,7 @@ export type AdminCapability =
   | "network:portfolio"
   | "network:onboard"
   | "operations:monitor"
+  | "queue:manage"
   | "chargers:command"
   | "energy:monitor"
   | "commercial:read"
@@ -22,6 +23,7 @@ const CAPABILITIES_BY_PROFILE = {
     "network:portfolio",
     "network:onboard",
     "operations:monitor",
+    "queue:manage",
     "chargers:command",
     "energy:monitor",
     "commercial:read",
@@ -34,6 +36,7 @@ const CAPABILITIES_BY_PROFILE = {
     "overview:view",
     "network:assets",
     "operations:monitor",
+    "queue:manage",
     "chargers:command",
     "energy:monitor",
     "commercial:read",

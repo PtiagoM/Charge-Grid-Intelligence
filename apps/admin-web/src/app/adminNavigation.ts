@@ -61,6 +61,7 @@ export const ADMIN_DOMAINS: readonly AdminDomain[] = [
     links: [
       { route: "operations", label: "Central operacional", capability: "operations:monitor" },
       { route: "sessions", label: "Sessões", capability: "operations:monitor" },
+      { route: "queue", label: "Fila", capability: "queue:manage" },
       { route: "support", label: "Chamados", capability: "operations:monitor" }
     ],
     relatedRoutes: ["session", "ticket"]

@@ -2668,6 +2668,93 @@ button[data-action="finish-session"]:hover {
   border-radius: 10px;
 }
 
+.operations-launch-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.operations-launch-grid a {
+  display: block;
+  min-height: 150px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .025);
+  color: var(--text);
+}
+
+.operations-launch-grid a:hover {
+  border-color: rgba(233, 63, 69, .5);
+  transform: translateY(-2px);
+}
+
+.operations-launch-grid span {
+  color: var(--danger);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.operations-launch-grid h3 {
+  margin: 18px 0 8px;
+}
+
+.operations-launch-grid p,
+.queue-call-card p,
+.queue-call-card small,
+.queue-assigned-card p {
+  color: var(--muted);
+}
+
+.queue-call-panel {
+  border-color: rgba(224, 163, 51, .32);
+  box-shadow: inset 3px 0 0 rgba(224, 163, 51, .68);
+}
+
+.queue-call-card,
+.queue-assigned-card {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(220px, .8fr) auto;
+  gap: 22px;
+  align-items: center;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .025);
+}
+
+.queue-call-card h3,
+.queue-assigned-card h3 {
+  margin: 10px 0 5px;
+}
+
+.queue-call-card > div:nth-child(2) {
+  display: grid;
+  gap: 5px;
+}
+
+.queue-call-card > div:nth-child(2) span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.queue-call-card > div:nth-child(2) strong {
+  font-size: 20px;
+}
+
+.queue-call-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.queue-assigned-card {
+  grid-template-columns: 1fr auto;
+}
+
 @media (max-width: 1200px) {
   .kpi-grid.four-cols,
   .simulator-grid,
@@ -5112,6 +5199,10 @@ body.layout-auth {
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .operations-launch-grid {
+    grid-template-columns: 1fr;
+  }
+
 }
 
 @media (max-width: 920px) {
@@ -5242,6 +5333,15 @@ body.layout-auth {
   .operations-session-summary,
   .operations-state-guide {
     grid-template-columns: 1fr;
+  }
+
+  .queue-call-card,
+  .queue-assigned-card {
+    grid-template-columns: 1fr;
+  }
+
+  .queue-call-actions {
+    justify-content: flex-start;
   }
 
   .operations-hero {

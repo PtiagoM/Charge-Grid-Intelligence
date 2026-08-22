@@ -107,8 +107,14 @@ export function createInitialState(): AdminState {
     ],
     sessionEvents,
     queue: [
-      { id: "Q-001", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverName: "Marcos Silva", vehicle: "GWM Ora 03", status: "waiting" },
-      { id: "Q-002", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverName: "Luiza Prado", vehicle: "Renault Kwid E-Tech", status: "waiting" }
+      { id: "Q-001", driverId: "driver-marcos-queue", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverName: "Marcos Silva", vehicle: "GWM Ora 03", requiredConnector: "TYPE_2", status: "waiting", joinedAt: "2026-08-18T17:40:00-03:00" },
+      { id: "Q-002", driverId: "driver-luiza-queue", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverName: "Luiza Prado", vehicle: "Renault Kwid E-Tech", requiredConnector: "TYPE_2", status: "waiting", joinedAt: "2026-08-18T17:46:00-03:00" },
+      { id: "Q-003", driverId: "driver-chen", establishmentId: "est-goodwe-shanghai", locationId: "loc-goodwe-shanghai", driverName: "Chen Wei", vehicle: "BYD Seal", requiredConnector: "CCS_2", status: "waiting", joinedAt: "2026-08-18T17:51:00-03:00" }
+    ],
+    queueEvents: [
+      { id: "queue-event-Q-001-joined", queueEntryId: "Q-001", establishmentId: "est-fiap", type: "JOINED", label: "Entrada confirmada na fila", at: "2026-08-18T17:40:00-03:00", actor: "DRIVER_PWA", detail: "TYPE_2 · GWM Ora 03" },
+      { id: "queue-event-Q-002-joined", queueEntryId: "Q-002", establishmentId: "est-fiap", type: "JOINED", label: "Entrada confirmada na fila", at: "2026-08-18T17:46:00-03:00", actor: "DRIVER_PWA", detail: "TYPE_2 · Renault Kwid E-Tech" },
+      { id: "queue-event-Q-003-joined", queueEntryId: "Q-003", establishmentId: "est-goodwe-shanghai", type: "JOINED", label: "Entrada confirmada na fila", at: "2026-08-18T17:51:00-03:00", actor: "DRIVER_PWA", detail: "CCS_2 · BYD Seal" }
     ],
     supportTickets: [{ id: "ticket-0001", establishmentId: "est-mercadox", code: "SUP-2026-0001", title: "Carregador sem comunicacao", description: "Equipamento offline desde 16:30.", status: "Em atendimento", createdAt: "2026-08-18T16:42:00-03:00" }],
     audit: [{ id: "audit-0001", summary: "Chamado SUP-2026-0001 criado", at: "2026-08-18T16:42:00-03:00" }],

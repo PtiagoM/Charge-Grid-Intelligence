@@ -235,11 +235,36 @@ export interface RequestChargerCommandResult {
 
 export interface QueueEntry {
   id: string;
+  driverId: string;
   establishmentId: string;
   locationId: string;
   driverName: string;
   vehicle: string;
-  status: "waiting" | "released";
+  requiredConnector: "TYPE_2" | "CCS_2";
+  status: "waiting" | "called" | "assigned" | "no_show" | "expired" | "released";
+  joinedAt: string;
+  calledAt?: string;
+  callExpiresAt?: string;
+  suggestedChargerId?: string;
+  assignedAt?: string;
+  completedAt?: string;
+}
+
+export interface QueueEvent {
+  id: string;
+  queueEntryId: string;
+  establishmentId: string;
+  type: "JOINED" | "CALLED" | "ASSIGNED" | "NO_SHOW" | "EXPIRED" | "RELEASED";
+  label: string;
+  at: string;
+  actor: string;
+  detail?: string;
+}
+
+export interface QueueActionResult {
+  ok: boolean;
+  issues: string[];
+  entry?: QueueEntry;
 }
 
 export interface SupportTicket {
@@ -283,6 +308,7 @@ export interface AdminState {
   sessions: Session[];
   sessionEvents: SessionEvent[];
   queue: QueueEntry[];
+  queueEvents: QueueEvent[];
   supportTickets: SupportTicket[];
   audit: AuditEntry[];
   energy: EnergySnapshot[];

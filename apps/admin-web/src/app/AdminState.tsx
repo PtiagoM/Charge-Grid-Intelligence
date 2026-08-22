@@ -1,11 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { Account, AdminState, NewChargerInput, NewClientInput, NewLocationInput, PlantOnboardingDraft, PlantOnboardingPublishResult, RequestChargerCommandInput, RequestChargerCommandResult, SupportTicket } from "../domain/admin";
+import type { Account, AdminState, NewChargerInput, NewClientInput, NewLocationInput, PlantOnboardingDraft, PlantOnboardingPublishResult, QueueActionResult, RequestChargerCommandInput, RequestChargerCommandResult, SupportTicket } from "../domain/admin";
 import { createInitialState } from "../fixtures/adminDemo";
 import { GOODWE_PLANT_CATALOG } from "../fixtures/goodwePlantCatalog";
 import { createEmptyPlantOnboardingDraft, publishPlantOnboarding as publishPlantDraft } from "../domain/plantOnboarding";
 import { browserAdminStateRepository } from "../services/adminStateRepository";
 import { acceptChargerCommand, requestChargerCommand as requestCommand, resolveChargerCommand } from "../domain/chargerOperations";
 import { demoAdminChargerCommandRepository } from "../services/adminChargerCommandRepository";
+import { callNextDriver, confirmQueueArrival as confirmArrival, markQueueNoShow as noShow, releaseQueueEntry as releaseEntry } from "../domain/queueOperations";
 
 function slugify(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -24,6 +25,10 @@ interface AdminContextValue {
   createLocation: (input: NewLocationInput) => string;
   createCharger: (input: NewChargerInput) => void;
   requestChargerCommand: (input: RequestChargerCommandInput) => Promise<RequestChargerCommandResult>;
+  callNextQueueDriver: (establishmentId: string) => QueueActionResult;
+  confirmQueueArrival: (entryId: string) => QueueActionResult;
+  markQueueNoShow: (entryId: string, now?: string) => QueueActionResult;
+  releaseQueueEntry: (entryId: string) => QueueActionResult;
   createTicket: (establishmentId: string, title: string, description: string) => string;
   updatePlantOnboardingDraft: (patch: Partial<PlantOnboardingDraft>) => void;
   resetPlantOnboardingDraft: () => void;
@@ -90,6 +95,30 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     return resolved;
   }, [account, state]);
 
+  const callNextQueueDriver = useCallback((establishmentId: string) => {
+    const transition = callNextDriver(state, account, establishmentId);
+    if (transition.ok) setState(transition.state);
+    return transition;
+  }, [account, state]);
+
+  const confirmQueueArrival = useCallback((entryId: string) => {
+    const transition = confirmArrival(state, account, entryId);
+    if (transition.ok) setState(transition.state);
+    return transition;
+  }, [account, state]);
+
+  const markQueueNoShow = useCallback((entryId: string, now?: string) => {
+    const transition = noShow(state, account, entryId, now);
+    if (transition.ok) setState(transition.state);
+    return transition;
+  }, [account, state]);
+
+  const releaseQueueEntry = useCallback((entryId: string) => {
+    const transition = releaseEntry(state, account, entryId);
+    if (transition.ok) setState(transition.state);
+    return transition;
+  }, [account, state]);
+
   const createTicket = useCallback((establishmentId: string, title: string, description: string) => {
     const id = `ticket-${Date.now().toString(36)}`;
     const ticket: SupportTicket = { id, establishmentId, code: `SUP-2026-${String(Date.now()).slice(-4)}`, title, description, status: "Aberto", createdAt: new Date().toISOString() };
@@ -118,7 +147,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     return publication.result;
   }, [state]);
 
-  const value = useMemo(() => ({ state, account, login, logout, createClient, createLocation, createCharger, requestChargerCommand, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding }), [state, account, login, logout, createClient, createLocation, createCharger, requestChargerCommand, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding]);
+  const value = useMemo(() => ({ state, account, login, logout, createClient, createLocation, createCharger, requestChargerCommand, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding }), [state, account, login, logout, createClient, createLocation, createCharger, requestChargerCommand, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding]);
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
 }
 

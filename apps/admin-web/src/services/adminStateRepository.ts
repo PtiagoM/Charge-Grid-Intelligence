@@ -20,6 +20,14 @@ export function normalizeAdminState(candidate: AdminState, fallback: AdminState)
       contractedLimitKw: Number.isFinite(item.contractedLimitKw) ? item.contractedLimitKw : defaults?.contractedLimitKw ?? 0
     };
   });
+  const fallbackQueue = new Map(fallback.queue.map((item) => [item.id, item]));
+  const queue = (Array.isArray(candidate.queue) ? candidate.queue : fallback.queue).map((item, index) => ({
+    ...fallbackQueue.get(item.id),
+    ...item,
+    driverId: item.driverId ?? fallbackQueue.get(item.id)?.driverId ?? `legacy-driver-${item.id}`,
+    requiredConnector: item.requiredConnector ?? fallbackQueue.get(item.id)?.requiredConnector ?? "TYPE_2",
+    joinedAt: item.joinedAt ?? fallbackQueue.get(item.id)?.joinedAt ?? new Date(Date.UTC(2026, 7, 18, 20, index)).toISOString()
+  }));
 
   return {
     ...fallback,
@@ -38,6 +46,8 @@ export function normalizeAdminState(candidate: AdminState, fallback: AdminState)
       chargerId: chargers.find((charger) => charger.establishmentId === item.establishmentId)?.id ?? item.chargerId
     }),
     sessionEvents: Array.isArray(candidate.sessionEvents) ? candidate.sessionEvents : fallback.sessionEvents,
+    queue,
+    queueEvents: Array.isArray(candidate.queueEvents) ? candidate.queueEvents : fallback.queueEvents,
     energy
   };
 }
