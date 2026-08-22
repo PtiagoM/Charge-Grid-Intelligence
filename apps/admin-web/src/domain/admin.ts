@@ -1,6 +1,83 @@
 export type Profile = "GOODWE" | "ESTABELECIMENTO";
 export type ChargerStatus = "available" | "charging" | "limited" | "offline";
 export type SessionStatus = "active" | "finished";
+export type PlantAccessPolicy = "PUBLIC" | "PRIVATE" | "MIXED";
+
+export interface GoodWePlantCharger {
+  id: string;
+  serial: string;
+  model: string;
+  powerKw: number;
+  technicalStatus: "ONLINE" | "OFFLINE";
+}
+
+export interface GoodWePlant {
+  id: string;
+  name: string;
+  organization: string;
+  address: string;
+  number: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  timezone: string;
+  latitude: number;
+  longitude: number;
+  capacityKwp: number;
+  batteryCapacityKwh: number;
+  authorization: "AUTHORIZED" | "DENIED";
+  catalogState: "READY" | "EMPTY" | "OFFLINE";
+  lastSyncAt?: string;
+  evChargers: GoodWePlantCharger[];
+}
+
+export interface CommercialPlantLink {
+  id: string;
+  goodwePlantId: string;
+  establishmentId: string;
+  locationId: string;
+  commercialName: string;
+  accessPolicy: PlantAccessPolicy;
+  alwaysOpen: boolean;
+  opensAt?: string;
+  closesAt?: string;
+  status: "PUBLISHED";
+  publishedAt: string;
+}
+
+export interface PlantOnboardingDraft {
+  plantId: string;
+  establishmentId: string;
+  commercialName: string;
+  accessPolicy: PlantAccessPolicy;
+  alwaysOpen: boolean;
+  opensAt: string;
+  closesAt: string;
+  updatedAt: string;
+}
+
+export type PlantOnboardingIssueCode =
+  | "PLANT_REQUIRED"
+  | "PLANT_NOT_FOUND"
+  | "PLANT_NOT_AUTHORIZED"
+  | "PLANT_NOT_READY"
+  | "PLANT_WITHOUT_EV"
+  | "PLANT_ALREADY_LINKED"
+  | "ESTABLISHMENT_REQUIRED"
+  | "ESTABLISHMENT_NOT_FOUND"
+  | "COMMERCIAL_NAME_REQUIRED"
+  | "OPERATING_HOURS_INVALID";
+
+export interface PlantOnboardingIssue {
+  code: PlantOnboardingIssueCode;
+  message: string;
+}
+
+export interface PlantOnboardingPublishResult {
+  ok: boolean;
+  issues: PlantOnboardingIssue[];
+  commercialPlantId?: string;
+}
 
 export interface Account {
   id: string;
@@ -127,6 +204,8 @@ export interface AdminState {
   currentAccountId: string | null;
   clients: Client[];
   establishments: Establishment[];
+  commercialPlants: CommercialPlantLink[];
+  plantOnboardingDraft: PlantOnboardingDraft;
   locations: Location[];
   chargers: Charger[];
   sessions: Session[];

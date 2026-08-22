@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { Account, AdminState, NewChargerInput, NewClientInput, NewLocationInput, SupportTicket } from "../domain/admin";
+import type { Account, AdminState, NewChargerInput, NewClientInput, NewLocationInput, PlantOnboardingDraft, PlantOnboardingPublishResult, SupportTicket } from "../domain/admin";
 import { createInitialState } from "../fixtures/adminDemo";
+import { GOODWE_PLANT_CATALOG } from "../fixtures/goodwePlantCatalog";
+import { createEmptyPlantOnboardingDraft, publishPlantOnboarding as publishPlantDraft } from "../domain/plantOnboarding";
 import { browserAdminStateRepository } from "../services/adminStateRepository";
 
 function slugify(value: string) {
@@ -20,6 +22,9 @@ interface AdminContextValue {
   createLocation: (input: NewLocationInput) => string;
   createCharger: (input: NewChargerInput) => void;
   createTicket: (establishmentId: string, title: string, description: string) => string;
+  updatePlantOnboardingDraft: (patch: Partial<PlantOnboardingDraft>) => void;
+  resetPlantOnboardingDraft: () => void;
+  publishPlantOnboarding: () => PlantOnboardingPublishResult;
 }
 
 const AdminContext = createContext<AdminContextValue | null>(null);
@@ -69,7 +74,28 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     return id;
   }, []);
 
-  const value = useMemo(() => ({ state, account, login, logout, createClient, createLocation, createCharger, createTicket }), [state, account, login, logout, createClient, createLocation, createCharger, createTicket]);
+  const updatePlantOnboardingDraft = useCallback((patch: Partial<PlantOnboardingDraft>) => {
+    setState((current) => ({
+      ...current,
+      plantOnboardingDraft: {
+        ...current.plantOnboardingDraft,
+        ...patch,
+        updatedAt: new Date().toISOString()
+      }
+    }));
+  }, []);
+
+  const resetPlantOnboardingDraft = useCallback(() => {
+    setState((current) => ({ ...current, plantOnboardingDraft: createEmptyPlantOnboardingDraft() }));
+  }, []);
+
+  const publishPlantOnboarding = useCallback(() => {
+    const publication = publishPlantDraft(state, GOODWE_PLANT_CATALOG, state.plantOnboardingDraft);
+    if (publication.result.ok) setState(publication.state);
+    return publication.result;
+  }, [state]);
+
+  const value = useMemo(() => ({ state, account, login, logout, createClient, createLocation, createCharger, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding }), [state, account, login, logout, createClient, createLocation, createCharger, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding]);
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
 }
 

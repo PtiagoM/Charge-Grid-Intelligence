@@ -1,4 +1,4 @@
-import type { AdminState, Charger, Establishment, Location } from "../domain/admin";
+import type { AdminState, Charger, CommercialPlantLink, Establishment, Location } from "../domain/admin";
 
 const establishments: Establishment[] = [
   { id: "est-fiap", clientId: "cli-fiap", name: "Shopping FIAP", city: "Sao Paulo", state: "SP", address: "Av. Lins de Vasconcelos, 1222", pricePerKwh: 2.95, contractCode: "CG-CTR-2026-001" },
@@ -15,6 +15,26 @@ const locations: Location[] = [
   { id: "loc-goodwe-europe", establishmentId: "est-goodwe-europe", name: "GoodWe Berlin", address: "Alexanderplatz", number: "4", city: "Berlin", state: "BE", zipCode: "10178", latitude: 52.52, longitude: 13.405, status: "Ativo" },
   { id: "loc-goodwe-shanghai", establishmentId: "est-goodwe-shanghai", name: "GoodWe Shanghai", address: "Century Avenue", number: "100", city: "Shanghai", state: "SH", zipCode: "200120", latitude: 31.2304, longitude: 121.4737, status: "Ativo" }
 ];
+
+const commercialPlants: CommercialPlantLink[] = [
+  ["fiap-aclimacao", "gw-plant-fiap-aclimacao", "est-fiap", "loc-fiap-aclimacao", "Hub FIAP Aclimação", "PUBLIC", true],
+  ["mercadox-pinheiros", "gw-plant-mercadox-pinheiros", "est-mercadox", "loc-mercadox-pinheiros", "MercadoX Pinheiros", "PUBLIC", false],
+  ["goodwe-california", "gw-plant-california", "est-goodwe-california", "loc-goodwe-california", "GoodWe San Francisco", "PRIVATE", true],
+  ["goodwe-berlin", "gw-plant-berlin", "est-goodwe-europe", "loc-goodwe-europe", "GoodWe Berlin", "PRIVATE", true],
+  ["goodwe-shanghai", "gw-plant-shanghai", "est-goodwe-shanghai", "loc-goodwe-shanghai", "GoodWe Shanghai", "PRIVATE", true]
+].map(([id, goodwePlantId, establishmentId, locationId, commercialName, accessPolicy, alwaysOpen]) => ({
+  id: `cplant-${id}`,
+  goodwePlantId: String(goodwePlantId),
+  establishmentId: String(establishmentId),
+  locationId: String(locationId),
+  commercialName: String(commercialName),
+  accessPolicy: accessPolicy as CommercialPlantLink["accessPolicy"],
+  alwaysOpen: Boolean(alwaysOpen),
+  opensAt: alwaysOpen ? undefined : "07:00",
+  closesAt: alwaysOpen ? undefined : "23:00",
+  status: "PUBLISHED",
+  publishedAt: "2026-08-01T10:00:00-03:00"
+}));
 
 const fiapChargers: Charger[] = [
   ["CG-FIAP-01", "FIAP-ACL-01", "charging", 22, 18.4, 54.28],
@@ -37,6 +57,17 @@ export function createInitialState(): AdminState {
       { id: "cli-goodwe-global", name: "GoodWe Global Mobility", corporateName: "GoodWe Technologies Co., Ltd.", document: "GLOBAL-GW-001", owner: "Global Operations", contactName: "Global Operations", contactEmail: "global.ops@goodwe.example", status: "Ativo" }
     ],
     establishments,
+    commercialPlants,
+    plantOnboardingDraft: {
+      plantId: "",
+      establishmentId: "",
+      commercialName: "",
+      accessPolicy: "PUBLIC",
+      alwaysOpen: true,
+      opensAt: "08:00",
+      closesAt: "22:00",
+      updatedAt: ""
+    },
     locations,
     chargers: [
       ...fiapChargers,

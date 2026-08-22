@@ -25,6 +25,11 @@ export function normalizeAdminState(candidate: AdminState, fallback: AdminState)
     ...fallback,
     ...candidate,
     accounts: candidate.accounts.filter((item) => item.profile === "GOODWE" || item.profile === "ESTABELECIMENTO"),
+    commercialPlants: Array.isArray(candidate.commercialPlants) ? candidate.commercialPlants : fallback.commercialPlants,
+    plantOnboardingDraft: {
+      ...fallback.plantOnboardingDraft,
+      ...(candidate.plantOnboardingDraft ?? {})
+    },
     chargers,
     sessions: candidate.sessions.map((item) => chargerIds.has(item.chargerId) ? item : {
       ...item,

@@ -9,6 +9,8 @@ describe('normalizeAdminState', () => {
     stale.accounts.push({ id: 'old-driver', email: 'driver@example.test', password: 'x', profile: 'USUARIO', displayName: 'Driver' });
     delete stale.energy[0].demandKw;
     delete stale.energy[0].contractedLimitKw;
+    delete stale.commercialPlants;
+    delete stale.plantOnboardingDraft;
     stale.sessions[0].chargerId = 'charger-that-does-not-exist';
 
     const result = normalizeAdminState(stale, fallback);
@@ -17,5 +19,7 @@ describe('normalizeAdminState', () => {
     expect(result.energy[0].demandKw).toBe(76);
     expect(result.energy[0].contractedLimitKw).toBe(100);
     expect(result.chargers.some((item) => item.id === result.sessions[0].chargerId)).toBe(true);
+    expect(result.commercialPlants).toHaveLength(fallback.commercialPlants.length);
+    expect(result.plantOnboardingDraft).toEqual(fallback.plantOnboardingDraft);
   });
 });
