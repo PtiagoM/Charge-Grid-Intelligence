@@ -1,14 +1,20 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { buildVisibleMapClusters, type MapLocation as ClusterLocation } from "../services/google-maps";
-import type { AppState } from "./model";
+import { buildVisibleMapClusters, type MapLocation as ClusterLocation } from "../../services/google-maps";
+import type { AdminState } from "../../domain/admin";
 
 type Position = { lat: number; lng: number };
 interface MapObject { setCenter(position: Position): void; setZoom(zoom: number): void; }
-interface MarkerObject { addListener(event: string, listener: () => void): unknown; setMap(map: null): void; }
+interface OverlayObject {
+  onAdd?: () => void;
+  draw?: () => void;
+  onRemove?: () => void;
+  setMap(map: MapObject | null): void;
+  getPanes(): { overlayMouseTarget: HTMLElement } | null;
+  getProjection(): { fromLatLngToDivPixel(position: Position): { x: number; y: number } | null };
+}
 interface MapsApi {
   Map: new (element: HTMLElement, options: Record<string, unknown>) => MapObject;
-  Marker: new (options: Record<string, unknown>) => MarkerObject;
-  SymbolPath: { CIRCLE: unknown };
+  OverlayView: new () => OverlayObject;
 }
 
 let mapsPromise: Promise<MapsApi> | null = null;
@@ -53,7 +59,7 @@ function point(position: Position) {
   return { x: Math.max(2, Math.min(98, ((position.lng + 180) / 360) * 100)), y: Math.max(2, Math.min(98, ((90 - position.lat) / 180) * 100)) };
 }
 
-export function WorldMap({ state }: { state: AppState }) {
+export function WorldMap({ state }: { state: AdminState }) {
   const mapElement = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState(false);
   const [selectedId, setSelectedId] = useState(state.locations[0]?.id ?? "");
@@ -69,7 +75,7 @@ export function WorldMap({ state }: { state: AppState }) {
 
   useEffect(() => {
     let disposed = false;
-    const markers: MarkerObject[] = [];
+    const overlays: OverlayObject[] = [];
     loadGoogleMaps().then((maps) => {
       if (disposed || !mapElement.current) return;
       const map = new maps.Map(mapElement.current, {
@@ -79,13 +85,25 @@ export function WorldMap({ state }: { state: AppState }) {
         restriction: { latLngBounds: { north: 84, south: -58, west: -179.5, east: 179.5 }, strictBounds: true }
       });
       clusters.forEach((cluster) => {
-        const marker = new maps.Marker({ map, position: cluster.position, title: cluster.locations.map((item) => String(item.location.name ?? item.location.id)).join(", "), label: cluster.isCluster ? { text: String(cluster.locations.length), color: "#fff", fontWeight: "900" } : undefined, icon: { path: maps.SymbolPath.CIRCLE, scale: cluster.isCluster ? 17 : 13, fillColor: cluster.hasOffline ? "#ff9d2e" : "#ff323a", fillOpacity: 1, strokeColor: "#6d1e27", strokeWeight: 6 } });
-        marker.addListener("click", () => { const id = cluster.locations[0]?.location.id; if (id) setSelectedId(id); map.setCenter(cluster.position); map.setZoom(5.5); });
-        markers.push(marker);
+        const content = document.createElement("button");
+        content.type = "button";
+        content.className = `google-map-overlay-marker${cluster.hasOffline ? " has-alert" : ""}${cluster.isCluster ? " is-cluster" : ""}`;
+        content.textContent = cluster.isCluster ? String(cluster.locations.length) : "";
+        content.setAttribute("aria-label", cluster.locations.map((item) => String(item.location.name ?? item.location.id)).join(", "));
+        content.addEventListener("click", () => { const id = cluster.locations[0]?.location.id; if (id) setSelectedId(id); map.setCenter(cluster.position); map.setZoom(5.5); });
+        const overlay = new maps.OverlayView();
+        overlay.onAdd = () => overlay.getPanes()?.overlayMouseTarget.appendChild(content);
+        overlay.draw = () => {
+          const pixel = overlay.getProjection().fromLatLngToDivPixel(cluster.position);
+          if (pixel) content.style.transform = `translate(${pixel.x}px, ${pixel.y}px) translate(-50%, -50%)`;
+        };
+        overlay.onRemove = () => content.remove();
+        overlay.setMap(map);
+        overlays.push(overlay);
       });
       setLoaded(true);
     }).catch(() => setLoaded(false));
-    return () => { disposed = true; markers.forEach((marker) => marker.setMap(null)); };
+    return () => { disposed = true; overlays.forEach((overlay) => overlay.setMap(null)); };
   }, [clusters, mapLocations]);
 
   return <div className="sems-map-canvas world-map-canvas" data-testid="world-charger-map">

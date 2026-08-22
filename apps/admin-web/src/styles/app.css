@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    ChargeGrid Intelligence - Design System
    Linguagem visual inspirada no ecossistema SEMS+ (GoodWe):
    tema escuro grafite, profundidade por tons de cinza,
@@ -1056,8 +1056,7 @@ button {
   color: var(--text);
 }
 
-.table-wrap::-webkit-scrollbar,
-.driver-shell::-webkit-scrollbar {
+.table-wrap::-webkit-scrollbar {
   height: 8px;
   width: 8px;
 }
@@ -1223,14 +1222,14 @@ button {
   font-size: 13px;
 }
 
-.quick-login-list {
+.demo-account-list {
   display: grid;
   gap: 8px;
   padding-top: 4px;
   border-top: 1px solid var(--border-soft);
 }
 
-.quick-login-list h3 {
+.demo-account-list h3 {
   margin: 8px 0 2px;
   font-size: 12.5px;
   color: var(--text-secondary);
@@ -1239,7 +1238,7 @@ button {
   letter-spacing: 0.06em;
 }
 
-.quick-login {
+.demo-account {
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-md);
   background: var(--surface-3);
@@ -1250,7 +1249,7 @@ button {
   transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
 }
 
-.quick-login:hover {
+.demo-account:hover {
   border-color: var(--red-soft-border);
   background: var(--surface-4);
   transform: translateX(2px);
@@ -1793,7 +1792,6 @@ button {
 .simulator-grid select,
 .start-session-form select,
 .start-session-form input,
-.driver-profile-form input,
 .sim-form input,
 .sim-form select {
   border: 1px solid var(--border-soft);
@@ -1820,7 +1818,6 @@ button {
 .simulator-grid select:focus,
 .start-session-form select:focus,
 .start-session-form input:focus,
-.driver-profile-form input:focus,
 .sim-form input:focus,
 .sim-form select:focus {
   outline: none;
@@ -1847,7 +1844,6 @@ button {
 .auth-form button,
 .inline-form button,
 .start-session-form button,
-.driver-profile-form button,
 .simulator-grid button,
 .sim-form button,
 button[data-action="finish-session"] {
@@ -2224,7 +2220,6 @@ button[data-action="finish-session"]:hover {
 
 .simulator-grid label,
 .start-session-form label,
-.driver-profile-form label,
 .sim-form label {
   display: grid;
   gap: 6px;
@@ -2290,260 +2285,10 @@ button[data-action="finish-session"]:hover {
   transform: scale(0.96);
 }
 
-.layout-driver .assistant-orb-button,
-.layout-quick .assistant-orb-button {
-  right: 18px;
-  bottom: 96px;
-  width: 52px;
-  height: 52px;
-}
 
 @keyframes orb-breathe {
   0%, 100% { box-shadow: var(--shadow-glow), 0 16px 30px rgba(0, 0, 0, 0.4); }
   50% { box-shadow: 0 0 0 1px rgba(255, 48, 73, 0.4), 0 16px 34px rgba(255, 48, 73, 0.32), 0 16px 30px rgba(0, 0, 0, 0.4); }
-}
-
-/* ============================================================
-   Drive (motorista) - mobile-first
-   ============================================================ */
-.driver-shell {
-  max-width: 480px;
-  margin: 0 auto;
-  min-height: 100vh;
-  background:
-    radial-gradient(560px circle at 50% -10%, rgba(255, 48, 73, 0.14), transparent 60%),
-    var(--bg);
-  padding-bottom: 96px;
-}
-
-.driver-topbar {
-  padding: 22px 18px 8px;
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  align-items: flex-start;
-}
-
-.driver-topbar small {
-  color: var(--goodwe-red);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 10px;
-  font-weight: 700;
-}
-
-.driver-topbar h1 {
-  margin: 6px 0;
-  font-size: 22px;
-  font-weight: 700;
-}
-
-.driver-topbar p {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 12.5px;
-}
-
-.driver-main {
-  padding: 8px 16px 16px;
-}
-
-.driver-section {
-  display: grid;
-  gap: 14px;
-}
-
-.driver-spot-grid,
-.map-list {
-  display: grid;
-  gap: 12px;
-}
-
-.driver-spot,
-.map-item,
-.quick-card {
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-lg);
-  background: var(--surface-2);
-  padding: 18px;
-  box-shadow: var(--shadow-card);
-}
-
-.driver-spot h3,
-.map-item strong {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.driver-spot p,
-.map-item span,
-.map-item small {
-  margin: 4px 0 0;
-  color: var(--text-secondary);
-  font-size: 12.5px;
-}
-
-.driver-spot ul {
-  margin: 14px 0 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-}
-
-.driver-spot li {
-  border-radius: var(--radius-sm);
-  background: var(--surface-3);
-  border: 1px solid var(--border-softer);
-  padding: 10px;
-}
-
-.driver-spot li strong,
-.driver-spot li span {
-  display: block;
-}
-
-.driver-spot li strong {
-  font-size: 14px;
-  color: var(--text);
-}
-
-.driver-spot li span {
-  color: var(--muted);
-  font-size: 10.5px;
-  margin-top: 2px;
-}
-
-.driver-spot-footer {
-  margin-top: 14px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.driver-est-detail ul,
-.quick-card ul {
-  margin: 10px 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  gap: 8px;
-  color: var(--text-secondary);
-  line-height: 1.5;
-  font-size: 12.5px;
-}
-
-.quick-card ul li {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border-softer);
-}
-
-.quick-card ul li:last-child {
-  border-bottom: 0;
-}
-
-.quick-card ul li strong {
-  color: var(--text);
-  font-weight: 700;
-}
-
-.driver-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.start-session-form,
-.driver-profile-form {
-  display: grid;
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.driver-nav {
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 16px;
-  width: min(94%, 440px);
-  background: var(--surface-2);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-pill);
-  box-shadow: var(--shadow-soft);
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  padding: 6px;
-  gap: 4px;
-  z-index: 40;
-}
-
-.driver-nav a {
-  min-height: 50px;
-  border-radius: var(--radius-pill);
-  display: grid;
-  place-items: center;
-  text-align: center;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  padding: 0 4px;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.driver-nav a.is-active {
-  background: var(--goodwe-red);
-  color: #fff;
-  font-weight: 700;
-  box-shadow: 0 6px 14px rgba(255, 48, 73, 0.35);
-}
-
-/* ============================================================
-   Quick (fluxo publico via QR)
-   ============================================================ */
-.quick-shell {
-  max-width: 560px;
-  margin: 0 auto;
-  min-height: 100vh;
-  padding: 26px 18px 32px;
-  background:
-    radial-gradient(560px circle at 85% -10%, rgba(255, 48, 73, 0.14), transparent 55%),
-    var(--bg);
-}
-
-.quick-shell header span {
-  color: var(--goodwe-red);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.quick-shell header h1 {
-  margin: 6px 0;
-  font-size: 22px;
-  font-weight: 700;
-}
-
-.quick-shell header p {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 12.5px;
-}
-
-.quick-shell main {
-  margin-top: 16px;
-}
-
-.quick-section {
-  display: grid;
-  gap: 14px;
 }
 
 /* ============================================================
@@ -2696,9 +2441,78 @@ button[data-action="finish-session"]:hover {
     transform: none;
     max-width: none;
   }
+}
 
-  .driver-spot ul {
-    grid-template-columns: repeat(2, 1fr);
+/* Administrative scope is explicit and travels with the URL. */
+.scope-selector {
+  display: grid;
+  grid-template-columns: auto minmax(150px, 220px);
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.scope-selector select {
+  min-height: 32px;
+  max-width: 220px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--surface-3);
+  color: var(--text);
+  padding: 0 28px 0 10px;
+}
+
+.google-map-overlay-marker {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 30px;
+  height: 30px;
+  border: 6px solid rgba(109, 30, 39, 0.82);
+  border-radius: 50%;
+  background: #ff323a;
+  color: #fff;
+  font-weight: 900;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+.google-map-overlay-marker.has-alert {
+  background: #ff9d2e;
+}
+
+.google-map-overlay-marker.is-cluster {
+  width: 38px;
+  height: 38px;
+}
+
+@media (max-width: 1320px) {
+  .profile-name,
+  .topbar-promo {
+    display: none;
+  }
+
+  .scope-selector {
+    grid-template-columns: minmax(150px, 200px);
+  }
+
+  .scope-selector span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  .page-heading h1 {
+    font-size: 24px;
+  }
+
+  .page-heading p,
+  .page-heading small {
+    display: block;
+    margin: 2px 0 0;
   }
 }
 
@@ -2747,9 +2561,7 @@ button[data-action="finish-session"]:hover {
 }
 
 body.layout-desktop,
-body.layout-auth,
-body.layout-driver,
-body.layout-quick {
+body.layout-auth {
   background: var(--bg);
   color: var(--text);
   font-family: Poppins, "Segoe UI", Arial, Helvetica, sans-serif;
@@ -3612,7 +3424,6 @@ body.layout-quick {
 .simulator-grid textarea,
 .start-session-form input,
 .start-session-form select,
-.driver-profile-form input,
 .sim-form input,
 .sim-form select {
   min-height: 36px;
@@ -4144,65 +3955,6 @@ body.layout-quick {
   background: #25282a;
 }
 
-.driver-point-card {
-  overflow: hidden;
-  padding: 0;
-}
-
-.driver-point-card > div:not(.driver-charger-options),
-.driver-point-card > ul,
-.driver-charger-options {
-  margin-inline: 18px;
-}
-
-.driver-point-cover,
-.driver-payment-cover {
-  width: 100%;
-  aspect-ratio: 16 / 8;
-  object-fit: cover;
-}
-
-.driver-charger-options {
-  display: grid;
-  gap: 8px;
-  margin-bottom: 18px;
-}
-
-.driver-charger-option {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 14px;
-  padding: 12px;
-  border: 1px solid var(--border-soft);
-  border-radius: 8px;
-  color: var(--text-primary);
-  text-decoration: none;
-  background: rgba(255, 255, 255, 0.025);
-}
-
-.driver-charger-option span,
-.driver-charger-option small {
-  display: block;
-  min-width: 0;
-}
-
-.driver-charger-option small {
-  margin-top: 4px;
-  color: var(--text-secondary);
-}
-
-.driver-charger-option b {
-  color: var(--goodwe-red);
-  white-space: nowrap;
-}
-
-.driver-payment-cover {
-  max-height: 260px;
-  margin-bottom: 18px;
-  border-radius: 8px;
-}
-
 @media (max-width: 1100px) {
   .establishment-folder-grid,
   .network-location-grid,
@@ -4610,30 +4362,14 @@ body.layout-quick {
 }
 
 .auth-brand,
-.auth-card,
-.driver-spot,
-.map-item,
-.quick-card {
+.auth-card {
   border-radius: 16px;
   background: linear-gradient(135deg, rgba(58, 58, 60, 0.92), rgba(31, 33, 35, 0.96));
   box-shadow: var(--shadow-card);
 }
 
-.driver-shell,
-.quick-shell {
-  background: var(--bg);
-}
 
-.driver-nav {
-  border-radius: 16px;
-  background: rgba(31, 33, 35, 0.96);
-}
 
-.driver-nav a.is-active {
-  background: rgba(245, 246, 248, 0.1);
-  color: var(--goodwe-red);
-  box-shadow: none;
-}
 
 @media (max-width: 1200px) {
   .sems-dashboard-grid,
@@ -4764,15 +4500,6 @@ body.layout-quick {
     height: 58px;
     right: 18px;
     bottom: 88px;
-  }
-
-  .layout-driver .assistant-orb-button,
-  .layout-quick .assistant-orb-button {
-    top: 118px;
-    right: 18px;
-    bottom: auto;
-    width: 52px;
-    height: 52px;
   }
 
   .assistant-orb-eye::before,

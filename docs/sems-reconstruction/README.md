@@ -1,8 +1,8 @@
 # Reconstrução do Dashboard SEMS+ com módulo ChargeGrid
 
-**Status:** plano de análise; nenhuma implementação autorizada nesta etapa  
+**Status:** análise histórica concluída; implementação autorizada e iniciada na linha `develop/admin-web`  
 **Decisão vigente:** ChargeGrid incorporado como módulo/camada da experiência SEMS+  
-**Fora do escopo:** qualquer alteração na Driver PWA
+**Fora do escopo do Admin:** qualquer alteração na Driver PWA
 
 ## 1. Resultado esperado
 

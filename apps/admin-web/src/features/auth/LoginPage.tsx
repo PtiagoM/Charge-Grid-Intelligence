@@ -1,14 +1,15 @@
 import { useState, type FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { assets } from "../constants/assets";
-import { useAppState } from "./AppState";
+import { assets } from "../../constants/assets";
+import { useAdminState } from "../../app/AdminState";
+import type { Profile } from "../../domain/admin";
 
-export function homeFor(profile: "GOODWE" | "ESTABELECIMENTO" | "USUARIO") {
-  return profile === "USUARIO" ? "/drive/home" : "/mvp/overview";
+export function homeFor(_profile: Profile) {
+  return "/mvp/overview";
 }
 
 export function LoginPage() {
-  const { account, login, state } = useAppState();
+  const { account, login, state } = useAdminState();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,7 +32,7 @@ export function LoginPage() {
       <img src={assets.logo} alt="GoodWe" />
       <h1>CHARGEGRID INTELLIGENCE</h1>
       <p>SEMS+ monitora a operacao energetica. ChargeGrid organiza a operacao comercial da recarga.</p>
-      <ul><li>Central GoodWe: visao nacional de rede comercial.</li><li>Business: operacao do estabelecimento em tempo real.</li><li>Drive e Quick: experiencia de recarga para motorista e visitante.</li></ul>
+      <ul><li>Central GoodWe: visao nacional de rede comercial.</li><li>Business: operacao do estabelecimento em tempo real.</li><li>Motoristas e visitantes utilizam exclusivamente o Driver PWA.</li></ul>
     </aside>
     <section className="auth-card" data-testid="login-card">
       <h2>Entrar no ChargeGrid</h2>
@@ -42,11 +43,11 @@ export function LoginPage() {
         <button type="submit" data-testid="login-submit">Acessar</button>
       </form>
       {error ? <p className="auth-error" data-testid="login-error">{error}</p> : null}
-      <div className="quick-login-list" data-testid="quick-login-list">
+      <div className="demo-account-list" data-testid="demo-account-list">
         <h3>Conta inicial</h3>
-        {state.accounts.map((item) => <button key={item.id} type="button" className="quick-login" onClick={() => { setEmail(item.email); setPassword(item.password); setError(""); }}>{item.profile} · {item.email}</button>)}
+        {state.accounts.map((item) => <button key={item.id} type="button" className="demo-account" onClick={() => { setEmail(item.email); setPassword(item.password); setError(""); }}>{item.profile} · {item.email}</button>)}
       </div>
-      <footer><span>Quick sem login por QR:</span><a href="#/quick/charger/CG-FIAP-01" data-testid="quick-public-link">Abrir ChargeGrid Quick</a></footer>
+      <footer><span>Ambiente administrativo separado das jornadas do motorista e visitante.</span></footer>
     </section>
   </div>;
 }

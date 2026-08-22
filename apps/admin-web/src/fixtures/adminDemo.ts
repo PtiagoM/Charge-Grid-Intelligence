@@ -1,4 +1,4 @@
-import type { AppState, Charger, Establishment, Location } from "./model";
+import type { AdminState, Charger, Establishment, Location } from "../domain/admin";
 
 const establishments: Establishment[] = [
   { id: "est-fiap", clientId: "cli-fiap", name: "Shopping FIAP", city: "Sao Paulo", state: "SP", address: "Av. Lins de Vasconcelos, 1222", pricePerKwh: 2.95, contractCode: "CG-CTR-2026-001" },
@@ -24,12 +24,11 @@ const fiapChargers: Charger[] = [
   id: String(id), establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", identifier: String(id), internalId: String(internalId), serial: `GWFIAP000${index + 1}`, model: "GoodWe AC 22", powerKw: Number(powerKw), installationDate: "2026-01-15", status: status as Charger["status"], todayEnergyKwh: Number(todayEnergyKwh), revenueToday: Number(revenueToday)
 }));
 
-export function createInitialState(): AppState {
+export function createInitialState(): AdminState {
   return {
     accounts: [
       { id: "acc-goodwe", email: "goodwe@teste.com", password: "teste", profile: "GOODWE", displayName: "Painel Executivo GoodWe" },
-      { id: "acc-est-fiap", email: "estabelecimento@teste.com", password: "teste", profile: "ESTABELECIMENTO", displayName: "Gestora FIAP", establishmentId: "est-fiap" },
-      { id: "acc-driver", email: "usuario@teste.com", password: "teste", profile: "USUARIO", displayName: "Usuario Demo" }
+      { id: "acc-est-fiap", email: "estabelecimento@teste.com", password: "teste", profile: "ESTABELECIMENTO", displayName: "Gestora FIAP", establishmentId: "est-fiap" }
     ],
     currentAccountId: null,
     clients: [
@@ -47,7 +46,7 @@ export function createInitialState(): AppState {
       { id: "CG-CN-01", establishmentId: "est-goodwe-shanghai", locationId: "loc-goodwe-shanghai", identifier: "GW-SHANGHAI-01", internalId: "CN-LAB-01", serial: "GWCN0001", model: "GoodWe DC 120", powerKw: 120, installationDate: "2026-05-12", status: "available", todayEnergyKwh: 48.9, revenueToday: 38.14 }
     ],
     sessions: [
-      { id: "CG-2026-1001", chargerId: "CG-FIAP-02", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverId: "driver-ana", driverName: "Ana Souza", vehicle: "Volvo EX30", status: "active", startedAt: "2026-08-18T17:20:00-03:00", durationMinutes: 40, energyKwh: 13.4, tariffPerKwh: 2.95, consumedAmount: 39.53, payment: { status: "Aprovado", method: "Cartao", limitAmount: 100 } },
+      { id: "CG-2026-1001", chargerId: "CG-FIAP-01", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverId: "driver-ana", driverName: "Ana Souza", vehicle: "Volvo EX30", status: "active", startedAt: "2026-08-18T17:20:00-03:00", durationMinutes: 40, energyKwh: 13.4, tariffPerKwh: 2.95, consumedAmount: 39.53, payment: { status: "Aprovado", method: "Cartao", limitAmount: 100 } },
       { id: "CG-2026-0998", chargerId: "CG-FIAP-01", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverId: "driver-paulo", driverName: "Paulo Lima", vehicle: "BYD Dolphin", status: "finished", startedAt: "2026-08-18T14:10:00-03:00", durationMinutes: 62, energyKwh: 18.7, tariffPerKwh: 2.95, consumedAmount: 55.17, finalAmount: 55.17, payment: { status: "Aprovado", method: "Pix", limitAmount: 80 } }
     ],
     queue: [
@@ -57,8 +56,8 @@ export function createInitialState(): AppState {
     supportTickets: [{ id: "ticket-0001", establishmentId: "est-mercadox", code: "SUP-2026-0001", title: "Carregador sem comunicacao", description: "Equipamento offline desde 16:30.", status: "Em atendimento", createdAt: "2026-08-18T16:42:00-03:00" }],
     audit: [{ id: "audit-0001", summary: "Chamado SUP-2026-0001 criado", at: "2026-08-18T16:42:00-03:00" }],
     energy: [
-      { establishmentId: "est-fiap", demandState: "Alerta", powerMarginPercent: 24, batterySocPercent: 73, solarPowerKw: 12.4, gridPowerKw: 6.1 },
-      { establishmentId: "est-mercadox", demandState: "Crítico", powerMarginPercent: 8, batterySocPercent: 38, solarPowerKw: 3.1, gridPowerKw: 18.7 }
+      { establishmentId: "est-fiap", demandState: "Alerta", demandKw: 76, contractedLimitKw: 100, powerMarginPercent: 24, batterySocPercent: 73, solarPowerKw: 12.4, gridPowerKw: 6.1 },
+      { establishmentId: "est-mercadox", demandState: "Crítico", demandKw: 92, contractedLimitKw: 100, powerMarginPercent: 8, batterySocPercent: 38, solarPowerKw: 3.1, gridPowerKw: 18.7 }
     ]
   };
 }

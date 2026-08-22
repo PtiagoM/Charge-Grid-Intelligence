@@ -1,4 +1,4 @@
-export type Profile = "GOODWE" | "ESTABELECIMENTO" | "USUARIO";
+export type Profile = "GOODWE" | "ESTABELECIMENTO";
 export type ChargerStatus = "available" | "charging" | "limited" | "offline";
 export type SessionStatus = "active" | "finished";
 
@@ -114,13 +114,15 @@ export interface AuditEntry {
 export interface EnergySnapshot {
   establishmentId: string;
   demandState: "Favorável" | "Alerta" | "Crítico";
+  demandKw: number;
+  contractedLimitKw: number;
   powerMarginPercent: number;
   batterySocPercent: number;
   solarPowerKw: number;
   gridPowerKw: number;
 }
 
-export interface AppState {
+export interface AdminState {
   accounts: Account[];
   currentAccountId: string | null;
   clients: Client[];

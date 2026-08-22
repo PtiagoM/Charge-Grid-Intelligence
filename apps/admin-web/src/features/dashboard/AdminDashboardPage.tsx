@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { useAppState } from "./AppState";
-import type { Charger, Client, Session } from "./model";
-import { Badge, DataTable, KpiCard, SectionHeader, money, number } from "./Ui";
-import { WorldMap } from "./WorldMap";
-import { assets } from "../constants/assets";
+import { calculateQueuePositions, getDemandState } from "@chargegrid/shared";
+import { useAdminState } from "../../app/AdminState";
+import type { Charger, Client, Session } from "../../domain/admin";
+import { Badge, DataTable, KpiCard, SectionHeader, money, number } from "../../components/AdminUi";
+import { WorldMap } from "../map/WorldMap";
+import { assets } from "../../constants/assets";
 
 const establishmentTabs = new Set(["overview", "locations", "location", "charger", "chargers", "sessions", "operations", "energy", "pricing", "finance", "invoices", "contract", "support", "ticket", "documents", "ai", "reports", "settings"]);
 
@@ -20,9 +21,11 @@ function StatusPill({ value }: { value: string }) {
   return <span className={`enterprise-status ${value.toLowerCase().replaceAll(" ", "-")}`}>{value}</span>;
 }
 
-function Overview() {
-  const { state, account } = useAppState();
-  const establishmentIds = account?.profile === "GOODWE" ? new Set(state.establishments.map((item) => item.id)) : new Set([account?.establishmentId ?? ""]);
+function Overview({ establishmentId }: { establishmentId?: string }) {
+  const { state, account } = useAdminState();
+  const establishmentIds = account?.profile === "GOODWE"
+    ? new Set(establishmentId ? [establishmentId] : state.establishments.map((item) => item.id))
+    : new Set([account?.establishmentId ?? ""]);
   const chargers = state.chargers.filter((item) => establishmentIds.has(item.establishmentId));
   const sessions = state.sessions.filter((item) => establishmentIds.has(item.establishmentId));
   const locations = state.locations.filter((item) => establishmentIds.has(item.establishmentId));
@@ -41,7 +44,7 @@ function Overview() {
 
   return <>
     <section className="sems-dashboard-map" data-testid="mvp-overview-panel">
-      <WorldMap state={state} />
+      <WorldMap state={{ ...state, locations, chargers }} />
       <article className="sems-station-summary world-station-summary" data-testid="mvp-overview-kpis">
         <div className="station-row station-row-main"><div className="station-map-illustration" aria-hidden="true"><span /><i /><b /><em /></div><div className="station-value"><p><strong>{locations.length}</strong><button type="button" aria-label="Expandir estacoes">⌄</button></p><span>Station Number <small>?</small></span></div></div>
         <div className="station-row"><div className="station-solar-illustration" aria-hidden="true"><span /><span /><span /></div><div className="station-value"><p><strong>{number(totalPower)}</strong><small>kWp</small></p><span>Capacity</span></div></div>
@@ -55,7 +58,7 @@ function Overview() {
 }
 
 function ClientsPage() {
-  const { state } = useAppState();
+  const { state } = useAdminState();
   return <><Breadcrumbs items={[{ label: "GoodWe" }, { label: "Clientes" }]} /><section className="surface panel enterprise-page" data-testid="clients-panel"><SectionHeader title="Clientes comerciais" subtitle="Relacionamento, contratos, operacao e oportunidades em uma unica pasta." action={<a className="sems-primary-action" href="#/mvp/new-client">Cadastrar cliente</a>} /><div className="kpi-grid four-cols"><KpiCard label="Clientes ativos" value={state.clients.filter((item) => item.status === "Ativo").length} help="carteira atual" /><KpiCard label="Em onboarding" value={state.clients.filter((item) => item.status === "Implantação").length} help="implantacao comercial" /><KpiCard label="Health medio" value="91/100" help="saude da carteira" accent="good" /><KpiCard label="Oportunidades" value={2} help="expansao identificada" accent="warn" /></div><form className="enterprise-search-row"><label><span>Buscar cliente</span><input placeholder="Nome, documento ou responsavel" /></label><label><span>Ciclo</span><select><option>Todos</option><option>Onboarding</option><option>Operacao</option><option>Expansao</option></select></label><button type="submit">Aplicar filtros</button></form><div className="enterprise-client-list">{state.clients.map((client) => {
     const establishments = state.establishments.filter((item) => item.clientId === client.id); const ids = new Set(establishments.map((item) => item.id)); const locations = state.locations.filter((item) => ids.has(item.establishmentId)); const chargers = state.chargers.filter((item) => ids.has(item.establishmentId));
     return <article className="enterprise-client-card" key={client.id}><img src={assets.plant} alt={client.name} /><div className="enterprise-client-main"><div className="enterprise-card-title"><div><span>Enterprise</span><h3>{client.name}</h3><p>{client.corporateName}</p></div><StatusPill value={client.status} /></div><div className="enterprise-client-metrics"><span><strong>{establishments.length}</strong> estabelecimentos</span><span><strong>{locations.length}</strong> pontos</span><span><strong>{chargers.length}</strong> carregadores</span><span><strong>{state.supportTickets.filter((item) => ids.has(item.establishmentId)).length}</strong> chamados</span></div><div className="enterprise-card-footer"><span>Responsavel GoodWe: {client.owner}</span><span>Health 91/100</span><a className="ghost-button" href={`#/mvp/client?client=${client.id}`}>Abrir cliente</a></div></div></article>;
@@ -63,7 +66,7 @@ function ClientsPage() {
 }
 
 function NewClientPage() {
-  const { createClient } = useAppState();
+  const { createClient } = useAdminState();
   const navigate = useNavigate();
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -75,17 +78,22 @@ function NewClientPage() {
 }
 
 function ClientDetail({ client }: { client: Client | undefined }) {
+  const { state } = useAdminState();
   if (!client) return <p>Cliente nao encontrado.</p>;
-  return <><Breadcrumbs items={[{ label: "Clientes", href: "#/mvp/clients" }, { label: client.name }]} /><section className="enterprise-hero surface"><img src={assets.plant} alt={client.name} /><div><span className="eyebrow">Enterprise · Operacao</span><h2>{client.name}</h2><p>{client.corporateName} · {client.document}</p><div className="enterprise-hero-meta"><StatusPill value={client.status} /><span>Responsavel {client.owner}</span><span>Health 91/100</span></div></div></section><nav className="enterprise-anchor-tabs"><a href="#client-summary">Resumo</a><a href="#client-establishments">Estabelecimentos</a><a href="#client-contacts">Contatos</a></nav><section id="client-summary" className="surface panel"><SectionHeader title="Resumo executivo" subtitle="Leitura consolidada do relacionamento e da operacao." /><div className="kpi-grid four-cols"><KpiCard label="Estabelecimentos" value="1" help="unidades de negocio" /><KpiCard label="Pontos" value="1" help="locais fisicos" /><KpiCard label="Carregadores" value="5" help="infraestrutura" /><KpiCard label="Health" value="91/100" help="relacionamento" accent="good" /></div></section><section id="client-contacts" className="surface panel"><SectionHeader title="Contato principal" /><div className="detail-grid"><article><h3>{client.contactName}</h3><p>{client.contactEmail}</p></article><article><h3>Responsavel GoodWe</h3><p>{client.owner}</p></article></div></section></>;
+  const establishments = state.establishments.filter((item) => item.clientId === client.id);
+  const establishmentIds = new Set(establishments.map((item) => item.id));
+  const locations = state.locations.filter((item) => establishmentIds.has(item.establishmentId));
+  const chargers = state.chargers.filter((item) => establishmentIds.has(item.establishmentId));
+  return <><Breadcrumbs items={[{ label: "Clientes", href: "#/mvp/clients" }, { label: client.name }]} /><section className="enterprise-hero surface"><img src={assets.plant} alt={client.name} /><div><span className="eyebrow">Enterprise · Operacao</span><h2>{client.name}</h2><p>{client.corporateName} · {client.document}</p><div className="enterprise-hero-meta"><StatusPill value={client.status} /><span>Responsavel {client.owner}</span><span>Health 91/100</span></div></div></section><nav className="enterprise-anchor-tabs"><a href="#client-summary">Resumo</a><a href="#client-establishments">Estabelecimentos</a><a href="#client-contacts">Contatos</a></nav><section id="client-summary" className="surface panel"><SectionHeader title="Resumo executivo" subtitle="Leitura consolidada do relacionamento e da operacao." /><div className="kpi-grid four-cols"><KpiCard label="Estabelecimentos" value={establishments.length} help="unidades de negocio" /><KpiCard label="Pontos" value={locations.length} help="locais fisicos" /><KpiCard label="Carregadores" value={chargers.length} help="infraestrutura" /><KpiCard label="Health" value="91/100" help="relacionamento" accent="good" /></div></section><section id="client-establishments" className="surface panel"><SectionHeader title="Estabelecimentos vinculados" subtitle="Acesse a unidade para continuar pela hierarquia operacional." /><div className="intel-grid">{establishments.map((item) => <article className="intel-card" key={item.id}><h3>{item.name}</h3><p>{item.city}/{item.state}</p><a className="ghost-button" href={`#/mvp/establishment?est=${item.id}`}>Abrir estabelecimento</a></article>)}</div></section><section id="client-contacts" className="surface panel"><SectionHeader title="Contato principal" /><div className="detail-grid"><article><h3>{client.contactName}</h3><p>{client.contactEmail}</p></article><article><h3>Responsavel GoodWe</h3><p>{client.owner}</p></article></div></section></>;
 }
 
 function EstablishmentsPage() {
-  const { state } = useAppState();
+  const { state } = useAdminState();
   return <section className="surface panel sems-list-page"><SectionHeader title="Estabelecimentos" subtitle="Clientes administrados pela GoodWe e sua estrutura vinculada." action={<a className="sems-primary-action" href="#/mvp/new-establishment">Cadastrar novo estabelecimento</a>} /><div className="establishment-folder-grid">{state.establishments.map((item) => { const locations = state.locations.filter((location) => location.establishmentId === item.id); const chargers = state.chargers.filter((charger) => charger.establishmentId === item.id); return <article className="establishment-folder-card" key={item.id}><div className="folder-thumb"><img src={assets.plant} alt={item.name} /></div><div className="folder-body"><h3>{item.name}</h3><p>{item.city}/{item.state} · Cliente comercial</p><div className="network-card-stats"><span><strong>{locations.length}</strong> pontos</span><span><strong>{chargers.length}</strong> carregadores</span><span><strong>{chargers.filter((charger) => charger.status === "charging").length}</strong> em uso</span><span><strong>{chargers.filter((charger) => charger.status === "available").length}</strong> disponiveis</span></div><p>Operacao estavel · {state.queue.filter((entry) => entry.establishmentId === item.id).length} em fila</p><a className="ghost-button" href={`#/mvp/establishment?est=${item.id}`}>Abrir pasta</a></div></article>; })}</div></section>;
 }
 
 function EstablishmentDetail({ establishmentId }: { establishmentId: string }) {
-  const { state } = useAppState();
+  const { state } = useAdminState();
   const item = state.establishments.find((candidate) => candidate.id === establishmentId);
   if (!item) return <p>Estabelecimento nao encontrado.</p>;
   const locations = state.locations.filter((location) => location.establishmentId === item.id);
@@ -94,13 +102,13 @@ function EstablishmentDetail({ establishmentId }: { establishmentId: string }) {
 }
 
 function LocationsPage({ establishmentId }: { establishmentId?: string }) {
-  const { state } = useAppState();
+  const { state } = useAdminState();
   const locations = establishmentId ? state.locations.filter((item) => item.establishmentId === establishmentId) : state.locations;
   return <section className="surface panel sems-list-page" data-testid="establishment-locations-panel"><SectionHeader title={establishmentId ? "Meus locais" : "Pontos de Recarga"} subtitle={establishmentId ? "Locais atribuidos pela GoodWe para monitoramento operacional." : "Mapa e blocos de todos os locais fisicos da rede."} /><form className="inline-form"><label>Estabelecimento<select><option>Todos</option>{state.establishments.map((item) => <option key={item.id}>{item.name}</option>)}</select></label><label>Status<select><option>Todos</option><option>Ativo</option><option>Inativo</option></select></label><button type="submit">Filtrar</button></form><div className="network-view-tabs"><span className="is-active">Blocos</span><a href="#/mvp/overview">Mapa</a></div><div className="network-location-grid">{locations.map((item) => { const chargers = state.chargers.filter((charger) => charger.locationId === item.id); return <article className="network-location-card" key={item.id}><img className="network-card-cover" src={assets.plant} alt={item.name} /><div className="network-card-body"><div className="network-card-title"><div><h3>{item.name}</h3><p>{item.city}/{item.state}</p></div><Badge value={item.status === "Ativo" ? "available" : "offline"} /></div><p className="network-card-address">{item.address}, {item.number}</p><div className="network-card-stats"><span><strong>{chargers.length}</strong> carregadores</span><span><strong>{chargers.filter((charger) => charger.status === "available").length}</strong> disponiveis</span><span><strong>{chargers.filter((charger) => charger.status === "charging").length}</strong> em uso</span><span><strong>{chargers.filter((charger) => charger.status === "offline").length}</strong> offline</span></div><a className="ghost-button" href={`#/mvp/location?est=${item.establishmentId}&loc=${item.id}`}>{establishmentId ? "Abrir monitoramento" : "Abrir ponto"}</a></div></article>; })}</div></section>;
 }
 
 function NewLocationPage({ establishmentId }: { establishmentId: string }) {
-  const { createLocation } = useAppState();
+  const { createLocation } = useAdminState();
   const navigate = useNavigate();
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -116,7 +124,7 @@ function ChargerCards({ items }: { items: Charger[] }) {
 }
 
 function LocationDetail({ establishmentId, locationId, canManage }: { establishmentId: string; locationId: string; canManage: boolean }) {
-  const { state, createCharger } = useAppState();
+  const { state, createCharger } = useAdminState();
   const [formOpen, setFormOpen] = useState(false);
   const location = state.locations.find((item) => item.id === locationId && item.establishmentId === establishmentId);
   if (!location) return <Navigate to="/mvp/overview" replace />;
@@ -132,7 +140,7 @@ function LocationDetail({ establishmentId, locationId, canManage }: { establishm
 }
 
 function ChargersPage({ establishmentId }: { establishmentId?: string }) {
-  const { state } = useAppState();
+  const { state } = useAdminState();
   const [selectedId, setSelectedId] = useState("");
   const items = establishmentId ? state.chargers.filter((item) => item.establishmentId === establishmentId) : state.chargers;
   const selected = items.find((item) => item.id === selectedId) ?? items[0];
@@ -144,50 +152,59 @@ function SessionRows({ items }: { items: Session[] }) {
 }
 
 function SessionsPage({ establishmentId }: { establishmentId?: string }) {
-  const { state } = useAppState();
+  const { state } = useAdminState();
   const [selectedId, setSelectedId] = useState("");
   const sessions = establishmentId ? state.sessions.filter((item) => item.establishmentId === establishmentId) : state.sessions;
   const active = sessions.filter((item) => item.status === "active"); const finished = sessions.filter((item) => item.status === "finished"); const selected = sessions.find((item) => item.id === selectedId) ?? active[0] ?? finished[0];
   return <><section className="surface panel sems-list-page" data-testid="mvp-sessions-active"><SectionHeader title="Sessoes ativas" subtitle="Acompanhamento em tempo real por local e carregador." /><div className="sems-status-tabs"><span className="sems-status-tab tone-info"><i />Todos <b>({sessions.length})</b></span><span className="sems-status-tab tone-danger is-active"><i />Em ocorrencia <b>({active.length})</b></span><span className="sems-status-tab tone-good"><i />Resolvidos <b>({finished.length})</b></span></div><div className="intel-grid">{active.map((session) => <article className="intel-card" key={session.id}><h3>{session.id}</h3><p>{session.chargerId} · {state.locations.find((item) => item.id === session.locationId)?.name}</p><p>{session.durationMinutes} min · {number(session.energyKwh)} kWh</p><p>{money(session.tariffPerKwh)}/kWh · {money(session.consumedAmount)}</p><button className="ghost-button" type="button" onClick={() => setSelectedId(session.id)}>Abrir sessao</button></article>)}</div></section><section className="surface panel sems-list-page" data-testid="mvp-sessions-finished"><SectionHeader title="Historico de sessoes" subtitle="Registro consolidado da operacao." /><DataTable columns={["Sessao", "Motorista", "Status", "Duracao", "Energia", "Tarifa", "Valor", "Pagamento"]}><SessionRows items={finished} /></DataTable></section>{selected ? <section className="surface panel" data-testid="mvp-session-detail"><SectionHeader title={`Detalhes da sessao ${selected.id}`} /><div className="detail-grid"><article><h3>Local</h3><p>{state.locations.find((item) => item.id === selected.locationId)?.name}</p></article><article><h3>Carregador</h3><p>{selected.chargerId}</p></article><article><h3>Energia</h3><p>{number(selected.energyKwh)} kWh</p></article><article><h3>Tempo</h3><p>{selected.durationMinutes} min</p></article><article><h3>Tarifa</h3><p>{money(selected.tariffPerKwh)}/kWh</p></article><article><h3>Pagamento</h3><p>{selected.payment.status}</p></article></div></section> : null}</>;
 }
 
-function PricingPage({ establishmentId }: { establishmentId: string }) {
-  const { state } = useAppState();
-  const establishment = state.establishments.find((item) => item.id === establishmentId) ?? state.establishments[0]!;
+function PricingPage({ establishmentId }: { establishmentId?: string }) {
+  const { state } = useAdminState();
+  const establishment = state.establishments.find((item) => item.id === establishmentId);
+  if (!establishment) return <section className="surface panel"><SectionHeader title="Tarifacao e Pagamentos" subtitle="Selecione um estabelecimento no controle de escopo para consultar tarifa, receita e pagamentos sem misturar unidades." /></section>;
   const sessions = state.sessions.filter((item) => item.establishmentId === establishment.id);
   const revenue = sessions.reduce((sum, item) => sum + (item.finalAmount ?? item.consumedAmount), 0);
   return <><section className="surface panel" data-testid="mvp-pricing-panel"><SectionHeader title="Tarifacao e Pagamentos" subtitle="Regras comerciais aplicadas sobre uma base de dados compartilhada." /><div className="detail-grid"><article><h3>Tarifa base</h3><p>{money(establishment.pricePerKwh)}/kWh</p></article><article><h3>Receita acumulada</h3><p>{money(revenue)}</p></article><article><h3>Pagamentos aprovados</h3><p>{sessions.filter((item) => item.payment.status === "Aprovado").length}</p></article><article><h3>Pagamentos pendentes</h3><p>{sessions.filter((item) => item.payment.status === "Pendente").length}</p></article></div>{sessions[0] ? <article className="assistant-card"><h3>Sessao de referencia {sessions[0].id}</h3><p>{number(sessions[0].energyKwh)} kWh x {money(sessions[0].tariffPerKwh)}/kWh</p><p>Valor: {money(sessions[0].consumedAmount)}</p></article> : null}</section><section className="surface panel" data-testid="mvp-payments-table"><SectionHeader title="Cobranca das recargas" subtitle="Historico financeiro por sessao." /><DataTable columns={["Sessao", "Local", "Metodo", "Limite", "Valor", "Status"]}>{sessions.map((item) => <tr key={item.id}><td>{item.id}</td><td>{state.locations.find((loc) => loc.id === item.locationId)?.name}</td><td>{item.payment.method}</td><td>{money(item.payment.limitAmount)}</td><td>{money(item.finalAmount ?? item.consumedAmount)}</td><td><Badge value={item.payment.status} /></td></tr>)}</DataTable></section></>;
 }
 
-function EnergyPage({ establishmentId }: { establishmentId: string }) {
-  const { state } = useAppState();
-  const energy = state.energy.find((item) => item.establishmentId === establishmentId) ?? state.energy[0]!;
-  const queue = state.queue.filter((item) => item.establishmentId === establishmentId && item.status === "waiting");
-  const sessions = state.sessions.filter((item) => item.establishmentId === establishmentId && item.status === "active"); const chargers = state.chargers.filter((item) => item.establishmentId === establishmentId);
-  return <><section className="surface panel" data-testid="mvp-energy-panel"><SectionHeader title="Demanda e Energia" subtitle="Monitoramento operacional da infraestrutura recebida." /><div className="kpi-grid four-cols"><KpiCard label="Demanda atual" value="76 kW" help="consumo total instantaneo" /><KpiCard label="Limite contratado" value="100 kW" help="capacidade maxima" /><KpiCard label="Carga dos carregadores" value={`${chargers.filter((item) => item.status === "charging").reduce((sum, item) => sum + item.powerKw, 0)} kW`} help="consumo de recarga" /><KpiCard label="Margem" value={`${energy.powerMarginPercent}%`} help={energy.demandState} accent="warn" /><KpiCard label="Solar" value={`${energy.solarPowerKw} kW`} help="geracao renovavel" /><KpiCard label="Bateria" value={`${energy.batterySocPercent}%`} help="SOC estimado" /><KpiCard label="Sessoes em andamento" value={sessions.length} help="tempo real" /><KpiCard label="Fila" value={queue.length} help="aguardando vaga" /></div></section><section className="surface panel" data-testid="mvp-queue-panel"><SectionHeader title="Fila de espera" subtitle="Concentrada por disponibilidade e condicao energetica." /><DataTable columns={["Posicao", "Usuario", "Veiculo", "Status", "Observacao"]}>{queue.map((item, index) => <tr key={item.id}><td>{index + 1}</td><td>{item.driverName}</td><td>{item.vehicle}</td><td><Badge value={item.status} /></td><td>Aguardando disponibilidade</td></tr>)}</DataTable></section><section className="surface panel sems-list-page"><SectionHeader title="Condicao por ponto" subtitle="Cada local possui demanda, limite e margem independentes." /><div className="intel-grid">{state.locations.filter((item) => item.establishmentId === establishmentId).map((location) => <article className="intel-card" key={location.id}><div className="network-card-title"><h3>{location.name}</h3><Badge value={energy.demandState} /></div><p>Demanda 76 kW de 100 kW</p><p>Solar {energy.solarPowerKw} kW · Bateria {energy.batterySocPercent}%</p><a className="ghost-button" href={`#/mvp/location?est=${establishmentId}&loc=${location.id}`}>Abrir ponto</a></article>)}</div></section></>;
+function EnergyPage({ establishmentId }: { establishmentId?: string }) {
+  const { state } = useAdminState();
+  const scopedIds = new Set(establishmentId ? [establishmentId] : state.establishments.map((item) => item.id));
+  const snapshots = state.energy.filter((item) => scopedIds.has(item.establishmentId));
+  const totalLimit = snapshots.reduce((sum, item) => sum + item.contractedLimitKw, 0);
+  const totalDemand = snapshots.reduce((sum, item) => sum + item.demandKw, 0);
+  const powerMarginPercent = totalLimit ? Math.round(((totalLimit - totalDemand) / totalLimit) * 100) : 0;
+  const batterySocPercent = snapshots.length ? Math.round(snapshots.reduce((sum, item) => sum + item.batterySocPercent, 0) / snapshots.length) : 0;
+  const demandState = getDemandState({ powerMarginPercent, socPercent: batterySocPercent });
+  const queue = calculateQueuePositions(state.queue.filter((item) => scopedIds.has(item.establishmentId) && item.status === "waiting").map((item) => ({ ...item })));
+  const sessions = state.sessions.filter((item) => scopedIds.has(item.establishmentId) && item.status === "active");
+  const chargers = state.chargers.filter((item) => scopedIds.has(item.establishmentId));
+  const solarPowerKw = snapshots.reduce((sum, item) => sum + item.solarPowerKw, 0);
+  return <><section className="surface panel" data-testid="mvp-energy-panel"><SectionHeader title="Demanda e Energia" subtitle={establishmentId ? "Monitoramento do estabelecimento selecionado." : "Visao agregada da rede; selecione um estabelecimento para detalhar."} /><div className="kpi-grid four-cols"><KpiCard label="Demanda atual" value={`${number(totalDemand)} kW`} help="consumo total instantaneo" /><KpiCard label="Limite contratado" value={`${number(totalLimit)} kW`} help="capacidade maxima" /><KpiCard label="Carga dos carregadores" value={`${chargers.filter((item) => item.status === "charging").reduce((sum, item) => sum + item.powerKw, 0)} kW`} help="consumo de recarga" /><KpiCard label="Margem" value={`${powerMarginPercent}%`} help={demandState.state} accent={demandState.tone === "danger" ? "danger" : "warn"} /><KpiCard label="Solar" value={`${number(solarPowerKw)} kW`} help="geracao renovavel" /><KpiCard label="Bateria" value={`${batterySocPercent}%`} help="SOC medio estimado" /><KpiCard label="Sessoes em andamento" value={sessions.length} help="tempo real" /><KpiCard label="Fila" value={queue.length} help="aguardando vaga" /></div></section><section className="surface panel" data-testid="mvp-queue-panel"><SectionHeader title="Fila de espera" subtitle="Concentrada por disponibilidade e condicao energetica." /><DataTable columns={["Posicao", "Usuario", "Veiculo", "Status", "Espera estimada"]}>{queue.map((item) => <tr key={item.id}><td>{item.position}</td><td>{item.driverName}</td><td>{item.vehicle}</td><td><Badge value={item.status} /></td><td>{item.estimatedWaitMinutes} min</td></tr>)}</DataTable></section><section className="surface panel sems-list-page"><SectionHeader title="Condicao por ponto" subtitle="Cada local possui demanda, limite e margem independentes." /><div className="intel-grid">{state.locations.filter((item) => scopedIds.has(item.establishmentId)).map((location) => { const snapshot = state.energy.find((item) => item.establishmentId === location.establishmentId); return <article className="intel-card" key={location.id}><div className="network-card-title"><h3>{location.name}</h3><Badge value={snapshot?.demandState ?? "Sem telemetria"} /></div><p>{snapshot ? `Demanda ${number(snapshot.demandKw)} kW de ${number(snapshot.contractedLimitKw)} kW` : "Telemetria energetica indisponivel"}</p><p>{snapshot ? `Solar ${number(snapshot.solarPowerKw)} kW · Bateria ${snapshot.batterySocPercent}%` : "Selecione outra planta ou verifique a integracao"}</p><a className="ghost-button" href={`#/mvp/location?est=${location.establishmentId}&loc=${location.id}`}>Abrir ponto</a></article>; })}</div></section></>;
 }
 
 function AiPage() {
-  const { state } = useAppState();
+  const { state } = useAdminState();
   const [topic, setTopic] = useState("station-devices");
   const topics = [{ id: "station-devices", title: "Station/Devices", subtitle: `${state.locations.length} locais · ${state.chargers.length} carregadores` }, { id: "indicator-lights", title: "Indicator Lights", subtitle: `${state.chargers.filter((item) => item.status === "offline").length} alertas tecnicos na carteira` }, { id: "station-revenue", title: "Station Revenue", subtitle: "Receita e utilizacao da rede" }];
   return <><section className="goodwe-ai-agent surface panel sems-ai-panel" data-testid="mvp-ai-panel"><header className="goodwe-ai-header"><h2>GoodWe AI Agent</h2><div className="goodwe-ai-window-actions"><button type="button" aria-label="Expandir agente">⛶</button><button type="button" aria-label="Fechar agente">×</button></div></header><button type="button" className="goodwe-ai-side-icon" aria-label="Menu do agente">≡</button><button type="button" className="goodwe-ai-new-chat" aria-label="Nova pergunta">⊞</button><div className="goodwe-ai-intro"><img src={assets.assistant} alt="" /><h3>Ola! Sou a Assistente de IA da GoodWe.</h3><p>Se tiver duvidas sobre nossos produtos ou o sistema, fique a vontade para perguntar.</p></div><div className="goodwe-ai-body"><aside className="goodwe-ai-topic-list" aria-label="Perguntas internas do sistema">{topics.map((item) => <button key={item.id} type="button" className={item.id === topic ? "is-active" : ""} onClick={() => setTopic(item.id)}><strong>{item.title}</strong><span>{item.subtitle}</span></button>)}</aside><article className="assistant-card sems-ai-answer goodwe-ai-answer"><small>Resposta interna</small><h3>Recomendacoes objetivas</h3><p>A rede possui {state.locations.length} locais vinculados e {state.chargers.length} carregadores. Priorize locais com equipamentos offline e acompanhe sessoes ativas antes de liberar novas campanhas comerciais.</p><ul><li>Monitorar o pico entre 18h e 21h.</li><li>Preservar a reserva minima da bateria.</li></ul></article></div><form className="goodwe-ai-compose"><button type="button">Usina/Dispositivos ›</button><input placeholder="Faca-me qualquer pergunta sobre o sistema." /><button type="submit" aria-label="Enviar pergunta">↑</button></form></section><section className="surface panel sems-list-page"><SectionHeader title="Inteligencia por ponto" subtitle="Health score, anomalias e previsao no escopo fisico correto." /><div className="intel-grid">{state.locations.map((location) => <article className="intel-card" key={location.id}><div className="network-card-title"><h3>{location.name}</h3><strong>92/100</strong></div><p>Demanda prevista em 30 min: 82 kW</p><p>Risco de saturacao: Medio</p><a className="ghost-button" href={`#/mvp/location?est=${location.establishmentId}&loc=${location.id}`}>Investigar</a></article>)}</div></section><section className="surface panel" data-testid="mvp-architecture-panel"><SectionHeader title="Arquitetura funcional" subtitle="GoodWe administra. Estabelecimento monitora dados vinculados." /><div className="architecture-flow"><div><strong>GoodWe</strong><span>cadastra estabelecimento, local, carregador e conta</span></div><i>↓</i><div><strong>Relacionamento</strong><span>conta vinculada ao estabelecimento correto</span></div><i>↓</i><div><strong>Monitoramento</strong><span>estabelecimento enxerga apenas o que recebeu</span></div></div></section></>;
 }
 
 function ReportsPage({ establishmentId }: { establishmentId?: string }) {
-  const { state } = useAppState();
+  const { state } = useAdminState();
   const sessions = establishmentId ? state.sessions.filter((item) => item.establishmentId === establishmentId) : state.sessions;
   return <section className="surface panel sems-report-center" data-testid="mvp-reports-panel"><SectionHeader title="Relatorios" subtitle="Consolidados por sessoes, energia e valores." /><div className="sems-report-toolbar"><span>Nao inscrito</span><button type="button" className="sems-toggle" aria-label="Assinatura de relatorios"><i /></button><button type="button" className="sems-secondary-action">Meus relatorios</button></div><div className="sems-report-grid"><article className="sems-report-card"><img src={assets.icons.reports} alt="" /><div><h3>Relatorio comercial</h3><ul><li>Geracao de receita por estabelecimento</li><li>Comparacao de varias unidades</li></ul></div></article><article className="sems-report-card"><img src={assets.icons.devices} alt="" /><div><h3>Relatorio de carregadores</h3><ul><li>Dados de operacao por equipamento</li><li>Comparativo de multiplos dispositivos</li></ul></div></article></div><form className="inline-form"><div className="segmented-tabs" data-testid="mvp-report-period-tabs"><button type="button" className="is-active">Periodo atual</button><button type="button">Sessoes ativas</button><button type="button">Sessoes encerradas</button></div><button type="submit">Aplicar periodo</button></form><div className="intel-grid"><article className="intel-card"><h3>Sessoes</h3><p>{sessions.length} registros.</p></article><article className="intel-card"><h3>Energia</h3><p>{number(sessions.reduce((sum, item) => sum + item.energyKwh, 0))} kWh</p></article><article className="intel-card"><h3>Tarifa media</h3><p>{money(sessions.length ? sessions.reduce((sum, item) => sum + item.tariffPerKwh, 0) / sessions.length : 0)}/kWh</p></article><article className="intel-card"><h3>Pagamentos aprovados</h3><p>{sessions.filter((item) => item.payment.status === "Aprovado").length}</p></article></div><DataTable columns={["Sessao", "Carregador", "Energia", "Tarifa", "Valor", "Pagamento"]}>{sessions.map((item) => <tr key={item.id}><td>{item.id}</td><td>{item.chargerId}</td><td>{number(item.energyKwh)} kWh</td><td>{money(item.tariffPerKwh)}/kWh</td><td>{money(item.finalAmount ?? item.consumedAmount)}</td><td>{item.payment.status}</td></tr>)}</DataTable></section>;
 }
 
 function ContractPage({ establishmentId }: { establishmentId: string }) {
-  const { state } = useAppState();
+  const { state } = useAdminState();
   const establishment = state.establishments.find((item) => item.id === establishmentId);
   return <><Breadcrumbs items={[{ label: "Business" }, { label: "Contratos" }]} /><section className="surface panel enterprise-page"><SectionHeader title="Meu contrato" subtitle="Condicoes comerciais vigentes para sua operacao." /><div className="contract-grid"><article className="contract-card"><header><div><span>{establishment?.contractCode}</span><h3>ChargeGrid Performance</h3><p>{establishment?.name}</p></div><StatusPill value="Ativo" /></header><dl><div><dt>Modelo</dt><dd>Revenue share</dd></div><div><dt>Renovacao</dt><dd>15/01/2027</dd></div><div><dt>SLA</dt><dd>8 horas</dd></div><div><dt>Participacao</dt><dd>6%</dd></div></dl><button className="ghost-button">Ver condicoes</button></article></div></section></>;
 }
 
 function SupportPage({ establishmentId }: { establishmentId?: string }) {
-  const { state, createTicket } = useAppState();
+  const { state, createTicket } = useAdminState();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const tickets = establishmentId ? state.supportTickets.filter((item) => item.establishmentId === establishmentId) : state.supportTickets;
@@ -201,19 +218,19 @@ function SupportPage({ establishmentId }: { establishmentId?: string }) {
 }
 
 function TicketPage({ ticketId }: { ticketId: string }) {
-  const { state } = useAppState();
+  const { state } = useAdminState();
   const ticket = state.supportTickets.find((item) => item.id === ticketId);
   if (!ticket) return <p>Chamado nao encontrado.</p>;
   return <section className="surface panel enterprise-page"><SectionHeader eyebrow={ticket.code} title={ticket.title} subtitle={ticket.description} /><div className="detail-grid"><article><h3>Status</h3><p><Badge value={ticket.status} /></p></article><article><h3>Criado em</h3><p>{new Date(ticket.createdAt).toLocaleString("pt-BR")}</p></article></div></section>;
 }
 
 function AuditPage() {
-  const { state } = useAppState();
+  const { state } = useAdminState();
   return <section className="surface panel enterprise-page"><SectionHeader eyebrow="Governanca" title="Auditoria" subtitle="Rastro das operacoes administrativas." /><div className="audit-list">{state.audit.slice().reverse().map((item) => <article key={item.id}><span>{new Date(item.at).toLocaleString("pt-BR")}</span><strong>{item.summary}</strong><p>Operacao registrada no escopo GoodWe.</p></article>)}</div></section>;
 }
 
 function GenericPage({ tab }: { tab: string }) {
-  const { state } = useAppState();
+  const { state } = useAdminState();
   const titles: Record<string, string> = { operations: "Operacao comercial", finance: "Financeiro", installations: "Implantacoes", contracts: "Contratos", expansion: "Expansao", documents: "Documentos", settings: "Configuracoes", invoices: "Faturas" };
   const revenue = state.sessions.reduce((sum, item) => sum + (item.finalAmount ?? item.consumedAmount), 0);
   if (tab === "contracts") return <section className="surface panel enterprise-page"><SectionHeader title="Contratos comerciais" subtitle="Modelos, vigencias, tarifas e obrigacoes da carteira." action={<button className="sems-primary-action">Novo contrato</button>} /><div className="contract-grid">{state.establishments.map((item) => <article className="contract-card" key={item.id}><header><div><span>{item.contractCode}</span><h3>Contrato ChargeGrid</h3><p>{item.name}</p></div><StatusPill value="Ativo" /></header><dl><div><dt>Modelo</dt><dd>Revenue share</dd></div><div><dt>SLA</dt><dd>8 horas</dd></div><div><dt>Participacao</dt><dd>6%</dd></div></dl><a className="ghost-button" href={`#/mvp/contract?est=${item.id}`}>Ver condicoes</a></article>)}</div></section>;
@@ -225,15 +242,14 @@ function GenericPage({ tab }: { tab: string }) {
   return <section className="surface panel enterprise-page"><SectionHeader eyebrow="ChargeGrid Intelligence" title={titles[tab] ?? "Modulo comercial"} subtitle="Visao consolidada da operacao autorizada." /><div className="settings-grid"><article><h3>Preferencias da conta</h3><p>Idioma, notificacoes e dados do perfil.</p><button className="ghost-button">Configurar</button></article><article><h3>Governanca</h3><p>Permissoes controladas pelo perfil ativo.</p><button className="ghost-button">Revisar acessos</button></article></div></section>;
 }
 
-export function MvpPage() {
+export function AdminDashboardPage() {
   const { tab = "overview" } = useParams();
   const [query] = useSearchParams();
-  const { state, account } = useAppState();
+  const { state, account } = useAdminState();
   if (!account) return <Navigate to="/login" replace />;
-  if (account.profile === "USUARIO") return <Navigate to="/drive/home" replace />;
   if (account.profile === "ESTABELECIMENTO" && !establishmentTabs.has(tab)) return <Navigate to="/mvp/overview" replace />;
 
-  const establishmentId = account.profile === "ESTABELECIMENTO" ? account.establishmentId! : query.get("est") ?? "est-fiap";
+  const establishmentId = account.profile === "ESTABELECIMENTO" ? account.establishmentId! : query.get("est") ?? "";
   if (account.profile === "ESTABELECIMENTO" && query.get("est") && query.get("est") !== account.establishmentId) return <Navigate to="/mvp/overview" replace />;
   const locationId = query.get("loc") ?? "";
   if (account.profile === "ESTABELECIMENTO" && locationId) {
@@ -243,21 +259,21 @@ export function MvpPage() {
 
   const content = (() => {
     switch (tab) {
-      case "overview": return <Overview />;
+      case "overview": return <Overview establishmentId={establishmentId || undefined} />;
       case "clients": return <ClientsPage />;
       case "new-client": return <NewClientPage />;
       case "client": return <ClientDetail client={state.clients.find((item) => item.id === query.get("client"))} />;
       case "establishments": return <EstablishmentsPage />;
       case "establishment": return <EstablishmentDetail establishmentId={establishmentId} />;
-      case "locations": return <LocationsPage establishmentId={account.profile === "ESTABELECIMENTO" ? establishmentId : undefined} />;
+      case "locations": return <LocationsPage establishmentId={establishmentId || undefined} />;
       case "new-location": return <NewLocationPage establishmentId={establishmentId} />;
       case "location": return <LocationDetail establishmentId={establishmentId} locationId={locationId} canManage={account.profile === "GOODWE"} />;
-      case "chargers": return <ChargersPage establishmentId={account.profile === "ESTABELECIMENTO" ? establishmentId : undefined} />;
-      case "sessions": return <SessionsPage establishmentId={account.profile === "ESTABELECIMENTO" ? establishmentId : undefined} />;
-      case "pricing": return <PricingPage establishmentId={establishmentId} />;
-      case "energy": return <EnergyPage establishmentId={establishmentId} />;
+      case "chargers": return <ChargersPage establishmentId={establishmentId || undefined} />;
+      case "sessions": return <SessionsPage establishmentId={establishmentId || undefined} />;
+      case "pricing": return <PricingPage establishmentId={establishmentId || undefined} />;
+      case "energy": return <EnergyPage establishmentId={establishmentId || undefined} />;
       case "ai": return <AiPage />;
-      case "reports": return <ReportsPage establishmentId={account.profile === "ESTABELECIMENTO" ? establishmentId : undefined} />;
+      case "reports": return <ReportsPage establishmentId={establishmentId || undefined} />;
       case "contract": return <ContractPage establishmentId={establishmentId} />;
       case "support": return <SupportPage establishmentId={account.profile === "ESTABELECIMENTO" ? establishmentId : undefined} />;
       case "ticket": return <TicketPage ticketId={query.get("ticket") ?? ""} />;

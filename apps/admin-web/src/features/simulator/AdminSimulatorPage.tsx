@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
-import { useAppState } from "./AppState";
-import { Badge, SectionHeader } from "./Ui";
+import { useAdminState } from "../../app/AdminState";
+import { Badge, SectionHeader } from "../../components/AdminUi";
 
-export function AdminPage() {
-  const { account, state } = useAppState();
+export function AdminSimulatorPage() {
+  const { account, state } = useAdminState();
   const [scenario, setScenario] = useState("normal");
   if (!account) return <Navigate to="/login" replace />;
   if (account.profile !== "GOODWE") return <Navigate to="/mvp/overview" replace />;

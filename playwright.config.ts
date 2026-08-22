@@ -20,7 +20,7 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"], viewport: { width: 1744, height: 877 } }
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 720 } }
     }
   ],
   reporter: [["dot"], ["html", { outputFolder: "output/playwright/report", open: "never" }]],

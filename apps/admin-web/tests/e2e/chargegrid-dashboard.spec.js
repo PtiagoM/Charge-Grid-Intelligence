@@ -42,7 +42,7 @@ test('MVP mostra carregadores, sessões e tarifação', async ({ page }) => {
   await expect(page.getByTestId('mvp-sessions-active')).toBeVisible();
   await expect(page.getByTestId('mvp-sessions-finished')).toBeVisible();
 
-  await page.goto('/#/mvp/pricing');
+  await page.goto('/#/mvp/pricing?est=est-fiap');
   await expect(page.getByTestId('mvp-pricing-panel')).toBeVisible();
   await expect(page.getByTestId('mvp-payments-table')).toBeVisible();
 });
