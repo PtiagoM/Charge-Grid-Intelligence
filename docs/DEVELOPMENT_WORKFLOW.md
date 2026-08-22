@@ -10,9 +10,10 @@ Manter o Dashboard Admin e o Driver PWA evoluindo em linhas independentes, com i
 
 | Referencia | Papel atual |
 | --- | --- |
-| `main` / `92a2544` | Conteudo equivalente ao baseline `c404b77`; contem no historico o merge e o revert do Admin |
-| `codex/driver-pwa-mobile` / `f304c43` | PWA quase completo; [PR #1](https://github.com/PtiagoM/Charge-Grid-Intelligence/pull/1) aberto para `main` |
+| `main` / `cd65156` | Governanca e PWA integrados pelos PRs #2 e #1; o Admin permanece ausente nessa branch |
+| `codex/driver-pwa-mobile` / `ef6d6d7` | Entrega do PWA aprovada e integrada pelo [PR #1](https://github.com/PtiagoM/Charge-Grid-Intelligence/pull/1) |
 | `codex/admin-web-sems-migration` / `c2aebd6` | Fotografia validada da primeira reconstrucao nativa do Admin |
+| `develop/admin-web` / `331f91b` | Linha ativa do dashboard sobre a `main` integrada, com a reconstrucao nativa restaurada |
 
 O merge `fe28427` tornou `c2aebd6` ancestral da `main`. O revert `92a2544` removeu seus arquivos sem remover essa ancestralidade. Por isso, `git merge codex/admin-web-sems-migration` pode responder que nao ha nada para integrar enquanto o dashboard continua ausente.
 
@@ -24,8 +25,8 @@ O merge `fe28427` tornou `c2aebd6` ancestral da `main`. O revert `92a2544` remov
 
 ### Linhas de produto
 
-- `codex/driver-pwa-mobile`: linha atual do PWA ate seu PR ser integrado.
-- `develop/admin-web`: futura linha principal do dashboard.
+- `codex/driver-pwa-mobile`: referencia da entrega integrada do PWA e possivel linha de manutencao depois de sincronizada com `main`.
+- `develop/admin-web`: linha principal ativa do dashboard.
 
 ### Branches curtas
 
@@ -37,18 +38,17 @@ O merge `fe28427` tornou `c2aebd6` ancestral da `main`. O revert `92a2544` remov
 
 Branches curtas devem nascer da linha do produto correspondente e retornar a ela por PR. Nao acumule Admin e PWA na mesma feature branch.
 
-## Sequencia para organizar o estado atual
+## Estado da organizacao atual
 
-1. Integrar esta governanca e o CI na `main` por Pull Request.
-2. Rodar os checks no PR de `codex/driver-pwa-mobile`.
-3. Corrigir falhas, revisar impactos em API e pagamentos e integrar o PWA na `main`.
-4. Criar `develop/admin-web` a partir da `main` ja atualizada.
-5. Em `develop/admin-web`, executar `git revert 92a2544` para reverter o revert e restaurar a arvore do Admin.
-6. Comparar a area do Admin com `c2aebd6` e validar build, unitarios e E2E.
-7. Continuar o dashboard em `develop/admin-web` ou em features derivadas dela.
-8. Abrir PR do Admin para `main` somente quando o dashboard estiver validado.
+1. Governanca, CI e protecao da `main`: concluidos pelo PR #2.
+2. Validacao e integracao do PWA: concluidas pelo PR #1.
+3. Criacao de `develop/admin-web` sobre a `main` integrada: concluida.
+4. Restauracao da arvore do Admin com `git revert 92a2544`: concluida em `331f91b`.
+5. Comparacao com `c2aebd6` e validacao integrada: obrigatorias antes de publicar a nova linha.
+6. Proximas alteracoes do dashboard: em `develop/admin-web` ou em features derivadas dela.
+7. Integracao futura do Admin: somente por PR para `main`, depois da validacao completa.
 
-Nao crie a nova linha ativa do Admin diretamente a partir de `codex/admin-web-sems-migration`: isso conserva a ancestralidade problematica e faz o Git omitir a migracao em um merge futuro.
+Nao recrie a linha ativa do Admin a partir de `codex/admin-web-sems-migration`: isso conserva a ancestralidade problematica e faz o Git omitir a migracao em um merge futuro. Use `develop/admin-web`, onde a recuperacao ja foi registrada corretamente.
 
 ## Rotina antes de editar
 

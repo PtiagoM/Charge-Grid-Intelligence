@@ -14,12 +14,12 @@ Antes de editar arquivos:
 ## Responsabilidade das branches
 
 - `main`: versao integrada e validada. Nunca desenvolver diretamente nela.
-- `codex/driver-pwa-mobile`: linha atual de estabilizacao do PWA ate sua integracao.
+- `codex/driver-pwa-mobile`: referencia da entrega do PWA integrada pelo PR #1; antes de novos trabalhos, sincronize-a por fast-forward com `main`.
 - `codex/admin-web-sems-migration`: fotografia da migracao nativa no commit `c2aebd6`. Nao usar como nova base de integracao sem consultar o fluxo documentado.
-- `develop/admin-web`: linha prevista para a continuidade do dashboard depois da integracao do PWA.
+- `develop/admin-web`: linha ativa do dashboard, criada sobre a `main` com o PWA integrado e com a reconstrucao nativa restaurada.
 - `feature/admin-*`, `feature/pwa-*`, `fix/*` e `chore/*`: branches curtas e focadas.
 
-O commit `c2aebd6` aparece no historico de `main` por causa do merge `fe28427`, mas seu conteudo foi removido pelo revert `92a2544`. Um merge comum da branch antiga do admin nao restaura esse conteudo. Siga a secao de recuperacao do admin em `docs/DEVELOPMENT_WORKFLOW.md`.
+O commit `c2aebd6` aparece no historico de `main` por causa do merge `fe28427`, mas seu conteudo foi removido pelo revert `92a2544`. Um merge comum da branch antiga do Admin nao restaura esse conteudo. A restauracao correta ja existe em `develop/admin-web`; nao repita o procedimento nem use a branch antiga como nova base.
 
 ## Limites de escopo
 

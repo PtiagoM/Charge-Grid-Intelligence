@@ -20,6 +20,12 @@ export default tseslint.config(
     }
   },
   {
+    files: ["apps/driver-pwa/public/sw.js"],
+    rules: {
+      "no-redeclare": ["error", { "builtinGlobals": false }]
+    }
+  },
+  {
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
       globals: { ...globals.browser, ...globals.node }
