@@ -7,6 +7,7 @@ import { EstablishmentPage } from "../pages/EstablishmentPage";
 import { HistoryPage } from "../pages/HistoryPage";
 import { HomePage } from "../pages/HomePage";
 import { LoginPage } from "../pages/LoginPage";
+import { MapPage } from "../pages/MapPage";
 import { NotificationsPage } from "../pages/NotificationsPage";
 import { QrLandingPage } from "../pages/QrLandingPage";
 import { QrScannerPage } from "../pages/QrScannerPage";
@@ -23,6 +24,7 @@ export function AppRouter() {
       <Route element={<MobileShell />}>
         <Route index element={<HomePage />} />
         <Route path="explore" element={<ExplorePage />} />
+        <Route path="map" element={<MapPage />} />
         <Route path="place/:establishmentId" element={<EstablishmentPage />} />
         <Route path="qr/:chargerSlug" element={<QrLandingPage />} />
         <Route path="scan" element={<QrScannerPage />} />

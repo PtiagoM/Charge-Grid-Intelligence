@@ -1,44 +1,38 @@
-import { useCallback, useMemo, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { useCallback, useState } from "react";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useDriverApp } from "../app/DriverAppContext";
 import { AppIcon } from "../components/AppIcon";
 import { DriverDiscoveryMap } from "../components/DriverDiscoveryMap";
 import { EstablishmentCard } from "../components/EstablishmentCard";
 import { PageIntro } from "../components/Ui";
-import { commercialPlants, distanceBetweenKm } from "../data/commercialPlants";
+import { commercialPlants } from "../data/commercialPlants";
+import { recommendedPlants } from "../data/plantRecommendations";
+
+const recommendations = recommendedPlants(commercialPlants);
+const mapPlaces = commercialPlants.map((plant) => ({
+  id: plant.id,
+  name: plant.name,
+  position: plant.position,
+  availableChargers: plant.availableChargerCount,
+  chargerCount: plant.chargerCount,
+  nominalPowerKw: plant.nominalPowerKw,
+  tariff: plant.tariffFrom?.amount ?? 0
+}));
 
 export function ExplorePage() {
-  const { isAuthenticated, profile, theme } = useDriverApp();
-  const [query, setQuery] = useState("");
+  const navigate = useNavigate();
+  const { isAuthenticated, profile, selectChargingPoint, theme } = useDriverApp();
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [userPosition, setUserPosition] = useState<{ lat: number; lng: number } | null>(null);
-  const [locationState, setLocationState] = useState<"idle" | "loading" | "ready" | "denied">("idle");
-
-  const filteredPlants = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase("pt-BR");
-    const matches = normalized
-      ? commercialPlants.filter((plant) => `${plant.name} ${plant.address} ${plant.category}`.toLocaleLowerCase("pt-BR").includes(normalized))
-      : [...commercialPlants];
-    return matches.sort((a, b) => {
-      const distanceA = userPosition ? distanceBetweenKm(userPosition, a.position) : a.distanceKm ?? 0;
-      const distanceB = userPosition ? distanceBetweenKm(userPosition, b.position) : b.distanceKm ?? 0;
-      return distanceA - distanceB;
-    });
-  }, [query, userPosition]);
-
-  const mapPlaces = useMemo(() => filteredPlants.map((plant) => ({
-    id: plant.id,
-    name: plant.name,
-    position: plant.position,
-    availableChargers: plant.availableChargerCount,
-    chargerCount: plant.chargerCount,
-    tariff: plant.tariffFrom?.amount ?? 0
-  })), [filteredPlants]);
+  const [locationState, setLocationState] = useState<"idle" | "loading" | "denied">("idle");
 
   const selectPlace = useCallback((placeId: string) => {
+    const plant = commercialPlants.find((item) => item.id === placeId);
+    const charger = plant?.chargers[0];
+    if (!plant || !charger) return;
     setSelectedPlaceId(placeId);
-    window.setTimeout(() => document.getElementById(`plant-${placeId}`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
-  }, []);
+    selectChargingPoint(plant.id, charger.id);
+  }, [selectChargingPoint]);
 
   if (!isAuthenticated) return <Navigate to="/" replace />;
 
@@ -51,8 +45,7 @@ export function ExplorePage() {
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
         setUserPosition({ lat: coords.latitude, lng: coords.longitude });
-        setSelectedPlaceId(null);
-        setLocationState("ready");
+        setLocationState("idle");
       },
       () => setLocationState("denied"),
       { enableHighAccuracy: true, timeout: 9000, maximumAge: 60_000 }
@@ -60,27 +53,35 @@ export function ExplorePage() {
   }
 
   return <>
-    <PageIntro eyebrow={`Olá, ${profile?.fullName.split(" ")[0] ?? "motorista"}`} title="Onde faz sentido carregar agora?">
-      <p>Compare disponibilidade, tarifa, potência e fila em cada ponto.</p>
+    <PageIntro eyebrow={`Olá, ${profile?.fullName.split(" ")[0] ?? "motorista"}`} title="Onde vale a pena carregar agora?">
+      <p>Veja a rede no mapa e encontre uma opção que combine disponibilidade, tarifa e distância.</p>
     </PageIntro>
 
-    <div className="map-stage">
-      <div className="search-shell" role="search">
-        <AppIcon name="search" size={22} />
-        <label className="sr-only" htmlFor="place-search">Buscar estabelecimento ou endereço</label>
-        <input id="place-search" type="search" placeholder="Buscar local ou endereço" value={query} onChange={(event) => { setQuery(event.target.value); setSelectedPlaceId(null); }} />
+    <section className="map-stage explore-map-preview" aria-label="Prévia do mapa de Charge Grids">
+      <div className="search-shell">
+        <button type="button" className="search-shell-trigger" onClick={() => navigate("/map")} aria-label="Abrir pesquisa no mapa">
+          <AppIcon name="search" size={22} />
+          <span>Buscar local ou endereço</span>
+          <AppIcon name="chevron-right" size={20} />
+        </button>
         <button type="button" className="locate-button" onClick={locateUser} aria-label="Usar minha localização"><AppIcon name="location" size={21} /></button>
       </div>
-      {mapPlaces.length ? <DriverDiscoveryMap places={mapPlaces} selectedPlaceId={selectedPlaceId} userPosition={userPosition} theme={theme} onSelectPlace={selectPlace} /> : <div className="map-no-results"><AppIcon name="search" size={32} /><strong>Nenhum ponto encontrado</strong></div>}
-    </div>
-
-    {locationState === "denied" ? <p className="field-message warning-message" role="status">Não foi possível usar sua localização. A busca manual continua disponível.</p> : null}
-    {locationState === "loading" ? <p className="field-message" role="status">Solicitando sua localização…</p> : null}
-    {locationState === "ready" ? <p className="field-message success-message" role="status">Localização ativa. Os pontos foram ordenados por proximidade.</p> : null}
-
-    <section className="results-heading"><div><p className="eyebrow">Rede ChargeGrid</p><h2>{filteredPlants.length} {filteredPlants.length === 1 ? "ponto encontrado" : "pontos encontrados"}</h2></div><span>Atualizado agora</span></section>
-    <section className="plant-results">
-      {filteredPlants.map((plant) => <div id={`plant-${plant.id}`} key={plant.id}><EstablishmentCard plant={plant} selected={plant.id === selectedPlaceId} distanceKm={userPosition ? distanceBetweenKm(userPosition, plant.position) : plant.distanceKm} /></div>)}
+      <DriverDiscoveryMap places={mapPlaces} selectedPlaceId={selectedPlaceId} userPosition={userPosition} theme={theme} onSelectPlace={selectPlace} />
     </section>
+
+    {locationState === "denied" ? <p className="field-message warning-message" role="status">Não foi possível usar sua localização. Você ainda pode pesquisar no mapa.</p> : null}
+    {locationState === "loading" ? <p className="field-message" role="status">Buscando sua localização…</p> : null}
+
+    <section className="results-heading recommendation-heading">
+      <div><p className="eyebrow">Recomendações ChargeGrid</p><h2>Melhores locais</h2></div>
+      <span>Melhor opção, tarifa e proximidade</span>
+    </section>
+    <section className="recommendation-rail" aria-label="Melhores locais para carregar">
+      {recommendations.map(({ plant, reason }) => <EstablishmentCard key={plant.id} plant={plant} recommendationLabel={reason} />)}
+    </section>
+
+    <nav className="discovery-actions" aria-label="Outras formas de encontrar uma Charge Grid">
+      <Link className="text-link" to="/session">Ver todas as plantas</Link>
+    </nav>
   </>;
 }

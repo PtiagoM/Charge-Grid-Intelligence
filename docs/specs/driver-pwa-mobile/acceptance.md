@@ -18,6 +18,10 @@
 ## Mapa
 
 - [x] Google Maps JavaScript API real substitui qualquer representação fictícia.
+- [x] O mapa possui rota imersiva e não mistura filtros ou catálogo no canvas.
+- [x] `Explorar` mostra a prévia do mapa antes das recomendações e abre o mapa imersivo ao tocar na busca.
+- [x] Pressionar Enter na busca geocodifica e centraliza o local pesquisado.
+- [x] Preview de pino mostra nome, disponibilidade, potência nominal e tarifa.
 - [x] Seis plantas, cards, busca, bounds, geolocalização e marcadores são sincronizados.
 - [x] Seleção de marcador não recria a instância do mapa.
 - [x] Canvas só aparece após tiles carregados.
@@ -41,7 +45,10 @@
 - [x] Motorista pode entrar, ser chamado e sair da fila local.
 - [x] Sessão respeita `AUTHORIZED → WAITING_START → STARTING → CHARGING → ENERGY_FINISHED → IDLE_GRACE_PERIOD → IDLE_FEE? → SETTLING → COMPLETED`.
 - [x] Nenhuma energia aparece antes de `CHARGING`.
+- [x] A interface não exibe diretamente códigos como `IDLE_GRACE_PERIOD`, `WAITING_START` ou `COMPLETED`.
+- [x] A tolerância de retirada possui contador visual e muda para urgência ao terminar.
 - [x] Comprovante mostra energia, subtotal, ociosidade, total e devolução.
+- [x] Destinos autenticados do fluxo comercial mantêm a aba `Sessão` visível e ativa na navegação.
 - [ ] Estado de fila e sessão é persistido e coordenado pela API/Supabase.
 - [ ] Start/StopCharge real é confirmado pelo adapter GoodWe homologado.
 
@@ -52,6 +59,10 @@
 - [x] Manifest, service worker, safe areas e instalação PWA.
 - [x] Permissão de notificação solicitada após gesto explícito.
 - [x] Notificação local abre a rota associada.
+- [x] Explorar mostra somente recomendações determinísticas com motivo curto.
+- [x] Sessão sem recarga mostra catálogo completo, busca, quatro filtros compactos e “Ver mais”.
+- [x] Notificações dos últimos sete dias aparecem primeiro e as anteriores ficam sob demanda.
+- [ ] Ilustrações próprias e estados vazios ilustrados aguardam assets fornecidos pelo produto.
 - [ ] Push remoto entrega eventos quando nenhum cliente está executando.
 
 ## Verificação técnica obrigatória

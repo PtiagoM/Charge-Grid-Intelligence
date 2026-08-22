@@ -32,7 +32,7 @@ export function QueuePage() {
     </PageIntro>
 
     <section className={`queue-hero ${called ? "is-called" : ""}`} aria-live="polite">
-      <StatusChip label={called ? "CALLED" : "WAITING"} tone={called ? "info" : "warning"} />
+      <StatusChip label={called ? "Sua vez" : "Aguardando vaga"} tone={called ? "info" : "warning"} />
       {called ? <><span>Tempo restante</span><strong className="queue-number">{countdown}</strong><p>{queue.chargerName} · vaga {queue.parkingSpot}</p></> : <><span>Sua posição</span><strong className="queue-number">#{queue.position}</strong><p>Espera estimada: cerca de {queue.estimatedWaitMinutes} min</p></>}
     </section>
 

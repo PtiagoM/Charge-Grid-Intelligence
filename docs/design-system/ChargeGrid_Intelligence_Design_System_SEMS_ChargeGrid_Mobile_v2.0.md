@@ -65,10 +65,16 @@ Label externa, fundo claro/cinza no tema claro, foco visível, ajuda e erro asso
 
 Estado textual, energia, potência, custo e próxima ação. Nunca mostra energia antes de confirmação.
 
+O `SessionHero` nunca exibe enum técnico. O estado combina label humana, ícone, cor semântica e orientação. A tolerância de ociosidade usa contador regressivo; quando encerrada, ícone, cor e mensagem mudam em conjunto.
+
 ## 6. Descoberta e mapa
 
+- Explorar é uma seleção curta de recomendações; catálogo, filtros e mapa são superfícies distintas.
+- Recomendações podem usar trilho horizontal com snap, sem transformar a tela em uma lista vertical extensa.
+- O catálogo completo fica na aba Sessão sem contexto ativo, com busca, filtros recolhíveis e “Ver mais”.
 - Google Maps real com estilo padrão legível no tema claro; não usar desenho cartográfico alternativo.
 - Busca flutuante branca, sombra discreta e controles de toque.
+- Em modo imersivo, busca e retorno são os únicos controles ChargeGrid sobre o mapa; Enter centraliza o endereço pesquisado.
 - Marcador vermelho/semântico com disponibilidade numérica.
 - Marcador representa estabelecimento/planta, não sessão.
 - Cards permanecem utilizáveis quando a API externa falhar.

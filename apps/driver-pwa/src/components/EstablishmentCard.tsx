@@ -1,12 +1,14 @@
 import { CommercialAvailability } from "@chargegrid/shared";
 import { Link } from "react-router-dom";
 import type { CommercialPlant } from "../data/commercialPlants";
+import { AppIcon } from "./AppIcon";
 import { StatusChip } from "./StatusChip";
 
 interface EstablishmentCardProps {
   plant: CommercialPlant;
   distanceKm?: number;
   selected?: boolean;
+  recommendationLabel?: string;
 }
 
 const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -20,10 +22,11 @@ const availability = {
   [CommercialAvailability.FAULT]: { label: "Indisponível", tone: "danger" as const }
 };
 
-export function EstablishmentCard({ plant, distanceKm, selected }: EstablishmentCardProps) {
+export function EstablishmentCard({ plant, distanceKm, selected, recommendationLabel }: EstablishmentCardProps) {
   const status = availability[plant.commercialAvailability];
   return (
     <article className={`establishment-card ${selected ? "is-selected" : ""}`}>
+      {recommendationLabel ? <p className="recommendation-label"><AppIcon name="check" size={15} /> {recommendationLabel}</p> : null}
       <div className="card-visual"><img src={plant.imageUrl} alt={`Área de recarga do ${plant.name}`} /><span>{plant.category} · {plant.openingHours}</span></div>
       <div className="card-title-row">
         <div><p>{distanceKm?.toFixed(1).replace(".", ",") ?? plant.distanceKm?.toFixed(1).replace(".", ",")} km de distância</p><h2>{plant.name}</h2></div>

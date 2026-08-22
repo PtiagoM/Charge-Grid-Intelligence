@@ -21,11 +21,12 @@ Entregar uma PWA exclusivamente mobile para recarga de veículos elétricos, com
 | `/qr/:chargerSlug` | público | detalhe público do carregador |
 | `/signup` | público | cadastro de motorista e veículo |
 | `/login` | público | autenticação |
-| `/explore` | motorista | Google Maps, geolocalização, busca e catálogo |
+| `/explore` | motorista | recomendações explicáveis para carregar agora |
+| `/map` | motorista | Google Maps imersivo, busca geocodificada e preview essencial |
 | `/place/:establishmentId` | motorista | detalhe, carregadores, rota externa e fila |
 | `/checkout` | público | limite, meio e Stripe Payment Element |
 | `/queue` | público | posição, estimativa, chamada e saída da fila da planta |
-| `/session` | público | autorização, energia, retirada e liquidação |
+| `/session` | público | autorização, energia, retirada e liquidação; para motorista sem sessão, catálogo completo |
 | `/receipt/:receiptId` | público | comprovante |
 | `/history` | motorista | histórico próprio |
 | `/notifications` | motorista | central e permissão do navegador |
@@ -51,15 +52,21 @@ Entregar uma PWA exclusivamente mobile para recarga de veículos elétricos, com
 
 ## Descoberta e Google Maps
 
+- `Explorar` não é o catálogo geral: mostra até três plantas recomendadas e exclui locais comercialmente indisponíveis.
+- O fallback determinístico prioriza, nesta ordem, disponibilidade comercial, fila/espera, distância, potência, tarifa e condição energética favorável. Motivos são curtos e não alegam IA.
+- `Explorar` mantém uma prévia do mapa antes da seção `Melhores locais`; tocar na barra de busca abre `/map`.
+- Sem sessão ativa, a aba `Sessão` contém todas as plantas, busca textual, filtros compactos de preço, potência, distância e disponibilidade e carregamento progressivo por “Ver mais”.
 - Google Maps JavaScript API real, sem mapa cartográfico alternativo.
+- O mapa abre em `/map` como visualização imersiva. A busca no topo geocodifica o texto ao pressionar Enter e centraliza o mapa sem filtrar ou reinterpretar os pinos.
 - O loader é singleton, assíncrono, possui timeout e remove tentativa incompleta antes de retry.
 - O canvas só é revelado após `tilesloaded`, evitando o relance de um mapa posteriormente rejeitado.
 - Falha de chave, cota, billing, referrer ou rede mantém a lista utilizável e apresenta erro estável.
 - Data Layer e ícones vetoriais representam estabelecimentos com disponibilidade.
-- Busca filtra mapa e cards; geolocalização recalcula distância e ordenação.
-- Selecionar marcador atualiza estilo, centralização, zoom e card sem recriar o mapa inteiro. Abrir uma planta preserva-a como contexto da aba Sessão até que outra seja escolhida.
+- O preview do pino contém somente nome, disponibilidade, potência nominal e tarifa.
+- Selecionar marcador atualiza estilo, centralização, zoom e preview essencial sem recriar o mapa inteiro. Abrir uma planta preserva-a como contexto da aba Sessão até que outra seja escolhida.
 - O tema visual da PWA também atualiza o estilo cartográfico do Google Maps sem recriar a instância, preservando marcadores, seleção e enquadramento.
 - A página da planta permite escolher explicitamente um dos carregadores. A fila é compartilhada pela planta, não por vaga; quando chamado, o app direciona para uma vaga disponível.
+- Para motorista autenticado, detalhe da planta, QR, fila, checkout, sessão e comprovante mantêm a navegação inferior e a aba `Sessão` ativa.
 - O catálogo inicial possui seis plantas na Grande São Paulo.
 - A chave demo usada no desenvolvimento atingiu a cota; funcionamento contínuo exige chave Google Cloud faturada e restrita corretamente.
 
@@ -81,6 +88,8 @@ Entregar uma PWA exclusivamente mobile para recarga de veículos elétricos, com
 - A jornada visual implementada é `AUTHORIZED → WAITING_START → STARTING → CHARGING → ENERGY_FINISHED → IDLE_GRACE_PERIOD → IDLE_FEE opcional → SETTLING → COMPLETED`.
 - Energia só aparece após `CHARGING`.
 - Em `SETTLING`, cartão é capturado ou saldo Pix é reembolsado pela API antes do comprovante.
+- Enums e códigos técnicos nunca são mostrados ao motorista. Cada estado possui título, orientação, cor e ícone compreensíveis.
+- `IDLE_GRACE_PERIOD` apresenta contador regressivo de 15 minutos; ao terminar, o visual muda de atenção para urgência antes da cobrança de ociosidade.
 - Estado atual de fila, sessão, comprovantes e notificações é mantido no cliente; persistência compartilhada na API/Supabase permanece futura.
 
 ## PWA, tema e notificações
@@ -90,6 +99,7 @@ Entregar uma PWA exclusivamente mobile para recarga de veículos elétricos, com
 - Manifest, ícone e service worker permitem instalação.
 - Notificações são solicitadas somente por gesto explícito e emitidas via `ServiceWorkerRegistration.showNotification`.
 - O clique direciona à rota associada.
+- A central exibe inicialmente os últimos sete dias e revela notificações anteriores somente sob demanda.
 - São notificações locais; push remoto sem cliente aberto exige infraestrutura adicional ainda ausente.
 
 ## Segurança

@@ -77,6 +77,7 @@ export interface DriverSessionState {
   energyAmount: number;
   idleMinutes: number;
   idleAmount: number;
+  idleGraceEndsAt?: string;
   completionReason?: SessionCompletionReason;
 }
 
@@ -335,7 +336,12 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
   const setSessionStatus = useCallback((status: CommercialSessionStatus) => {
     setState((current) => current.session ? {
       ...current,
-      session: { ...current.session, status, currentPowerKw: status === CommercialSessionStatus.CHARGING ? Math.min(22, current.session.currentPowerKw || 7) : current.session.currentPowerKw },
+      session: {
+        ...current.session,
+        status,
+        currentPowerKw: status === CommercialSessionStatus.CHARGING ? Math.min(22, current.session.currentPowerKw || 7) : current.session.currentPowerKw,
+        idleGraceEndsAt: status === CommercialSessionStatus.IDLE_GRACE_PERIOD ? new Date(Date.now() + 15 * 60_000).toISOString() : current.session.idleGraceEndsAt
+      },
       notifications: status === CommercialSessionStatus.CHARGING
         ? [notification("Recarga iniciada", `Energia confirmada em ${current.session.chargerName}.`, "/session"), ...current.notifications]
         : current.notifications
@@ -373,7 +379,7 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
 
   const applyIdleFee = useCallback(() => setState((current) => current.session ? {
     ...current,
-    session: { ...current.session, status: CommercialSessionStatus.IDLE_FEE, idleMinutes: 4, idleAmount: 2 },
+    session: { ...current.session, status: CommercialSessionStatus.IDLE_FEE, idleMinutes: 4, idleAmount: 2, idleGraceEndsAt: undefined },
     notifications: [notification("Ociosidade em cobrança", "A tolerância terminou. A taxa atual é de R$ 0,50 por minuto.", "/session"), ...current.notifications]
   } : current), []);
 

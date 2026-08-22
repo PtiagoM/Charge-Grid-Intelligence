@@ -8,6 +8,7 @@ export type AppIconName =
   | "check"
   | "chevron-right"
   | "clock"
+  | "filter"
   | "location"
   | "logout"
   | "map"
@@ -36,6 +37,7 @@ const paths: Record<AppIconName, React.ReactNode> = {
   check: <path d="m5 12 4 4L19 6" />,
   "chevron-right": <path d="m9 18 6-6-6-6" />,
   clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+  filter: <><path d="M4 6h16M7 12h10M10 18h4" /></>,
   location: <><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></>,
   logout: <><path d="M10 5H5v14h5M14 8l4 4-4 4M18 12H9" /></>,
   map: <><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3Z" /><path d="M9 3v15M15 6v15" /></>,

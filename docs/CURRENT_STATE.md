@@ -6,6 +6,14 @@
 
 Este é o primeiro documento que uma pessoa ou IA sem contexto deve ler. Ele descreve o que existe no repositório hoje e prevalece sobre trechos históricos conflitantes dos documentos v1.0. Os documentos de Produto, Arquitetura, Contratos, Demo e Design System continuam válidos para intenção e domínio, desde que não contradigam este estado, a spec `driver-pwa-mobile` ou uma decisão posterior registrada.
 
+## Registro da entrega atual — 21 de agosto de 2026
+
+- `Explorar` combina prévia do mapa, abertura imersiva por busca e recomendações explícitas de locais.
+- O catálogo compacto permanece em `Sessão` quando não há recarga ativa.
+- O contexto de sessão fica ativo na navegação do motorista durante detalhe, QR, fila, checkout e comprovante.
+- Estados de sessão e notificações foram humanizados e verificados em navegador, lint, testes e build.
+- O fluxo Pix, sua configuração Stripe e os assets de ilustração não foram alterados nesta entrega; ilustrações aguardam arquivos fornecidos pelo produto.
+
 ## 1. Produto atual
 
 O ChargeGrid Intelligence é uma camada comercial e operacional para recarga de veículos elétricos no ecossistema GoodWe. O monorepo possui três superfícies:
@@ -33,6 +41,13 @@ Estas decisões foram dadas depois dos documentos v1.0 e, portanto, têm preced�
 11. A fila é exclusiva para motoristas autenticados. A entrada exige confirmação explícita, informa posição/espera previstas e explica que o primeiro carregador compatível liberado na planta será atribuído.
 12. Fila e sessão comercial são estados globais persistidos no contexto do motorista: devem continuar durante a navegação. Busca, filtros e estados transitórios de interface permanecem locais à tela.
 13. O limite financeiro autorizado é um teto de recarga: ao atingi-lo, a sessão encerra a energia sem ultrapassar o valor e informa o motorista. Durante a recarga, o principal indicador é uma barra verde de consumo do limite, saldo e tempo estimado restante.
+14. `Explorar` preserva uma prévia do mapa antes das recomendações determinísticas e explicáveis. Acionar a barra de busca abre o mapa imersivo; a ordenação das recomendações prioriza disponibilidade comercial, fila/espera, distância, potência, tarifa e condição energética favorável e não deve alegar uso de IA.
+15. Sem sessão ativa, a aba `Sessão` é a origem do catálogo completo de plantas, busca e filtros compactos. Com sessão ativa, preserva o contexto comercial corrente.
+16. O mapa de descoberta usa a rota imersiva `/map`: ocupa a área visual completa, mantém somente busca, navegação de retorno e previews essenciais dos pinos. Enter geocodifica e centraliza o local pesquisado.
+17. Estados de sessão nunca exibem enums ou códigos técnicos ao motorista. Tolerância de ociosidade usa contador visual e muda para urgência quando encerrada.
+18. A central mostra por padrão notificações dos últimos sete dias e oferece acesso explícito às anteriores.
+19. Em todos os destinos autenticados que pertencem ao fluxo comercial (detalhe, QR, fila, checkout, sessão e comprovante), a navegação inferior permanece visível e marca `Sessão` como ativa.
+20. Ilustrações próprias e a expansão da identidade visual são roadmap: os assets serão fornecidos separadamente antes de qualquer integração na PWA.
 
 ## 3. Estado implementado
 
@@ -42,14 +57,15 @@ Estas decisões foram dadas depois dos documentos v1.0 e, portanto, têm preced�
 | Scanner QR | Câmera, imagem e código manual com ZXing | `apps/driver-pwa/src/pages/QrScannerPage.tsx` |
 | Visitante | QR → detalhe → checkout → sessão → comprovante | `apps/driver-pwa/src/app/AppRouter.tsx` |
 | Cadastro/login | Supabase Auth quando configurado; fallback local em desenvolvimento | `apps/driver-pwa/src/services/driverAuth.ts` |
-| Mapa | Google Maps JavaScript API, Data Layer, busca, geolocalização e seis plantas | `apps/driver-pwa/src/components/DriverDiscoveryMap.tsx` |
+| Descoberta | Três recomendações determinísticas e explicáveis; catálogo completo na aba Sessão | `apps/driver-pwa/src/pages/ExplorePage.tsx`, `apps/driver-pwa/src/components/SessionPlantCatalog.tsx` |
+| Mapa | Google Maps JavaScript API, Data Layer, rota imersiva, geocodificação por Enter e seis plantas | `apps/driver-pwa/src/pages/MapPage.tsx`, `apps/driver-pwa/src/components/DriverDiscoveryMap.tsx` |
 | Resiliência do mapa | SDK singleton, timeout, espera por tiles, retry limpo e fallback para a lista | `apps/driver-pwa/src/components/DriverDiscoveryMap.tsx` |
 | Pagamento | Stripe Payment Element e PaymentIntents em modo teste | `apps/driver-pwa/src/pages/CheckoutPage.tsx` |
 | API financeira | Criar, consultar, capturar e reembolsar PaymentIntent | `apps/api/src/payments/` |
 | Webhook Stripe | Assinatura validada sobre corpo bruto; eventos relevantes registrados | `apps/api/src/payments/routes.ts` |
 | Fila/sessão | Estado global persistido, entrada confirmada, aviso global da fila, ciclo de sessão independente da tela e limite financeiro aplicado | `apps/driver-pwa/src/app/DriverAppContext.tsx` |
-| Progresso de recarga | Barra verde de uso do limite, saldo e estimativa até o teto financeiro | `apps/driver-pwa/src/pages/SessionPage.tsx` |
-| Notificações | Permissão e notificações locais pelo service worker | `apps/driver-pwa/src/services/browserNotifications.ts` |
+| Progresso de recarga | Barra verde de uso do limite, saldo, estimativa e estados humanos; tolerância possui contador visual | `apps/driver-pwa/src/pages/SessionPage.tsx` |
+| Notificações | Permissão e notificações locais pelo service worker; recentes por sete dias e anteriores sob demanda | `apps/driver-pwa/src/pages/NotificationsPage.tsx`, `apps/driver-pwa/src/services/browserNotifications.ts` |
 | PWA | Manifest, service worker, ícone, instalação e safe areas | `apps/driver-pwa/public/` |
 | Admin Web | Shell e mapa operacional SEMS+/GoodWe | `apps/admin-web/` |
 | GoodWe | Contrato e `MockGoodWeProvider`; OpenAPI real ainda não conectada | `apps/api/src/goodwe/` |
@@ -74,11 +90,12 @@ Estas decisões foram dadas depois dos documentos v1.0 e, portanto, têm preced�
 | `/qr/:chargerSlug` | público | carregador identificado |
 | `/signup` | público | cadastro de motorista |
 | `/login` | público | login |
-| `/explore` | motorista | mapa, busca e catálogo |
+| `/explore` | motorista | recomendações determinísticas para carregar agora |
+| `/map` | motorista | mapa imersivo, busca de local e preview de plantas |
 | `/place/:establishmentId` | motorista | detalhe do estabelecimento |
 | `/checkout` | público | Stripe Payment Element |
 | `/queue` | motorista | fila |
-| `/session` | público | sessão corrente |
+| `/session` | público | sessão corrente; para motorista sem sessão, catálogo completo e filtros |
 | `/receipt/:receiptId` | público | comprovante |
 | `/history` | motorista | histórico |
 | `/notifications` | motorista | central e permissão |
