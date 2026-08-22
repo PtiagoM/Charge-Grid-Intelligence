@@ -1,6 +1,6 @@
 # Plano de implementação do Dashboard Admin
 
-**Status:** execução iniciada. M0/M1 estão em consolidação; os protótipos visuais existentes de M2–M8 não significam que esses marcos foram concluídos. A revisão crítica vigente está em `docs/admin-dashboard/CRITICAL_REVIEW.md`.
+**Status:** execução iniciada. M0 está consolidado e M1 possui baseline de shell, seis domínios, navegação contextual, escopo e capability map; autorização backend, tema claro e papéis adicionais permanecem pendentes. Os protótipos visuais existentes de M2–M8 não significam que esses marcos foram concluídos. A revisão crítica vigente está em `docs/admin-dashboard/CRITICAL_REVIEW.md`.
 
 **Estimativas:** dias úteis de desenvolvimento e validação para uma pessoa experiente, usadas apenas para ordenar e dimensionar. Integrações não homologadas podem ampliar os intervalos.
 

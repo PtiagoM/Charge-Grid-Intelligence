@@ -143,8 +143,8 @@ O assistente apresenta textos fixos e previsões sem fonte, confiança ou fallba
 
 | Marco | Situação observada | Decisão |
 | --- | --- | --- |
-| M0 — fundação | contratos compartilhados existem, mas a UI não os consumia e havia duas árvores Admin | consolidar árvore, fixtures, serviço de estado e domínio compartilhado |
-| M1 — shell/RBAC | shell visual forte; escopo implícito e sidebar excessiva | concluir escopo em URL, guardas e reorganização por domínios |
+| M0 — fundação | árvore, fixtures e serviço de estado consolidados; contratos reais ainda dependem da API | preservar uma única arquitetura e substituir mocks por repositories sem reabrir a fronteira PWA |
+| M1 — shell/RBAC | seis domínios primários, navegação contextual, escopo em URL e capability map tipado | conectar capacidades a autorização de ação/API; tema claro e papéis adicionais permanecem pendentes |
 | M2 — planta/onboarding | formulários independentes e recadastro técnico | reconstruir como vínculo de planta GoodWe |
 | M3 — carregadores/sessões | listas superficiais, sem comandos/timeline | primeira vertical slice funcional |
 | M4 — fila | tabela demonstrativa | integrar ao contexto de planta/sessão |
@@ -154,7 +154,7 @@ O assistente apresenta textos fixos e previsões sem fonte, confiança ou fallba
 | M8 — acesso/relatórios | telas cenográficas | implementar por capacidade e tarefas reais |
 | M9 — validação | boa cobertura de demo em viewport amplo | matriz por papel, estado e 1280/1440/desktop amplo |
 
-O estado atual deve ser tratado como **M0/M1 parcial com protótipos visuais de M2–M8**, não como conclusão desses marcos.
+O estado atual deve ser tratado como **fundação M0 consolidada e baseline de interface M1 concluída, ainda sem autorização backend**, com protótipos visuais de M2–M8. Esses protótipos não significam conclusão funcional dos marcos.
 
 ## Fundação corrigida nesta etapa
 
@@ -163,6 +163,10 @@ O estado atual deve ser tratado como **M0/M1 parcial com protótipos visuais de 
 - organização em `app`, `domain`, `fixtures`, `features`, `components`, `layouts` e `services`;
 - estado local atrás de um repository substituível;
 - escopo GoodWe explícito e persistido na URL;
+- sidebar reduzida de dezesseis/doze itens para seis domínios primários;
+- navegação contextual dentro de cada domínio e títulos que explicam o propósito da seção;
+- capability map tipado separando portfólio GoodWe e autosserviço do estabelecimento;
+- lateral expandida com rótulos em desktop e recolhida apenas em viewports menores;
 - rolagem reiniciada na mudança de rota/escopo;
 - métricas de cliente derivadas da fonte de dados;
 - sessão de fixture vinculada a carregador existente;
@@ -172,8 +176,8 @@ O estado atual deve ser tratado como **M0/M1 parcial com protótipos visuais de 
 
 ## Ordem da reconstrução funcional
 
-1. **M1 completo:** reduzir navegação, definir capability map e estabilizar shell/escopo.
-2. **M2:** portfólio e onboarding de planta vinculada.
+1. **M1 hardening:** aplicar o capability map também a ações e respostas da API quando os endpoints entrarem; não criar controles locais fictícios.
+2. **M2 — próximo incremento funcional:** portfólio e onboarding de planta vinculada.
 3. **M3:** carregadores, detalhe, comandos e sessões/timeline.
 4. **M4/M5:** fila e energia dentro do contexto da planta.
 5. **M6:** tarifa, pagamento, conciliação e financeiro parametrizados.

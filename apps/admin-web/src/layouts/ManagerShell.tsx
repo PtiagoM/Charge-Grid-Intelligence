@@ -1,24 +1,14 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
-  Activity, BadgeDollarSign, BatteryCharging, BrainCircuit, Building2, ChartNoAxesCombined,
-  ClipboardCheck, Clock3, createIcons, FileChartColumn, FileSignature, FolderOpen, Gauge,
-  History, Landmark, LayoutDashboard, LogOut, MapPin, MapPinned, NotebookTabs, PlugZap,
-  RadioTower, ReceiptText, ScrollText, Settings, ShieldCheck, Sparkles, TrendingUp,
-  UsersRound, WalletCards, Zap
+  Activity, BadgeDollarSign, BrainCircuit, createIcons, LayoutDashboard, LogOut,
+  MapPinned, Settings, Zap
 } from "lucide";
 import { assets } from "../constants/assets";
 import { useAdminState } from "../app/AdminState";
+import { ADMIN_DOMAINS, getAdminContextLinks, getAdminDomainForRoute, getAdminEntryRoute } from "../app/adminNavigation";
 
-const goodweNav = [
-  ["overview", "Visao Geral", "layout-dashboard"], ["clients", "Clientes", "users-round"], ["establishments", "Estabelecimentos", "building-2"], ["locations", "Pontos de Recarga", "map-pinned"], ["chargers", "Carregadores", "battery-charging"], ["installations", "Implantacoes", "clipboard-check"], ["contracts", "Contratos", "file-signature"], ["finance", "Financeiro", "wallet-cards"], ["operations", "Operacao", "activity"], ["sessions", "Sessoes", "history"], ["energy", "Demanda e Energia", "zap"], ["pricing", "Tarifacao e Pagamentos", "badge-dollar-sign"], ["ai", "Inteligencia Artificial", "brain-circuit"], ["reports", "Relatorios", "file-chart-column"], ["expansion", "Expansao", "trending-up"], ["audit", "Auditoria", "shield-check"]
-];
-
-const establishmentNav = [
-  ["overview", "Visao Geral", "gauge"], ["locations", "Meus Pontos", "map-pin"], ["chargers", "Carregadores", "plug-zap"], ["operations", "Operacao", "radio-tower"], ["sessions", "Sessoes", "clock-3"], ["energy", "Demanda e Energia", "chart-no-axes-combined"], ["pricing", "Tarifacao e Pagamentos", "receipt-text"], ["finance", "Financeiro", "landmark"], ["contract", "Contrato", "scroll-text"], ["documents", "Documentos", "folder-open"], ["ai", "Inteligencia Artificial", "sparkles"], ["reports", "Relatorios", "notebook-tabs"]
-];
-
-const sidebarIcons = { Activity, BadgeDollarSign, BatteryCharging, BrainCircuit, Building2, ChartNoAxesCombined, ClipboardCheck, Clock3, FileChartColumn, FileSignature, FolderOpen, Gauge, History, Landmark, LayoutDashboard, LogOut, MapPin, MapPinned, NotebookTabs, PlugZap, RadioTower, ReceiptText, ScrollText, Settings, ShieldCheck, Sparkles, TrendingUp, UsersRound, WalletCards, Zap };
+const sidebarIcons = { Activity, BadgeDollarSign, BrainCircuit, LayoutDashboard, LogOut, MapPinned, Settings, Zap };
 
 function AssistantDrawer({ onClose }: { onClose: () => void }) {
   const [topic, setTopic] = useState("Operacao da rede");
@@ -38,9 +28,11 @@ export function ManagerShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [assistantOpen, setAssistantOpen] = useState(false);
-  const nav = account?.profile === "GOODWE" ? goodweNav : establishmentNav;
-  const active = location.pathname.split("/")[2] ?? "overview";
+  const activeRoute = location.pathname.split("/")[2] ?? "overview";
+  const activeDomain = getAdminDomainForRoute(activeRoute);
   const selectedEstablishmentId = new URLSearchParams(location.search).get("est") ?? "";
+  const profile = account?.profile ?? "ESTABELECIMENTO";
+  const scopedSearch = selectedEstablishmentId ? `?est=${encodeURIComponent(selectedEstablishmentId)}` : "";
 
   function changeScope(establishmentId: string) {
     const query = new URLSearchParams(location.search);
@@ -50,7 +42,7 @@ export function ManagerShell({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => { document.body.className = "layout-desktop"; }, []);
-  useEffect(() => { createIcons({ icons: sidebarIcons }); }, [active, assistantOpen]);
+  useEffect(() => { createIcons({ icons: sidebarIcons }); }, [activeRoute, assistantOpen]);
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
     document.querySelector(".page-content")?.scrollTo({ top: 0, behavior: "instant" });
@@ -58,12 +50,12 @@ export function ManagerShell({ children }: { children: ReactNode }) {
 
   return <div className="app-shell desktop-shell" data-testid="desktop-shell">
     <aside className="sidebar" data-testid="sidebar">
-      <a className="sidebar-logo" href={`#/mvp/overview${selectedEstablishmentId ? `?est=${encodeURIComponent(selectedEstablishmentId)}` : ""}`} aria-label="GoodWe"><img className="logo-collapsed" src={assets.logoCollapsed} alt="GoodWe" /></a>
-      <nav className="sidebar-nav">{nav.map(([id, label, icon]) => <NavLink key={id} to={{ pathname: `/mvp/${id}`, search: selectedEstablishmentId ? `?est=${encodeURIComponent(selectedEstablishmentId)}` : "" }} className={active === id ? "sidebar-item is-active" : "sidebar-item"} title={label} aria-label={label}><i className="sidebar-lucide" data-lucide={icon} aria-hidden="true" /><span className="sidebar-tooltip">{label}</span></NavLink>)}</nav>
+      <a className="sidebar-logo" href={`#/mvp/overview${scopedSearch}`} aria-label="GoodWe"><img className="logo-collapsed" src={assets.logoCollapsed} alt="GoodWe" /></a>
+      <nav className="sidebar-nav" aria-label="Domínios principais">{ADMIN_DOMAINS.map((domain) => <NavLink key={domain.id} to={{ pathname: `/mvp/${getAdminEntryRoute(domain, profile)}`, search: scopedSearch }} className={activeDomain?.id === domain.id ? "sidebar-item is-active" : "sidebar-item"} title={domain.label} aria-label={domain.label}><i className="sidebar-lucide" data-lucide={domain.icon} aria-hidden="true" /><span className="sidebar-tooltip">{domain.label}</span></NavLink>)}</nav>
     </aside>
     <main className="main-area">
       <header className="topbar" data-testid="topbar"><div className="topbar-promo"><img src={assets.icons.solarInfo} alt="" />Hub Comercial ChargeGrid</div><div className="topbar-actions">{account?.profile === "GOODWE" ? <label className="scope-selector"><span>Escopo</span><select aria-label="Escopo operacional" value={selectedEstablishmentId} onChange={(event) => changeScope(event.target.value)}><option value="">Toda a rede</option>{state.establishments.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label> : null}<span className="profile-chip">{account?.profile}</span><span className="profile-name">{account?.displayName}</span><img className="avatar" src={assets.avatar} alt="Perfil" /><a className="topbar-account-action" href="#/mvp/settings" aria-label="Configuracoes"><i data-lucide="settings" /></a><a className="topbar-account-action is-logout" href="#/logout" aria-label="Sair do sistema"><i data-lucide="log-out" /></a></div></header>
-      <section className="page-content" data-testid="page-content"><header className="page-heading"><div><h1>{account?.profile === "GOODWE" ? "ChargeGrid Intelligence GoodWe" : "ChargeGrid Intelligence Estabelecimento"}</h1><p>{account?.profile === "GOODWE" ? "A GoodWe controla a rede e administra estrutura, vinculos e contas." : "O estabelecimento monitora apenas locais e carregadores atribuidos pela GoodWe."}</p><small>Dados atualizados em 22/08/2026, 06:39:38</small></div></header>{children}</section>
+      <section className="page-content" data-testid="page-content"><header className="page-heading"><div><span className="page-heading-eyebrow">ChargeGrid Intelligence · {profile === "GOODWE" ? "GoodWe" : "Estabelecimento"}</span><h1>{activeDomain?.label ?? "Configurações"}</h1><p>{activeDomain?.description[profile] ?? "Preferências da conta e controles de acesso do ambiente administrativo."}</p><small>Dados atualizados em 22/08/2026, 06:39:38</small></div></header>{activeDomain ? <nav className="context-navigation" aria-label={`Navegação de ${activeDomain.label}`}>{getAdminContextLinks(activeDomain, profile).map((item) => <NavLink key={item.route} to={{ pathname: `/mvp/${item.route}`, search: scopedSearch }} className={activeRoute === item.route ? "is-active" : ""}>{item.label}</NavLink>)}</nav> : null}{children}</section>
     </main>
     <button type="button" className="assistant-orb-button" aria-label="Assistente ChargeGrid" onClick={() => setAssistantOpen(true)}><img src={assets.assistant} alt="" /><span className="assistant-orb-eye" /></button>
     {assistantOpen ? <AssistantDrawer onClose={() => setAssistantOpen(false)} /> : null}
