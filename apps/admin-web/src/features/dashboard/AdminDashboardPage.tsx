@@ -10,8 +10,9 @@ import { PlantDetailPage, PlantOnboardingPage, PlantsPortfolioPage } from "../pl
 import { ChargerDetailPage, ChargersInventoryPage, SessionDetailPage, SessionsPage as OperationsSessionsPage } from "../operations/ChargerPages";
 import { OperationsCenterPage, QueueOperationsPage } from "../operations/QueuePages";
 import { EnergyOperationsPage } from "../energy/EnergyOperationsPage";
+import { FinanceDashboardPage, FinancialSessionPage, TariffPoliciesPage } from "../finance/FinancialPages";
 
-const establishmentTabs = new Set(["overview", "locations", "location", "charger", "chargers", "sessions", "session", "operations", "queue", "energy", "pricing", "finance", "invoices", "contract", "support", "ticket", "documents", "ai", "reports", "settings"]);
+const establishmentTabs = new Set(["overview", "locations", "location", "charger", "chargers", "sessions", "session", "operations", "queue", "energy", "pricing", "finance", "financial-session", "invoices", "contract", "support", "ticket", "documents", "ai", "reports", "settings"]);
 
 function EntityCell({ title, subtitle }: { title: string; subtitle: string }) {
   return <div><strong>{title}</strong><span>{subtitle}</span></div>;
@@ -211,7 +212,8 @@ function ReportsPage({ establishmentId }: { establishmentId?: string }) {
 function ContractPage({ establishmentId }: { establishmentId: string }) {
   const { state } = useAdminState();
   const establishment = state.establishments.find((item) => item.id === establishmentId);
-  return <><Breadcrumbs items={[{ label: "Business" }, { label: "Contratos" }]} /><section className="surface panel enterprise-page"><SectionHeader title="Meu contrato" subtitle="Condicoes comerciais vigentes para sua operacao." /><div className="contract-grid"><article className="contract-card"><header><div><span>{establishment?.contractCode}</span><h3>ChargeGrid Performance</h3><p>{establishment?.name}</p></div><StatusPill value="Ativo" /></header><dl><div><dt>Modelo</dt><dd>Revenue share</dd></div><div><dt>Renovacao</dt><dd>15/01/2027</dd></div><div><dt>SLA</dt><dd>8 horas</dd></div><div><dt>Participacao</dt><dd>6%</dd></div></dl><button className="ghost-button">Ver condicoes</button></article></div></section></>;
+  const shareBps = state.tariffPolicies.find((item) => item.establishmentId === establishmentId && item.status === "ACTIVE")?.platformShareBps;
+  return <><Breadcrumbs items={[{ label: "Business" }, { label: "Contratos" }]} /><section className="surface panel enterprise-page"><SectionHeader title="Meu contrato" subtitle="Condicoes comerciais vigentes para sua operacao." /><div className="contract-grid"><article className="contract-card"><header><div><span>{establishment?.contractCode}</span><h3>ChargeGrid Performance</h3><p>{establishment?.name}</p></div><StatusPill value="Ativo" /></header><dl><div><dt>Modelo</dt><dd>Revenue share</dd></div><div><dt>Renovacao</dt><dd>15/01/2027</dd></div><div><dt>SLA</dt><dd>8 horas</dd></div><div><dt>Participacao</dt><dd>{shareBps === undefined ? "Nao parametrizada" : `${shareBps / 100}%`}</dd></div></dl><a className="ghost-button" href={`#/mvp/pricing?est=${establishmentId}`}>Ver politica vigente</a></article></div></section></>;
 }
 
 function SupportPage({ establishmentId }: { establishmentId?: string }) {
@@ -288,7 +290,9 @@ export function AdminDashboardPage() {
       case "session": return <SessionDetailPage sessionId={query.get("session") ?? ""} establishmentId={establishmentId || undefined} />;
       case "operations": return <OperationsCenterPage establishmentId={establishmentId || undefined} />;
       case "queue": return <QueueOperationsPage establishmentId={establishmentId || undefined} />;
-      case "pricing": return <PricingPage establishmentId={establishmentId || undefined} />;
+      case "pricing": return <TariffPoliciesPage establishmentId={establishmentId || undefined} />;
+      case "finance": return <FinanceDashboardPage establishmentId={establishmentId || undefined} />;
+      case "financial-session": return <FinancialSessionPage transactionId={query.get("transaction") ?? ""} establishmentId={establishmentId || undefined} />;
       case "energy": return <EnergyOperationsPage establishmentId={establishmentId || undefined} />;
       case "ai": return <AiPage />;
       case "reports": return <ReportsPage establishmentId={establishmentId || undefined} />;

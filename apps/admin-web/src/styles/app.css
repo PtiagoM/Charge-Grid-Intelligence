@@ -2918,6 +2918,81 @@ button[data-action="finish-session"]:hover {
   border-radius: 10px;
 }
 
+.financial-editor {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.financial-editor label {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.financial-editor input,
+.financial-editor textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(8, 9, 10, .58);
+  color: var(--text);
+  padding: 11px 12px;
+}
+
+.financial-editor textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.financial-editor .financial-reason {
+  grid-column: span 2;
+}
+
+.financial-editor button {
+  justify-self: start;
+  align-self: end;
+}
+
+.financial-row-actions {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.financial-breakdown {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.financial-breakdown article {
+  display: grid;
+  gap: 8px;
+  min-height: 130px;
+  padding: 17px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, .025);
+}
+
+.financial-breakdown article span,
+.financial-breakdown article small {
+  color: var(--muted);
+}
+
+.financial-breakdown article strong {
+  font-size: 21px;
+}
+
+.financial-breakdown .financial-net {
+  grid-column: span 2;
+  border-color: rgba(52, 168, 91, .38);
+  background: rgba(52, 168, 91, .07);
+}
+
 @media (max-width: 1200px) {
   .kpi-grid.four-cols,
   .simulator-grid,
@@ -5378,6 +5453,11 @@ body.layout-auth {
     grid-column: 3;
   }
 
+  .financial-editor,
+  .financial-breakdown {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
 }
 
 @media (max-width: 920px) {
@@ -5538,6 +5618,16 @@ body.layout-auth {
   .demand-meter footer {
     display: grid;
     grid-template-columns: 1fr 1fr;
+  }
+
+  .financial-editor,
+  .financial-breakdown {
+    grid-template-columns: 1fr;
+  }
+
+  .financial-editor .financial-reason,
+  .financial-breakdown .financial-net {
+    grid-column: auto;
   }
 
   .operations-hero {

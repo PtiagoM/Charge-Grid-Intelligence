@@ -1,6 +1,6 @@
 # Plano de implementação do Dashboard Admin
 
-**Status:** execução em M5. M0/M1 estão consolidados; M2–M4 cobrem plantas, carregadores/sessões e fila; M5 possui snapshot energético tipado, frescor, política por estabelecimento, bloqueio de início e recomendação determinística. Autorização backend e providers reais permanecem pendentes. Os protótipos visuais de M6–M8 não significam conclusão. A revisão crítica vigente está em `docs/admin-dashboard/CRITICAL_REVIEW.md`.
+**Status:** execução em M6. M0–M5 possuem verticais locais funcionais; M6 adiciona tarifa versionada, cálculo em centavos, estados financeiros, reembolso idempotente e conciliação sobre Stripe sandbox simulado. Autorização backend, providers e lifecycle financeiro reais permanecem pendentes. Os protótipos de M7–M8 não significam conclusão. A revisão crítica vigente está em `docs/admin-dashboard/CRITICAL_REVIEW.md`.
 
 **Estimativas:** dias úteis de desenvolvimento e validação para uma pessoa experiente, usadas apenas para ordenar e dimensionar. Integrações não homologadas podem ampliar os intervalos.
 

@@ -45,5 +45,6 @@ test('MVP mostra carregadores, sessões e tarifação', async ({ page }) => {
 
   await page.goto('/#/mvp/pricing?est=est-fiap');
   await expect(page.getByTestId('mvp-pricing-panel')).toBeVisible();
+  await page.goto('/#/mvp/finance?est=est-fiap');
   await expect(page.getByTestId('mvp-payments-table')).toBeVisible();
 });

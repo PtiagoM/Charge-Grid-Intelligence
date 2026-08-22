@@ -101,10 +101,10 @@ export function createInitialState(): AdminState {
     ],
     chargerCommands: [],
     sessions: [
-      { id: "CG-2026-1001", chargerId: "CG-FIAP-01", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverId: "driver-ana", driverName: "Ana Souza", vehicle: "Volvo EX30", status: "active", startedAt: "2026-08-18T17:20:00-03:00", durationMinutes: 40, energyKwh: 13.4, tariffPerKwh: 2.95, consumedAmount: 39.53, payment: { status: "Aprovado", method: "Cartao", limitAmount: 100 }, servicePriority: "STANDARD" },
-      { id: "CG-2026-0998", chargerId: "CG-FIAP-01", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverId: "driver-paulo", driverName: "Paulo Lima", vehicle: "BYD Dolphin", status: "finished", startedAt: "2026-08-18T14:10:00-03:00", durationMinutes: 62, energyKwh: 18.7, tariffPerKwh: 2.95, consumedAmount: 55.17, finalAmount: 55.17, payment: { status: "Aprovado", method: "Pix", limitAmount: 80 } },
-      { id: "CG-2026-1002", chargerId: "CG-FIAP-03", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverId: "driver-luiza", driverName: "Luiza Prado", vehicle: "Renault Kwid E-Tech", status: "authorized", startedAt: "2026-08-18T18:02:00-03:00", durationMinutes: 0, energyKwh: 0, tariffPerKwh: 2.95, consumedAmount: 0, payment: { status: "Aprovado", method: "Cartao", limitAmount: 90 } },
-      { id: "CG-2026-1003", chargerId: "CG-FIAP-05", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverId: "driver-marcos", driverName: "Marcos Silva", vehicle: "GWM Ora 03", status: "authorized", startedAt: "2026-08-18T18:06:00-03:00", durationMinutes: 0, energyKwh: 0, tariffPerKwh: 2.95, consumedAmount: 0, payment: { status: "Aprovado", method: "Pix", limitAmount: 75 } }
+      { id: "CG-2026-1001", chargerId: "CG-FIAP-01", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverId: "driver-ana", driverName: "Ana Souza", vehicle: "Volvo EX30", status: "active", startedAt: "2026-08-18T17:20:00-03:00", durationMinutes: 40, energyKwh: 13.4, tariffPerKwh: 2.95, consumedAmount: 39.53, payment: { status: "Aprovado", method: "Cartao", limitAmount: 100 }, servicePriority: "STANDARD", tariffPolicyId: "tariff-est-fiap-v1", idleMinutes: 0 },
+      { id: "CG-2026-0998", chargerId: "CG-FIAP-01", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverId: "driver-paulo", driverName: "Paulo Lima", vehicle: "BYD Dolphin", status: "finished", startedAt: "2026-08-18T14:10:00-03:00", durationMinutes: 62, energyKwh: 18.7, tariffPerKwh: 2.95, consumedAmount: 55.17, finalAmount: 55.17, payment: { status: "Aprovado", method: "Pix", limitAmount: 80 }, tariffPolicyId: "tariff-est-fiap-v1", idleMinutes: 0 },
+      { id: "CG-2026-1002", chargerId: "CG-FIAP-03", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverId: "driver-luiza", driverName: "Luiza Prado", vehicle: "Renault Kwid E-Tech", status: "authorized", startedAt: "2026-08-18T18:02:00-03:00", durationMinutes: 0, energyKwh: 0, tariffPerKwh: 2.95, consumedAmount: 0, payment: { status: "Aprovado", method: "Cartao", limitAmount: 90 }, tariffPolicyId: "tariff-est-fiap-v1", idleMinutes: 0 },
+      { id: "CG-2026-1003", chargerId: "CG-FIAP-05", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverId: "driver-marcos", driverName: "Marcos Silva", vehicle: "GWM Ora 03", status: "authorized", startedAt: "2026-08-18T18:06:00-03:00", durationMinutes: 0, energyKwh: 0, tariffPerKwh: 2.95, consumedAmount: 0, payment: { status: "Aprovado", method: "Pix", limitAmount: 75 }, tariffPolicyId: "tariff-est-fiap-v1", idleMinutes: 0 }
     ],
     sessionEvents,
     queue: [
@@ -126,6 +126,21 @@ export function createInitialState(): AdminState {
     energyPolicies: [
       { establishmentId: "est-fiap", alertUtilizationPercent: 70, criticalUtilizationPercent: 90, freshnessMinutes: 15, blockStartOnCritical: true, blockStartWithoutFreshTelemetry: true },
       { establishmentId: "est-mercadox", alertUtilizationPercent: 80, criticalUtilizationPercent: 90, freshnessMinutes: 15, blockStartOnCritical: true, blockStartWithoutFreshTelemetry: true }
+    ],
+    tariffPolicies: [
+      { id: "tariff-est-fiap-v1", establishmentId: "est-fiap", version: 1, status: "ACTIVE", energyPriceCentsPerKwh: 295, idlePriceCentsPerMinute: 50, idleGraceMinutes: 10, platformShareBps: 600, effectiveFrom: "2026-01-15T00:00:00-03:00", createdAt: "2026-01-10T10:00:00-03:00", createdBy: "Comercial GoodWe", changeReason: "Condicoes comerciais iniciais" },
+      { id: "tariff-est-mercadox-v1", establishmentId: "est-mercadox", version: 1, status: "ACTIVE", energyPriceCentsPerKwh: 310, idlePriceCentsPerMinute: 65, idleGraceMinutes: 8, platformShareBps: 750, effectiveFrom: "2026-03-10T00:00:00-03:00", createdAt: "2026-03-05T10:00:00-03:00", createdBy: "Comercial GoodWe", changeReason: "Condicoes comerciais iniciais" }
+    ],
+    paymentTransactions: [
+      { id: "pay-CG-2026-1001", sessionId: "CG-2026-1001", establishmentId: "est-fiap", tariffPolicyId: "tariff-est-fiap-v1", provider: "STRIPE_SANDBOX", providerReference: "pi_demo_1001", currency: "BRL", status: "AUTHORIZED", settlementStatus: "PENDING", authorizedCents: 10000, capturedCents: 0, refundedCents: 0, providerFeeCents: 0, platformShareBps: 600, createdAt: "2026-08-18T17:18:00-03:00" },
+      { id: "pay-CG-2026-0998", sessionId: "CG-2026-0998", establishmentId: "est-fiap", tariffPolicyId: "tariff-est-fiap-v1", provider: "STRIPE_SANDBOX", providerReference: "pi_demo_0998", currency: "BRL", status: "CAPTURED", settlementStatus: "AVAILABLE", authorizedCents: 8000, capturedCents: 5517, refundedCents: 0, providerFeeCents: 180, platformShareBps: 600, createdAt: "2026-08-18T14:08:00-03:00", capturedAt: "2026-08-18T15:13:00-03:00" },
+      { id: "pay-CG-2026-1002", sessionId: "CG-2026-1002", establishmentId: "est-fiap", tariffPolicyId: "tariff-est-fiap-v1", provider: "STRIPE_SANDBOX", providerReference: "pi_demo_1002", currency: "BRL", status: "AUTHORIZED", settlementStatus: "PENDING", authorizedCents: 9000, capturedCents: 0, refundedCents: 0, providerFeeCents: 0, platformShareBps: 600, createdAt: "2026-08-18T18:02:00-03:00" },
+      { id: "pay-CG-2026-1003", sessionId: "CG-2026-1003", establishmentId: "est-fiap", tariffPolicyId: "tariff-est-fiap-v1", provider: "STRIPE_SANDBOX", providerReference: "pi_demo_1003", currency: "BRL", status: "AUTHORIZED", settlementStatus: "PENDING", authorizedCents: 7500, capturedCents: 0, refundedCents: 0, providerFeeCents: 0, platformShareBps: 600, createdAt: "2026-08-18T18:06:00-03:00" }
+    ],
+    financialEvents: [
+      { id: "financial-authorized-1001", transactionId: "pay-CG-2026-1001", type: "AUTHORIZED", at: "2026-08-18T17:18:00-03:00", actor: "STRIPE_SANDBOX", amountCents: 10000 },
+      { id: "financial-authorized-0998", transactionId: "pay-CG-2026-0998", type: "AUTHORIZED", at: "2026-08-18T14:08:00-03:00", actor: "STRIPE_SANDBOX", amountCents: 8000 },
+      { id: "financial-captured-0998", transactionId: "pay-CG-2026-0998", type: "CAPTURED", at: "2026-08-18T15:13:00-03:00", actor: "STRIPE_SANDBOX", amountCents: 5517 }
     ]
   };
 }

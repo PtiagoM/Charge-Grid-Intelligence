@@ -93,7 +93,7 @@ export const ADMIN_DOMAINS: readonly AdminDomain[] = [
       { route: "documents", label: "Documentos", capability: "commercial:self-service" },
       { route: "contracts", label: "Contratos", capability: "commercial:manage" }
     ],
-    relatedRoutes: ["invoices"]
+    relatedRoutes: ["financial-session", "invoices"]
   },
   {
     id: "intelligence",

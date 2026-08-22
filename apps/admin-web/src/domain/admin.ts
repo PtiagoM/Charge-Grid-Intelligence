@@ -194,6 +194,8 @@ export interface Session {
   finalAmount?: number;
   payment: Payment;
   servicePriority?: "STANDARD" | "ACCESSIBILITY" | "FLEET_CRITICAL";
+  tariffPolicyId?: string;
+  idleMinutes?: number;
 }
 
 export type SessionEventType =
@@ -309,6 +311,60 @@ export interface EnergyPolicy {
   blockStartWithoutFreshTelemetry: boolean;
 }
 
+export interface TariffPolicy {
+  id: string;
+  establishmentId: string;
+  version: number;
+  status: "DRAFT" | "ACTIVE" | "RETIRED";
+  energyPriceCentsPerKwh: number;
+  idlePriceCentsPerMinute: number;
+  idleGraceMinutes: number;
+  platformShareBps: number;
+  effectiveFrom: string;
+  effectiveTo?: string;
+  createdAt: string;
+  createdBy: string;
+  changeReason: string;
+}
+
+export interface PaymentTransaction {
+  id: string;
+  sessionId: string;
+  establishmentId: string;
+  tariffPolicyId: string;
+  provider: "STRIPE_SANDBOX";
+  providerReference: string;
+  currency: "BRL";
+  status: "AUTHORIZED" | "CAPTURED" | "PARTIALLY_REFUNDED" | "REFUNDED" | "FAILED" | "DISPUTED";
+  settlementStatus: "PENDING" | "AVAILABLE" | "PAID" | "FAILED";
+  authorizedCents: number;
+  capturedCents: number;
+  refundedCents: number;
+  providerFeeCents: number;
+  platformShareBps: number;
+  createdAt: string;
+  capturedAt?: string;
+  settledAt?: string;
+  failureReason?: string;
+}
+
+export interface FinancialEvent {
+  id: string;
+  transactionId: string;
+  type: "AUTHORIZED" | "CAPTURED" | "REFUNDED" | "DISPUTED" | "SETTLED" | "FAILED";
+  at: string;
+  actor: string;
+  amountCents?: number;
+  reason?: string;
+}
+
+export interface FinancialActionResult {
+  ok: boolean;
+  issues: string[];
+  transaction?: PaymentTransaction;
+  tariffPolicy?: TariffPolicy;
+}
+
 export interface AdminState {
   accounts: Account[];
   currentAccountId: string | null;
@@ -328,6 +384,9 @@ export interface AdminState {
   audit: AuditEntry[];
   energy: EnergySnapshot[];
   energyPolicies: EnergyPolicy[];
+  tariffPolicies: TariffPolicy[];
+  paymentTransactions: PaymentTransaction[];
+  financialEvents: FinancialEvent[];
 }
 
 export interface NewClientInput {

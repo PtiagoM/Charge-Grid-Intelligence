@@ -12,6 +12,7 @@ export type AdminCapability =
   | "commercial:read"
   | "commercial:self-service"
   | "commercial:manage"
+  | "finance:manage"
   | "intelligence:read"
   | "intelligence:portfolio"
   | "governance:audit";
@@ -28,6 +29,7 @@ const CAPABILITIES_BY_PROFILE = {
     "energy:monitor",
     "commercial:read",
     "commercial:manage",
+    "finance:manage",
     "intelligence:read",
     "intelligence:portfolio",
     "governance:audit"
