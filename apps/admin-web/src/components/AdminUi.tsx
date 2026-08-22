@@ -11,13 +11,13 @@ export function number(value: number) {
 }
 
 export function statusLabel(value: string) {
-  return ({ available: "Disponivel", charging: "Em recarga", limited: "Limitado", offline: "Offline", authorized: "Autorizada", starting: "Iniciando", active: "Ativa", finished: "Finalizada", start_failed: "Falha no inicio", REQUESTED: "Solicitado", ACCEPTED: "Aceito", CONFIRMED: "Confirmado", FAILED: "Falhou", EXPIRED: "Expirado", waiting: "Aguardando", called: "Em chamada", assigned: "Admitido", no_show: "Nao compareceu", expired: "Expirado", released: "Concluido" } as Record<string, string>)[value] ?? value;
+  return ({ available: "Disponivel", charging: "Em recarga", limited: "Limitado", offline: "Offline", authorized: "Autorizada", starting: "Iniciando", active: "Ativa", finished: "Finalizada", start_failed: "Falha no inicio", REQUESTED: "Solicitado", ACCEPTED: "Aceito", CONFIRMED: "Confirmado", FAILED: "Falhou", EXPIRED: "Expirado", NORMAL: "Normal", ALERT: "Alerta", CRITICAL: "Critico", STALE: "Desatualizado", UNAVAILABLE: "Indisponivel", waiting: "Aguardando", called: "Em chamada", assigned: "Admitido", no_show: "Nao compareceu", expired: "Expirado", released: "Concluido" } as Record<string, string>)[value] ?? value;
 }
 
 export function tone(value: string) {
-  if (["CONFIRMED", "assigned", "released"].includes(value)) return "good";
-  if (["start_failed", "FAILED", "no_show"].includes(value)) return "danger";
-  if (["authorized", "starting", "REQUESTED", "ACCEPTED", "EXPIRED", "called"].includes(value)) return "warn";
+  if (["CONFIRMED", "NORMAL", "assigned", "released"].includes(value)) return "good";
+  if (["start_failed", "FAILED", "CRITICAL", "no_show"].includes(value)) return "danger";
+  if (["authorized", "starting", "REQUESTED", "ACCEPTED", "EXPIRED", "ALERT", "STALE", "UNAVAILABLE", "called"].includes(value)) return "warn";
   if (["available", "finished", "Aprovado", "Ativo", "Favorável", "released"].includes(value)) return "good";
   if (["charging", "Recusado", "Crítico", "Alta"].includes(value)) return "danger";
   if (["limited", "Pendente", "Alerta", "waiting", "Implantação"].includes(value)) return "warn";

@@ -148,13 +148,13 @@ O assistente apresenta textos fixos e previsões sem fonte, confiança ou fallba
 | M2 — planta/onboarding | portfólio, detalhe somente leitura e wizard de vínculo implementados sobre catálogo GoodWe mockado | homologar provider/SSO reais e mover publicação/autorização para a API |
 | M3 — carregadores/sessões | vertical funcional local: inventário, detalhe, telemetria, sessão/timeline e comandos auditáveis | homologar provider GoodWe real e mover autorização para a API sem perder idempotência/frescor |
 | M4 — fila | fluxo local funcional com FIFO, compatibilidade, janela de chamada, admissão e no-show | integrar eventos originados na PWA e notificações reais sem transformar chamada em reserva |
-| M5 — energia | KPIs visualmente coerentes, mas parcialmente fixos | usar snapshot tipado, frescor, limiares e impacto operacional |
+| M5 — energia | snapshot tipado, frescor, limiares, bloqueio de início e recomendação determinística implementados localmente | homologar granularidade/latência GoodWe e método de atribuição por origem |
 | M6 — financeiro | percentuais e rateio tratados como definitivos | parametrizar e separar hipótese de dado confirmado |
 | M7 — incidentes/recomendações | cartões estáticos | inbox, workflow e recomendação explicável |
 | M8 — acesso/relatórios | telas cenográficas | implementar por capacidade e tarefas reais |
 | M9 — validação | boa cobertura de demo em viewport amplo | matriz por papel, estado e 1280/1440/desktop amplo |
 
-O estado atual deve ser tratado como **fundação M0 consolidada, baseline de interface M1 concluída e verticais M2–M4 funcionais sobre providers locais**, ainda sem autorização backend. As telas de M5–M8 continuam protótipos e não significam conclusão funcional desses marcos.
+O estado atual deve ser tratado como **fundação M0 consolidada, baseline de interface M1 concluída e verticais M2–M5 funcionais sobre providers locais**, ainda sem autorização backend. As telas de M6–M8 continuam protótipos e não significam conclusão funcional desses marcos.
 
 ## Fundação corrigida nesta etapa
 
@@ -180,8 +180,8 @@ O estado atual deve ser tratado como **fundação M0 consolidada, baseline de in
 2. **M2 concluído no mock:** portfólio, detalhe, pré-condições, rascunho retomável e publicação derivada da planta GoodWe; integração real permanece pendente.
 3. **M3 concluído no mock:** carregadores, telemetria fresca, start/stop com motivo, idempotência, confirmação assíncrona e sessões/timeline.
 4. **M4 concluído no mock:** fila por estabelecimento, FIFO, compatibilidade, chamada sem reserva, comparecimento e no-show auditáveis.
-5. **M5 — próximo incremento:** energia dentro do contexto da planta.
-6. **M6:** tarifa, pagamento, conciliação e financeiro parametrizados.
+5. **M5 concluído no mock:** snapshot fresco, política por estabelecimento, bloqueio fail-closed, atribuição calculável e recomendação explicada.
+6. **M6 — próximo incremento:** tarifa, pagamento, conciliação e financeiro parametrizados.
 7. **M7/M8:** incidentes, recomendações, acesso, auditoria e relatórios.
 8. **M9:** validação visual e funcional completa.
 

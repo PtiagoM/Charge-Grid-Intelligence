@@ -298,7 +298,7 @@ Disponibilidade técnica ≠ comercial. Um carregador online pode estar fechado,
 | API financeira | Criar, consultar, capturar e reembolsar PaymentIntent | `apps/api/src/payments/` |
 | Fila/sessão | Estado global persistido, entrada confirmada e limite financeiro aplicado | `apps/driver-pwa/src/app/DriverAppContext.tsx` |
 | Notificações | Permissão e notificações locais pelo service worker | `apps/driver-pwa/src/pages/NotificationsPage.tsx` |
-| Dashboard Admin | **RECONSTRUÇÃO FUNCIONAL EM M4**: plantas, carregadores/sessões e fila operacional funcionais sobre providers locais; FIFO, compatibilidade, chamada sem reserva e auditoria implementados | `apps/admin-web/`, `docs/admin-dashboard/CRITICAL_REVIEW.md` |
+| Dashboard Admin | **RECONSTRUÇÃO FUNCIONAL EM M5**: plantas, carregadores/sessões, fila e energia funcionais sobre providers locais; frescor, limiares, bloqueio de início e recomendação explicável implementados | `apps/admin-web/`, `docs/admin-dashboard/CRITICAL_REVIEW.md` |
 | GoodWe | contrato e `MockGoodWeProvider`; OpenAPI real ainda não conectada | `apps/api/src/goodwe/` |
 | Persistência comercial | estrutura prevista; migrations, RLS e repositories ainda não implementados | `supabase/` |
 | IA externa | fronteira documental | `apps/api/src/ai/README.md` |
@@ -575,7 +575,7 @@ produto/contexto → arquitetura → contratos → demo
 | Progresso | **LOCAL**: teto, barra verde, saldo e estimativa | `SessionPage.tsx` |
 | Notificações | **LOCAL**: navegador/service worker | `browserNotifications.ts` |
 | PWA | **IMPLEMENTADO**: manifest, SW, ícone, instalação/safe areas | `public/` |
-| Dashboard Admin | **EM RECONSTRUÇÃO**: M0/M1 consolidados; M2–M4 locais implementados com onboarding, telemetria/comandos, sessões/timeline e fila por estabelecimento; providers/autorização reais pendentes e telas M5–M8 ainda são protótipos | `apps/admin-web/`, `docs/admin-dashboard/CRITICAL_REVIEW.md` |
+| Dashboard Admin | **EM RECONSTRUÇÃO**: M0/M1 consolidados; M2–M5 locais implementados com onboarding, telemetria/comandos, sessões/timeline, fila e energia/demanda; providers/autorização reais pendentes e telas M6–M8 ainda são protótipos | `apps/admin-web/`, `docs/admin-dashboard/CRITICAL_REVIEW.md` |
 | GoodWe | **SIMULADO** | `apps/api/src/goodwe/` |
 | Persistência comercial | **NÃO IMPLEMENTADO**: migrations/repositories/RLS | `supabase/` |
 | IA | **NÃO IMPLEMENTADO** | `apps/api/src/ai/README.md` |

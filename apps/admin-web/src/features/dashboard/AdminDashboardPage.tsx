@@ -9,6 +9,7 @@ import { assets } from "../../constants/assets";
 import { PlantDetailPage, PlantOnboardingPage, PlantsPortfolioPage } from "../plants/PlantPages";
 import { ChargerDetailPage, ChargersInventoryPage, SessionDetailPage, SessionsPage as OperationsSessionsPage } from "../operations/ChargerPages";
 import { OperationsCenterPage, QueueOperationsPage } from "../operations/QueuePages";
+import { EnergyOperationsPage } from "../energy/EnergyOperationsPage";
 
 const establishmentTabs = new Set(["overview", "locations", "location", "charger", "chargers", "sessions", "session", "operations", "queue", "energy", "pricing", "finance", "invoices", "contract", "support", "ticket", "documents", "ai", "reports", "settings"]);
 
@@ -288,7 +289,7 @@ export function AdminDashboardPage() {
       case "operations": return <OperationsCenterPage establishmentId={establishmentId || undefined} />;
       case "queue": return <QueueOperationsPage establishmentId={establishmentId || undefined} />;
       case "pricing": return <PricingPage establishmentId={establishmentId || undefined} />;
-      case "energy": return <EnergyPage establishmentId={establishmentId || undefined} />;
+      case "energy": return <EnergyOperationsPage establishmentId={establishmentId || undefined} />;
       case "ai": return <AiPage />;
       case "reports": return <ReportsPage establishmentId={establishmentId || undefined} />;
       case "contract": return <ContractPage establishmentId={establishmentId} />;

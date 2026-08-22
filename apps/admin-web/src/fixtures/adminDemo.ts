@@ -58,6 +58,7 @@ const sessionEvents: SessionEvent[] = [
 ];
 
 export function createInitialState(): AdminState {
+  const observedAt = new Date().toISOString();
   return {
     accounts: [
       { id: "acc-goodwe", email: "goodwe@teste.com", password: "teste", profile: "GOODWE", displayName: "Painel Executivo GoodWe" },
@@ -100,7 +101,7 @@ export function createInitialState(): AdminState {
     ],
     chargerCommands: [],
     sessions: [
-      { id: "CG-2026-1001", chargerId: "CG-FIAP-01", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverId: "driver-ana", driverName: "Ana Souza", vehicle: "Volvo EX30", status: "active", startedAt: "2026-08-18T17:20:00-03:00", durationMinutes: 40, energyKwh: 13.4, tariffPerKwh: 2.95, consumedAmount: 39.53, payment: { status: "Aprovado", method: "Cartao", limitAmount: 100 } },
+      { id: "CG-2026-1001", chargerId: "CG-FIAP-01", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverId: "driver-ana", driverName: "Ana Souza", vehicle: "Volvo EX30", status: "active", startedAt: "2026-08-18T17:20:00-03:00", durationMinutes: 40, energyKwh: 13.4, tariffPerKwh: 2.95, consumedAmount: 39.53, payment: { status: "Aprovado", method: "Cartao", limitAmount: 100 }, servicePriority: "STANDARD" },
       { id: "CG-2026-0998", chargerId: "CG-FIAP-01", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverId: "driver-paulo", driverName: "Paulo Lima", vehicle: "BYD Dolphin", status: "finished", startedAt: "2026-08-18T14:10:00-03:00", durationMinutes: 62, energyKwh: 18.7, tariffPerKwh: 2.95, consumedAmount: 55.17, finalAmount: 55.17, payment: { status: "Aprovado", method: "Pix", limitAmount: 80 } },
       { id: "CG-2026-1002", chargerId: "CG-FIAP-03", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverId: "driver-luiza", driverName: "Luiza Prado", vehicle: "Renault Kwid E-Tech", status: "authorized", startedAt: "2026-08-18T18:02:00-03:00", durationMinutes: 0, energyKwh: 0, tariffPerKwh: 2.95, consumedAmount: 0, payment: { status: "Aprovado", method: "Cartao", limitAmount: 90 } },
       { id: "CG-2026-1003", chargerId: "CG-FIAP-05", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", driverId: "driver-marcos", driverName: "Marcos Silva", vehicle: "GWM Ora 03", status: "authorized", startedAt: "2026-08-18T18:06:00-03:00", durationMinutes: 0, energyKwh: 0, tariffPerKwh: 2.95, consumedAmount: 0, payment: { status: "Aprovado", method: "Pix", limitAmount: 75 } }
@@ -119,8 +120,12 @@ export function createInitialState(): AdminState {
     supportTickets: [{ id: "ticket-0001", establishmentId: "est-mercadox", code: "SUP-2026-0001", title: "Carregador sem comunicacao", description: "Equipamento offline desde 16:30.", status: "Em atendimento", createdAt: "2026-08-18T16:42:00-03:00" }],
     audit: [{ id: "audit-0001", summary: "Chamado SUP-2026-0001 criado", at: "2026-08-18T16:42:00-03:00" }],
     energy: [
-      { establishmentId: "est-fiap", demandState: "Alerta", demandKw: 76, contractedLimitKw: 100, powerMarginPercent: 24, batterySocPercent: 73, solarPowerKw: 12.4, gridPowerKw: 6.1 },
-      { establishmentId: "est-mercadox", demandState: "Crítico", demandKw: 92, contractedLimitKw: 100, powerMarginPercent: 8, batterySocPercent: 38, solarPowerKw: 3.1, gridPowerKw: 18.7 }
+      { establishmentId: "est-fiap", demandState: "Alerta", observedAt, providerStatus: "ONLINE", demandKw: 76, contractedLimitKw: 100, powerMarginPercent: 24, batterySocPercent: 73, solarPowerKw: 12.4, gridPowerKw: 6.1, periodSolarKwh: 42.8, periodBatteryKwh: 11.2, periodGridKwh: 38.4 },
+      { establishmentId: "est-mercadox", demandState: "Crítico", observedAt, providerStatus: "ONLINE", demandKw: 92, contractedLimitKw: 100, powerMarginPercent: 8, batterySocPercent: 38, solarPowerKw: 3.1, gridPowerKw: 18.7 }
+    ],
+    energyPolicies: [
+      { establishmentId: "est-fiap", alertUtilizationPercent: 70, criticalUtilizationPercent: 90, freshnessMinutes: 15, blockStartOnCritical: true, blockStartWithoutFreshTelemetry: true },
+      { establishmentId: "est-mercadox", alertUtilizationPercent: 80, criticalUtilizationPercent: 90, freshnessMinutes: 15, blockStartOnCritical: true, blockStartWithoutFreshTelemetry: true }
     ]
   };
 }

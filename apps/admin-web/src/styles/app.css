@@ -2755,6 +2755,169 @@ button[data-action="finish-session"]:hover {
   grid-template-columns: 1fr auto;
 }
 
+.energy-portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.energy-portfolio-grid article {
+  display: grid;
+  gap: 10px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .025);
+}
+
+.energy-portfolio-grid h3 {
+  margin: 12px 0 5px;
+}
+
+.energy-portfolio-grid p,
+.energy-portfolio-grid span,
+.renewable-attribution p,
+.renewable-attribution small,
+.energy-evidence p,
+.energy-queue-link span {
+  color: var(--muted);
+}
+
+.energy-hero.state-critical {
+  border-left-color: #ef434b;
+}
+
+.energy-hero.state-alert,
+.energy-hero.state-stale,
+.energy-hero.state-unavailable {
+  border-left-color: #e0a333;
+}
+
+.energy-hero.state-normal {
+  border-left-color: #34a85b;
+}
+
+.demand-meter {
+  margin-top: 22px;
+}
+
+.demand-meter > div {
+  position: relative;
+  height: 16px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(52, 168, 91, .18) 0 70%, rgba(224, 163, 51, .2) 70% 90%, rgba(239, 67, 75, .22) 90%);
+}
+
+.demand-meter i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #34a85b, #e0a333 75%, #ef434b);
+}
+
+.demand-meter b {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 22px;
+  background: rgba(255, 255, 255, .8);
+}
+
+.demand-meter footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.energy-flow {
+  display: grid;
+  grid-template-columns: 1fr auto 1.2fr auto 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.energy-flow article {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  min-height: 120px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .025);
+}
+
+.energy-flow article strong {
+  font-size: 20px;
+}
+
+.energy-flow > i {
+  color: var(--danger);
+  font-style: normal;
+  font-size: 24px;
+}
+
+.energy-flow .source-battery {
+  grid-column: 3;
+}
+
+.renewable-attribution {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.renewable-attribution h3 {
+  margin: 0 0 5px;
+}
+
+.energy-decision {
+  box-shadow: inset 3px 0 0 rgba(224, 163, 51, .7);
+}
+
+.energy-decision.severity-critical {
+  box-shadow: inset 3px 0 0 rgba(239, 67, 75, .85);
+}
+
+.energy-evidence {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.energy-evidence > div {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.energy-evidence h3 {
+  margin-top: 0;
+}
+
+.energy-evidence li {
+  margin-bottom: 8px;
+  color: var(--muted);
+}
+
+.energy-queue-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
 @media (max-width: 1200px) {
   .kpi-grid.four-cols,
   .simulator-grid,
@@ -5203,6 +5366,18 @@ body.layout-auth {
     grid-template-columns: 1fr;
   }
 
+  .energy-flow {
+    grid-template-columns: 1fr auto 1fr;
+  }
+
+  .energy-flow .source-grid {
+    grid-column: 1;
+  }
+
+  .energy-flow .source-battery {
+    grid-column: 3;
+  }
+
 }
 
 @media (max-width: 920px) {
@@ -5342,6 +5517,27 @@ body.layout-auth {
 
   .queue-call-actions {
     justify-content: flex-start;
+  }
+
+  .energy-portfolio-grid,
+  .energy-evidence,
+  .energy-flow {
+    grid-template-columns: 1fr;
+  }
+
+  .energy-flow > i {
+    transform: rotate(90deg);
+    text-align: center;
+  }
+
+  .energy-flow .source-grid,
+  .energy-flow .source-battery {
+    grid-column: auto;
+  }
+
+  .demand-meter footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
 
   .operations-hero {

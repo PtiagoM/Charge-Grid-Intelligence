@@ -15,6 +15,7 @@ describe('normalizeAdminState', () => {
     delete stale.chargerCommands;
     delete stale.sessionEvents;
     delete stale.queueEvents;
+    delete stale.energyPolicies;
     stale.sessions[0].chargerId = 'charger-that-does-not-exist';
 
     const result = normalizeAdminState(stale, fallback);
@@ -29,5 +30,6 @@ describe('normalizeAdminState', () => {
     expect(result.chargerCommands).toEqual(fallback.chargerCommands);
     expect(result.sessionEvents).toEqual(fallback.sessionEvents);
     expect(result.queueEvents).toEqual(fallback.queueEvents);
+    expect(result.energyPolicies).toEqual(fallback.energyPolicies);
   });
 });

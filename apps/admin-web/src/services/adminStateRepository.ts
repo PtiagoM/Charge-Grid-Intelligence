@@ -48,7 +48,8 @@ export function normalizeAdminState(candidate: AdminState, fallback: AdminState)
     sessionEvents: Array.isArray(candidate.sessionEvents) ? candidate.sessionEvents : fallback.sessionEvents,
     queue,
     queueEvents: Array.isArray(candidate.queueEvents) ? candidate.queueEvents : fallback.queueEvents,
-    energy
+    energy,
+    energyPolicies: Array.isArray(candidate.energyPolicies) ? candidate.energyPolicies : fallback.energyPolicies
   };
 }
 

@@ -193,6 +193,7 @@ export interface Session {
   consumedAmount: number;
   finalAmount?: number;
   payment: Payment;
+  servicePriority?: "STANDARD" | "ACCESSIBILITY" | "FLEET_CRITICAL";
 }
 
 export type SessionEventType =
@@ -286,12 +287,26 @@ export interface AuditEntry {
 export interface EnergySnapshot {
   establishmentId: string;
   demandState: "Favorável" | "Alerta" | "Crítico";
+  observedAt: string;
+  providerStatus: "ONLINE" | "OFFLINE";
   demandKw: number;
   contractedLimitKw: number;
   powerMarginPercent: number;
   batterySocPercent: number;
   solarPowerKw: number;
   gridPowerKw: number;
+  periodSolarKwh?: number;
+  periodBatteryKwh?: number;
+  periodGridKwh?: number;
+}
+
+export interface EnergyPolicy {
+  establishmentId: string;
+  alertUtilizationPercent: number;
+  criticalUtilizationPercent: number;
+  freshnessMinutes: number;
+  blockStartOnCritical: boolean;
+  blockStartWithoutFreshTelemetry: boolean;
 }
 
 export interface AdminState {
@@ -312,6 +327,7 @@ export interface AdminState {
   supportTickets: SupportTicket[];
   audit: AuditEntry[];
   energy: EnergySnapshot[];
+  energyPolicies: EnergyPolicy[];
 }
 
 export interface NewClientInput {

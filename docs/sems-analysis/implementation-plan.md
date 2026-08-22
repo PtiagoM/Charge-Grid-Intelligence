@@ -1,6 +1,6 @@
 # Plano de implementação do Dashboard Admin
 
-**Status:** execução em M4. M0/M1 estão consolidados; M2/M3 possuem plantas, carregadores, telemetria, comandos e sessões/timeline; M4 possui fila por estabelecimento com FIFO, compatibilidade, janela de chamada e auditoria sobre estado local. Autorização backend, providers e notificações reais permanecem pendentes. Os protótipos visuais de M5–M8 não significam conclusão. A revisão crítica vigente está em `docs/admin-dashboard/CRITICAL_REVIEW.md`.
+**Status:** execução em M5. M0/M1 estão consolidados; M2–M4 cobrem plantas, carregadores/sessões e fila; M5 possui snapshot energético tipado, frescor, política por estabelecimento, bloqueio de início e recomendação determinística. Autorização backend e providers reais permanecem pendentes. Os protótipos visuais de M6–M8 não significam conclusão. A revisão crítica vigente está em `docs/admin-dashboard/CRITICAL_REVIEW.md`.
 
 **Estimativas:** dias úteis de desenvolvimento e validação para uma pessoa experiente, usadas apenas para ordenar e dimensionar. Integrações não homologadas podem ampliar os intervalos.
 

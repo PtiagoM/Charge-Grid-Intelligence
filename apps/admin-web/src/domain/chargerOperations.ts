@@ -10,6 +10,7 @@ import type {
   SessionEventType
 } from "./admin";
 import { hasAdminCapability } from "./adminCapabilities";
+import { assessEstablishmentEnergy } from "./energyDemand";
 
 export interface ChargerCommandTransitionResult extends RequestChargerCommandResult {
   state: AdminState;
@@ -84,6 +85,8 @@ export function requestChargerCommand(
     if (charger.status === "offline") issues.push("Carregador offline nao pode iniciar uma recarga.");
     if (charger.status === "charging") issues.push("Carregador ja possui uma recarga ativa.");
     if (!session) issues.push("Nao existe sessao autorizada para iniciar neste carregador.");
+    const energy = assessEstablishmentEnergy(state, charger.establishmentId, requestedAt);
+    if (!energy.canStartCharge) issues.push(`Inicio bloqueado pela politica de energia: ${energy.reason}`);
   }
   if (charger && input.type === "STOP_CHARGE") {
     if (charger.status !== "charging") issues.push("Carregador nao possui recarga ativa para encerrar.");
