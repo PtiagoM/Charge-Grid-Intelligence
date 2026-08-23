@@ -16,6 +16,8 @@ test('MVP exibe relatórios e tarifação detalhada', async ({ page }) => {
 
   await page.goto('/#/mvp/pricing');
   await expect(page.getByTestId('mvp-pricing-panel')).toBeVisible();
+
+  await page.goto('/#/mvp/finance');
   await expect(page.getByTestId('mvp-payments-table')).toBeVisible();
 });
 

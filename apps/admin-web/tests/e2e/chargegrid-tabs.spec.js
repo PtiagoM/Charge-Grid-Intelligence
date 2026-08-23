@@ -13,12 +13,12 @@ test('GoodWe navega entre módulos estratégicos do MVP', async ({ page }) => {
   await expect(page.getByTestId('sidebar')).toBeVisible();
 
   await page.goto('/#/mvp/energy');
-  await expect(page.getByTestId('mvp-energy-panel')).toBeVisible();
-  await expect(page.getByTestId('mvp-queue-panel')).toBeVisible();
+  await expect(page.getByTestId('energy-portfolio')).toBeVisible();
+  await expect(page.getByTestId('energy-portfolio')).toContainText('Shopping FIAP');
 
   await page.goto('/#/mvp/ai');
-  await expect(page.getByTestId('mvp-ai-panel')).toBeVisible();
-  await expect(page.getByTestId('mvp-architecture-panel')).toBeVisible();
+  await expect(page.getByTestId('recommendations-page')).toBeVisible();
+  await expect(page.getByTestId('recommendations-page')).toContainText('Aceitar nao executa comandos');
 
   await page.goto('/#/mvp/reports');
   await expect(page.getByTestId('mvp-reports-panel')).toBeVisible();

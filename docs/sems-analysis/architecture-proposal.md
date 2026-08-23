@@ -1,6 +1,6 @@
 # Proposta de arquitetura — experiência SEMS+ com ChargeGrid incorporado
 
-**Status:** proposta para o projeto futuro; nenhuma implementação foi iniciada.
+**Status:** proposta adotada. A consolidação M0/M1 foi iniciada em `feature/admin-foundation-consolidation`; consultar `docs/admin-dashboard/CRITICAL_REVIEW.md` antes de novas telas.
 
 **Classificação:** `INFERRED`, confiança alta para fronteiras e estratégia; média para integração/SSO GoodWe, que depende de homologação.
 

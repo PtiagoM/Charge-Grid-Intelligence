@@ -10,10 +10,10 @@ Manter o Dashboard Admin e o Driver PWA evoluindo em linhas independentes, com i
 
 | Referencia | Papel atual |
 | --- | --- |
-| `main` / `cd65156` | Governanca e PWA integrados pelos PRs #2 e #1; o Admin permanece ausente nessa branch |
-| `codex/driver-pwa-mobile` / `ef6d6d7` | Entrega do PWA aprovada e integrada pelo [PR #1](https://github.com/PtiagoM/Charge-Grid-Intelligence/pull/1) |
+| `main` / `15afdb9` | Governanca e PWA integrados; o Admin em reconstrução permanece fora dessa branch |
+| `codex/driver-pwa-mobile` / `15afdb9` | Referência da entrega do PWA integrada pelo [PR #1](https://github.com/PtiagoM/Charge-Grid-Intelligence/pull/1) e sincronizada com `main` |
 | `codex/admin-web-sems-migration` / `c2aebd6` | Fotografia validada da primeira reconstrucao nativa do Admin |
-| `develop/admin-web` / `331f91b` | Linha ativa do dashboard sobre a `main` integrada, com a reconstrucao nativa restaurada |
+| `develop/admin-web` / `3310e0b` | Linha ativa do dashboard sobre a `main` integrada, com a reconstrucao nativa restaurada |
 
 O merge `fe28427` tornou `c2aebd6` ancestral da `main`. O revert `92a2544` removeu seus arquivos sem remover essa ancestralidade. Por isso, `git merge codex/admin-web-sems-migration` pode responder que nao ha nada para integrar enquanto o dashboard continua ausente.
 
@@ -131,6 +131,18 @@ Nao escolha manualmente um dos lockfiles completos e nao edite versoes internas 
 | PWA | build e testes focados | lint, testes, build do PWA e fluxos moveis |
 | API/pagamentos | testes da API | lint, testes da API e integracao com o consumidor |
 | `packages/shared` ou raiz | consumidores afetados | suite e build completos do monorepo |
+
+## Estratégia de testes durante a evolução do produto
+
+Enquanto o Dashboard Admin estiver convergindo para a referência SEMS+ e o modelo de negócio ainda mudar, a prioridade é proteger regras de domínio e jornadas críticas, não congelar uma interface transitória.
+
+- Mantenha testes unitários para cálculo, autorização, escopo, fila, energia, financeiro, idempotência e relatórios.
+- Execute E2E somente para o fluxo diretamente alterado; não rode a matriz completa em cada ajuste visual.
+- Não crie snapshots, diffs de screenshot ou asserts detalhados de texto/estrutura visual sem aprovação explícita do produto de que a página, viewport e estado estão estáveis.
+- Screenshots de PR são evidência de revisão, não baseline automatizado, até essa aprovação existir.
+- A matriz visual e a regressão E2E integral entram no gate de PR para `main` ou em acionamento manual, quando a direção visual estiver consolidada.
+
+A estratégia detalhada do Admin está em `docs/admin-dashboard/TESTING_STRATEGY.md`.
 
 ## GitHub CLI
 

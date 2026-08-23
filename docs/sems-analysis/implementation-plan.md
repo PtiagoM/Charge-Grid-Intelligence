@@ -1,6 +1,6 @@
-# Plano de implementação futuro
+# Plano de implementação do Dashboard Admin
 
-**Status:** plano, não execução. Nenhum scaffold, componente, rota, mock ou código foi criado nesta missão.
+**Status:** execução local de M0–M9 concluída no sandbox administrativo. As verticais possuem fluxos funcionais, papéis e escopos governam navegação, rotas e operações, e o hardening final removeu implementações paralelas obsoletas, corrigiu responsividade e alinhou a regressão aos fluxos nativos. Autorização backend/RLS, providers reais, entrega externa das assinaturas, tema claro e homologação de SLA permanecem pendentes. A evidência do M9 está em `docs/admin-dashboard/VALIDATION_REPORT.md` e a revisão crítica vigente em `docs/admin-dashboard/CRITICAL_REVIEW.md`.
 
 **Estimativas:** dias úteis de desenvolvimento e validação para uma pessoa experiente, usadas apenas para ordenar e dimensionar. Integrações não homologadas podem ampliar os intervalos.
 
@@ -33,6 +33,8 @@
 - **Estimativa:** 4–6 dias.
 
 ## M2 — Planta comercial e onboarding
+
+**Estado atual:** baseline local concluída. O catálogo técnico é somente leitura; o vínculo comercial persiste rascunho, valida duplicidade/autorização/dados/EV e projeta ponto e carregadores sem recadastro. Provider GoodWe real, SSO e autorização na API seguem pendentes.
 
 - **Objetivo:** vincular planta GoodWe existente e publicar perfil comercial mínimo.
 - **Páginas/fluxos:** portfólio, detalhe e onboarding comercial.
@@ -104,6 +106,8 @@
 
 ## M7 — Incidentes e recomendações
 
+**Estado atual:** vertical local concluída. A inbox aplica escopo, severidade e estado; o detalhe preserva origem, correlação, timeline, responsável e resolução; recomendações mostram evidência, impacto e confiança e registram aceitar/adiar/rejeitar sem disparar a ação proposta. Integrações, SLA e governança de modelos externos seguem pendentes.
+
 - **Objetivo:** transformar sinais técnicos em acompanhamento operacional e orientação explicável.
 - **Páginas/fluxos:** inbox/detalhe de incidente e recomendações.
 - **Componentes:** severity badge, correlação, timeline, responsável, recommendation card e confiança.
@@ -118,6 +122,8 @@
 
 ## M8 — Usuários, relatórios, estados e hardening
 
+**Estado atual:** vertical local concluída. GoodWe e administrador do estabelecimento concedem ou revogam somente papéis e escopos autorizados; operador e analista recebem navegação reduzida e bloqueio de rota/domínio. Relatórios de sessões, energia, financeiro e incidentes percorrem fila/processamento/pronto/falha, geram CSV por escopo e período com proteção contra fórmula, suportam download, retentativa e assinatura auditada. RLS/API e entrega agendada real seguem pendentes.
+
 - **Objetivo:** completar administração, relatórios e qualidade transversal.
 - **Páginas/fluxos:** acesso/usuários, relatórios, downloads, assinaturas e todos os estados de erro/vazio.
 - **Componentes:** user table, role editor, report builder, subscriptions e task center.
@@ -131,6 +137,8 @@
 - **Estimativa:** 5–8 dias.
 
 ## M9 — Validação visual completa e prontidão
+
+**Estado atual:** hardening local concluído dentro do escopo desta etapa. Build, lint, 70 testes unitários e 14 cenários E2E focados passaram; a regressão E2E integral foi interrompida por decisão do produto porque telas, fluxos e linguagem visual serão redesenhados nos próximos marcos. Não há divergência S0/S1 conhecida nos cenários exercitados, e o relatório de validação registra explicitamente o que foi adiado.
 
 - **Objetivo:** fechar fidelidade, regressão e critérios de entrega do módulo.
 - **Páginas/fluxos:** matriz completa MUST e SHOULD que entrou na release.

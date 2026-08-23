@@ -298,7 +298,7 @@ Disponibilidade técnica ≠ comercial. Um carregador online pode estar fechado,
 | API financeira | Criar, consultar, capturar e reembolsar PaymentIntent | `apps/api/src/payments/` |
 | Fila/sessão | Estado global persistido, entrada confirmada e limite financeiro aplicado | `apps/driver-pwa/src/app/DriverAppContext.tsx` |
 | Notificações | Permissão e notificações locais pelo service worker | `apps/driver-pwa/src/pages/NotificationsPage.tsx` |
-| Admin legado | referência visual/funcional; a experiência futura é SEMS+ com módulo ChargeGrid | `apps/admin-web/` |
+| Dashboard Admin | **RECONSTRUÇÃO FUNCIONAL EM M6**: verticais de plantas, operação, fila, energia e financeiro funcionais localmente; tarifa versionada, precisão monetária, reembolso e conciliação implementados | `apps/admin-web/`, `docs/admin-dashboard/CRITICAL_REVIEW.md` |
 | GoodWe | contrato e `MockGoodWeProvider`; OpenAPI real ainda não conectada | `apps/api/src/goodwe/` |
 | Persistência comercial | estrutura prevista; migrations, RLS e repositories ainda não implementados | `supabase/` |
 | IA externa | fronteira documental | `apps/api/src/ai/README.md` |
@@ -365,7 +365,7 @@ líquido do estabelecimento
 - `ESTABLISHMENT_ADMIN`: plantas, tarifa, pagamentos, energia e relatórios;
 - `ESTABLISHMENT_OPERATOR`: rotina sem parâmetros sensíveis.
 
-O novo projeto deve reconstruir o shell e as partes relevantes do SEMS+ e incorporar nele as jornadas administrativas do ChargeGrid. Não se pretende clonar toda a plataforma: páginas observadas serão classificadas por necessidade. O Dashboard pode reutilizar contexto técnico da planta sem duplicar desnecessariamente o SEMS+ e não deve reproduzir a jornada de descoberta da PWA.
+O Dashboard está sendo reconstruído sobre a linha `develop/admin-web`. O shell e as partes relevantes do SEMS+ servem como referência, enquanto as jornadas administrativas do ChargeGrid são implementadas por vertical slices. Não se pretende clonar toda a plataforma. O Dashboard reutiliza o contexto técnico da planta sem duplicar desnecessariamente o SEMS+ e não reproduz jornadas de motorista ou visitante da PWA.
 
 ### Driver PWA
 
@@ -575,7 +575,7 @@ produto/contexto → arquitetura → contratos → demo
 | Progresso | **LOCAL**: teto, barra verde, saldo e estimativa | `SessionPage.tsx` |
 | Notificações | **LOCAL**: navegador/service worker | `browserNotifications.ts` |
 | PWA | **IMPLEMENTADO**: manifest, SW, ícone, instalação/safe areas | `public/` |
-| Admin legado | **REFERÊNCIA/SUPERADO COMO ARQUITETURA FINAL**: shell e mapa operacional existentes podem informar regras e conteúdo, mas o destino agora é um novo Dashboard com ChargeGrid dentro da experiência SEMS+ | `apps/admin-web/` |
+| Dashboard Admin | **BASE LOCAL M0–M9 CONCLUÍDA**: onboarding, operação, fila, energia, financeiro, incidentes, recomendações sem autoexecução, acesso por papel/escopo e relatórios exportáveis funcionam no sandbox; M9 removeu implementações paralelas e validou build, lint, unitários, E2E crítico e 390/1280/1440 px. Providers, autorização backend/RLS, tema claro, entrega agendada e a nova regressão visual após o próximo redesenho permanecem pendentes | `apps/admin-web/`, `docs/admin-dashboard/VALIDATION_REPORT.md` |
 | GoodWe | **SIMULADO** | `apps/api/src/goodwe/` |
 | Persistência comercial | **NÃO IMPLEMENTADO**: migrations/repositories/RLS | `supabase/` |
 | IA | **NÃO IMPLEMENTADO** | `apps/api/src/ai/README.md` |
