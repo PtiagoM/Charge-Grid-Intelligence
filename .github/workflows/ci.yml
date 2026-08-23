@@ -43,26 +43,34 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Detect optional E2E suite
-        id: e2e
-        shell: bash
-        run: |
-          if node -e "const p=require('./package.json'); process.exit(p.scripts?.['test:e2e'] ? 0 : 1)"; then
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-          fi
+  e2e:
+    name: End-to-end regression
+    needs: quality
+    if: github.event_name == 'workflow_dispatch' || github.base_ref == 'main' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Install Playwright browser
-        if: steps.e2e.outputs.enabled == 'true'
         run: npx playwright install --with-deps chromium
 
       - name: End-to-end tests
-        if: steps.e2e.outputs.enabled == 'true'
         run: npm run test:e2e
 
       - name: Upload Playwright report
-        if: failure() && steps.e2e.outputs.enabled == 'true'
+        if: failure()
         uses: actions/upload-artifact@v7
         with:
           name: playwright-report

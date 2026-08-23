@@ -24,7 +24,7 @@ O E2E focal cobre os quatro papéis (`GOODWE_ADMIN`, `ESTABLISHMENT_ADMIN`, `EST
 
 ## Decisão sobre a regressão integral
 
-A regressão E2E completa foi iniciada e interrompida por decisão explícita do produto. O dashboard terá alterações amplas de visual, fluxos e telas nos próximos passos; manter agora uma bateria visual extensa e snapshots de uma interface transitória geraria custo sem proteger a versão futura. A suíte de domínio permanece preservada e a regressão visual integral deve ser reconstruída quando a nova direção estabilizar.
+A execução integral local foi interrompida por decisão explícita do produto. O dashboard terá alterações amplas de visual, fluxos e telas nos próximos passos; manter agora uma bateria visual extensa e snapshots de uma interface transitória geraria custo sem proteger a versão futura. A suíte de domínio permanece preservada e a regressão visual integral deve ser criada somente após aprovação explícita da direção visual, conforme `TESTING_STRATEGY.md`.
 
 ## Pendências deliberadas
 

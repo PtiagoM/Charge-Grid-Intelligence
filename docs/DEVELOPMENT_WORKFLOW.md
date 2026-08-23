@@ -132,6 +132,18 @@ Nao escolha manualmente um dos lockfiles completos e nao edite versoes internas 
 | API/pagamentos | testes da API | lint, testes da API e integracao com o consumidor |
 | `packages/shared` ou raiz | consumidores afetados | suite e build completos do monorepo |
 
+## Estratégia de testes durante a evolução do produto
+
+Enquanto o Dashboard Admin estiver convergindo para a referência SEMS+ e o modelo de negócio ainda mudar, a prioridade é proteger regras de domínio e jornadas críticas, não congelar uma interface transitória.
+
+- Mantenha testes unitários para cálculo, autorização, escopo, fila, energia, financeiro, idempotência e relatórios.
+- Execute E2E somente para o fluxo diretamente alterado; não rode a matriz completa em cada ajuste visual.
+- Não crie snapshots, diffs de screenshot ou asserts detalhados de texto/estrutura visual sem aprovação explícita do produto de que a página, viewport e estado estão estáveis.
+- Screenshots de PR são evidência de revisão, não baseline automatizado, até essa aprovação existir.
+- A matriz visual e a regressão E2E integral entram no gate de PR para `main` ou em acionamento manual, quando a direção visual estiver consolidada.
+
+A estratégia detalhada do Admin está em `docs/admin-dashboard/TESTING_STRATEGY.md`.
+
 ## GitHub CLI
 
 Configuracao inicial:

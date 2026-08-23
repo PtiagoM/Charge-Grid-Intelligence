@@ -65,9 +65,11 @@ Admin e PWA compartilham marca, vermelho, iconografia e significado de status. A
 - Comunicar estado somente por cor.
 - Copiar componente desktop para mobile sem adaptar densidade e toque.
 
-## 7. Evidência obrigatória em PR visual
+## 7. Evidência visual e momento de congelamento
 
-Toda alteração visual relevante deve apresentar:
+Durante a fase de descoberta visual, screenshots podem acompanhar o PR como evidência de revisão, mas não devem virar snapshots ou matriz automatizada. A aprovação explícita do produto é necessária para congelar uma página, papel, viewport e estado como baseline visual.
+
+Depois dessa aprovação, a evidência da alteração visual relevante deve apresentar:
 
 1. Screenshot desktop ou mobile no viewport-alvo.
 2. Estados normal, hover/pressed, foco, disabled e erro quando existirem.
@@ -75,6 +77,8 @@ Toda alteração visual relevante deve apresentar:
 4. Comparação com a implementação homologada ou referência do documento.
 5. Confirmação de uso dos tokens e assets aprovados.
 6. Teste em viewport mínimo e zoom/fonte ampliada quando aplicável.
+
+Sem baseline aprovado, valide somente usabilidade proporcional (por exemplo, ausência de overflow ou foco em uma jornada alterada) e mantenha os testes de domínio separados do layout.
 
 ## 8. Critério de aceite visual
 

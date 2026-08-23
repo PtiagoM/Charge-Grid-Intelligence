@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('smoke das experiências administrativas GoodWe e estabelecimento', async ({ page }) => {
+test('smoke de autenticação administrativa por perfil', async ({ page }) => {
   await page.goto('/#/login');
   await expect(page.getByTestId('auth-shell')).toBeVisible();
 
