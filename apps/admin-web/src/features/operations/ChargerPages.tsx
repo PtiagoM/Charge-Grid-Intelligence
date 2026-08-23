@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { Navigate } from "react-router-dom";
 import { useAdminState } from "../../app/AdminState";
-import { Badge, DataTable, KpiCard, SectionHeader, money, number, statusLabel } from "../../components/AdminUi";
+import { Badge, DataTable, SectionHeader, money, number, statusLabel } from "../../components/AdminUi";
 import type { ChargerCommandType } from "../../domain/admin";
 
 function localDate(value?: string) {
@@ -26,24 +26,14 @@ export function ChargersInventoryPage({ establishmentId }: { establishmentId?: s
   });
 
   return <>
-    <nav className="enterprise-breadcrumb" aria-label="Navegacao estrutural"><span><a href="#/mvp/overview">Operacao</a><i>/</i></span><span><strong>Carregadores</strong></span></nav>
-    <section className="surface panel operations-page" data-testid="mvp-chargers-panel">
-      <SectionHeader eyebrow="Infraestrutura operacional" title={establishmentId ? "Carregadores dos meus locais" : "Inventario de carregadores"} subtitle="Localize um equipamento e avance para telemetria, sessoes e comandos auditaveis." />
-      <div className="kpi-grid four-cols">
-        <KpiCard label="No escopo" value={scoped.length} help="equipamentos" />
-        <KpiCard label="Disponiveis" value={scoped.filter((item) => item.status === "available").length} help="prontos para uso" accent="good" />
-        <KpiCard label="Em recarga" value={scoped.filter((item) => item.status === "charging").length} help="energia confirmada" accent="danger" />
-        <KpiCard label="Offline" value={scoped.filter((item) => item.status === "offline").length} help="sem comunicacao" accent="warn" />
-      </div>
-      <form className="operations-filter" onSubmit={(event) => event.preventDefault()}>
-        <label><span>Buscar equipamento</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="ID, serial ou modelo" /></label>
-        <label><span>Local</span><select value={locationId} onChange={(event) => setLocationId(event.target.value)}><option value="all">Todos os locais</option>{locations.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-        <label><span>Status</span><select value={status} onChange={(event) => setStatus(event.target.value)}><option value="all">Todos</option><option value="available">Disponivel</option><option value="charging">Em recarga</option><option value="offline">Offline</option><option value="limited">Limitado</option></select></label>
-      </form>
-      <DataTable columns={["Equipamento", "Local", "Conector", "Potencia agora", "Energia hoje", "Acao"]}>
+    <section className="surface panel operations-page sems-reference-list" data-testid="mvp-chargers-panel">
+      <nav className="sems-device-type-tabs" aria-label="Tipos de dispositivos"><span>Inversor</span><span>Dongle</span><button className="is-active" type="button">Carregador veicular</button><span>Inversor de terceiros</span></nav>
+      <form className="operations-filter sems-reference-filter" onSubmit={(event) => event.preventDefault()}><button className="sems-filter-button" type="button">⌁ Filtro</button><label><span className="sr-only">Local</span><select value={locationId} onChange={(event) => setLocationId(event.target.value)}><option value="all">Nome da usina</option>{locations.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label><span className="sr-only">Buscar equipamento</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nome do dispositivo, SN" /></label><button className="sems-icon-action" type="submit" aria-label="Pesquisar">⌕</button><button className="sems-icon-action" type="button" aria-label="Atualizar">↻</button></form>
+      <nav className="sems-reference-status-tabs" aria-label="Status dos dispositivos"><button className={status === "all" ? "is-active" : ""} type="button" onClick={() => setStatus("all")}>Todos <b>({scoped.length})</b></button><button className={status === "available" ? "is-active" : ""} type="button" onClick={() => setStatus("available")}>Em operação <b>({scoped.filter((item) => item.status === "available" || item.status === "charging").length})</b></button><button className={status === "offline" ? "is-active" : ""} type="button" onClick={() => setStatus("offline")}>Offline <b>({scoped.filter((item) => item.status === "offline").length})</b></button></nav>
+      <DataTable columns={["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Potência ativa", "Energia hoje", "Operação"]}>
         {items.map((charger) => {
           const telemetry = state.chargerTelemetry.find((item) => item.chargerId === charger.id);
-          return <tr key={charger.id}><td><strong>{charger.identifier}</strong><span>{charger.serial} · {charger.model}</span></td><td>{state.locations.find((item) => item.id === charger.locationId)?.name}</td><td><Badge value={charger.status} /></td><td>{number(telemetry?.currentPowerKw ?? 0)} kW<span>Leitura {localDate(telemetry?.observedAt)}</span></td><td>{number(charger.todayEnergyKwh)} kWh<span>{money(charger.revenueToday)}</span></td><td><a className="ghost-button" href={`#/mvp/charger?charger=${charger.id}`}>Abrir carregador</a></td></tr>;
+          return <tr key={charger.id}><td><strong>{charger.identifier}</strong><span>{state.locations.find((item) => item.id === charger.locationId)?.name}</span></td><td>{charger.serial}</td><td><Badge value={charger.status} /></td><td>Carregador veicular · {charger.model}</td><td>{number(telemetry?.currentPowerKw ?? 0)} kW<span>Leitura {localDate(telemetry?.observedAt)}</span></td><td>{number(charger.todayEnergyKwh)} kWh<span>{money(charger.revenueToday)}</span></td><td><a className="sems-row-action" href={`#/mvp/charger?charger=${charger.id}`}>Abrir carregador ›</a></td></tr>;
         })}
       </DataTable>
       {!items.length ? <p className="operations-empty">Nenhum carregador corresponde aos filtros.</p> : null}

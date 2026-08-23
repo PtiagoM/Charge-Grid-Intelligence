@@ -55,32 +55,16 @@ export function PlantsPortfolioPage() {
   const blocked = plants.length - linkedIds.size - available;
 
   return <>
-    <section className="surface panel plant-portfolio" data-testid="plants-portfolio">
-      <SectionHeader eyebrow="Rede · Catálogo GoodWe" title="Plantas" subtitle="Dados técnicos sincronizados da GoodWe e seu vínculo comercial no ChargeGrid." action={<a className="sems-primary-action" href="#/mvp/plant-onboarding">Vincular planta</a>} />
-      <div className="kpi-grid four-cols">
-        <KpiCard label="Catálogo GoodWe" value={plants.length} help="plantas visíveis" />
-        <KpiCard label="Publicadas" value={linkedIds.size} help="com perfil comercial" accent="good" />
-        <KpiCard label="Disponíveis" value={available} help="aptas para vínculo" />
-        <KpiCard label="Com bloqueio" value={blocked} help="pré-condição pendente" accent="warn" />
-      </div>
-      <div className="plant-toolbar">
-        <label><span>Buscar planta</span><input aria-label="Buscar planta" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nome, organização ou cidade" /></label>
-        <label><span>Situação</span><select aria-label="Filtrar situação da planta" value={filter} onChange={(event) => setFilter(event.target.value)}><option value="ALL">Todas</option><option>Vinculada</option><option>Disponível</option><option>Dados incompletos</option><option>Sem EV</option><option>Sem autorização</option></select></label>
-      </div>
+    <section className="surface panel plant-portfolio sems-reference-list" data-testid="plants-portfolio">
+      <div className="sems-reference-actions"><div className="plant-toolbar"><button className="sems-filter-button" type="button">⌁ Filtro</button><label><span className="sr-only">Buscar usina</span><input aria-label="Buscar planta" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nome da usina, organização ou cidade" /></label><label><span className="sr-only">Situação</span><select aria-label="Filtrar situação da planta" value={filter} onChange={(event) => setFilter(event.target.value)}><option value="ALL">Todos os status</option><option>Vinculada</option><option>Disponível</option><option>Dados incompletos</option><option>Sem EV</option><option>Sem autorização</option></select></label><button className="sems-icon-action" type="button" aria-label="Pesquisar">⌕</button><button className="sems-icon-action" type="button" aria-label="Atualizar">↻</button></div><a className="sems-primary-action" href="#/mvp/plant-onboarding">＋ Nova usina</a></div>
+      <nav className="sems-reference-status-tabs" aria-label="Status das usinas"><button className="is-active" type="button" onClick={() => setFilter("ALL")}>Todos <b>({plants.length})</b></button><button type="button" onClick={() => setFilter("Vinculada")}>Em operação <b>({linkedIds.size})</b></button><button type="button" onClick={() => setFilter("Disponível")}>Aguardando <b>({available})</b></button><button type="button" onClick={() => setFilter("Dados incompletos")}>Em construção <b>({blocked})</b></button></nav>
       {loading ? <div className="plant-loading" role="status">Consultando catálogo GoodWe…</div> : null}
       {!loading && !visiblePlants.length ? <div className="empty-state">Nenhuma planta corresponde aos filtros.</div> : null}
-      <div className="plant-portfolio-grid">{visiblePlants.map((plant) => {
+      <div className="table-wrap sems-table-wrap"><table className="data-table sems-reference-table"><thead><tr><th>Informações da usina</th><th>Status da usina</th><th>Geração de hoje</th><th>Geração total</th><th>Potência FV</th><th>Carregadores EV</th><th>Operação</th></tr></thead><tbody>{visiblePlants.map((plant) => {
         const link = state.commercialPlants.find((candidate) => candidate.goodwePlantId === plant.id);
         const establishment = state.establishments.find((item) => item.id === link?.establishmentId);
-        return <article className="plant-portfolio-card" key={plant.id} data-testid={`plant-card-${plant.id}`}>
-          <div className="plant-card-cover"><img src={assets.plant} alt="" /><PlantState plant={plant} linked={Boolean(link)} /></div>
-          <div className="plant-card-body"><small>{plant.organization}</small><h3>{plant.name}</h3><p>{plant.city}/{plant.state} · ID {plant.id}</p>
-            <dl><div><dt>Capacidade</dt><dd>{number(plant.capacityKwp)} kWp</dd></div><div><dt>Carregadores EV</dt><dd>{plant.evChargers.length}</dd></div><div><dt>Última sincronização</dt><dd>{plant.lastSyncAt ? new Date(plant.lastSyncAt).toLocaleString("pt-BR") : "Não disponível"}</dd></div></dl>
-            {link ? <p className="plant-link-summary"><strong>{link.commercialName}</strong><span>{establishment?.name} · Publicada</span></p> : <p className="plant-link-summary"><strong>Sem perfil comercial</strong><span>Dados técnicos preservados no catálogo GoodWe.</span></p>}
-            <a className="ghost-button" href={`#/mvp/plant?plant=${plant.id}`}>Abrir planta</a>
-          </div>
-        </article>;
-      })}</div>
+        return <tr key={plant.id} data-testid={`plant-card-${plant.id}`}><td><div className="sems-plant-cell"><img src={assets.plant} alt="" /><div><strong>{link?.commercialName ?? plant.name}</strong><span>{plant.organization}</span><small>{plant.city}/{plant.state} · {establishment?.name ?? plant.id}</small></div></div></td><td><PlantState plant={plant} linked={Boolean(link)} /></td><td>{number(plant.capacityKwp * 0.48)} kWh</td><td>{number(plant.capacityKwp * 483.5)} kWh</td><td>{number(plant.capacityKwp)} kW</td><td>{plant.evChargers.length}</td><td><a className="sems-row-action" href={`#/mvp/plant?plant=${plant.id}`}>Abrir ›</a></td></tr>;
+      })}</tbody></table></div>
     </section>
   </>;
 }

@@ -30,3 +30,10 @@ temp/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Referencias visuais brutas podem conter dados de contas reais.
+docs/admin-dashboard/reference-screenshots/inbox/**/*.png
+docs/admin-dashboard/reference-screenshots/inbox/**/*.jpg
+docs/admin-dashboard/reference-screenshots/inbox/**/*.jpeg
+docs/admin-dashboard/reference-screenshots/inbox/**/*.webp
+docs/admin-dashboard/reference-screenshots/inbox/**/*.svg

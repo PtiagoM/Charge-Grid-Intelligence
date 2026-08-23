@@ -112,7 +112,7 @@ export const ADMIN_DOMAINS: readonly AdminDomain[] = [
       { route: "audit", label: "Auditoria", capability: "governance:audit" },
       { route: "access", label: "Acessos", capability: "access:manage" }
     ],
-    relatedRoutes: ["settings"]
+    relatedRoutes: ["settings", "analysis-iv", "analysis-comparison", "analysis-battery"]
   }
 ];
 
@@ -153,7 +153,10 @@ export function getAdminRouteCapability(route: string): AdminCapability | undefi
     ticket: "operations:monitor",
     "financial-session": "commercial:read",
     invoices: "commercial:read",
-    recommendations: "intelligence:read"
+    recommendations: "intelligence:read",
+    "analysis-iv": "intelligence:read",
+    "analysis-comparison": "intelligence:read",
+    "analysis-battery": "intelligence:read"
   };
   return related[route];
 }

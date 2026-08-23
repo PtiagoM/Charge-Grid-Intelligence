@@ -7,7 +7,20 @@ export const assets = {
   assistant: `${base}/icons/ai_icon_no_eye.9dad5490.png`,
   charger: `${base}/devices/charging_pile_off.b86d796d.png`,
   plant: `${base}/plants/136287ad-ae2c-4034-bb53-015701b5fe9d.jpg`,
+  dashboard: {
+    power: `${base}/dashboard/SEMS-ASSET-DASHBOARD-POWER-DARK_40x34.png`,
+    alarm: `${base}/dashboard/SEMS-ASSET-DASHBOARD-ALARM-DARK_36x34.png`,
+    curve: `${base}/dashboard/SEMS-ASSET-DASHBOARD-CURVE-LINE-DARK_40x36.png`,
+    monitor: `${base}/dashboard/SEMS-ASSET-DASHBOARD-ENERGY-MONITOR-DARK_32x32.png`,
+    co2: `${base}/dashboard/SEMS-ASSET-DASHBOARD-CO2_52x38.png`,
+    tree: `${base}/dashboard/SEMS-ASSET-DASHBOARD-GREEN-TREE_50x46.png`,
+    chargingEnergy: `${base}/dashboard/SEMS-ASSET-DASHBOARD-CHARGING-ENERGY_54x52.png`,
+    generatedEnergy: `${base}/dashboard/SEMS-ASSET-DASHBOARD-GENERATED-ENERGY_52x52.png`,
+    generationIncome: `${base}/dashboard/SEMS-ASSET-DASHBOARD-GENERATION-INCOME_52x52.png`,
+    gridIncome: `${base}/dashboard/SEMS-ASSET-DASHBOARD-GRID-INCOME_54x54.png`
+  },
   icons: {
+    dashboard: `${base}/icons/icon_backstage_over.6f515874.png`,
     solarInfo: `${base}/icons/entrance_light.8edf1291.png`,
     plants: `${base}/icons/icon_station_over.fd7f2df2.png`,
     devices: `${base}/icons/icon_device.ad71c9b2.png`,

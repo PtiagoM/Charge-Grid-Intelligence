@@ -15,6 +15,7 @@ export function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   if (account) return <Navigate to={homeFor(account.profile)} replace />;
 
@@ -28,27 +29,27 @@ export function LoginPage() {
     navigate(homeFor(matched.profile), { replace: true });
   }
 
-  return <div className="auth-shell" data-testid="auth-shell">
-    <aside className="auth-brand">
+  return <div className="auth-shell sems-auth-shell" data-testid="auth-shell">
+    <aside className="auth-brand sems-auth-hero">
       <img src={assets.logo} alt="GoodWe" />
-      <h1>CHARGEGRID INTELLIGENCE</h1>
-      <p>SEMS+ monitora a operacao energetica. ChargeGrid organiza a operacao comercial da recarga.</p>
-      <ul><li>Central GoodWe: visao nacional de rede comercial.</li><li>Business: operacao do estabelecimento em tempo real.</li><li>Motoristas e visitantes utilizam exclusivamente o Driver PWA.</li></ul>
+      <div className="auth-hero-copy"><span>SEMS+ · ChargeGrid Intelligence</span><h1>Energia e recarga em uma unica operacao.</h1><p>Monitore usinas, dispositivos e a jornada comercial da recarga conectada.</p></div>
     </aside>
-    <section className="auth-card" data-testid="login-card">
-      <h2>Entrar no ChargeGrid</h2>
-      <p>Use as credenciais demonstrativas para acessar cada ambiente.</p>
+    <section className="auth-card sems-auth-card" data-testid="login-card">
+      <nav className="auth-utilities" aria-label="Preferencias de acesso"><button type="button">Servidor global</button><button type="button">Português</button><button type="button" aria-label="Alternar tema">☼</button></nav>
+      <div className="auth-form-wrap"><span className="auth-welcome">Bem-vindo ao SEMS+</span><h2>Entrar</h2><p>Acesse a operacao integrada GoodWe e ChargeGrid.</p>
       <form className="auth-form" onSubmit={submit}>
-        <label>E-mail<input name="email" type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="seuemail@teste.com" required data-testid="login-email" /></label>
-        <label>Senha<input name="password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="******" required data-testid="login-password" /></label>
-        <button type="submit" data-testid="login-submit">Acessar</button>
+        <label><span>Conta</span><input name="email" type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Insira sua conta" required data-testid="login-email" /></label>
+        <label><span>Senha</span><span className="auth-password-field"><input name="password" type={showPassword ? "text" : "password"} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Insira sua senha" required data-testid="login-password" /><button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}>{showPassword ? "Ocultar" : "Exibir"}</button></span></label>
+        <div className="auth-form-options"><label><input type="checkbox" /> Lembrar senha</label><button type="button">Esqueceu sua senha?</button></div>
+        <button className="auth-submit" type="submit" data-testid="login-submit">Entrar</button>
       </form>
       {error ? <p className="auth-error" data-testid="login-error">{error}</p> : null}
-      <div className="demo-account-list" data-testid="demo-account-list">
-        <h3>Conta inicial</h3>
+      <details className="demo-account-list" data-testid="demo-account-list">
+        <summary>Usar uma conta de demonstracao</summary>
         {state.accounts.filter((item) => activeGrantFor(state, item.id)).map((item) => <button key={item.id} type="button" className="demo-account" onClick={() => { setEmail(item.email); setPassword(item.password); setError(""); }}>{item.role} · {item.email}</button>)}
-      </div>
-      <footer><span>Ambiente administrativo separado das jornadas do motorista e visitante.</span></footer>
+      </details>
+      <p className="auth-create-account">Ainda nao possui uma conta? <button type="button">Criar conta</button></p></div>
+      <footer><span>Declaração de privacidade</span><span>Termos de uso</span><span>© 2026 GoodWe Technologies Co., Ltd.</span></footer>
     </section>
   </div>;
 }

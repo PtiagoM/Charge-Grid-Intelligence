@@ -1,14 +1,39 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
-  Activity, BadgeDollarSign, BrainCircuit, createIcons, LayoutDashboard, LogOut,
-  MapPinned, Settings, Zap
+  createIcons, LogOut
 } from "lucide";
 import { assets } from "../constants/assets";
 import { useAdminState } from "../app/AdminState";
-import { ADMIN_DOMAINS, getAdminContextLinks, getAdminDomainForRoute, getAdminEntryRoute } from "../app/adminNavigation";
+import { getAdminContextLinks, getAdminDomainForRoute } from "../app/adminNavigation";
+import { hasAdminCapability, type AdminCapability } from "../domain/adminCapabilities";
 
-const sidebarIcons = { Activity, BadgeDollarSign, BrainCircuit, LayoutDashboard, LogOut, MapPinned, Settings, Zap };
+const sidebarIcons = { LogOut };
+
+const semsNavigation: ReadonlyArray<{ label: string; route: string; establishmentRoute?: string; icon: string; capability: AdminCapability; activeRoutes: readonly string[] }> = [
+  { label: "Painel", route: "overview", icon: assets.icons.dashboard, capability: "overview:view", activeRoutes: ["overview"] },
+  { label: "Lista de usinas", route: "plants", establishmentRoute: "locations", icon: assets.icons.plants, capability: "network:assets", activeRoutes: ["plants", "plant", "plant-onboarding", "installations", "locations", "location", "new-location"] },
+  { label: "Lista de dispositivos", route: "chargers", icon: assets.icons.devices, capability: "network:assets", activeRoutes: ["chargers", "charger", "sessions", "session", "operations", "queue"] },
+  { label: "Central de alarmes", route: "incidents", icon: assets.icons.alarms, capability: "incidents:manage", activeRoutes: ["incidents", "incident"] },
+  { label: "Central de relatórios", route: "reports", icon: assets.icons.reports, capability: "reports:generate", activeRoutes: ["reports"] },
+  { label: "Ferramentas de análise", route: "analysis-iv", icon: assets.icons.analysis, capability: "intelligence:read", activeRoutes: ["analysis-iv", "analysis-comparison", "analysis-battery", "ai", "recommendations", "energy", "expansion", "audit"] },
+  { label: "Centro de serviço", route: "support", icon: assets.icons.services, capability: "operations:monitor", activeRoutes: ["support", "ticket"] }
+];
+
+const analysisLinks = [
+  { route: "analysis-iv", label: "Diagnóstico IV" },
+  { route: "analysis-comparison", label: "Comparação de dados" },
+  { route: "analysis-battery", label: "Consistência da bateria" },
+  { route: "ai", label: "Inteligência ChargeGrid" }
+] as const;
+
+const routeTitles: Record<string, string> = {
+  "analysis-iv": "Diagnóstico IV",
+  "analysis-comparison": "Comparação de dados",
+  "analysis-battery": "Consistência da bateria"
+};
+
+const semsStandaloneRoutes = new Set(["plants", "plant-onboarding", "locations", "chargers", "incidents", "reports", "support", "analysis-iv", "analysis-comparison", "analysis-battery"]);
 
 function AssistantDrawer({ onClose }: { onClose: () => void }) {
   const [topic, setTopic] = useState("Operacao da rede");
@@ -32,8 +57,9 @@ export function ManagerShell({ children }: { children: ReactNode }) {
   const activeDomain = getAdminDomainForRoute(activeRoute);
   const selectedEstablishmentId = new URLSearchParams(location.search).get("est") ?? "";
   const profile = account?.profile ?? "ESTABELECIMENTO";
-  const visibleDomains = account ? ADMIN_DOMAINS.filter((domain) => getAdminContextLinks(domain, account).length > 0) : [];
+  const visibleNavigation = account ? semsNavigation.filter((item) => hasAdminCapability(account, item.capability)) : [];
   const scopedSearch = selectedEstablishmentId ? `?est=${encodeURIComponent(selectedEstablishmentId)}` : "";
+  const isStandaloneRoute = semsStandaloneRoutes.has(activeRoute);
 
   function changeScope(establishmentId: string) {
     const query = new URLSearchParams(location.search);
@@ -51,12 +77,13 @@ export function ManagerShell({ children }: { children: ReactNode }) {
 
   return <div className="app-shell desktop-shell" data-testid="desktop-shell">
     <aside className="sidebar" data-testid="sidebar">
-      <a className="sidebar-logo" href={`#/mvp/overview${scopedSearch}`} aria-label="GoodWe"><img className="logo-collapsed" src={assets.logoCollapsed} alt="GoodWe" /></a>
-      <nav className="sidebar-nav" aria-label="Domínios principais">{visibleDomains.map((domain) => <NavLink key={domain.id} to={{ pathname: `/mvp/${getAdminEntryRoute(domain, account!)}`, search: scopedSearch }} className={activeDomain?.id === domain.id ? "sidebar-item is-active" : "sidebar-item"} title={domain.label} aria-label={domain.label}><i className="sidebar-lucide" data-lucide={domain.icon} aria-hidden="true" /><span className="sidebar-tooltip">{domain.label}</span></NavLink>)}</nav>
+      <a className="sidebar-logo" href={`#/mvp/overview${scopedSearch}`} aria-label="GoodWe SEMS+"><img className="logo-expanded" src={assets.logo} alt="GoodWe" /><small>SEMS+ · CHARGEGRID</small></a>
+      <nav className="sidebar-nav" aria-label="Navegação principal">{visibleNavigation.map((item) => { const route = profile === "GOODWE" ? item.route : (item.establishmentRoute ?? item.route); const isActive = item.activeRoutes.includes(activeRoute); return <div className="sidebar-nav-group" key={item.label}><NavLink to={{ pathname: `/mvp/${route}`, search: scopedSearch }} className={isActive ? "sidebar-item is-active" : "sidebar-item"} title={item.label}><img src={item.icon} alt="" /><span className="sidebar-tooltip">{item.label}</span></NavLink>{item.route === "analysis-iv" && isActive ? <div className="sidebar-subnav">{analysisLinks.map((link) => <NavLink key={link.route} to={{ pathname: `/mvp/${link.route}`, search: scopedSearch }} className={activeRoute === link.route || (link.route === "ai" && activeRoute === "recommendations") ? "is-active" : ""}>{link.label}</NavLink>)}</div> : null}</div>; })}</nav>
+      {account && hasAdminCapability(account, "access:manage") ? <footer className="sidebar-footer"><NavLink to="/mvp/access" className={activeRoute === "access" || activeRoute === "settings" ? "sidebar-item is-active" : "sidebar-item"}><img src={assets.icons.setting} alt="" /><span className="sidebar-tooltip">Gestão da organização</span></NavLink></footer> : null}
     </aside>
     <main className="main-area">
-      <header className="topbar" data-testid="topbar"><div className="topbar-promo"><img src={assets.icons.solarInfo} alt="" />Hub Comercial ChargeGrid</div><div className="topbar-actions">{account?.profile === "GOODWE" ? <label className="scope-selector"><span>Escopo</span><select aria-label="Escopo operacional" value={selectedEstablishmentId} onChange={(event) => changeScope(event.target.value)}><option value="">Toda a rede</option>{state.establishments.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label> : null}<span className="profile-chip">{account?.role}</span><span className="profile-name">{account?.displayName}</span><img className="avatar" src={assets.avatar} alt="Perfil" />{account && getAdminContextLinks(ADMIN_DOMAINS.find((domain) => domain.id === "intelligence")!, account).some((item) => item.route === "access") ? <a className="topbar-account-action" href="#/mvp/settings" aria-label="Configuracoes"><i data-lucide="settings" /></a> : null}<a className="topbar-account-action is-logout" href="#/logout" aria-label="Sair do sistema"><i data-lucide="log-out" /></a></div></header>
-      <section className="page-content" data-testid="page-content"><header className="page-heading"><div><span className="page-heading-eyebrow">ChargeGrid Intelligence · {profile === "GOODWE" ? "GoodWe" : "Estabelecimento"}</span><h1>{activeDomain?.label ?? "Configurações"}</h1><p>{activeDomain?.description[profile] ?? "Preferências da conta e controles de acesso do ambiente administrativo."}</p><small>Dados atualizados em 22/08/2026, 06:39:38</small></div></header>{activeDomain && account ? <nav className="context-navigation" aria-label={`Navegação de ${activeDomain.label}`}>{getAdminContextLinks(activeDomain, account).map((item) => <NavLink key={item.route} to={{ pathname: `/mvp/${item.route}`, search: scopedSearch }} className={activeRoute === item.route ? "is-active" : ""}>{item.label}</NavLink>)}</nav> : null}{children}</section>
+      <header className="topbar" data-testid="topbar"><div className="topbar-spacer" /><div className="topbar-actions">{account?.profile === "GOODWE" ? <label className="scope-selector"><span>Escopo</span><select aria-label="Escopo operacional" value={selectedEstablishmentId} onChange={(event) => changeScope(event.target.value)}><option value="">Toda a rede</option>{state.establishments.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label> : null}<span className="topbar-promo"><img src={assets.icons.solarInfo} alt="" />Hub Solar Insight</span><button className="topbar-icon-button" type="button" aria-label="Pesquisar"><img src={assets.icons.search} alt="" /></button><a className="topbar-icon-button" href="#/mvp/incidents" aria-label="Alarmes"><img src={assets.icons.alarms} alt="" /></a><button className="topbar-icon-button" type="button" aria-label="Mensagens"><img src={assets.icons.message} alt="" /></button><button className="topbar-icon-button" type="button" aria-label="Idioma"><img src={assets.icons.language} alt="" /></button><span className="profile-name">{account?.displayName}</span><img className="avatar" src={assets.avatar} alt="Perfil" /><a className="topbar-account-action is-logout" href="#/logout" aria-label="Sair do sistema"><i data-lucide="log-out" /></a></div></header>
+      <section className="page-content" data-testid="page-content"><header className="page-heading"><div><h1>{routeTitles[activeRoute] ?? visibleNavigation.find((item) => item.activeRoutes.includes(activeRoute))?.label ?? activeDomain?.label ?? "Configurações"}</h1>{activeRoute === "overview" ? <small>Atualizado em 22/08/2026, 06:39:38 <button type="button" aria-label="Atualizar painel">↻</button></small> : !isStandaloneRoute ? <p>{activeDomain?.description[profile] ?? "Preferências da conta e controles de acesso."}</p> : null}</div></header>{activeRoute !== "overview" && !isStandaloneRoute && activeDomain && account ? <nav className="context-navigation" aria-label={`Navegação de ${activeDomain.label}`}>{getAdminContextLinks(activeDomain, account).map((item) => <NavLink key={item.route} to={{ pathname: `/mvp/${item.route}`, search: scopedSearch }} className={activeRoute === item.route ? "is-active" : ""}>{item.label}</NavLink>)}</nav> : null}{children}</section>
     </main>
     <button type="button" className="assistant-orb-button" aria-label="Assistente ChargeGrid" onClick={() => setAssistantOpen(true)}><img src={assets.assistant} alt="" /><span className="assistant-orb-eye" /></button>
     {assistantOpen ? <AssistantDrawer onClose={() => setAssistantOpen(false)} /> : null}
