@@ -152,9 +152,9 @@ O assistente apresenta textos fixos e previsões sem fonte, confiança ou fallba
 | M6 — financeiro | tarifa versionada, cálculo em centavos, estados de pagamento, reembolso e conciliação implementados no sandbox local | homologar split, fiscalidade, custo energético e lifecycle Stripe real |
 | M7 — incidentes/recomendações | inbox e detalhe com correlação/deduplicação, responsável, resolução, timeline e recomendação determinística explicável | integrar sinais/providers reais, notificações e SLA sem transformar o Admin em help desk técnico |
 | M8 — acesso/relatórios | papéis e escopos aplicados na navegação, rota e domínio; concessão/revogação auditável; relatórios assíncronos com CSV sanitizado, download, falha, retentativa e assinatura | migrar enforcement para API/RLS e conectar armazenamento e entrega agendada reais |
-| M9 — validação | boa cobertura de demo em viewport amplo | matriz por papel, estado e 1280/1440/desktop amplo |
+| M9 — validação | hardening local concluído com matriz dos quatro papéis, teclado, 390/1280/1440 px, correção de overflow e E2E crítico focado | repetir regressão visual integral somente após o próximo redesenho de telas e fluxos |
 
-O estado atual deve ser tratado como **fundação M0 consolidada, baseline de interface M1 concluída e verticais M2–M8 funcionais sobre providers locais**, ainda sem autorização backend/RLS. A administração e as exportações do M8 são completas no sandbox, não equivalem a provisionamento de identidade, armazenamento ou entrega agendada reais.
+O estado atual deve ser tratado como **fundação M0 consolidada e verticais M1–M9 funcionais e endurecidas sobre providers locais**, ainda sem autorização backend/RLS. A administração e as exportações do M8 são completas no sandbox, não equivalem a provisionamento de identidade, armazenamento ou entrega agendada reais. O M9 fecha a qualidade proporcional desta versão; a regressão visual integral foi conscientemente adiada porque o produto seguirá para um redesenho amplo.
 
 ## Fundação corrigida nesta etapa
 
@@ -184,7 +184,7 @@ O estado atual deve ser tratado como **fundação M0 consolidada, baseline de in
 6. **M6 concluído no sandbox local:** tarifa versionada, ociosidade, pagamento, reembolso idempotente, participação parametrizada e conciliação.
 7. **M7 concluído no mock:** correlação e deduplicação de sinais, inbox, atribuição, resolução e recomendações determinísticas sem autoexecução.
 8. **M8 concluído no sandbox:** acesso por papel/escopo, revogação, auditoria, tarefas de relatório, CSV sanitizado, download, retentativa e assinatura.
-9. **M9:** validação visual e funcional completa.
+9. **M9 concluído no escopo vigente:** implementações paralelas removidas, contratos derivados da fonte canônica, responsividade corrigida, matriz de papéis/viewports e regressão crítica focal validadas. A suíte visual integral deve ser recriada após o próximo redesenho, evitando manter snapshots descartáveis.
 
 Cada etapa nasce em `feature/admin-*`, retorna por PR para `develop/admin-web` e só segue para `main` após validação e aprovação humana.
 

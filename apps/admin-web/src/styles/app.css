@@ -5825,10 +5825,35 @@ body.layout-auth {
 @media (max-width: 560px) {
   .main-area {
     margin-left: 0;
+    width: 100%;
+    min-width: 0;
   }
 
   .topbar {
     padding: 0 12px;
+  }
+
+  .topbar-actions {
+    width: 100%;
+    min-width: 0;
+    gap: 7px;
+    justify-content: flex-end;
+  }
+
+  .scope-selector {
+    flex: 1 1 auto;
+    min-width: 0;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .scope-selector select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .profile-chip,
+  .avatar {
+    display: none;
   }
 
   .topbar-promo {
@@ -5839,6 +5864,39 @@ body.layout-auth {
   .page-heading small {
     display: block;
     margin: 4px 0 0;
+  }
+
+  .page-content {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .page-content > *,
+  .context-navigation {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .operations-page,
+  .operations-detail,
+  .reports-layout,
+  .governance-grid {
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .operations-page > *,
+  .operations-detail > *,
+  .reports-layout > *,
+  .governance-grid > *,
+  .section-header > div,
+  .table-wrap {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .section-header p {
+    overflow-wrap: anywhere;
   }
 
   .sems-dashboard-map {

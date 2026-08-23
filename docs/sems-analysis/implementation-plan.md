@@ -1,6 +1,6 @@
 # Plano de implementação do Dashboard Admin
 
-**Status:** execução em M8 concluída localmente. M0–M8 possuem verticais locais funcionais; papéis e escopos agora governam navegação, rotas e operações, enquanto relatórios passam por tarefas assíncronas, exportação CSV sanitizada, assinatura e trilha auditável. Autorização backend/RLS, providers reais, entrega externa das assinaturas e SLA permanecem pendentes. M9 segue em execução. A revisão crítica vigente está em `docs/admin-dashboard/CRITICAL_REVIEW.md`.
+**Status:** execução local de M0–M9 concluída no sandbox administrativo. As verticais possuem fluxos funcionais, papéis e escopos governam navegação, rotas e operações, e o hardening final removeu implementações paralelas obsoletas, corrigiu responsividade e alinhou a regressão aos fluxos nativos. Autorização backend/RLS, providers reais, entrega externa das assinaturas, tema claro e homologação de SLA permanecem pendentes. A evidência do M9 está em `docs/admin-dashboard/VALIDATION_REPORT.md` e a revisão crítica vigente em `docs/admin-dashboard/CRITICAL_REVIEW.md`.
 
 **Estimativas:** dias úteis de desenvolvimento e validação para uma pessoa experiente, usadas apenas para ordenar e dimensionar. Integrações não homologadas podem ampliar os intervalos.
 
@@ -137,6 +137,8 @@
 - **Estimativa:** 5–8 dias.
 
 ## M9 — Validação visual completa e prontidão
+
+**Estado atual:** hardening local concluído dentro do escopo desta etapa. Build, lint, 70 testes unitários e 14 cenários E2E focados passaram; a regressão E2E integral foi interrompida por decisão do produto porque telas, fluxos e linguagem visual serão redesenhados nos próximos marcos. Não há divergência S0/S1 conhecida nos cenários exercitados, e o relatório de validação registra explicitamente o que foi adiado.
 
 - **Objetivo:** fechar fidelidade, regressão e critérios de entrega do módulo.
 - **Páginas/fluxos:** matriz completa MUST e SHOULD que entrou na release.

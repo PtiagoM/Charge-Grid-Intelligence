@@ -12,7 +12,7 @@ test('Admin não oferece conta nem jornada de motorista', async ({ page }) => {
   await page.goto('/#/logout');
   await page.goto('/#/login');
   await expect(page.getByTestId('demo-account-list')).toContainText('GOODWE');
-  await expect(page.getByTestId('demo-account-list')).toContainText('ESTABELECIMENTO');
+  await expect(page.getByTestId('demo-account-list')).toContainText('ESTABLISHMENT_ADMIN');
   await expect(page.getByTestId('demo-account-list')).not.toContainText('USUARIO');
   await expect(page.getByTestId('auth-shell')).not.toContainText('ChargeGrid Quick');
 });

@@ -12,9 +12,9 @@ test('inteligência do MVP entrega previsões de demanda e recomendações', asy
   await login(page, 'goodwe@teste.com', 'teste');
   await page.goto('/#/mvp/ai');
 
-  await expect(page.getByTestId('mvp-ai-panel')).toBeVisible();
-  await expect(page.getByTestId('mvp-architecture-panel')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Recomendacoes objetivas' })).toBeVisible();
+  await expect(page.getByTestId('recommendations-page')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Recomendacoes operacionais' })).toBeVisible();
+  await expect(page.getByTestId('recommendations-page')).toContainText('Aceitar nao executa comandos');
 });
 
 test('visão geral do MVP destaca recomendação operacional', async ({ page }) => {
