@@ -1,4 +1,4 @@
-import type { Profile } from "../domain/admin";
+import type { Account, Profile } from "../domain/admin";
 import { hasAdminCapability, type AdminCapability } from "../domain/adminCapabilities";
 
 export type AdminDomainId = "overview" | "network" | "operations" | "energy" | "commercial" | "intelligence";
@@ -107,10 +107,12 @@ export const ADMIN_DOMAINS: readonly AdminDomain[] = [
     },
     links: [
       { route: "ai", label: "Recomendações", capability: "intelligence:read" },
-      { route: "reports", label: "Relatórios", capability: "intelligence:read" },
+      { route: "reports", label: "Relatórios", capability: "reports:generate" },
       { route: "expansion", label: "Expansão", capability: "intelligence:portfolio" },
-      { route: "audit", label: "Auditoria", capability: "governance:audit" }
-    ]
+      { route: "audit", label: "Auditoria", capability: "governance:audit" },
+      { route: "access", label: "Acessos", capability: "access:manage" }
+    ],
+    relatedRoutes: ["settings"]
   }
 ];
 
@@ -120,10 +122,38 @@ export function getAdminDomainForRoute(route: string) {
   );
 }
 
-export function getAdminContextLinks(domain: AdminDomain, profile: Profile) {
-  return domain.links.filter((link) => hasAdminCapability(profile, link.capability));
+export function getAdminContextLinks(domain: AdminDomain, subject: Profile | Account) {
+  return domain.links.filter((link) => hasAdminCapability(subject, link.capability));
 }
 
-export function getAdminEntryRoute(domain: AdminDomain, profile: Profile) {
-  return domain.entryRoute[profile];
+export function getAdminEntryRoute(domain: AdminDomain, subject: Profile | Account) {
+  const profile = typeof subject === "string" ? subject : subject.profile;
+  const preferred = domain.entryRoute[profile];
+  if (typeof subject === "string") return preferred;
+  const preferredLink = domain.links.find((item) => item.route === preferred);
+  if (!preferredLink || hasAdminCapability(subject, preferredLink.capability)) return preferred;
+  return getAdminContextLinks(domain, subject)[0]?.route ?? "overview";
+}
+
+export function getAdminRouteCapability(route: string): AdminCapability | undefined {
+  if (route === "settings" || route === "access") return "access:manage";
+  const direct = ADMIN_DOMAINS.flatMap((domain) => domain.links).find((item) => item.route === route)?.capability;
+  if (direct) return direct;
+  const related: Record<string, AdminCapability> = {
+    client: "network:portfolio",
+    "new-client": "network:portfolio",
+    establishment: "network:portfolio",
+    plant: "network:onboard",
+    "plant-onboarding": "network:onboard",
+    location: "network:assets",
+    "new-location": "network:portfolio",
+    charger: "network:assets",
+    session: "operations:monitor",
+    incident: "incidents:manage",
+    ticket: "operations:monitor",
+    "financial-session": "commercial:read",
+    invoices: "commercial:read",
+    recommendations: "intelligence:read"
+  };
+  return related[route];
 }

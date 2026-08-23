@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { assets } from "../../constants/assets";
 import { useAdminState } from "../../app/AdminState";
 import type { Profile } from "../../domain/admin";
+import { activeGrantFor } from "../../domain/accessOperations";
 
 export function homeFor(_profile: Profile) {
   return "/mvp/overview";
@@ -45,7 +46,7 @@ export function LoginPage() {
       {error ? <p className="auth-error" data-testid="login-error">{error}</p> : null}
       <div className="demo-account-list" data-testid="demo-account-list">
         <h3>Conta inicial</h3>
-        {state.accounts.map((item) => <button key={item.id} type="button" className="demo-account" onClick={() => { setEmail(item.email); setPassword(item.password); setError(""); }}>{item.profile} · {item.email}</button>)}
+        {state.accounts.filter((item) => activeGrantFor(state, item.id)).map((item) => <button key={item.id} type="button" className="demo-account" onClick={() => { setEmail(item.email); setPassword(item.password); setError(""); }}>{item.role} · {item.email}</button>)}
       </div>
       <footer><span>Ambiente administrativo separado das jornadas do motorista e visitante.</span></footer>
     </section>

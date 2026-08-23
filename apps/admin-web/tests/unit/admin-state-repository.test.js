@@ -22,11 +22,16 @@ describe('normalizeAdminState', () => {
     delete stale.incidents;
     delete stale.incidentEvents;
     delete stale.recommendations;
+    delete stale.accessGrants;
+    delete stale.reportJobs;
+    delete stale.reportSubscriptions;
+    delete stale.accounts[0].role;
     stale.sessions[0].chargerId = 'charger-that-does-not-exist';
 
     const result = normalizeAdminState(stale, fallback);
 
-    expect(result.accounts.map((item) => item.profile)).toEqual(['GOODWE', 'ESTABELECIMENTO']);
+    expect(result.accounts.map((item) => item.profile)).toEqual(['GOODWE', 'ESTABELECIMENTO', 'ESTABELECIMENTO', 'ESTABELECIMENTO']);
+    expect(result.accounts[0].role).toBe('GOODWE_ADMIN');
     expect(result.energy[0].demandKw).toBe(76);
     expect(result.energy[0].contractedLimitKw).toBe(100);
     expect(result.chargers.some((item) => item.id === result.sessions[0].chargerId)).toBe(true);
@@ -43,5 +48,8 @@ describe('normalizeAdminState', () => {
     expect(result.incidents).toEqual(fallback.incidents);
     expect(result.incidentEvents).toEqual(fallback.incidentEvents);
     expect(result.recommendations).toEqual(fallback.recommendations);
+    expect(result.accessGrants).toEqual(fallback.accessGrants);
+    expect(result.reportJobs).toEqual(fallback.reportJobs);
+    expect(result.reportSubscriptions).toEqual(fallback.reportSubscriptions);
   });
 });

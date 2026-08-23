@@ -1,4 +1,5 @@
 export type Profile = "GOODWE" | "ESTABELECIMENTO";
+export type AdminRole = "GOODWE_ADMIN" | "ESTABLISHMENT_ADMIN" | "ESTABLISHMENT_OPERATOR" | "REPORT_VIEWER";
 export type ChargerStatus = "available" | "charging" | "limited" | "offline";
 export type SessionStatus = "authorized" | "starting" | "active" | "finished" | "start_failed";
 export type ChargerCommandType = "START_CHARGE" | "STOP_CHARGE";
@@ -87,6 +88,7 @@ export interface Account {
   email: string;
   password: string;
   profile: Profile;
+  role: AdminRole;
   displayName: string;
   establishmentId?: string;
 }
@@ -140,6 +142,61 @@ export interface Charger {
   status: ChargerStatus;
   todayEnergyKwh: number;
   revenueToday: number;
+}
+
+export interface AccessGrant {
+  id: string;
+  accountId: string;
+  role: AdminRole;
+  establishmentIds: string[];
+  status: "ACTIVE" | "REVOKED";
+  grantedAt: string;
+  grantedBy: string;
+  revokedAt?: string;
+  revokedBy?: string;
+  revocationReason?: string;
+}
+
+export interface AccessActionResult {
+  ok: boolean;
+  issues: string[];
+  grant?: AccessGrant;
+}
+
+export type ReportType = "SESSIONS" | "ENERGY" | "FINANCIAL" | "INCIDENTS";
+
+export interface ReportJob {
+  id: string;
+  type: ReportType;
+  requestedBy: string;
+  establishmentIds: string[];
+  periodFrom: string;
+  periodTo: string;
+  status: "QUEUED" | "PROCESSING" | "READY" | "FAILED";
+  requestedAt: string;
+  completedAt?: string;
+  rowCount?: number;
+  fileName?: string;
+  csvContent?: string;
+  failureReason?: string;
+}
+
+export interface ReportSubscription {
+  id: string;
+  accountId: string;
+  type: ReportType;
+  establishmentIds: string[];
+  cadence: "DAILY" | "WEEKLY" | "MONTHLY";
+  status: "ACTIVE" | "PAUSED";
+  nextRunAt?: string;
+  updatedAt: string;
+}
+
+export interface ReportActionResult {
+  ok: boolean;
+  issues: string[];
+  job?: ReportJob;
+  subscription?: ReportSubscription;
 }
 
 export interface ChargerTelemetry {
@@ -425,6 +482,7 @@ export interface IncidentActionResult {
 
 export interface AdminState {
   accounts: Account[];
+  accessGrants: AccessGrant[];
   currentAccountId: string | null;
   clients: Client[];
   establishments: Establishment[];
@@ -448,6 +506,8 @@ export interface AdminState {
   incidents: Incident[];
   incidentEvents: IncidentEvent[];
   recommendations: Recommendation[];
+  reportJobs: ReportJob[];
+  reportSubscriptions: ReportSubscription[];
 }
 
 export interface NewClientInput {

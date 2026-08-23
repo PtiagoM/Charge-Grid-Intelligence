@@ -1,6 +1,6 @@
 # Plano de implementação do Dashboard Admin
 
-**Status:** execução em M7 concluída localmente. M0–M7 possuem verticais locais funcionais; incidentes correlacionam sinais GoodWe, ChargeGrid e financeiros com deduplicação, responsabilidade e resolução auditável, enquanto recomendações determinísticas exibem evidência e exigem decisão humana sem autoexecução. Autorização backend, providers reais, notificações e SLA permanecem pendentes. M8–M9 seguem em execução. A revisão crítica vigente está em `docs/admin-dashboard/CRITICAL_REVIEW.md`.
+**Status:** execução em M8 concluída localmente. M0–M8 possuem verticais locais funcionais; papéis e escopos agora governam navegação, rotas e operações, enquanto relatórios passam por tarefas assíncronas, exportação CSV sanitizada, assinatura e trilha auditável. Autorização backend/RLS, providers reais, entrega externa das assinaturas e SLA permanecem pendentes. M9 segue em execução. A revisão crítica vigente está em `docs/admin-dashboard/CRITICAL_REVIEW.md`.
 
 **Estimativas:** dias úteis de desenvolvimento e validação para uma pessoa experiente, usadas apenas para ordenar e dimensionar. Integrações não homologadas podem ampliar os intervalos.
 
@@ -121,6 +121,8 @@
 - **Estimativa:** 5–8 dias.
 
 ## M8 — Usuários, relatórios, estados e hardening
+
+**Estado atual:** vertical local concluída. GoodWe e administrador do estabelecimento concedem ou revogam somente papéis e escopos autorizados; operador e analista recebem navegação reduzida e bloqueio de rota/domínio. Relatórios de sessões, energia, financeiro e incidentes percorrem fila/processamento/pronto/falha, geram CSV por escopo e período com proteção contra fórmula, suportam download, retentativa e assinatura auditada. RLS/API e entrega agendada real seguem pendentes.
 
 - **Objetivo:** completar administração, relatórios e qualidade transversal.
 - **Páginas/fluxos:** acesso/usuários, relatórios, downloads, assinaturas e todos os estados de erro/vazio.

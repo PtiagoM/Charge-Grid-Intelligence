@@ -16,7 +16,7 @@ export interface EnqueueDriverInput {
 }
 
 function canManage(account: Account | null, establishmentId: string) {
-  return Boolean(account && hasAdminCapability(account.profile, "queue:manage") && (
+  return Boolean(account && hasAdminCapability(account, "queue:manage") && (
     account.profile === "GOODWE" || account.establishmentId === establishmentId
   ));
 }

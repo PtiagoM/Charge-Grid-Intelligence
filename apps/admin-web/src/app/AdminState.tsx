@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { Account, AdminState, FinancialActionResult, IncidentActionResult, NewChargerInput, NewClientInput, NewLocationInput, PlantOnboardingDraft, PlantOnboardingPublishResult, QueueActionResult, Recommendation, RequestChargerCommandInput, RequestChargerCommandResult, SupportTicket } from "../domain/admin";
+import type { AccessActionResult, Account, AdminState, FinancialActionResult, IncidentActionResult, NewChargerInput, NewClientInput, NewLocationInput, PlantOnboardingDraft, PlantOnboardingPublishResult, QueueActionResult, Recommendation, ReportActionResult, ReportSubscription, RequestChargerCommandInput, RequestChargerCommandResult, SupportTicket } from "../domain/admin";
 import { createInitialState } from "../fixtures/adminDemo";
 import { GOODWE_PLANT_CATALOG } from "../fixtures/goodwePlantCatalog";
 import { createEmptyPlantOnboardingDraft, publishPlantOnboarding as publishPlantDraft } from "../domain/plantOnboarding";
@@ -9,6 +9,9 @@ import { demoAdminChargerCommandRepository } from "../services/adminChargerComma
 import { callNextDriver, confirmQueueArrival as confirmArrival, markQueueNoShow as noShow, releaseQueueEntry as releaseEntry } from "../domain/queueOperations";
 import { activateTariffPolicy as activateTariff, refundPayment as refundTransaction, settlePayment as settleTransaction, type ActivateTariffInput } from "../domain/financialOperations";
 import { acknowledgeIncident as acknowledgeOperationalIncident, correlateOperationalSignals, decideRecommendation as decideOperationalRecommendation, resolveIncident as resolveOperationalIncident } from "../domain/incidentOperations";
+import { activeGrantFor, grantAccess as grantAccountAccess, revokeAccess as revokeAccountAccess, type GrantAccessInput } from "../domain/accessOperations";
+import { completeReport, failReport, markReportProcessing, requestReport as requestOperationalReport, saveReportSubscription as saveOperationalReportSubscription, type RequestReportInput } from "../domain/reportOperations";
+import { demoAdminReportRepository } from "../services/adminReportRepository";
 
 function slugify(value: string) {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -37,6 +40,11 @@ interface AdminContextValue {
   acknowledgeIncident: (incidentId: string, assignee: string) => IncidentActionResult;
   resolveIncident: (incidentId: string, resolution: string) => IncidentActionResult;
   decideRecommendation: (recommendationId: string, decision: Extract<Recommendation["status"], "ACCEPTED" | "DEFERRED" | "REJECTED">, reason: string) => IncidentActionResult;
+  grantAccess: (input: GrantAccessInput) => AccessActionResult;
+  revokeAccess: (grantId: string, reason: string) => AccessActionResult;
+  requestReport: (input: RequestReportInput) => Promise<ReportActionResult>;
+  retryReport: (jobId: string) => Promise<ReportActionResult>;
+  saveReportSubscription: (input: Pick<ReportSubscription, "type" | "establishmentIds" | "cadence" | "status">) => ReportActionResult;
   createTicket: (establishmentId: string, title: string, description: string) => string;
   updatePlantOnboardingDraft: (patch: Partial<PlantOnboardingDraft>) => void;
   resetPlantOnboardingDraft: () => void;
@@ -53,10 +61,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const account = state.accounts.find((item) => item.id === state.currentAccountId) ?? null;
 
   const login = useCallback((email: string, password: string) => {
-    const matched = state.accounts.find((item) => item.email === email.trim().toLowerCase() && item.password === password) ?? null;
+    const matched = state.accounts.find((item) => item.email === email.trim().toLowerCase() && item.password === password && activeGrantFor(state, item.id)) ?? null;
     if (matched) setState((current) => ({ ...current, currentAccountId: matched.id }));
     return matched;
-  }, [state.accounts]);
+  }, [state]);
 
   const logout = useCallback(() => setState((current) => ({ ...current, currentAccountId: null })), []);
 
@@ -163,6 +171,49 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     return transition;
   }, [account, state]);
 
+  const grantAccess = useCallback((input: GrantAccessInput) => {
+    const transition = grantAccountAccess(state, account, input);
+    if (transition.ok) setState(transition.state);
+    return transition;
+  }, [account, state]);
+
+  const revokeAccess = useCallback((grantId: string, reason: string) => {
+    const transition = revokeAccountAccess(state, account, grantId, reason);
+    if (transition.ok) setState(transition.state);
+    return transition;
+  }, [account, state]);
+
+  const runReport = useCallback(async (input: RequestReportInput) => {
+    const requested = requestOperationalReport(state, account, input);
+    if (!requested.ok || !requested.job) return requested;
+    setState(requested.state);
+    const processing = markReportProcessing(requested.state, requested.job.id);
+    if (!processing.ok || !processing.job) return processing;
+    setState(processing.state);
+    try {
+      const artifact = await demoAdminReportRepository.generate(processing.state, processing.job);
+      const completed = completeReport(processing.state, processing.job.id, artifact);
+      setState(completed.state);
+      return completed;
+    } catch (error) {
+      const failed = failReport(processing.state, processing.job.id, error instanceof Error ? error.message : "Falha inesperada ao gerar relatorio.");
+      setState(failed.state);
+      return failed;
+    }
+  }, [account, state]);
+
+  const retryReport = useCallback(async (jobId: string) => {
+    const job = state.reportJobs.find((item) => item.id === jobId);
+    if (!job || job.status !== "FAILED") return { ok: false, issues: ["Somente tarefas com falha podem ser repetidas."] };
+    return runReport({ type: job.type, establishmentIds: job.establishmentIds, periodFrom: job.periodFrom, periodTo: job.periodTo });
+  }, [runReport, state.reportJobs]);
+
+  const saveReportSubscription = useCallback((input: Pick<ReportSubscription, "type" | "establishmentIds" | "cadence" | "status">) => {
+    const transition = saveOperationalReportSubscription(state, account, input);
+    if (transition.ok) setState(transition.state);
+    return transition;
+  }, [account, state]);
+
   const createTicket = useCallback((establishmentId: string, title: string, description: string) => {
     const id = `ticket-${Date.now().toString(36)}`;
     const ticket: SupportTicket = { id, establishmentId, code: `SUP-2026-${String(Date.now()).slice(-4)}`, title, description, status: "Aberto", createdAt: new Date().toISOString() };
@@ -191,7 +242,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     return publication.result;
   }, [state]);
 
-  const value = useMemo(() => ({ state, account, login, logout, createClient, createLocation, createCharger, requestChargerCommand, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, activateTariffPolicy, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding }), [state, account, login, logout, createClient, createLocation, createCharger, requestChargerCommand, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, activateTariffPolicy, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding]);
+  const value = useMemo(() => ({ state, account, login, logout, createClient, createLocation, createCharger, requestChargerCommand, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, activateTariffPolicy, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, requestReport: runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding }), [state, account, login, logout, createClient, createLocation, createCharger, requestChargerCommand, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, activateTariffPolicy, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding]);
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
 }
 

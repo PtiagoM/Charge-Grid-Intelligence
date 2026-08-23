@@ -151,10 +151,10 @@ O assistente apresenta textos fixos e previsões sem fonte, confiança ou fallba
 | M5 — energia | snapshot tipado, frescor, limiares, bloqueio de início e recomendação determinística implementados localmente | homologar granularidade/latência GoodWe e método de atribuição por origem |
 | M6 — financeiro | tarifa versionada, cálculo em centavos, estados de pagamento, reembolso e conciliação implementados no sandbox local | homologar split, fiscalidade, custo energético e lifecycle Stripe real |
 | M7 — incidentes/recomendações | inbox e detalhe com correlação/deduplicação, responsável, resolução, timeline e recomendação determinística explicável | integrar sinais/providers reais, notificações e SLA sem transformar o Admin em help desk técnico |
-| M8 — acesso/relatórios | telas cenográficas | implementar por capacidade e tarefas reais |
+| M8 — acesso/relatórios | papéis e escopos aplicados na navegação, rota e domínio; concessão/revogação auditável; relatórios assíncronos com CSV sanitizado, download, falha, retentativa e assinatura | migrar enforcement para API/RLS e conectar armazenamento e entrega agendada reais |
 | M9 — validação | boa cobertura de demo em viewport amplo | matriz por papel, estado e 1280/1440/desktop amplo |
 
-O estado atual deve ser tratado como **fundação M0 consolidada, baseline de interface M1 concluída e verticais M2–M7 funcionais sobre providers locais**, ainda sem autorização backend. As telas antigas de acesso e relatórios continuam protótipos e não significam conclusão funcional de M8.
+O estado atual deve ser tratado como **fundação M0 consolidada, baseline de interface M1 concluída e verticais M2–M8 funcionais sobre providers locais**, ainda sem autorização backend/RLS. A administração e as exportações do M8 são completas no sandbox, não equivalem a provisionamento de identidade, armazenamento ou entrega agendada reais.
 
 ## Fundação corrigida nesta etapa
 
@@ -183,7 +183,7 @@ O estado atual deve ser tratado como **fundação M0 consolidada, baseline de in
 5. **M5 concluído no mock:** snapshot fresco, política por estabelecimento, bloqueio fail-closed, atribuição calculável e recomendação explicada.
 6. **M6 concluído no sandbox local:** tarifa versionada, ociosidade, pagamento, reembolso idempotente, participação parametrizada e conciliação.
 7. **M7 concluído no mock:** correlação e deduplicação de sinais, inbox, atribuição, resolução e recomendações determinísticas sem autoexecução.
-8. **M8 — próximo incremento:** acesso por capacidade, auditoria, relatórios e exportações reais no sandbox.
+8. **M8 concluído no sandbox:** acesso por papel/escopo, revogação, auditoria, tarefas de relatório, CSV sanitizado, download, retentativa e assinatura.
 9. **M9:** validação visual e funcional completa.
 
 Cada etapa nasce em `feature/admin-*`, retorna por PR para `develop/admin-web` e só segue para `main` após validação e aprovação humana.

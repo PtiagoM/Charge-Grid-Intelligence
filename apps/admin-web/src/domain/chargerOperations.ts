@@ -67,7 +67,7 @@ export function requestChargerCommand(
 
   const issues: string[] = [];
   const charger = state.chargers.find((item) => item.id === input.chargerId);
-  if (!account || !hasAdminCapability(account.profile, "chargers:command")) issues.push("Perfil sem permissao para comandar carregadores.");
+  if (!account || !hasAdminCapability(account, "chargers:command")) issues.push("Perfil sem permissao para comandar carregadores.");
   if (!charger) issues.push("Carregador nao encontrado.");
   if (input.reason.trim().length < 8) issues.push("Informe um motivo com pelo menos 8 caracteres.");
   if (charger && account?.profile === "ESTABELECIMENTO" && account.establishmentId !== charger.establishmentId) {

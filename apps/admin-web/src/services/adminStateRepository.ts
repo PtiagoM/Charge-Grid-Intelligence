@@ -8,6 +8,7 @@ export interface AdminStateRepository {
 const storageKey = "chargegrid-admin-state-v3";
 
 export function normalizeAdminState(candidate: AdminState, fallback: AdminState): AdminState {
+  const fallbackAccounts = new Map(fallback.accounts.map((item) => [item.id, item]));
   const chargers = Array.isArray(candidate.chargers) ? candidate.chargers : fallback.chargers;
   const chargerIds = new Set(chargers.map((item) => item.id));
   const fallbackEnergy = new Map(fallback.energy.map((item) => [item.establishmentId, item]));
@@ -32,7 +33,11 @@ export function normalizeAdminState(candidate: AdminState, fallback: AdminState)
   return {
     ...fallback,
     ...candidate,
-    accounts: candidate.accounts.filter((item) => item.profile === "GOODWE" || item.profile === "ESTABELECIMENTO"),
+    accounts: candidate.accounts.filter((item) => item.profile === "GOODWE" || item.profile === "ESTABELECIMENTO").map((item) => ({
+      ...item,
+      role: item.role ?? fallbackAccounts.get(item.id)?.role ?? (item.profile === "GOODWE" ? "GOODWE_ADMIN" : "ESTABLISHMENT_ADMIN")
+    })),
+    accessGrants: Array.isArray(candidate.accessGrants) ? candidate.accessGrants : fallback.accessGrants,
     commercialPlants: Array.isArray(candidate.commercialPlants) ? candidate.commercialPlants : fallback.commercialPlants,
     plantOnboardingDraft: {
       ...fallback.plantOnboardingDraft,
@@ -55,7 +60,9 @@ export function normalizeAdminState(candidate: AdminState, fallback: AdminState)
     financialEvents: Array.isArray(candidate.financialEvents) ? candidate.financialEvents : fallback.financialEvents,
     incidents: Array.isArray(candidate.incidents) ? candidate.incidents : fallback.incidents,
     incidentEvents: Array.isArray(candidate.incidentEvents) ? candidate.incidentEvents : fallback.incidentEvents,
-    recommendations: Array.isArray(candidate.recommendations) ? candidate.recommendations : fallback.recommendations
+    recommendations: Array.isArray(candidate.recommendations) ? candidate.recommendations : fallback.recommendations,
+    reportJobs: Array.isArray(candidate.reportJobs) ? candidate.reportJobs : fallback.reportJobs,
+    reportSubscriptions: Array.isArray(candidate.reportSubscriptions) ? candidate.reportSubscriptions : fallback.reportSubscriptions
   };
 }
 

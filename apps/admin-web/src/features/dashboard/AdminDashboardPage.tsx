@@ -12,8 +12,11 @@ import { OperationsCenterPage, QueueOperationsPage } from "../operations/QueuePa
 import { EnergyOperationsPage } from "../energy/EnergyOperationsPage";
 import { FinanceDashboardPage, FinancialSessionPage, TariffPoliciesPage } from "../finance/FinancialPages";
 import { IncidentDetailPage, IncidentInboxPage, RecommendationsPage } from "../incidents/IncidentPages";
+import { AccessDeniedPage, AccessManagementPage, ReportsOperationsPage } from "../governance/GovernancePages";
+import { hasAdminCapability } from "../../domain/adminCapabilities";
+import { getAdminRouteCapability } from "../../app/adminNavigation";
 
-const establishmentTabs = new Set(["overview", "locations", "location", "charger", "chargers", "sessions", "session", "operations", "queue", "incidents", "incident", "energy", "pricing", "finance", "financial-session", "invoices", "contract", "support", "ticket", "documents", "ai", "recommendations", "reports", "settings"]);
+const establishmentTabs = new Set(["overview", "locations", "location", "charger", "chargers", "sessions", "session", "operations", "queue", "incidents", "incident", "energy", "pricing", "finance", "financial-session", "invoices", "contract", "support", "ticket", "documents", "ai", "recommendations", "reports", "settings", "access"]);
 
 function EntityCell({ title, subtitle }: { title: string; subtitle: string }) {
   return <div><strong>{title}</strong><span>{subtitle}</span></div>;
@@ -262,6 +265,8 @@ export function AdminDashboardPage() {
   const { state, account } = useAdminState();
   if (!account) return <Navigate to="/login" replace />;
   if (account.profile === "ESTABELECIMENTO" && !establishmentTabs.has(tab)) return <Navigate to="/mvp/overview" replace />;
+  const requiredCapability = getAdminRouteCapability(tab);
+  if (requiredCapability && !hasAdminCapability(account, requiredCapability)) return <AccessDeniedPage />;
 
   const establishmentId = account.profile === "ESTABELECIMENTO" ? account.establishmentId! : query.get("est") ?? "";
   if (account.profile === "ESTABELECIMENTO" && query.get("est") && query.get("est") !== account.establishmentId) return <Navigate to="/mvp/overview" replace />;
@@ -299,7 +304,9 @@ export function AdminDashboardPage() {
       case "energy": return <EnergyOperationsPage establishmentId={establishmentId || undefined} />;
       case "ai": return <RecommendationsPage establishmentId={establishmentId || undefined} />;
       case "recommendations": return <RecommendationsPage establishmentId={establishmentId || undefined} />;
-      case "reports": return <ReportsPage establishmentId={establishmentId || undefined} />;
+      case "reports": return <ReportsOperationsPage establishmentId={establishmentId || undefined} />;
+      case "access": return <AccessManagementPage />;
+      case "settings": return <AccessManagementPage />;
       case "contract": return <ContractPage establishmentId={establishmentId} />;
       case "support": return <SupportPage establishmentId={account.profile === "ESTABELECIMENTO" ? establishmentId : undefined} />;
       case "ticket": return <TicketPage ticketId={query.get("ticket") ?? ""} />;

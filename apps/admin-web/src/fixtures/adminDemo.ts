@@ -61,8 +61,16 @@ export function createInitialState(): AdminState {
   const observedAt = new Date().toISOString();
   return {
     accounts: [
-      { id: "acc-goodwe", email: "goodwe@teste.com", password: "teste", profile: "GOODWE", displayName: "Painel Executivo GoodWe" },
-      { id: "acc-est-fiap", email: "estabelecimento@teste.com", password: "teste", profile: "ESTABELECIMENTO", displayName: "Gestora FIAP", establishmentId: "est-fiap" }
+      { id: "acc-goodwe", email: "goodwe@teste.com", password: "teste", profile: "GOODWE", role: "GOODWE_ADMIN", displayName: "Painel Executivo GoodWe" },
+      { id: "acc-est-fiap", email: "estabelecimento@teste.com", password: "teste", profile: "ESTABELECIMENTO", role: "ESTABLISHMENT_ADMIN", displayName: "Gestora FIAP", establishmentId: "est-fiap" },
+      { id: "acc-operator-fiap", email: "operador@teste.com", password: "teste", profile: "ESTABELECIMENTO", role: "ESTABLISHMENT_OPERATOR", displayName: "Operacao FIAP", establishmentId: "est-fiap" },
+      { id: "acc-reports-fiap", email: "relatorios@teste.com", password: "teste", profile: "ESTABELECIMENTO", role: "REPORT_VIEWER", displayName: "Analista FIAP", establishmentId: "est-fiap" }
+    ],
+    accessGrants: [
+      { id: "grant-acc-goodwe-initial", accountId: "acc-goodwe", role: "GOODWE_ADMIN", establishmentIds: [], status: "ACTIVE", grantedAt: "2026-01-01T09:00:00-03:00", grantedBy: "Bootstrap ChargeGrid" },
+      { id: "grant-acc-est-fiap-initial", accountId: "acc-est-fiap", role: "ESTABLISHMENT_ADMIN", establishmentIds: ["est-fiap"], status: "ACTIVE", grantedAt: "2026-01-15T09:00:00-03:00", grantedBy: "Painel Executivo GoodWe" },
+      { id: "grant-acc-operator-fiap-initial", accountId: "acc-operator-fiap", role: "ESTABLISHMENT_OPERATOR", establishmentIds: ["est-fiap"], status: "ACTIVE", grantedAt: "2026-02-01T09:00:00-03:00", grantedBy: "Gestora FIAP" },
+      { id: "grant-acc-reports-fiap-initial", accountId: "acc-reports-fiap", role: "REPORT_VIEWER", establishmentIds: ["est-fiap"], status: "ACTIVE", grantedAt: "2026-02-01T09:05:00-03:00", grantedBy: "Gestora FIAP" }
     ],
     currentAccountId: null,
     clients: [
@@ -151,6 +159,12 @@ export function createInitialState(): AdminState {
     recommendations: [
       { id: "rec-incident-goodwe-CG-MX-01-offline", establishmentId: "est-mercadox", incidentId: "incident-goodwe-CG-MX-01-offline", title: "Investigar equipamento afetado", rationale: "GoodWe reportou COMMUNICATION_LOST.", evidence: ["Origem GOODWE.", "1 ocorrencia correlacionada.", "Severidade HIGH."], expectedImpact: "Reduzir indisponibilidade e evitar novas sessoes afetadas.", proposedAction: "OPEN_CHARGER", targetId: "CG-MX-01", confidence: "HIGH", deterministic: true, status: "OPEN", createdAt: "2026-08-18T16:30:00-03:00" },
       { id: "rec-energy-est-fiap", establishmentId: "est-fiap", title: "Monitorar margem antes da proxima admissao", rationale: "Margem reduzida; monitorar antes de ampliar a carga.", evidence: ["76,0 kW de 100,0 kW contratados.", "Limiar critico em 90%."], expectedImpact: "Preservar a operacao dentro da politica energetica.", proposedAction: "OPEN_ENERGY", targetId: "est-fiap", confidence: "MEDIUM", deterministic: true, status: "OPEN", createdAt: observedAt }
+    ],
+    reportJobs: [
+      { id: "report-incidents-demo-failed", type: "INCIDENTS", requestedBy: "acc-goodwe", establishmentIds: ["est-mercadox"], periodFrom: "2026-08-01", periodTo: "2026-08-18", status: "FAILED", requestedAt: "2026-08-18T17:00:00-03:00", completedAt: "2026-08-18T17:00:04-03:00", failureReason: "Provider de armazenamento indisponivel na tentativa inicial." }
+    ],
+    reportSubscriptions: [
+      { id: "subscription-acc-est-fiap-sessions", accountId: "acc-est-fiap", type: "SESSIONS", establishmentIds: ["est-fiap"], cadence: "WEEKLY", status: "PAUSED", updatedAt: "2026-08-18T17:00:00-03:00" }
     ]
   };
 }

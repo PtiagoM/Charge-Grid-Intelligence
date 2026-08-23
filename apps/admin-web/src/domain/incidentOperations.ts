@@ -21,7 +21,7 @@ export interface IncidentSignal {
 }
 
 function canManage(account: Account | null, establishmentId: string) {
-  return Boolean(account && hasAdminCapability(account.profile, "incidents:manage") && (
+  return Boolean(account && hasAdminCapability(account, "incidents:manage") && (
     account.profile === "GOODWE" || account.establishmentId === establishmentId
   ));
 }

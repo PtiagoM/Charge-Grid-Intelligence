@@ -26,7 +26,7 @@ export interface FinancialBreakdown {
 }
 
 function canManage(account: Account | null, establishmentId: string) {
-  return Boolean(account && hasAdminCapability(account.profile, "finance:manage") && (
+  return Boolean(account && hasAdminCapability(account, "finance:manage") && (
     account.profile === "GOODWE" || account.establishmentId === establishmentId
   ));
 }

@@ -575,7 +575,7 @@ produto/contexto → arquitetura → contratos → demo
 | Progresso | **LOCAL**: teto, barra verde, saldo e estimativa | `SessionPage.tsx` |
 | Notificações | **LOCAL**: navegador/service worker | `browserNotifications.ts` |
 | PWA | **IMPLEMENTADO**: manifest, SW, ícone, instalação/safe areas | `public/` |
-| Dashboard Admin | **EM RECONSTRUÇÃO**: M0/M1 consolidados; M2–M7 locais implementados com onboarding, operação, fila, energia, financeiro, incidentes e recomendações sem autoexecução; providers/autorização reais pendentes e acesso/relatórios M8 ainda estão em reconstrução | `apps/admin-web/`, `docs/admin-dashboard/CRITICAL_REVIEW.md` |
+| Dashboard Admin | **EM RECONSTRUÇÃO**: M0/M1 consolidados; M2–M8 locais implementados com onboarding, operação, fila, energia, financeiro, incidentes, recomendações sem autoexecução, acesso por papel/escopo e relatórios exportáveis; providers, autorização backend/RLS e entrega agendada reais permanecem pendentes; M9 de validação integral está em execução | `apps/admin-web/`, `docs/admin-dashboard/CRITICAL_REVIEW.md` |
 | GoodWe | **SIMULADO** | `apps/api/src/goodwe/` |
 | Persistência comercial | **NÃO IMPLEMENTADO**: migrations/repositories/RLS | `supabase/` |
 | IA | **NÃO IMPLEMENTADO** | `apps/api/src/ai/README.md` |
