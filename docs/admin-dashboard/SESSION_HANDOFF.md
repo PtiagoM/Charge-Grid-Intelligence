@@ -2,8 +2,9 @@
 
 **Data:** 23 de agosto de 2026  
 **Branch:** `feature/admin-responsibility-flows`  
-**HEAD:** `45e64af` — `feat(admin): align operator surfaces with SEMS references`  
-**Estado:** consolidação de responsabilidades e fluxos concluída localmente; commit, push e atualização do PR foram autorizados pelo usuário para o fechamento desta rodada.
+**Commit de entrega:** `7fe0205` — `feat(admin): align ChargeGrid flows with SEMS responsibilities`  
+**Integração:** PR #5 integrado em `develop/admin-web` pelo merge `b7d3fea`.  
+**Estado:** a consolidação de responsabilidades e fluxos foi entregue. A próxima rodada deve partir de `origin/develop/admin-web`, não desta branch histórica de entrega.
 
 ## Entrega local atual
 
@@ -35,14 +36,14 @@ A revisão final com as práticas React removeu a implementação antiga e não 
 4. estabelecimento e consultor derivados do contrato e bloqueados no onboarding;
 5. lint, build, 70 testes unitários e 11 E2E focais aprovados.
 
-O estado local atual contém essas correções e está pronto para revisão humana antes de qualquer commit.
+O estado foi posteriormente ampliado, validado e entregue no commit `7fe0205`.
 
 ## Cuidados para continuação
 
 - preservar todas as alterações locais e o diretório não rastreado `output/`;
 - não alterar `apps/driver-pwa`, API, pacotes compartilhados ou `main`;
 - não criar snapshots ou baselines visuais;
-- manter as próximas entregas na linha Admin e usar o PR existente para `develop/admin-web`; não integrar em `main`;
+- manter as próximas entregas na linha Admin, criar novo PR para `develop/admin-web` e não integrar em `main` diretamente;
 - revisar `git status -sb` e este handoff antes de continuar.
 
 ## Consolidação concluída nesta continuação
@@ -57,6 +58,15 @@ O estado local atual contém essas correções e está pronto para revisão huma
 - janela da fila é de dez minutos em domínio, interface e testes;
 - a regra de apresentação densa, contextual e não genérica foi registrada em `PRODUCT_DECISIONS.md`;
 - build, lint, testes unitários e E2E focais foram atualizados e executados proporcionalmente.
+
+## Fechamento e estado validado
+
+- commit publicado: `7fe0205`;
+- PR #5: integrado em `develop/admin-web` (`b7d3fea`);
+- CI do PR: lint, testes e build aprovados; regressão E2E integral ignorada pela política de desenvolvimento;
+- validação local final: build e lint aprovados, 20 arquivos/72 testes unitários e 20 cenários E2E focais aprovados;
+- não foi criada baseline, snapshot ou matriz visual; o navegador integrado não estava exposto nesta validação final;
+- a revisão documental posterior registrou que o frontend demonstra as responsabilidades ChargeGrid conhecidas, sem alegar reproduzir toda a matriz proprietária de permissões SEMS+.
 
 ## Próximas referências visuais mais úteis
 
