@@ -1,0 +1,56 @@
+import { describe, expect, it } from 'vitest';
+import { createInitialState } from '../../src/fixtures/adminDemo.js';
+import { normalizeAdminState } from '../../src/services/adminStateRepository.js';
+
+describe('normalizeAdminState', () => {
+  it('migra fixtures antigas para a fronteira administrativa atual', () => {
+    const fallback = createInitialState();
+    const stale = structuredClone(fallback);
+    stale.accounts.push({ id: 'old-driver', email: 'driver@example.test', password: 'x', profile: 'USUARIO', displayName: 'Driver' });
+    delete stale.energy[0].demandKw;
+    delete stale.energy[0].contractedLimitKw;
+    delete stale.commercialPlants;
+    delete stale.plantOnboardingDraft;
+    delete stale.chargerTelemetry;
+    delete stale.chargerCommands;
+    delete stale.sessionEvents;
+    delete stale.queueEvents;
+    delete stale.energyPolicies;
+    delete stale.tariffPolicies;
+    delete stale.paymentTransactions;
+    delete stale.financialEvents;
+    delete stale.incidents;
+    delete stale.incidentEvents;
+    delete stale.recommendations;
+    delete stale.accessGrants;
+    delete stale.reportJobs;
+    delete stale.reportSubscriptions;
+    delete stale.accounts[0].role;
+    stale.sessions[0].chargerId = 'charger-that-does-not-exist';
+
+    const result = normalizeAdminState(stale, fallback);
+
+    expect(result.accounts.map((item) => item.profile)).toEqual(fallback.accounts.map((item) => item.profile));
+    expect(result.accounts[0].role).toBe('GOODWE_CENTRAL');
+    expect(result.accounts[0].semsOrganizationFunction).toBe('ADMINISTRATOR');
+    expect(result.energy[0].demandKw).toBe(76);
+    expect(result.energy[0].contractedLimitKw).toBe(100);
+    expect(result.chargers.some((item) => item.id === result.sessions[0].chargerId)).toBe(true);
+    expect(result.commercialPlants).toHaveLength(fallback.commercialPlants.length);
+    expect(result.plantOnboardingDraft).toEqual(fallback.plantOnboardingDraft);
+    expect(result.chargerTelemetry).toEqual(fallback.chargerTelemetry);
+    expect(result.chargerCommands).toEqual(fallback.chargerCommands);
+    expect(result.sessionEvents).toEqual(fallback.sessionEvents);
+    expect(result.queueEvents).toEqual(fallback.queueEvents);
+    expect(result.energyPolicies).toEqual(fallback.energyPolicies);
+    expect(result.tariffPolicies).toEqual(fallback.tariffPolicies);
+    expect(result.paymentTransactions).toEqual(fallback.paymentTransactions);
+    expect(result.financialEvents).toEqual(fallback.financialEvents);
+    expect(result.incidents).toEqual(fallback.incidents);
+    expect(result.incidentEvents).toEqual(fallback.incidentEvents);
+    expect(result.recommendations).toEqual(fallback.recommendations);
+    expect(result.accessGrants).toEqual(fallback.accessGrants);
+    expect(result.reportJobs).toEqual(fallback.reportJobs);
+    expect(result.reportSubscriptions).toEqual(fallback.reportSubscriptions);
+  });
+});

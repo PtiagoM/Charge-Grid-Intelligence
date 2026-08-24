@@ -4,18 +4,18 @@
 
 A Driver PWA não é redesenhada aqui. Eventos de motorista aparecem apenas como entradas ou resultados que o administrativo precisa receber.
 
-## J1 — GoodWe acompanha a rede e aprofunda uma planta
+## J1 — GoodWe acompanha carteira/rede e aprofunda uma exceção
 
 | Campo | Definição |
 | --- | --- |
-| usuário/papel | `GOODWE_ADMIN` |
-| objetivo | identificar desempenho, indisponibilidade, volume, incidentes e oportunidade de expansão |
-| entrada | home SEMS+ com módulo ChargeGrid e escopo de rede |
-| páginas | dashboard → plantas comerciais → detalhe da planta → carregador/sessões |
+| usuário/papel | gestor de carteira/consultor GoodWe; Central GoodWe em visão agregada |
+| objetivo | identificar ativação, qualidade comercial, indisponibilidade, utilização e oportunidade de expansão no escopo atribuído |
+| entrada | home SEMS+ com camada ChargeGrid e escopo de carteira, região ou parceiro |
+| páginas | dashboard por responsabilidade → ativações/plantas comerciais → detalhe autorizado → carregador/sessões quando necessário |
 | ações | filtrar período/escopo, comparar KPIs, abrir planta, inspecionar status e incidente |
 | resultados | causa e impacto ficam contextualizados; ação técnica é encaminhada ao responsável adequado |
 | próxima etapa | relatório, recomendação de expansão ou acompanhamento do incidente |
-| permissões | leitura de rede; financeiro agregado e comissão; comandos somente se capacidade explícita |
+| permissões | leitura conforme carteira/região/parceiro; nacional somente como capacidade estratégica; financeiro e comandos apenas quando explicitamente autorizados |
 | erro/ausência | rede vazia, telemetria antiga, `GOODWE_UNAVAILABLE`, escopo sem acesso e dados financeiros indisponíveis |
 | evidências/open questions | SEMS-DASH-001, SEMS-PLANT-004, SEMS-ENERGY-002; identidade/SSO e extensão do controle continuam abertas |
 
@@ -23,16 +23,16 @@ A Driver PWA não é redesenhada aqui. Eventos de motorista aparecem apenas como
 
 | Campo | Definição |
 | --- | --- |
-| usuário/papel | `ESTABLISHMENT_ADMIN`; GoodWe admin quando assistido |
+| usuário/papel | `ESTABLISHMENT_ADMIN`; consultor GoodWe conduz contrato e acompanha ativação |
 | objetivo | transformar uma planta técnica existente em planta comercial publicável |
-| entrada | lista de plantas autorizadas no shell SEMS+ |
-| páginas | plantas → vincular ao ChargeGrid → validar EV Chargers → perfil comercial → revisão/publicação |
-| ações | selecionar planta existente, autorizar leitura, revisar carregadores, definir horários, acesso, tarifa e política de ociosidade |
+| entrada | código emitido após contrato externo para uma planta |
+| páginas | resgatar código → vincular planta própria → validar EV Chargers → perfil comercial → revisão/publicação |
+| ações | confirmar contrato/estabelecimento projetados, selecionar planta quando necessário, revisar carregadores, definir horários, acesso, tarifa e política de ociosidade |
 | resultados | estabelecimento e planta ficam vinculados; publicação só ocorre com pré-condições válidas |
 | próxima etapa | testar sessão controlada e abrir operação |
-| permissões | admin altera perfil/tarifa; operador não publica nem altera parâmetros sensíveis |
-| erro/ausência | planta não autorizada, nenhum EV compatível, telemetria indisponível, tarifa ausente ou permissão insuficiente |
-| evidências/open questions | wizard SEMS como referência: SEMS-PLANT-005..007; forma final da autorização GoodWe permanece aberta |
+| permissões | consultor autoriza emissão; backend gera código; admin do estabelecimento resgata/configura; operador não publica nem altera parâmetros sensíveis |
+| erro/ausência | código inválido/expirado, contrato não vigente, estabelecimento divergente, planta já contratada, nenhum EV compatível, telemetria indisponível ou permissão insuficiente |
+| evidências/open questions | wizard SEMS como referência: SEMS-PLANT-005..007; sistema contratual e checklist final permanecem abertos |
 
 ## J3 — Operador conduz sessões e fila do dia
 
@@ -68,7 +68,7 @@ A Driver PWA não é redesenhada aqui. Eventos de motorista aparecem apenas como
 
 | Campo | Definição |
 | --- | --- |
-| usuário/papel | `ESTABLISHMENT_ADMIN`; `GOODWE_ADMIN` vê agregados autorizados |
+| usuário/papel | `ESTABLISHMENT_ADMIN`; GoodWe vê somente agregados autorizados no escopo |
 | objetivo | publicar condições comerciais e entender receita, taxas, líquido e pendências |
 | entrada | configurações ChargeGrid ou KPI financeiro da planta |
 | páginas | tarifa e políticas → financeiro → sessão/pagamento → exportações |
@@ -83,7 +83,7 @@ A Driver PWA não é redesenhada aqui. Eventos de motorista aparecem apenas como
 
 | Campo | Definição |
 | --- | --- |
-| usuário/papel | operador; estabelecimento admin; GoodWe admin conforme escopo |
+| usuário/papel | operador; estabelecimento admin; gestor/Central GoodWe conforme escopo e capacidade |
 | objetivo | coordenar impacto em carregador/sessão sem duplicar a verdade técnica |
 | entrada | alarme GoodWe correlacionado ou falha de sessão/comando |
 | páginas | incidentes → detalhe → planta/carregador/sessão → histórico |
@@ -98,7 +98,7 @@ A Driver PWA não é redesenhada aqui. Eventos de motorista aparecem apenas como
 
 | Campo | Definição |
 | --- | --- |
-| usuário/papel | `GOODWE_ADMIN` ou `ESTABLISHMENT_ADMIN` |
+| usuário/papel | gestor/Central GoodWe conforme escopo ou `ESTABLISHMENT_ADMIN` |
 | objetivo | antecipar saturação, demanda ou expansão sem automatizar decisão sensível |
 | entrada | card de recomendação no dashboard ou página Recomendações |
 | páginas | recomendações → explicação/dados → planta/sessões → ação proposta |

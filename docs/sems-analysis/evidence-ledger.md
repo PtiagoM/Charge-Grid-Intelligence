@@ -68,3 +68,16 @@ Estas entradas documentam derivações da análise, não novos comportamentos do
 | CG-JOURNEY-001 | `INFERRED` | alta | escopo + fluxos observados + regras vigentes | n/a | compor jornadas administrativas | sete jornadas com papel, ação, resultado, permissão, falhas e perguntas | nenhuma | normal |
 | CG-ARCH-001 | `INFERRED` | alta | arquitetura vigente + análise visual/funcional | n/a | comparar oito estratégias de implementação | abordagem híbrida escolhida: contratos mínimos, shell-first, vertical slices e mocks substituíveis | nenhuma | normal |
 | CG-PLAN-001 | `INFERRED` | alta | escopo + arquitetura | n/a | decompor trabalho futuro | dez milestones independentes/testáveis e plano de validação visual definidos | nenhuma | normal |
+
+## Decisões de produto posteriores à auditoria — 23/08/2026
+
+Estas entradas registram decisões explícitas do produto. Não são promovidas a comportamento observado do SEMS+.
+
+| ID | Classificação | Confiança | Contexto | Decisão | Consequência |
+| --- | --- | --- | --- | --- | --- |
+| CG-PRODUCT-002 | `VIGENTE` | alta | identidade SEMS+ | preservar `Proprietário` e `Distribuidor/Instalador`; conta profissional exige aprovação/código | ChargeGrid não cria terceiro tipo público de login |
+| CG-PRODUCT-003 | `VIGENTE` | alta | fronteira de produto | ChargeGrid é camada aditiva e não remove/troca funções ou shell SEMS+ | integração por contexto, abas e páginas coerentes no mesmo shell |
+| CG-PRODUCT-004 | `VIGENTE` | alta | escopo comercial | contrato e acesso comercial são por planta; conta pode misturar plantas técnicas e comerciais | `Usuário comercial` é estado derivado, não tipo permanente |
+| CG-PRODUCT-005 | `VIGENTE` | alta | ativação | estabelecimento contrata; consultor autoriza código; resgate inicia onboarding; publicação depende de prontidão | ativação deixa de ser solicitação irrestrita de qualquer usuário |
+| CG-PRODUCT-006 | `VIGENTE` | alta | autorização | compartilhamento SEMS+ não concede dados ou ações comerciais | memberships ChargeGrid são explícitas e aplicadas no backend |
+| CG-PRODUCT-007 | `VIGENTE` | alta | GoodWe | usuários internos atuam por carteira/região/parceiro; visão nacional é capacidade estratégica adicional | `GOODWE_ADMIN` único fica superado como persona de produto |

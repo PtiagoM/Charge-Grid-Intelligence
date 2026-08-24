@@ -10,9 +10,10 @@ Manter o Dashboard Admin e o Driver PWA evoluindo em linhas independentes, com i
 
 | Referencia | Papel atual |
 | --- | --- |
-| `main` / `92a2544` | Conteudo equivalente ao baseline `c404b77`; contem no historico o merge e o revert do Admin |
-| `codex/driver-pwa-mobile` / `f304c43` | PWA quase completo; [PR #1](https://github.com/PtiagoM/Charge-Grid-Intelligence/pull/1) aberto para `main` |
+| `main` / `15afdb9` | Governanca e PWA integrados; o Admin em reconstrução permanece fora dessa branch |
+| `codex/driver-pwa-mobile` / `15afdb9` | Referência da entrega do PWA integrada pelo [PR #1](https://github.com/PtiagoM/Charge-Grid-Intelligence/pull/1) e sincronizada com `main` |
 | `codex/admin-web-sems-migration` / `c2aebd6` | Fotografia validada da primeira reconstrucao nativa do Admin |
+| `develop/admin-web` / `3310e0b` | Linha ativa do dashboard sobre a `main` integrada, com a reconstrucao nativa restaurada |
 
 O merge `fe28427` tornou `c2aebd6` ancestral da `main`. O revert `92a2544` removeu seus arquivos sem remover essa ancestralidade. Por isso, `git merge codex/admin-web-sems-migration` pode responder que nao ha nada para integrar enquanto o dashboard continua ausente.
 
@@ -24,8 +25,8 @@ O merge `fe28427` tornou `c2aebd6` ancestral da `main`. O revert `92a2544` remov
 
 ### Linhas de produto
 
-- `codex/driver-pwa-mobile`: linha atual do PWA ate seu PR ser integrado.
-- `develop/admin-web`: futura linha principal do dashboard.
+- `codex/driver-pwa-mobile`: referencia da entrega integrada do PWA e possivel linha de manutencao depois de sincronizada com `main`.
+- `develop/admin-web`: linha principal ativa do dashboard.
 
 ### Branches curtas
 
@@ -37,18 +38,17 @@ O merge `fe28427` tornou `c2aebd6` ancestral da `main`. O revert `92a2544` remov
 
 Branches curtas devem nascer da linha do produto correspondente e retornar a ela por PR. Nao acumule Admin e PWA na mesma feature branch.
 
-## Sequencia para organizar o estado atual
+## Estado da organizacao atual
 
-1. Integrar esta governanca e o CI na `main` por Pull Request.
-2. Rodar os checks no PR de `codex/driver-pwa-mobile`.
-3. Corrigir falhas, revisar impactos em API e pagamentos e integrar o PWA na `main`.
-4. Criar `develop/admin-web` a partir da `main` ja atualizada.
-5. Em `develop/admin-web`, executar `git revert 92a2544` para reverter o revert e restaurar a arvore do Admin.
-6. Comparar a area do Admin com `c2aebd6` e validar build, unitarios e E2E.
-7. Continuar o dashboard em `develop/admin-web` ou em features derivadas dela.
-8. Abrir PR do Admin para `main` somente quando o dashboard estiver validado.
+1. Governanca, CI e protecao da `main`: concluidos pelo PR #2.
+2. Validacao e integracao do PWA: concluidas pelo PR #1.
+3. Criacao de `develop/admin-web` sobre a `main` integrada: concluida.
+4. Restauracao da arvore do Admin com `git revert 92a2544`: concluida em `331f91b`.
+5. Comparacao com `c2aebd6` e validacao integrada: obrigatorias antes de publicar a nova linha.
+6. Proximas alteracoes do dashboard: em `develop/admin-web` ou em features derivadas dela.
+7. Integracao futura do Admin: somente por PR para `main`, depois da validacao completa.
 
-Nao crie a nova linha ativa do Admin diretamente a partir de `codex/admin-web-sems-migration`: isso conserva a ancestralidade problematica e faz o Git omitir a migracao em um merge futuro.
+Nao recrie a linha ativa do Admin a partir de `codex/admin-web-sems-migration`: isso conserva a ancestralidade problematica e faz o Git omitir a migracao em um merge futuro. Use `develop/admin-web`, onde a recuperacao ja foi registrada corretamente.
 
 ## Rotina antes de editar
 
@@ -131,6 +131,18 @@ Nao escolha manualmente um dos lockfiles completos e nao edite versoes internas 
 | PWA | build e testes focados | lint, testes, build do PWA e fluxos moveis |
 | API/pagamentos | testes da API | lint, testes da API e integracao com o consumidor |
 | `packages/shared` ou raiz | consumidores afetados | suite e build completos do monorepo |
+
+## Estratégia de testes durante a evolução do produto
+
+Enquanto o Dashboard Admin estiver convergindo para a referência SEMS+ e o modelo de negócio ainda mudar, a prioridade é proteger regras de domínio e jornadas críticas, não congelar uma interface transitória.
+
+- Mantenha testes unitários para cálculo, autorização, escopo, fila, energia, financeiro, idempotência e relatórios.
+- Execute E2E somente para o fluxo diretamente alterado; não rode a matriz completa em cada ajuste visual.
+- Não crie snapshots, diffs de screenshot ou asserts detalhados de texto/estrutura visual sem aprovação explícita do produto de que a página, viewport e estado estão estáveis.
+- Screenshots de PR são evidência de revisão, não baseline automatizado, até essa aprovação existir.
+- A matriz visual e a regressão E2E integral entram no gate de PR para `main` ou em acionamento manual, quando a direção visual estiver consolidada.
+
+A estratégia detalhada do Admin está em `docs/admin-dashboard/TESTING_STRATEGY.md`.
 
 ## GitHub CLI
 

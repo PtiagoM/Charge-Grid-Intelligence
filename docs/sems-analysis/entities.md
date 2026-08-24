@@ -20,6 +20,13 @@
 | Registro de controle | relaciona dispositivo, comando, origem e resultado | modo de carga, potência, SOC, Web/App, sucesso | `OBSERVED`, alta |
 | Tipo de alarme EV | pertence a severidade e componente EV | falha, alarme ou aviso; latência de notificação | `OBSERVED`, alta |
 
+## Decisões de identidade posteriores à observação
+
+- permanecem os tipos de conta SEMS+ `Proprietário` e `Distribuidor/Instalador`;
+- a conta profissional depende de aprovação/código organizacional;
+- `Usuário comercial` não é novo tipo de conta: é uma projeção derivada dos vínculos comerciais ativos por planta;
+- compartilhamento técnico SEMS+ e acesso comercial ChargeGrid são relações independentes.
+
 Sessão comercial, tarifa de recarga, pagamento, liquidação, lucro, comissão, fila, ociosidade, recomendação de IA e incidente ChargeGrid ainda não foram observados como entidades equivalentes do SEMS+ nesta fase.
 
 ## Relações observadas consolidadas
@@ -42,5 +49,35 @@ Relatório → seleção de plantas/dispositivos → tarefa de download
 | energia derivada | `PlantEnergySnapshot`, `PlantEnergyStatus` | GoodWe + regras derivadas | `INFERRED`, alta |
 | comando | `GoodWeCommand`, `GoodWeCommandResult` | ChargeGrid solicita; GoodWe confirma | `INFERRED`, média |
 | predição | `PredictionSummary` | IA/cálculo derivado | `INFERRED`, média |
+
+## Entidades comerciais confirmadas em 23/08/2026
+
+| Entidade | Relação/regra | Fonte de verdade |
+| --- | --- | --- |
+| `Establishment` | parte contratante; pode possuir várias plantas comerciais | ChargeGrid + sistema comercial |
+| `CommercialContract` | cobre exatamente uma planta; mantém histórico e somente uma vigência ativa por operação | sistema contratual; projeção ChargeGrid |
+| `ActivationCase` | acompanha contrato, validação técnica, resgate, configuração, revisão e publicação | ChargeGrid |
+| `ActivationInvite` | código temporário, único, revogável e auditável; vinculado a contrato/estabelecimento/consultor | ChargeGrid |
+| `PlantCommercialLink` | liga uma planta SEMS+ a estabelecimento e contrato sem duplicar a planta | ChargeGrid + referência GoodWe |
+| `CommercialPlantMembership` | concede capacidade comercial a usuário/organização somente naquela planta | ChargeGrid/Auth |
+| `CommercialProfile` | horários, acesso, tarifa, disponibilidade e publicação | ChargeGrid |
+| `ConsultantAssignment` | liga usuário GoodWe a carteira, região, parceiro, contrato ou ativação | ChargeGrid/CRM |
+| `GoodWePortfolio` | agrupa estabelecimentos/plantas sob responsabilidade comercial | CRM/ChargeGrid |
+| `ExpansionOpportunity` | registra oportunidade comercial explicável no estabelecimento/planta | CRM/ChargeGrid |
+
+```text
+Conta SEMS+
+└── acessos técnicos por propriedade/compartilhamento
+
+Estabelecimento
+└── contratos (um por planta)
+    └── PlantCommercialLink → Plant SEMS+
+        └── perfil comercial → carregadores elegíveis/publicados
+
+Usuário
+└── CommercialPlantMembership por planta
+```
+
+Não criar `GoodWePlant`, `GoodWeDevice` ou cópias equivalentes. IDs externos SEMS+ permanecem referências; a verdade técnica continua na GoodWe.
 
 Essas entidades vêm dos contratos vigentes do produto. Não são alegações sobre o modelo interno do SEMS+.

@@ -1,12 +1,12 @@
 # Análise autorizada do SEMS+
 
-**Status:** Fases 0–7 concluídas em 22/08/2026. Documentação pronta para decisão; implementação não iniciada.
+**Status:** Fases 0–7 concluídas em 22/08/2026; modelo de produto refinado em 23/08/2026. Consultar `docs/admin-dashboard/PRODUCT_DECISIONS.md` para as decisões vigentes posteriores à auditoria.
 
 ## Executive summary
 
 O SEMS+ oferece um antecedente forte para shell, navegação, plantas, dispositivos, energia, alarmes, relatórios, usuários, temas e auditoria. Ele não oferece como equivalentes completos as entidades comerciais centrais do ChargeGrid: sessão, fila, tarifa de recarga, pagamento, liquidação, ociosidade, disponibilidade comercial, lucro/comissão ou recomendação preditiva operacional.
 
-A recomendação é reconstruir futuramente somente o shell e os contextos SEMS+ necessários e incorporar o ChargeGrid como módulo administrativo. A arquitetura interna continua modular, com GoodWe como verdade técnico-energética, ChargeGrid como verdade comercial e gateway + ChargeGrid como verdade financeira.
+A decisão vigente é preservar a experiência técnica SEMS+ reconstruída e incorporar o ChargeGrid como camada aditiva por planta. Habilitar a camada não troca o shell, não remove funções técnicas e não converte automaticamente todas as plantas da conta. A arquitetura interna continua modular, com GoodWe como verdade técnico-energética, ChargeGrid como verdade comercial e gateway + ChargeGrid como verdade financeira.
 
 O corte mínimo é:
 
@@ -77,6 +77,7 @@ A entidade de teste criada foi excluída e a busca posterior confirmou ausência
 | escopo MUST/SHOULD/REFERENCE/OUT | [scope-candidates.md](scope-candidates.md) |
 | jornadas administrativas | [journeys.md](journeys.md) |
 | arquitetura e estratégia | [architecture-proposal.md](architecture-proposal.md) |
+| decisões vigentes da camada comercial | [../admin-dashboard/PRODUCT_DECISIONS.md](../admin-dashboard/PRODUCT_DECISIONS.md) |
 | milestones | [implementation-plan.md](implementation-plan.md) |
 | validação visual | [visual-validation-plan.md](visual-validation-plan.md) |
 | perguntas priorizadas | [open-questions.md](open-questions.md) |
@@ -85,6 +86,7 @@ A entidade de teste criada foi excluída e a busca posterior confirmou ausência
 ## Fronteiras e precedência
 
 - `docs/CURRENT_STATE.md` prevalece em conflitos.
+- `docs/admin-dashboard/PRODUCT_DECISIONS.md` registra as decisões explícitas de 23/08/2026 e prevalece sobre inferências anteriores desta auditoria dentro do seu escopo.
 - A decisão histórica de Dashboard ChargeGrid independente está superada.
 - A fila vigente é exclusiva para usuários autenticados; a regra histórica que incluía visitante não orienta o novo projeto.
 - A Driver PWA permanece separada e congelada.
