@@ -37,3 +37,7 @@ docs/admin-dashboard/reference-screenshots/inbox/**/*.jpg
 docs/admin-dashboard/reference-screenshots/inbox/**/*.jpeg
 docs/admin-dashboard/reference-screenshots/inbox/**/*.webp
 docs/admin-dashboard/reference-screenshots/inbox/**/*.svg
+output/pdf/proposta_goodwe_chargegrid_intelligence.pdf
+.gitignore
+output/pdf/proposta_goodwe_chargegrid_intelligence_page2.png
+output/pdf/proposta_goodwe_chargegrid_intelligence_page1.png
