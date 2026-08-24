@@ -67,7 +67,7 @@ A execução integral local foi interrompida por decisão explícita do produto.
 
 ## Consolidação de responsabilidades e fluxos — 23/08/2026
 
-**Branch de entrega:** `feature/admin-responsibility-flows`, baseada no HEAD já integrado pelo PR #4 e destinada a `develop/admin-web`.
+**Branch de entrega:** `feature/admin-responsibility-flows`, baseada no HEAD já integrado pelo PR #4. A entrega `7fe0205` foi integrada em `develop/admin-web` pelo PR #5 (`b7d3fea`).
 
 Esta rodada corrigiu o frontend para representar o modelo vigente sem simular segurança de backend. Conta SEMS+, função organizacional, vínculo ChargeGrid, papel, escopo e capacidade deixaram de ser tratados como uma única classificação. Uma conta SEMS+ comum autentica e preserva todas as superfícies técnicas sem receber qualquer conteúdo ChargeGrid. Revogar uma concessão comercial remove o papel, mas não desativa a identidade SEMS+.
 
@@ -83,4 +83,4 @@ Também foram concluídos:
 - janela de chamada da fila unificada em dez minutos;
 - resumos compactos adotados nas novas áreas de governança, preservando a decisão de não iniciar uma varredura visual integral.
 
-Validação executada nesta rodada: build e lint do Admin aprovados; 20 arquivos e 72 testes unitários aprovados; 8 E2E de navegação/responsabilidade aprovados; 11 dos 12 E2E adicionais de dispositivos, plantas, acesso e relatórios aprovados na primeira repetição, com o cenário restante corrigido e repetido separadamente. Nenhum snapshot ou baseline visual foi criado. O navegador integrado não ficou disponível para inspeção manual; a validação visual direta deve ser retomada quando a sessão de navegador estiver exposta.
+Validação executada nesta rodada: build e lint do Admin aprovados; 20 arquivos e 72 testes unitários aprovados; 20 cenários E2E focais aprovados entre navegação, responsabilidades, dispositivos, plantas, acesso e relatórios. Nenhum snapshot ou baseline visual foi criado. O navegador integrado não ficou disponível para inspeção manual; a validação visual direta deve ser retomada quando a sessão de navegador estiver exposta. O CI do PR #5 também aprovou lint, testes e build; a regressão E2E integral foi ignorada conforme a política de desenvolvimento.

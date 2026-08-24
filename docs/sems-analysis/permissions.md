@@ -12,6 +12,8 @@
 
 A exigência de aprovação/código da conta profissional foi confirmada pelo produto em 23/08/2026 e é coerente com a documentação GoodWe consultada. Ela complementa a evidência observacional da auditoria, que havia registrado os papéis e escopos, mas não formalizado o gate de cadastro.
 
+Atualização observacional de 23/08/2026: uma conta `Distribuidor/Instalador` pode conter usuários internos com funções organizacionais distintas. Em teste realizado pelo produto, um usuário `Navegador` não acessou a área de gestão e encontrou a exclusão de planta bloqueada, embora pudesse consultar a planta compartilhada. Isso confirma que a função interna afeta tanto superfícies visíveis quanto ações. O detalhe da matriz de dispositivos entre `Administrador`, `Navegador` e `Técnico` continua sem evidência suficiente e não deve ser presumido.
+
 Iniciar o cadastro de um dispositivo como `Proprietário` não garante sua inclusão: o fluxo exige identidade técnica válida, como SN/código de verificação. Criar uma planta vazia não cria um ativo técnico legitimado.
 
 ## Matriz consolidada do que foi visível/testado
@@ -40,11 +42,12 @@ Não houve tentativa de acesso por URL a uma área invisível para contornar RBA
 
 ## Modelo de permissão observado
 
-O SEMS+ combina três camadas:
+O SEMS+ combina, ao menos, quatro camadas:
 
 1. papel da conta/organização;
-2. propriedade ou compartilhamento da planta;
-3. permissão do compartilhamento (`Monitoramento` ou `Monitoramento + Controle`) com prazo.
+2. função interna do usuário organizacional, quando aplicável;
+3. propriedade ou compartilhamento da planta;
+4. permissão do compartilhamento (`Monitoramento` ou `Monitoramento + Controle`) com prazo.
 
 `INFERRED`, confiança média: esse modelo é um bom antecedente conceitual para o RBAC ChargeGrid, mas as capacidades exatas de backend ainda precisam de uma matriz controlada. A presença de uma ação na interface não garante autorização efetiva.
 

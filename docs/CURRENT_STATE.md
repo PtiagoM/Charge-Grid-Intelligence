@@ -76,6 +76,8 @@ Não confundir documentação com homologação, sandbox com produção, ou fixt
 13. Novos carregadores da planta ficam elegíveis, mas não são publicados automaticamente.
 14. Usuários GoodWe recebem responsabilidade e escopo de carteira, região, parceiro ou planta; visão nacional é capacidade estratégica adicional e agregada por padrão.
 15. A apresentação ChargeGrid segue a densidade e a hierarquia do SEMS+: listas, tabelas, gráficos, estados inline e resumos compactos prevalecem sobre grades genéricas de cards grandes com números.
+16. As funções organizacionais `Administrador`, `Navegador` e `Técnico` continuam distintas dos papéis ChargeGrid; a demonstração não pretende reconstruir toda a matriz proprietária de permissões do SEMS+.
+17. Permissões internas do SEMS+ só são reproduzidas quando confirmadas por evidência ou necessárias ao modelo ChargeGrid; diferenças desconhecidas de acesso a dispositivos não devem ser inventadas.
 
 O registro completo e canônico destas decisões está em `docs/admin-dashboard/PRODUCT_DECISIONS.md`.
 
@@ -85,6 +87,7 @@ O registro completo e canônico destas decisões está em `docs/admin-dashboard/
 - somente o carregador possui detalhe reconstruído nesta fase, com palco do equipamento, último carregamento, monitoramento e registros; os demais dispositivos permanecem no inventário técnico;
 - Central GoodWe, gestor de carteira e suporte técnico possuem escopos explícitos nas fixtures do Admin;
 - a função organizacional SEMS+ (`Administrador`, `Navegador` ou `Técnico`) é armazenada separadamente do papel ChargeGrid;
+- a fidelidade de permissões prioriza contratos, ativações, carteiras, publicação de carregadores, operação local e proteção comercial; a matriz interna GoodWe permanece deliberadamente simplificada;
 - a Gestão da organização reúne informações organizacionais, usuários e funções, contratos e ativações e logs;
 - o código autorizado localiza um contrato de uma planta e inicia o onboarding sem permitir redigitação do estabelecimento, consultor ou vínculo técnico;
 - uma conta SEMS+ sem concessão ChargeGrid autentica normalmente e não recebe conteúdo comercial;
@@ -94,6 +97,14 @@ O registro completo e canônico destas decisões está em `docs/admin-dashboard/
 - carregadores descobertos entram como elegíveis e exigem configuração e publicação individual pelo administrador do estabelecimento;
 - a janela de chamada da fila foi unificada em dez minutos;
 - esta implementação permanece frontend/fixture; autoridade produtiva, RLS, integração contratual e emissão segura do código continuam pendentes no backend.
+
+### Integração mais recente do Admin — 23/08/2026
+
+- `7fe0205` — `feat(admin): align ChargeGrid flows with SEMS responsibilities` — foi integrado em `develop/admin-web` pelo PR #5 (`b7d3fea`);
+- a entrega consolida a camada ChargeGrid sobre as superfícies SEMS+, sem alterar o Driver PWA, API, pacotes compartilhados ou `main`;
+- CI do PR aprovou lint, testes e build; a regressão E2E integral permaneceu fora da execução automática conforme a estratégia vigente;
+- a validação local proporcional registrou 20 arquivos/72 testes unitários e 20 cenários E2E focais aprovados; o navegador integrado não estava disponível para uma nova inspeção manual;
+- o modelo de permissões apresentado no frontend é demonstrativo: reproduz a estrutura e as restrições ChargeGrid confirmadas, mas não afirma equivalência integral à matriz proprietária de autorização GoodWe.
 
 ## Registro da entrega atual — 21 de agosto de 2026
 

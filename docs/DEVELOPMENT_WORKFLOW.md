@@ -13,9 +13,11 @@ Manter o Dashboard Admin e o Driver PWA evoluindo em linhas independentes, com i
 | `main` / `15afdb9` | Governanca e PWA integrados; o Admin em reconstrução permanece fora dessa branch |
 | `codex/driver-pwa-mobile` / `15afdb9` | Referência da entrega do PWA integrada pelo [PR #1](https://github.com/PtiagoM/Charge-Grid-Intelligence/pull/1) e sincronizada com `main` |
 | `codex/admin-web-sems-migration` / `c2aebd6` | Fotografia validada da primeira reconstrucao nativa do Admin |
-| `develop/admin-web` / `3310e0b` | Linha ativa do dashboard sobre a `main` integrada, com a reconstrucao nativa restaurada |
+| `origin/develop/admin-web` / `b7d3fea` | Linha ativa do dashboard, com a reconstrução nativa e a consolidação de responsabilidades ChargeGrid integradas pelos PRs #4 e #5 |
 
 O merge `fe28427` tornou `c2aebd6` ancestral da `main`. O revert `92a2544` removeu seus arquivos sem remover essa ancestralidade. Por isso, `git merge codex/admin-web-sems-migration` pode responder que nao ha nada para integrar enquanto o dashboard continua ausente.
+
+O PR #5 integrou `7fe0205` (`feat(admin): align ChargeGrid flows with SEMS responsibilities`) em `develop/admin-web`. Antes de iniciar nova entrega do Admin, atualize a referencia remota e crie uma branch curta a partir de `origin/develop/admin-web`; uma cópia local de `develop/admin-web` pode estar atrasada e não deve ser usada como evidência do estado integrado.
 
 ## Modelo de branches
 

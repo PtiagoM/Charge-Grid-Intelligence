@@ -74,6 +74,29 @@ Autorizacao administrativa combina:
 identidade + organizacao + papel + escopo + capacidade
 ```
 
+## Limite de fidelidade das permissoes SEMS+
+
+A conta profissional `Distribuidor/Instalador` pode reunir varios usuarios na mesma organizacao SEMS+, com funcoes internas distintas como `Administrador`, `Navegador` e `Tecnico`. Essas funcoes pertencem ao plano organizacional do SEMS+ e permanecem separadas dos papeis e escopos ChargeGrid.
+
+Evidencia observada diretamente no SEMS+:
+
+- um usuario com funcao `Navegador` nao acessa a pagina de gestao da organizacao;
+- o mesmo usuario pode consultar uma planta compartilhada, mas a acao de excluir a planta permanece bloqueada;
+- portanto, a autorizacao SEMS+ atua tanto na visibilidade de superficies quanto na capacidade de executar acoes;
+- as diferencas detalhadas de acesso a dispositivos entre `Administrador`, `Navegador` e `Tecnico` ainda nao foram confirmadas, porque a unica planta real disponivel para auditoria e compartilhada e nao expoe evidencia suficiente.
+
+O ChargeGrid Intelligence nao tentara reconstruir integralmente a matriz proprietaria de permissoes internas do SEMS+. A demonstracao deve preservar a estrutura essencial de responsabilidades e reproduzir apenas comportamentos confirmados ou necessarios para explicar o modelo ChargeGrid.
+
+Prioridades de fidelidade nesta fase:
+
+- separar administracao, navegacao/consulta e suporte tecnico em nivel suficiente para tornar as jornadas compreensiveis;
+- detalhar permissoes de contrato por planta, ativacao, carteira atribuida, publicacao individual de carregadores, operacao local e protecao de dados comerciais;
+- bloquear acoes administrativas para quem nao possui a capacidade correspondente, mesmo quando algum contexto possa ser consultado;
+- nao inventar restricoes tecnicas de dispositivos sem nova evidencia observavel;
+- tratar a matriz atual do frontend como demonstracao do modelo de negocio, nao como reproducao completa da autorizacao produtiva GoodWe.
+
+Uma eventual superficie organizacional somente para consulta nao e, por si so, uma divergencia critica nesta fase. O requisito central e que `Navegador`, consultor e tecnico nao recebam poderes administrativos ou comerciais fora de suas responsabilidades ChargeGrid demonstradas.
+
 ## Contrato e ativacao comercial
 
 Decisoes confirmadas:
