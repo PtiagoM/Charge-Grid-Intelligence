@@ -11,13 +11,18 @@ export interface AccessTransitionResult extends AccessActionResult {
   state: AdminState;
 }
 
+const GOODWE_ROLES: readonly AdminRole[] = ["GOODWE_CENTRAL", "GOODWE_PORTFOLIO_MANAGER", "GOODWE_TECH_SUPPORT", "GOODWE_ADMIN"];
+
+function isGoodWeRole(role?: AdminRole) {
+  return Boolean(role && GOODWE_ROLES.includes(role));
+}
+
 export function activeGrantFor(state: AdminState, accountId: string) {
   return state.accessGrants.find((item) => item.accountId === accountId && item.status === "ACTIVE");
 }
 
 export function accessibleEstablishmentIds(state: AdminState, account: Account | null) {
   if (!account) return [];
-  if (account.role === "GOODWE_ADMIN") return state.establishments.map((item) => item.id);
   const grant = activeGrantFor(state, account.id);
   return grant?.establishmentIds ?? (account.establishmentId ? [account.establishmentId] : []);
 }
@@ -36,18 +41,19 @@ function grantIssues(state: AdminState, actor: Account | null, input: GrantAcces
   const scopes = normalizeScopes(input.establishmentIds);
   if (!actor || !hasAdminCapability(actor, "access:manage")) issues.push("Perfil sem permissao para gerenciar acessos.");
   if (!target) issues.push("Conta de destino nao encontrada.");
-  if (input.role === "GOODWE_ADMIN") {
-    if (actor?.role !== "GOODWE_ADMIN") issues.push("Somente GoodWe pode conceder administracao global.");
-    if (target?.profile !== "GOODWE") issues.push("Administracao global exige uma conta GoodWe.");
+  if (isGoodWeRole(input.role)) {
+    if (actor?.role !== "GOODWE_CENTRAL" && actor?.role !== "GOODWE_ADMIN") issues.push("Somente a Central GoodWe pode atribuir responsabilidades GoodWe.");
+    if (target?.profile !== "GOODWE") issues.push("A responsabilidade selecionada exige uma conta GoodWe.");
+    if (!scopes.length) issues.push("Toda responsabilidade GoodWe exige carteira, regiao ou plantas explicitas.");
   } else {
     if (!scopes.length) issues.push("Selecione ao menos um estabelecimento para o acesso.");
     if (target?.profile !== "ESTABELECIMENTO") issues.push("O papel selecionado exige uma conta de estabelecimento.");
   }
   const known = new Set(state.establishments.map((item) => item.id));
   if (scopes.some((item) => !known.has(item))) issues.push("O escopo contem estabelecimento inexistente.");
-  if (actor && actor.role !== "GOODWE_ADMIN") {
+  if (actor) {
     const actorScopes = new Set(accessibleEstablishmentIds(state, actor));
-    if (input.role === "ESTABLISHMENT_ADMIN") issues.push("Administrador local nao pode promover outro administrador.");
+    if (!isGoodWeRole(actor.role) && input.role === "ESTABLISHMENT_ADMIN") issues.push("Administrador local nao pode promover outro administrador.");
     if (scopes.some((item) => !actorScopes.has(item))) issues.push("Escopo solicitado ultrapassa os estabelecimentos administrados.");
   }
   return issues;
@@ -99,10 +105,8 @@ export function revokeAccess(state: AdminState, actor: Account | null, grantId: 
   if (current.accountId === actor.id) return { ok: false, issues: ["Nao e permitido revogar o proprio acesso ativo."], grant: current, state };
   if (current.status === "REVOKED") return { ok: true, issues: [], grant: current, state };
   if (reason.trim().length < 8) return { ok: false, issues: ["Informe o motivo da revogacao com pelo menos 8 caracteres."], grant: current, state };
-  if (actor.role !== "GOODWE_ADMIN") {
-    const actorScopes = new Set(accessibleEstablishmentIds(state, actor));
-    if (current.establishmentIds.some((item) => !actorScopes.has(item))) return { ok: false, issues: ["Concessao fora do escopo administrado."], grant: current, state };
-  }
+  const actorScopes = new Set(accessibleEstablishmentIds(state, actor));
+  if (current.establishmentIds.some((item) => !actorScopes.has(item))) return { ok: false, issues: ["Concessao fora do escopo administrado."], grant: current, state };
   const grant: AccessGrant = { ...current, status: "REVOKED", revokedAt: now, revokedBy: actor.displayName, revocationReason: reason.trim() };
   return {
     ok: true,
@@ -111,7 +115,7 @@ export function revokeAccess(state: AdminState, actor: Account | null, grantId: 
     state: {
       ...state,
       accessGrants: state.accessGrants.map((item) => item.id === grantId ? grant : item),
-      currentAccountId: state.currentAccountId === current.accountId ? null : state.currentAccountId,
+      accounts: state.accounts.map((item) => item.id === current.accountId ? { ...item, role: undefined } : item),
       audit: [...state.audit, { id: `audit-${grant.id}-revoked`, summary: `Acesso de ${current.accountId} revogado por ${actor.displayName}`, at: now }]
     }
   };

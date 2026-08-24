@@ -103,12 +103,13 @@ export function publishPlantOnboarding(
         powerKw: charger.powerKw,
         installationDate: publishedAt.slice(0, 10),
         status: charger.technicalStatus === "ONLINE" ? "available" as const : "offline" as const,
+        commercialStatus: "ELIGIBLE" as const,
         todayEnergyKwh: 0,
         revenueToday: 0
       }))],
       audit: [...state.audit, {
         id: `audit-plant-${commercialPlantId}`,
-        summary: `Planta ${plant.name} vinculada a ${draft.commercialName.trim()}`,
+        summary: `Planta ${plant.name} vinculada; ${plant.evChargers.length} carregador(es) aguardam configuracao comercial`,
         at: publishedAt
       }]
     },

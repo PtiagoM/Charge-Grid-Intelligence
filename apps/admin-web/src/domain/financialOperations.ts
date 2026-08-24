@@ -1,5 +1,6 @@
 import type { Account, AdminState, FinancialActionResult, FinancialEvent, PaymentTransaction, Session, TariffPolicy } from "./admin";
 import { hasAdminCapability } from "./adminCapabilities";
+import { canAccessEstablishment } from "./accessOperations";
 
 export interface FinancialTransitionResult extends FinancialActionResult {
   state: AdminState;
@@ -25,10 +26,8 @@ export interface FinancialBreakdown {
   refundedCents: number;
 }
 
-function canManage(account: Account | null, establishmentId: string) {
-  return Boolean(account && hasAdminCapability(account, "finance:manage") && (
-    account.profile === "GOODWE" || account.establishmentId === establishmentId
-  ));
+function canManage(state: AdminState, account: Account | null, establishmentId: string) {
+  return Boolean(account && hasAdminCapability(account, "finance:manage") && canAccessEstablishment(state, account, establishmentId));
 }
 
 export function calculateSessionCharge(session: Session, tariff: TariffPolicy) {
@@ -61,7 +60,7 @@ export function activeTariffFor(state: AdminState, establishmentId: string, at =
 export function activateTariffPolicy(state: AdminState, account: Account | null, input: ActivateTariffInput, now = new Date().toISOString()): FinancialTransitionResult {
   const issues: string[] = [];
   if (!state.establishments.some((item) => item.id === input.establishmentId)) issues.push("Estabelecimento nao encontrado.");
-  if (!canManage(account, input.establishmentId)) issues.push("Perfil sem permissao para publicar tarifas.");
+  if (!canManage(state, account, input.establishmentId)) issues.push("Perfil sem permissao para publicar tarifas.");
   if (!Number.isInteger(input.energyPriceCentsPerKwh) || input.energyPriceCentsPerKwh <= 0) issues.push("Preco de energia deve ser informado em centavos inteiros positivos.");
   if (!Number.isInteger(input.idlePriceCentsPerMinute) || input.idlePriceCentsPerMinute < 0) issues.push("Preco de ociosidade deve usar centavos inteiros.");
   if (!Number.isInteger(input.idleGraceMinutes) || input.idleGraceMinutes < 0) issues.push("Carencia de ociosidade invalida.");
@@ -111,7 +110,7 @@ function replaceTransaction(state: AdminState, transaction: PaymentTransaction, 
 export function refundPayment(state: AdminState, account: Account | null, transactionId: string, amountCents: number, reason: string, idempotencyKey: string, now = new Date().toISOString()): FinancialTransitionResult {
   const current = state.paymentTransactions.find((item) => item.id === transactionId);
   if (!current) return { ok: false, issues: ["Transacao nao encontrada."], state };
-  if (!canManage(account, current.establishmentId)) return { ok: false, issues: ["Perfil sem permissao para reembolsar esta transacao."], transaction: current, state };
+  if (!canManage(state, account, current.establishmentId)) return { ok: false, issues: ["Perfil sem permissao para reembolsar esta transacao."], transaction: current, state };
   const eventId = `financial-refund-${idempotencyKey.replace(/[^a-zA-Z0-9-]/g, "-")}`;
   if (state.financialEvents.some((item) => item.id === eventId)) return { ok: true, issues: [], transaction: current, state };
   const available = current.capturedCents - current.refundedCents;
@@ -130,7 +129,7 @@ export function refundPayment(state: AdminState, account: Account | null, transa
 export function settlePayment(state: AdminState, account: Account | null, transactionId: string, now = new Date().toISOString()): FinancialTransitionResult {
   const current = state.paymentTransactions.find((item) => item.id === transactionId);
   if (!current) return { ok: false, issues: ["Transacao nao encontrada."], state };
-  if (!canManage(account, current.establishmentId)) return { ok: false, issues: ["Perfil sem permissao para conciliar esta transacao."], transaction: current, state };
+  if (!canManage(state, account, current.establishmentId)) return { ok: false, issues: ["Perfil sem permissao para conciliar esta transacao."], transaction: current, state };
   if (current.settlementStatus !== "AVAILABLE") return { ok: false, issues: ["Liquidacao ainda nao esta disponivel."], transaction: current, state };
   if (current.status === "DISPUTED") return { ok: false, issues: ["Transacao em disputa nao pode ser liquidada."], transaction: current, state };
   const transaction: PaymentTransaction = { ...current, settlementStatus: "PAID", settledAt: now };

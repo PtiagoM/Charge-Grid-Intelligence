@@ -8,7 +8,11 @@
 
 O dashboard importado é uma boa referência visual e uma prova de conceito React/TypeScript, mas não é uma base de produto pronta para expansão. Ele reproduz a superfície do SEMS+ sem reproduzir sua lógica de contexto, hierarquia, progressão e operação. O resultado parece artificial porque oferece muitos destinos laterais, poucas jornadas completas, números demonstrativos apresentados como certezas e controles que não correspondem a capacidades reais.
 
-A reconstrução não será um clone página a página. O shell, a densidade e os padrões visuais do SEMS+ são referência; a arquitetura de informação e os fluxos devem nascer do trabalho real do ChargeGrid.
+A reconstrução não será uma cópia de código nem uma coleção de telas sem comportamento. O shell, a densidade, os padrões e as funções SEMS+ reconstruídas são preservados; o ChargeGrid acrescenta jornadas comerciais sem substituir a experiência técnica.
+
+### Refinamento de produto — 23/08/2026
+
+O ChargeGrid foi definido literalmente como camada aditiva por planta. Habilitá-lo não troca o shell, não remove funções SEMS+ e não transforma toda a conta. Contrato e membership são por planta; uma conta pode manter plantas técnicas e comerciais simultaneamente. O fluxo completo, os papéis GoodWe e as regras de ativação estão em [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md).
 
 ## Modelo operacional canônico
 
@@ -27,7 +31,7 @@ GoodWe / organização
             └── incidentes
 ```
 
-`Planta` é a entidade técnica existente na GoodWe. `Ponto de recarga` é sua projeção comercial no ChargeGrid. O onboarding não deve recadastrar a planta nem inventar uma localização paralela: deve vincular uma planta autorizada, detectar seus equipamentos e complementar apenas dados comerciais.
+`Planta` é a entidade técnica existente na GoodWe. `Ponto de recarga` é sua projeção comercial no ChargeGrid. O onboarding não recadastra a planta nem inventa localização paralela: contrato por planta e código autorizado pelo consultor vinculam a entidade SEMS+, detectam equipamentos e complementam apenas dados comerciais. Resgatar o código não publica sem prontidão.
 
 ## Problemas encontrados
 
@@ -35,16 +39,7 @@ GoodWe / organização
 
 O perfil GoodWe recebe dezesseis itens laterais e o estabelecimento doze. A sidebar funciona como inventário de funcionalidades, não como orientação de trabalho. Conceitos relacionados ficam separados artificialmente: operação, sessões, energia, tarifa, financeiro, relatórios e auditoria competem no mesmo nível.
 
-**Decisão:** a próxima interface terá no máximo seis domínios primários:
-
-1. Visão geral;
-2. Rede — clientes, estabelecimentos, plantas e carregadores;
-3. Operação — sessões, fila, comandos e incidentes;
-4. Energia;
-5. Comercial — tarifas, pagamentos, contratos e financeiro;
-6. Inteligência — recomendações e relatórios.
-
-Configurações, acesso e auditoria pertencem ao menu da conta ou a uma área administrativa secundária.
+**Decisão atualizada em 23/08/2026:** a lateral não cria domínios abstratos. Ela preserva as sete superfícies observadas no SEMS+: Painel, Lista de usinas, Lista de dispositivos, Central de alarmes, Central de relatórios, Ferramentas de análise e Centro de serviço. Configurações, acesso e auditoria pertencem ao menu da conta ou à área administrativa secundária. Contratos, ativações, sessões, fila, energia comercial e financeiro entram como navegação contextual na superfície correspondente.
 
 ### 2. Falta de navegação contextual e vertical
 
@@ -144,7 +139,7 @@ O assistente apresenta textos fixos e previsões sem fonte, confiança ou fallba
 | Marco | Situação observada | Decisão |
 | --- | --- | --- |
 | M0 — fundação | árvore, fixtures e serviço de estado consolidados; contratos reais ainda dependem da API | preservar uma única arquitetura e substituir mocks por repositories sem reabrir a fronteira PWA |
-| M1 — shell/RBAC | seis domínios primários, navegação contextual, escopo em URL e capability map tipado | conectar capacidades a autorização de ação/API; tema claro e papéis adicionais permanecem pendentes |
+| M1 — shell/RBAC | sete superfícies SEMS+ preservadas, navegação contextual ChargeGrid, escopo em URL e capability map tipado | conectar capacidades a autorização de ação/API; tema claro e papéis adicionais permanecem pendentes |
 | M2 — planta/onboarding | portfólio, detalhe somente leitura e wizard de vínculo implementados sobre catálogo GoodWe mockado | homologar provider/SSO reais e mover publicação/autorização para a API |
 | M3 — carregadores/sessões | vertical funcional local: inventário, detalhe, telemetria, sessão/timeline e comandos auditáveis | homologar provider GoodWe real e mover autorização para a API sem perder idempotência/frescor |
 | M4 — fila | fluxo local funcional com FIFO, compatibilidade, janela de chamada, admissão e no-show | integrar eventos originados na PWA e notificações reais sem transformar chamada em reserva |
@@ -163,7 +158,7 @@ O estado atual deve ser tratado como **fundação M0 consolidada e verticais M1�
 - organização em `app`, `domain`, `fixtures`, `features`, `components`, `layouts` e `services`;
 - estado local atrás de um repository substituível;
 - escopo GoodWe explícito e persistido na URL;
-- sidebar reduzida de dezesseis/doze itens para seis domínios primários;
+- sidebar reduzida de dezesseis/doze itens para as sete superfícies principais do SEMS+;
 - navegação contextual dentro de cada domínio e títulos que explicam o propósito da seção;
 - capability map tipado separando portfólio GoodWe e autosserviço do estabelecimento;
 - lateral expandida com rótulos em desktop e recolhida apenas em viewports menores;

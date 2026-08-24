@@ -2,42 +2,49 @@ import { describe, expect, it } from 'vitest';
 import { ADMIN_DOMAINS, getAdminContextLinks, getAdminDomainForRoute, getAdminEntryRoute } from '../../src/app/adminNavigation.js';
 import { getAdminCapabilities, hasAdminCapability } from '../../src/domain/adminCapabilities.js';
 
+const semsOwner = { id: 'owner', profile: 'ESTABELECIMENTO', semsAccountType: 'OWNER' };
+const establishmentAdmin = { ...semsOwner, id: 'est-admin', role: 'ESTABLISHMENT_ADMIN' };
+const central = { id: 'central', profile: 'GOODWE', semsAccountType: 'DISTRIBUTOR_INSTALLER', role: 'GOODWE_CENTRAL' };
+const consultant = { ...central, id: 'consultant', role: 'GOODWE_PORTFOLIO_MANAGER' };
+const technician = { ...central, id: 'technician', role: 'GOODWE_TECH_SUPPORT', semsOrganizationFunction: 'TECHNICIAN' };
+
 describe('admin navigation', () => {
-  it('mantém somente os seis domínios primários', () => {
+  it('mantém as superfícies principais do SEMS+', () => {
     expect(ADMIN_DOMAINS.map((domain) => domain.id)).toEqual([
       'overview',
-      'network',
-      'operations',
-      'energy',
-      'commercial',
-      'intelligence'
+      'plants',
+      'devices',
+      'alarms',
+      'reports',
+      'analysis',
+      'service',
+      'organization'
     ]);
   });
 
-  it('resolve rotas profundas para o domínio pai', () => {
-    expect(getAdminDomainForRoute('client')?.id).toBe('network');
-    expect(getAdminDomainForRoute('ticket')?.id).toBe('operations');
-    expect(getAdminDomainForRoute('invoices')?.id).toBe('commercial');
+  it('resolve rotas profundas para a superfície SEMS+ correspondente', () => {
+    expect(getAdminDomainForRoute('client')?.id).toBe('plants');
+    expect(getAdminDomainForRoute('ticket')?.id).toBe('service');
+    expect(getAdminDomainForRoute('invoices')?.id).toBe('reports');
+    expect(getAdminDomainForRoute('financial-session')?.id).toBe('reports');
   });
 
-  it('aplica capacidades distintas para GoodWe e estabelecimento', () => {
-    const network = ADMIN_DOMAINS.find((domain) => domain.id === 'network');
-    expect(network).toBeDefined();
-    expect(getAdminEntryRoute(network, 'GOODWE')).toBe('clients');
-    expect(getAdminEntryRoute(network, 'ESTABELECIMENTO')).toBe('locations');
-    expect(getAdminContextLinks(network, 'GOODWE').map((item) => item.route)).toEqual(['clients', 'establishments', 'locations', 'chargers', 'plants']);
-    expect(getAdminContextLinks(network, 'ESTABELECIMENTO').map((item) => item.route)).toEqual(['locations', 'chargers']);
-    const commercial = ADMIN_DOMAINS.find((domain) => domain.id === 'commercial');
-    expect(getAdminContextLinks(commercial, 'GOODWE').map((item) => item.route)).toEqual(['pricing', 'finance', 'contracts']);
-    expect(getAdminContextLinks(commercial, 'ESTABELECIMENTO').map((item) => item.route)).toEqual(['pricing', 'finance', 'contract', 'documents']);
-    expect(hasAdminCapability('ESTABELECIMENTO', 'network:portfolio')).toBe(false);
-    expect(getAdminCapabilities('GOODWE')).toContain('governance:audit');
+  it('mantém a conta SEMS comum e adiciona ChargeGrid por responsabilidade', () => {
+    const plants = ADMIN_DOMAINS.find((domain) => domain.id === 'plants');
+    const devices = ADMIN_DOMAINS.find((domain) => domain.id === 'devices');
+    const reports = ADMIN_DOMAINS.find((domain) => domain.id === 'reports');
 
-    const operator = { id: 'operator', profile: 'ESTABELECIMENTO', role: 'ESTABLISHMENT_OPERATOR' };
-    const reporter = { id: 'reporter', profile: 'ESTABELECIMENTO', role: 'REPORT_VIEWER' };
-    const intelligence = ADMIN_DOMAINS.find((domain) => domain.id === 'intelligence');
-    expect(getAdminContextLinks(commercial, operator)).toEqual([]);
-    expect(getAdminContextLinks(intelligence, reporter).map((item) => item.route)).toEqual(['reports']);
-    expect(getAdminEntryRoute(intelligence, reporter)).toBe('reports');
+    expect(getAdminEntryRoute(plants, semsOwner)).toBe('plants');
+    expect(getAdminContextLinks(plants, semsOwner).map((item) => item.route)).toEqual(['plants']);
+    expect(getAdminContextLinks(plants, central).map((item) => item.route)).toEqual(['plants', 'clients']);
+    expect(getAdminContextLinks(plants, consultant).map((item) => item.route)).toEqual(['plants', 'plant-onboarding', 'clients', 'contracts']);
+    expect(getAdminContextLinks(plants, establishmentAdmin).map((item) => item.route)).toEqual(['plants', 'plant-onboarding', 'contracts']);
+    expect(getAdminContextLinks(devices, technician).map((item) => item.route)).toEqual(['chargers']);
+    expect(getAdminContextLinks(reports, central).map((item) => item.route)).toEqual(['reports', 'finance', 'pricing']);
+
+    expect(hasAdminCapability(semsOwner, 'commercial:read')).toBe(false);
+    expect(hasAdminCapability(technician, 'commercial:read')).toBe(false);
+    expect(hasAdminCapability(consultant, 'operations:monitor')).toBe(false);
+    expect(getAdminCapabilities(central)).toContain('governance:audit');
   });
 });

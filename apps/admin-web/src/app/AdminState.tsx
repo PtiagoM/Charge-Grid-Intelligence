@@ -1,21 +1,17 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { AccessActionResult, Account, AdminState, FinancialActionResult, IncidentActionResult, NewChargerInput, NewClientInput, NewLocationInput, PlantOnboardingDraft, PlantOnboardingPublishResult, QueueActionResult, Recommendation, ReportActionResult, ReportSubscription, RequestChargerCommandInput, RequestChargerCommandResult, SupportTicket } from "../domain/admin";
+import type { AccessActionResult, Account, AdminState, ChargerCommercialStatus, FinancialActionResult, IncidentActionResult, PlantOnboardingDraft, PlantOnboardingPublishResult, QueueActionResult, Recommendation, ReportActionResult, ReportSubscription, RequestChargerCommandInput, RequestChargerCommandResult, SupportTicket } from "../domain/admin";
 import { createInitialState } from "../fixtures/adminDemo";
 import { GOODWE_PLANT_CATALOG } from "../fixtures/goodwePlantCatalog";
 import { createEmptyPlantOnboardingDraft, publishPlantOnboarding as publishPlantDraft } from "../domain/plantOnboarding";
 import { browserAdminStateRepository } from "../services/adminStateRepository";
-import { acceptChargerCommand, requestChargerCommand as requestCommand, resolveChargerCommand } from "../domain/chargerOperations";
+import { acceptChargerCommand, requestChargerCommand as requestCommand, resolveChargerCommand, updateChargerCommercialStatus as updateCommercialStatus } from "../domain/chargerOperations";
 import { demoAdminChargerCommandRepository } from "../services/adminChargerCommandRepository";
 import { callNextDriver, confirmQueueArrival as confirmArrival, markQueueNoShow as noShow, releaseQueueEntry as releaseEntry } from "../domain/queueOperations";
 import { activateTariffPolicy as activateTariff, refundPayment as refundTransaction, settlePayment as settleTransaction, type ActivateTariffInput } from "../domain/financialOperations";
 import { acknowledgeIncident as acknowledgeOperationalIncident, correlateOperationalSignals, decideRecommendation as decideOperationalRecommendation, resolveIncident as resolveOperationalIncident } from "../domain/incidentOperations";
-import { activeGrantFor, grantAccess as grantAccountAccess, revokeAccess as revokeAccountAccess, type GrantAccessInput } from "../domain/accessOperations";
+import { grantAccess as grantAccountAccess, revokeAccess as revokeAccountAccess, type GrantAccessInput } from "../domain/accessOperations";
 import { completeReport, failReport, markReportProcessing, requestReport as requestOperationalReport, saveReportSubscription as saveOperationalReportSubscription, type RequestReportInput } from "../domain/reportOperations";
 import { demoAdminReportRepository } from "../services/adminReportRepository";
-
-function slugify(value: string) {
-  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-}
 
 function readState(): AdminState {
   return browserAdminStateRepository.load(createInitialState());
@@ -26,9 +22,7 @@ interface AdminContextValue {
   account: Account | null;
   login: (email: string, password: string) => Account | null;
   logout: () => void;
-  createClient: (input: NewClientInput) => string;
-  createLocation: (input: NewLocationInput) => string;
-  createCharger: (input: NewChargerInput) => void;
+  updateChargerCommercialStatus: (chargerId: string, target: ChargerCommercialStatus) => AccessActionResult;
   requestChargerCommand: (input: RequestChargerCommandInput) => Promise<RequestChargerCommandResult>;
   callNextQueueDriver: (establishmentId: string) => QueueActionResult;
   confirmQueueArrival: (entryId: string) => QueueActionResult;
@@ -61,36 +55,18 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const account = state.accounts.find((item) => item.id === state.currentAccountId) ?? null;
 
   const login = useCallback((email: string, password: string) => {
-    const matched = state.accounts.find((item) => item.email === email.trim().toLowerCase() && item.password === password && activeGrantFor(state, item.id)) ?? null;
+    const matched = state.accounts.find((item) => item.email === email.trim().toLowerCase() && item.password === password) ?? null;
     if (matched) setState((current) => ({ ...current, currentAccountId: matched.id }));
     return matched;
   }, [state]);
 
   const logout = useCallback(() => setState((current) => ({ ...current, currentAccountId: null })), []);
 
-  const createClient = useCallback((input: NewClientInput) => {
-    const id = `cli-${slugify(input.name)}`;
-    setState((current) => ({
-      ...current,
-      clients: [...current.clients, { id, ...input, status: "Implantação" }],
-      audit: [...current.audit, { id: `audit-${Date.now()}`, summary: `Cliente ${input.name} criado`, at: new Date().toISOString() }]
-    }));
-    return id;
-  }, []);
-
-  const createLocation = useCallback((input: NewLocationInput) => {
-    const id = `loc-${slugify(input.name)}-${Date.now().toString(36)}`;
-    setState((current) => ({ ...current, locations: [...current.locations, { id, ...input, latitude: -23.5617, longitude: -46.6559, status: "Ativo" }] }));
-    return id;
-  }, []);
-
-  const createCharger = useCallback((input: NewChargerInput) => {
-    setState((current) => ({
-      ...current,
-      chargers: [...current.chargers, { id: input.identifier, ...input, status: "available", todayEnergyKwh: 0, revenueToday: 0 }],
-      chargerTelemetry: [...current.chargerTelemetry, { chargerId: input.identifier, connectorState: "AVAILABLE", currentPowerKw: 0, observedAt: new Date().toISOString(), vehicleConnected: false }]
-    }));
-  }, []);
+  const updateChargerCommercialStatus = useCallback((chargerId: string, target: ChargerCommercialStatus) => {
+    const transition = updateCommercialStatus(state, account, chargerId, target);
+    if (transition.ok) setState(transition.state);
+    return { ok: transition.ok, issues: transition.issues };
+  }, [account, state]);
 
   const requestChargerCommand = useCallback(async (input: RequestChargerCommandInput) => {
     const requested = requestCommand(state, account, input);
@@ -242,7 +218,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     return publication.result;
   }, [state]);
 
-  const value = useMemo(() => ({ state, account, login, logout, createClient, createLocation, createCharger, requestChargerCommand, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, activateTariffPolicy, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, requestReport: runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding }), [state, account, login, logout, createClient, createLocation, createCharger, requestChargerCommand, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, activateTariffPolicy, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding]);
+  const value = useMemo(() => ({ state, account, login, logout, updateChargerCommercialStatus, requestChargerCommand, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, activateTariffPolicy, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, requestReport: runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding }), [state, account, login, logout, updateChargerCommercialStatus, requestChargerCommand, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, activateTariffPolicy, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding]);
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
 }
 

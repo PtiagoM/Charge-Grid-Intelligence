@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAdminState } from "../../app/AdminState";
 import { Badge, DataTable, KpiCard, SectionHeader } from "../../components/AdminUi";
 import { queuePosition } from "../../domain/queueOperations";
+import { accessibleEstablishmentIds } from "../../domain/accessOperations";
 
 function localTime(value?: string) {
   return value ? new Date(value).toLocaleString("pt-BR") : "—";
@@ -10,13 +11,14 @@ function localTime(value?: string) {
 export function OperationsCenterPage({ establishmentId }: { establishmentId?: string }) {
   const { state, account } = useAdminState();
   const scope = establishmentId ? state.establishments.find((item) => item.id === establishmentId) : undefined;
-  const scopedIds = new Set(scope ? [scope.id] : account?.profile === "ESTABELECIMENTO" ? [account.establishmentId ?? ""] : state.establishments.map((item) => item.id));
+  const scopedIds = new Set(scope ? [scope.id] : accessibleEstablishmentIds(state, account));
+  const visibleEstablishments = state.establishments.filter((item) => scopedIds.has(item.id));
   const sessions = state.sessions.filter((item) => scopedIds.has(item.establishmentId));
   const queue = state.queue.filter((item) => scopedIds.has(item.establishmentId));
-  const chargers = state.chargers.filter((item) => scopedIds.has(item.establishmentId));
+  const chargers = state.chargers.filter((item) => scopedIds.has(item.establishmentId) && item.commercialStatus === "PUBLISHED");
   return <>
-    <section className="surface panel operations-page"><SectionHeader eyebrow="Operacao cotidiana" title={scope ? `Central · ${scope.name}` : "Central operacional"} subtitle="Um ponto de entrada para sessoes, fila e disponibilidade; os detalhes avancam verticalmente." /><div className="kpi-grid four-cols"><KpiCard label="Sessoes ao vivo" value={sessions.filter((item) => ["starting", "active"].includes(item.status)).length} help="energia e inicio" accent="danger" /><KpiCard label="Aguardando" value={queue.filter((item) => item.status === "waiting").length} help="fila atual" accent="warn" /><KpiCard label="Em chamada" value={queue.filter((item) => item.status === "called").length} help="janela ativa" /><KpiCard label="Disponiveis" value={chargers.filter((item) => item.status === "available").length} help="sem reserva" accent="good" /></div><div className="operations-launch-grid"><a href="#/mvp/sessions"><span>Ao vivo</span><h3>Acompanhar sessoes</h3><p>Energia, comandos, pagamentos e timeline.</p></a><a href={scope ? `#/mvp/queue?est=${scope.id}` : "#/mvp/queue"}><span>Admissao</span><h3>Gerenciar fila</h3><p>FIFO, compatibilidade, chamada e no-show.</p></a><a href="#/mvp/support"><span>Ocorrencias</span><h3>Abrir chamados</h3><p>Contexto tecnico ligado a equipamento e sessao.</p></a></div></section>
-    {!scope && account?.profile === "GOODWE" ? <section className="surface panel"><SectionHeader title="Fila por estabelecimento" subtitle="Selecione a unidade antes de executar uma acao operacional." /><div className="operations-state-guide">{state.establishments.map((item) => <article key={item.id}><h3>{item.name}</h3><p>{state.queue.filter((entry) => entry.establishmentId === item.id && entry.status === "waiting").length} aguardando</p><a className="ghost-button" href={`#/mvp/operations?est=${item.id}`}>Abrir unidade</a></article>)}</div></section> : null}
+    <section className="surface panel operations-page"><SectionHeader eyebrow="Operacao cotidiana" title={scope ? `Central · ${scope.name}` : "Central operacional"} subtitle="Um ponto de entrada para sessoes, fila e disponibilidade; os detalhes avancam verticalmente." /><div className="kpi-grid four-cols"><KpiCard label="Sessoes ao vivo" value={sessions.filter((item) => ["starting", "active"].includes(item.status)).length} help="energia e inicio" accent="danger" /><KpiCard label="Aguardando" value={queue.filter((item) => item.status === "waiting").length} help="fila atual" accent="warn" /><KpiCard label="Em chamada" value={queue.filter((item) => item.status === "called").length} help="janela ativa" /><KpiCard label="Disponiveis" value={chargers.filter((item) => item.status === "available").length} help="publicados e sem reserva" accent="good" /></div><div className="operations-launch-grid"><a href={scope ? `#/mvp/sessions?est=${scope.id}` : "#/mvp/sessions"}><span>Ao vivo</span><h3>Acompanhar sessoes</h3><p>Energia, comandos, pagamentos e timeline.</p></a><a href={scope ? `#/mvp/queue?est=${scope.id}` : "#/mvp/queue"}><span>Admissao</span><h3>Gerenciar fila</h3><p>FIFO, compatibilidade, chamada e no-show.</p></a><a href={scope ? `#/mvp/support?est=${scope.id}` : "#/mvp/support"}><span>Ocorrencias</span><h3>Abrir chamados</h3><p>Contexto tecnico ligado a equipamento e sessao.</p></a></div></section>
+    {!scope && account?.profile === "GOODWE" ? <section className="surface panel"><SectionHeader title="Fila por estabelecimento" subtitle="Selecione a unidade antes de executar uma acao operacional." /><div className="operations-state-guide">{visibleEstablishments.map((item) => <article key={item.id}><h3>{item.name}</h3><p>{state.queue.filter((entry) => entry.establishmentId === item.id && entry.status === "waiting").length} aguardando</p><a className="ghost-button" href={`#/mvp/operations?est=${item.id}`}>Abrir unidade</a></article>)}</div></section> : null}
   </>;
 }
 
@@ -24,9 +26,11 @@ export function QueueOperationsPage({ establishmentId }: { establishmentId?: str
   const { state, account, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry } = useAdminState();
   const [feedback, setFeedback] = useState("");
   const establishment = establishmentId ? state.establishments.find((item) => item.id === establishmentId) : undefined;
+  const authorizedIds = new Set(accessibleEstablishmentIds(state, account));
+  const visibleEstablishments = state.establishments.filter((item) => authorizedIds.has(item.id));
 
   if (!establishment && account?.profile === "GOODWE") {
-    return <section className="surface panel operations-page" data-testid="queue-portfolio"><SectionHeader eyebrow="Admissao" title="Filas da rede" subtitle="Abra um estabelecimento para chamar motoristas sem misturar unidades." /><div className="operations-state-guide">{state.establishments.map((item) => { const waiting = state.queue.filter((entry) => entry.establishmentId === item.id && entry.status === "waiting"); return <article key={item.id}><Badge value={waiting.length ? "waiting" : "available"} /><h3>{item.name}</h3><p>{waiting.length} aguardando</p><a className="ghost-button" href={`#/mvp/queue?est=${item.id}`}>Gerenciar fila</a></article>; })}</div></section>;
+    return <section className="surface panel operations-page" data-testid="queue-portfolio"><SectionHeader eyebrow="Admissao" title="Filas da rede" subtitle="Abra um estabelecimento para chamar motoristas sem misturar unidades." /><div className="operations-state-guide">{visibleEstablishments.map((item) => { const waiting = state.queue.filter((entry) => entry.establishmentId === item.id && entry.status === "waiting"); return <article key={item.id}><Badge value={waiting.length ? "waiting" : "available"} /><h3>{item.name}</h3><p>{waiting.length} aguardando</p><a className="ghost-button" href={`#/mvp/queue?est=${item.id}`}>Gerenciar fila</a></article>; })}</div></section>;
   }
 
   const scopeId = establishment?.id ?? account?.establishmentId ?? "";

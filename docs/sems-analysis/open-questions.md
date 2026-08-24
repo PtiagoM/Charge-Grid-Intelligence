@@ -6,11 +6,13 @@ Questões abaixo não foram convertidas em fatos. Defaults são apenas caminhos 
 
 | ID | Pergunta | Impacto | Responsável sugerido | Default seguro até decisão |
 | --- | --- | --- | --- | --- |
-| OQ-01 | qual identidade/SSO e escopo de organização/planta o módulo receberá do SEMS+? | autenticação, rotas, multi-planta e isolamento | GoodWe + arquitetura | adapter de identidade mockado; nenhuma sessão proprietária copiada |
+| OQ-01 | como a identidade/SSO entregará tecnicamente organização, plantas e vínculos ao módulo? Os tipos `Proprietário`/`Distribuidor/Instalador` e o acesso comercial adicional por planta já estão decididos. | autenticação, rotas, multi-planta e isolamento | GoodWe + arquitetura | adapter mockado; membership comercial explícita e separada do compartilhamento SEMS+ |
 | OQ-02 | quais campos EV/energia estão homologados por região, hardware e frescor? | status, demanda, sessão e sustentabilidade | GoodWe técnico | exibir indisponível/antigo; não inventar medição |
 | OQ-03 | quais comandos podem ser usados e por quais papéis? | start/stop, demanda, auditoria e risco operacional | GoodWe + produto + segurança | somente start/stop documentados, simulados e pendentes até confirmação |
 | OQ-04 | a planta compartilhada observada possui qualquer conexão externa real? | impede testes mutáveis de controle | dono do sandbox | manter `NOT TESTED — EXTERNAL IMPACT RISK` |
-| OQ-05 | qual matriz final de capacidades para `GOODWE_ADMIN`, `ESTABLISHMENT_ADMIN` e `ESTABLISHMENT_OPERATOR`? | todas as ações sensíveis | produto + segurança | menor privilégio; operador sem tarifa, usuários, comissão ou política global |
+| OQ-05 | quais capacidades backend/RLS implementam gestor/consultor GoodWe, Central GoodWe, estabelecimento admin e operador? O superpapel nacional único foi superado. | todas as ações sensíveis | produto + segurança | menor privilégio; papel × escopo × capacidade; operador sem tarifa, usuários, comissão ou política global |
+| OQ-18 | qual sistema comercial/contratual publicará contrato, vigência, cancelamento e reatribuição de consultor para o ChargeGrid? | ativação, suspensão, auditoria e consistência | GoodWe + arquitetura comercial | `ContractProvider`/backoffice restrito com projeção mínima e idempotente |
+| OQ-19 | qual checklist final de prontidão técnica e comercial libera publicação após o resgate do código? | segurança operacional e go-live | GoodWe técnico + produto | exigir contrato vigente, membership, planta válida, EV compatível, telemetria fresca e perfil completo |
 
 ## P1 — bloqueiam regras comerciais completas
 
@@ -30,7 +32,7 @@ Questões abaixo não foram convertidas em fatos. Defaults são apenas caminhos 
 | OQ-12 | quais relatórios/exportações entram na primeira release? | M8 e carga de dados | produto/operação | sessões, energia, financeiro e incidentes por período |
 | OQ-13 | como recomendações ChargeGrid coexistem com o agente de IA GoodWe? | nomenclatura e responsabilidade | produto/GoodWe/IA | área separada, explicável e sem autoexecução |
 | OQ-14 | mapa de rede entra no primeiro corte ou após planta/lista? | esforço visual e provider de mapas | produto | SHOULD; lista funciona sem mapa |
-| OQ-15 | existe necessidade de entrada contextual para Diagnóstico IV/bateria? | navegação técnica | GoodWe/produto | `REFERENCE ONLY`, sem clone |
+| OQ-15 | quais entradas contextuais ChargeGrid ajudam a chegar a Diagnóstico IV/bateria sem alterar o fluxo técnico? | navegação técnica | GoodWe/produto | preservar a superfície SEMS+; adicionar apenas contexto quando houver benefício |
 | OQ-16 | por que Editar/Excluir apareceram no EV compartilhado sem abrir edição? | interpretação do RBAC SEMS+ | GoodWe/sandbox | não usar como evidência de permissão; nenhuma ação no ativo |
 | OQ-17 | edição, ativação/desativação ou arquivamento técnico de planta é relevante ao módulo? | fronteira do onboarding | produto/GoodWe | fora da camada comercial; somente vínculo/publicação ChargeGrid |
 
@@ -41,7 +43,19 @@ Questões abaixo não foram convertidas em fatos. Defaults são apenas caminhos 
 - Usuários organizacionais observados usam `ADMINISTRATOR` e `BROWSER`; esses nomes não substituem os papéis ChargeGrid.
 - Existe taxonomia EV específica de falha/alarme/aviso e histórico de comandos Web/App.
 - Relatórios possuem tarefa assíncrona e assinaturas semanais, mensais ou anuais.
-- O projeto futuro não deve clonar o SEMS+ inteiro, criar Dashboard ChargeGrid independente ou alterar a Driver PWA.
+- O projeto não copia código proprietário nem cria Dashboard ChargeGrid independente; preserva as funções SEMS+ reconstruídas e mantém a Driver PWA separada.
+
+## Respondidas por decisão de produto em 23/08/2026
+
+- O ChargeGrid é camada aditiva: não remove funções, não troca o shell e não converte todas as plantas da conta.
+- Permanecem `Proprietário` e `Distribuidor/Instalador`; a conta profissional exige aprovação e código organizacional.
+- `Usuário comercial` é estado derivado de membership comercial por planta.
+- Compartilhamento técnico SEMS+ não concede acesso comercial.
+- O estabelecimento é a parte contratante e cada contrato cobre exatamente uma planta.
+- O consultor GoodWe autoriza a emissão; o backend gera o código que vincula contrato, estabelecimento, consultor e planta quando conhecida.
+- Resgatar o código inicia onboarding; prontidão e configuração precedem a publicação.
+- Uma conta pode manter plantas somente SEMS+ e ChargeGrid simultaneamente.
+- A GoodWe atua por carteira, região, parceiro ou planta; visão nacional é capacidade estratégica adicional.
 
 ## Registro de incerteza
 

@@ -1,6 +1,7 @@
 import type { Account, AdminState, Incident, IncidentActionResult, IncidentEvent, Recommendation } from "./admin";
 import { hasAdminCapability } from "./adminCapabilities";
 import { recommendEnergyAction } from "./energyDemand";
+import { canAccessEstablishment } from "./accessOperations";
 
 export interface IncidentTransitionResult extends IncidentActionResult {
   state: AdminState;
@@ -20,10 +21,8 @@ export interface IncidentSignal {
   summary: string;
 }
 
-function canManage(account: Account | null, establishmentId: string) {
-  return Boolean(account && hasAdminCapability(account, "incidents:manage") && (
-    account.profile === "GOODWE" || account.establishmentId === establishmentId
-  ));
+function canManage(state: AdminState, account: Account | null, establishmentId: string) {
+  return Boolean(account && hasAdminCapability(account, "incidents:manage") && canAccessEstablishment(state, account, establishmentId));
 }
 
 function recommendationForIncident(incident: Incident): Recommendation {
@@ -84,7 +83,7 @@ export function correlateOperationalSignals(state: AdminState, now = new Date().
 export function acknowledgeIncident(state: AdminState, account: Account | null, incidentId: string, assignee: string, now = new Date().toISOString()): IncidentTransitionResult {
   const current = state.incidents.find((item) => item.id === incidentId);
   if (!current) return { ok: false, issues: ["Incidente nao encontrado."], state };
-  if (!canManage(account, current.establishmentId)) return { ok: false, issues: ["Perfil sem permissao para gerenciar este incidente."], incident: current, state };
+  if (!canManage(state, account, current.establishmentId)) return { ok: false, issues: ["Perfil sem permissao para gerenciar este incidente."], incident: current, state };
   if (!assignee.trim()) return { ok: false, issues: ["Informe o responsavel pelo incidente."], incident: current, state };
   if (current.status === "RESOLVED") return { ok: false, issues: ["Incidente resolvido nao pode ser reconhecido novamente."], incident: current, state };
   const incident: Incident = { ...current, status: "IN_PROGRESS", assignee: assignee.trim(), updatedAt: now };
@@ -95,7 +94,7 @@ export function acknowledgeIncident(state: AdminState, account: Account | null, 
 export function resolveIncident(state: AdminState, account: Account | null, incidentId: string, resolution: string, now = new Date().toISOString()): IncidentTransitionResult {
   const current = state.incidents.find((item) => item.id === incidentId);
   if (!current) return { ok: false, issues: ["Incidente nao encontrado."], state };
-  if (!canManage(account, current.establishmentId)) return { ok: false, issues: ["Perfil sem permissao para gerenciar este incidente."], incident: current, state };
+  if (!canManage(state, account, current.establishmentId)) return { ok: false, issues: ["Perfil sem permissao para gerenciar este incidente."], incident: current, state };
   if (resolution.trim().length < 8) return { ok: false, issues: ["Descreva a resolucao com pelo menos 8 caracteres."], incident: current, state };
   const incident: Incident = { ...current, status: "RESOLVED", resolution: resolution.trim(), resolvedAt: now, updatedAt: now };
   const incidentEvent: IncidentEvent = { id: `incident-event-${incident.id}-resolved`, incidentId, type: "RESOLVED", at: now, actor: account?.displayName ?? "Operacao", detail: incident.resolution };
@@ -105,7 +104,7 @@ export function resolveIncident(state: AdminState, account: Account | null, inci
 export function decideRecommendation(state: AdminState, account: Account | null, recommendationId: string, decision: Extract<Recommendation["status"], "ACCEPTED" | "DEFERRED" | "REJECTED">, reason: string, now = new Date().toISOString()): IncidentTransitionResult {
   const current = state.recommendations.find((item) => item.id === recommendationId);
   if (!current) return { ok: false, issues: ["Recomendacao nao encontrada."], state };
-  if (!canManage(account, current.establishmentId)) return { ok: false, issues: ["Perfil sem permissao para decidir esta recomendacao."], recommendation: current, state };
+  if (!canManage(state, account, current.establishmentId)) return { ok: false, issues: ["Perfil sem permissao para decidir esta recomendacao."], recommendation: current, state };
   if (current.status !== "OPEN") return { ok: false, issues: ["Recomendacao ja possui uma decisao registrada."], recommendation: current, state };
   if (decision !== "ACCEPTED" && reason.trim().length < 8) return { ok: false, issues: ["Informe o motivo da decisao com pelo menos 8 caracteres."], recommendation: current, state };
   const recommendation: Recommendation = { ...current, status: decision, decidedAt: now, decidedBy: account?.displayName, decisionReason: reason.trim() || "Acao aceita para revisao humana." };

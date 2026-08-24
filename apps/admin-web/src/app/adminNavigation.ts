@@ -1,7 +1,7 @@
 import type { Account, Profile } from "../domain/admin";
 import { hasAdminCapability, type AdminCapability } from "../domain/adminCapabilities";
 
-export type AdminDomainId = "overview" | "network" | "operations" | "energy" | "commercial" | "intelligence";
+export type AdminDomainId = "overview" | "plants" | "devices" | "alarms" | "reports" | "analysis" | "service" | "organization";
 
 export interface AdminContextLink {
   route: string;
@@ -22,97 +22,127 @@ export interface AdminDomain {
 export const ADMIN_DOMAINS: readonly AdminDomain[] = [
   {
     id: "overview",
-    label: "Visão geral",
+    label: "Painel",
     icon: "layout-dashboard",
     entryRoute: { GOODWE: "overview", ESTABELECIMENTO: "overview" },
     description: {
-      GOODWE: "Saúde da rede, alertas e prioridades comerciais em uma leitura executiva.",
-      ESTABELECIMENTO: "Situação dos seus pontos, carregadores, sessões e demanda em um só lugar."
+      GOODWE: "Prioridades do escopo autorizado, sem substituir a leitura técnica do SEMS+.",
+      ESTABELECIMENTO: "Situação técnica das plantas e contexto comercial somente onde o ChargeGrid está ativo."
     },
-    links: [{ route: "overview", label: "Resumo", capability: "overview:view" }]
+    links: [{ route: "overview", label: "Painel", capability: "overview:view" }]
   },
   {
-    id: "network",
-    label: "Rede",
+    id: "plants",
+    label: "Lista de usinas",
     icon: "map-pinned",
-    entryRoute: { GOODWE: "clients", ESTABELECIMENTO: "locations" },
+    entryRoute: { GOODWE: "plants", ESTABELECIMENTO: "plants" },
     description: {
-      GOODWE: "Estrutura comercial do cliente até os pontos e equipamentos vinculados.",
-      ESTABELECIMENTO: "Pontos de recarga e equipamentos atribuídos ao seu estabelecimento."
+      GOODWE: "Usinas do escopo técnico e ativações comerciais da carteira atribuída.",
+      ESTABELECIMENTO: "Usinas SEMS+ próprias e vínculos ChargeGrid contratados por planta."
     },
     links: [
-      { route: "clients", label: "Clientes", capability: "network:portfolio" },
-      { route: "establishments", label: "Estabelecimentos", capability: "network:portfolio" },
-      { route: "locations", label: "Pontos de recarga", capability: "network:assets" },
-      { route: "chargers", label: "Carregadores", capability: "network:assets" },
-      { route: "plants", label: "Plantas e onboarding", capability: "network:onboard" }
+      { route: "plants", label: "Lista de usinas", capability: "network:assets" },
+      { route: "plant-onboarding", label: "Ativações ChargeGrid", capability: "commercial:activate" },
+      { route: "clients", label: "Carteira comercial", capability: "network:portfolio" },
+      { route: "contracts", label: "Contratos por planta", capability: "commercial:manage" }
     ],
-    relatedRoutes: ["client", "new-client", "establishment", "location", "new-location", "charger", "plant", "plant-onboarding", "installations"]
+    relatedRoutes: ["plant", "client", "establishments", "establishment", "locations", "location"]
   },
   {
-    id: "operations",
-    label: "Operação",
-    icon: "activity",
-    entryRoute: { GOODWE: "operations", ESTABELECIMENTO: "operations" },
+    id: "devices",
+    label: "Lista de dispositivos",
+    icon: "plug-zap",
+    entryRoute: { GOODWE: "chargers", ESTABELECIMENTO: "chargers" },
     description: {
-      GOODWE: "Disponibilidade, sessões, filas e incidentes que exigem atuação da operação.",
-      ESTABELECIMENTO: "Acompanhamento diário das sessões, filas e ocorrências dos seus pontos."
+      GOODWE: "Inventário técnico SEMS+ e contexto ChargeGrid somente para carregadores autorizados.",
+      ESTABELECIMENTO: "Dispositivos técnicos e operação comercial dos carregadores publicados."
     },
     links: [
-      { route: "operations", label: "Central operacional", capability: "operations:monitor" },
+      { route: "chargers", label: "Inventário SEMS+", capability: "network:assets" },
+      { route: "operations", label: "Operação ChargeGrid", capability: "operations:monitor" },
       { route: "sessions", label: "Sessões", capability: "operations:monitor" },
-      { route: "queue", label: "Fila", capability: "queue:manage" },
-      { route: "incidents", label: "Incidentes", capability: "incidents:manage" },
-      { route: "support", label: "Chamados", capability: "operations:monitor" }
+      { route: "queue", label: "Fila", capability: "queue:manage" }
     ],
-    relatedRoutes: ["session", "incident", "ticket"]
+    relatedRoutes: ["charger", "session"]
   },
   {
-    id: "energy",
-    label: "Energia",
-    icon: "zap",
-    entryRoute: { GOODWE: "energy", ESTABELECIMENTO: "energy" },
+    id: "alarms",
+    label: "Central de alarmes",
+    icon: "triangle-alert",
+    entryRoute: { GOODWE: "incidents", ESTABELECIMENTO: "incidents" },
     description: {
-      GOODWE: "Demanda, margem contratada e impacto energético consolidados por escopo.",
-      ESTABELECIMENTO: "Demanda local, margem disponível e sinais para operar com segurança."
-    },
-    links: [{ route: "energy", label: "Demanda e energia", capability: "energy:monitor" }]
-  },
-  {
-    id: "commercial",
-    label: "Comercial",
-    icon: "badge-dollar-sign",
-    entryRoute: { GOODWE: "finance", ESTABELECIMENTO: "finance" },
-    description: {
-      GOODWE: "Tarifas, contratos, receita e conciliação da carteira ChargeGrid.",
-      ESTABELECIMENTO: "Tarifação, receita, repasses e documentos do seu contrato."
+      GOODWE: "Alarmes técnicos e impacto comercial dentro da responsabilidade atribuída.",
+      ESTABELECIMENTO: "Ocorrências técnicas e comerciais das plantas autorizadas."
     },
     links: [
-      { route: "pricing", label: "Tarifação e pagamentos", capability: "commercial:read" },
-      { route: "finance", label: "Financeiro", capability: "commercial:read" },
-      { route: "contract", label: "Meu contrato", capability: "commercial:self-service" },
-      { route: "documents", label: "Documentos", capability: "commercial:self-service" },
-      { route: "contracts", label: "Contratos", capability: "commercial:manage" }
+      { route: "incidents", label: "Alarmes e ocorrências", capability: "alarms:view" },
+      { route: "recommendations", label: "Recomendações", capability: "intelligence:read" }
     ],
-    relatedRoutes: ["financial-session", "invoices"]
+    relatedRoutes: ["incident"]
   },
   {
-    id: "intelligence",
-    label: "Inteligência",
-    icon: "brain-circuit",
-    entryRoute: { GOODWE: "ai", ESTABELECIMENTO: "ai" },
+    id: "reports",
+    label: "Central de relatórios",
+    icon: "file-chart-column",
+    entryRoute: { GOODWE: "reports", ESTABELECIMENTO: "reports" },
     description: {
-      GOODWE: "Recomendações, relatórios e oportunidades explicadas pelos dados da rede.",
-      ESTABELECIMENTO: "Recomendações e relatórios para melhorar a operação do estabelecimento."
+      GOODWE: "Relatórios técnicos e comerciais limitados ao escopo autorizado.",
+      ESTABELECIMENTO: "Relatórios SEMS+ e exportações ChargeGrid disponíveis para suas plantas."
     },
     links: [
-      { route: "ai", label: "Recomendações", capability: "intelligence:read" },
-      { route: "reports", label: "Relatórios", capability: "reports:generate" },
-      { route: "expansion", label: "Expansão", capability: "intelligence:portfolio" },
-      { route: "audit", label: "Auditoria", capability: "governance:audit" },
-      { route: "access", label: "Acessos", capability: "access:manage" }
+      { route: "reports", label: "Central de relatórios", capability: "reports:generate" },
+      { route: "finance", label: "Resumo financeiro", capability: "commercial:read" },
+      { route: "pricing", label: "Políticas tarifárias", capability: "commercial:read" }
     ],
-    relatedRoutes: ["settings"]
+    relatedRoutes: ["invoices", "financial-session"]
+  },
+  {
+    id: "analysis",
+    label: "Ferramentas de análise",
+    icon: "chart-no-axes-combined",
+    entryRoute: { GOODWE: "analysis-iv", ESTABELECIMENTO: "analysis-iv" },
+    description: {
+      GOODWE: "Análise técnica SEMS+ e evidências comerciais adequadas à responsabilidade.",
+      ESTABELECIMENTO: "Diagnósticos técnicos e recomendações para as plantas autorizadas."
+    },
+    links: [
+      { route: "analysis-iv", label: "Diagnóstico IV", capability: "analysis:technical" },
+      { route: "analysis-comparison", label: "Comparação de dados", capability: "analysis:technical" },
+      { route: "analysis-battery", label: "Consistência da bateria", capability: "analysis:technical" },
+      { route: "energy", label: "Energia e demanda", capability: "energy:monitor" },
+      { route: "ai", label: "Inteligência ChargeGrid", capability: "intelligence:read" },
+      { route: "expansion", label: "Oportunidades", capability: "intelligence:portfolio" }
+    ]
+  },
+  {
+    id: "service",
+    label: "Centro de serviço",
+    icon: "headphones",
+    entryRoute: { GOODWE: "support", ESTABELECIMENTO: "support" },
+    description: {
+      GOODWE: "Suporte técnico, garantias e chamados do escopo autorizado.",
+      ESTABELECIMENTO: "Conteúdo técnico e atendimento das suas plantas e equipamentos."
+    },
+    links: [
+      { route: "support", label: "Centro de serviço", capability: "service:view" },
+      { route: "documents", label: "Documentos comerciais", capability: "commercial:self-service" }
+    ],
+    relatedRoutes: ["ticket"]
+  },
+  {
+    id: "organization",
+    label: "Gestão da organização",
+    icon: "settings",
+    entryRoute: { GOODWE: "access", ESTABELECIMENTO: "access" },
+    description: {
+      GOODWE: "Conta SEMS+, responsabilidades ChargeGrid e escopos permanecem separados.",
+      ESTABELECIMENTO: "Preferências organizacionais e acessos comerciais autorizados."
+    },
+    links: [
+      { route: "access", label: "Organização e usuários", capability: "organization:view" },
+      { route: "audit", label: "Auditoria", capability: "governance:audit" }
+    ],
+    relatedRoutes: ["settings", "contract"]
   }
 ];
 
@@ -136,24 +166,25 @@ export function getAdminEntryRoute(domain: AdminDomain, subject: Profile | Accou
 }
 
 export function getAdminRouteCapability(route: string): AdminCapability | undefined {
-  if (route === "settings" || route === "access") return "access:manage";
   const direct = ADMIN_DOMAINS.flatMap((domain) => domain.links).find((item) => item.route === route)?.capability;
   if (direct) return direct;
   const related: Record<string, AdminCapability> = {
+    plant: "network:assets",
     client: "network:portfolio",
-    "new-client": "network:portfolio",
+    establishments: "network:portfolio",
     establishment: "network:portfolio",
-    plant: "network:onboard",
-    "plant-onboarding": "network:onboard",
+    locations: "network:assets",
     location: "network:assets",
-    "new-location": "network:portfolio",
     charger: "network:assets",
     session: "operations:monitor",
-    incident: "incidents:manage",
-    ticket: "operations:monitor",
+    incident: "alarms:view",
+    ticket: "service:view",
     "financial-session": "commercial:read",
+    finance: "commercial:read",
+    pricing: "commercial:read",
     invoices: "commercial:read",
-    recommendations: "intelligence:read"
+    contract: "commercial:self-service",
+    settings: "organization:view"
   };
   return related[route];
 }

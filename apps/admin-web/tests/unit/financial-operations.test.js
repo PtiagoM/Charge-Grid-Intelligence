@@ -4,7 +4,7 @@ import { activateTariffPolicy, activeTariffFor, calculateFinancialBreakdown, cal
 
 const NOW = '2026-08-22T12:00:00-03:00';
 
-function account(state, id = 'acc-goodwe') {
+function account(state, id = 'acc-est-fiap') {
   return state.accounts.find((item) => item.id === id);
 }
 
@@ -27,11 +27,11 @@ describe('financial operations', () => {
     expect(result.state.establishments.find((item) => item.id === 'est-fiap')?.pricePerKwh).toBe(3.25);
   });
 
-  it('impede estabelecimento de publicar tarifa ou reembolsar', () => {
+  it('impede operador sem responsabilidade financeira de publicar tarifa ou reembolsar', () => {
     const state = createInitialState();
-    const establishment = account(state, 'acc-est-fiap');
-    const tariff = activateTariffPolicy(state, establishment, { establishmentId: 'est-fiap', energyPriceCentsPerKwh: 300, idlePriceCentsPerMinute: 50, idleGraceMinutes: 10, platformShareBps: 600, effectiveFrom: NOW, changeReason: 'Tentativa sem permissao' }, NOW);
-    const refund = refundPayment(state, establishment, 'pay-CG-2026-0998', 100, 'Ajuste solicitado', 'denied', NOW);
+    const operator = account(state, 'acc-operator-fiap');
+    const tariff = activateTariffPolicy(state, operator, { establishmentId: 'est-fiap', energyPriceCentsPerKwh: 300, idlePriceCentsPerMinute: 50, idleGraceMinutes: 10, platformShareBps: 600, effectiveFrom: NOW, changeReason: 'Tentativa sem permissao' }, NOW);
+    const refund = refundPayment(state, operator, 'pay-CG-2026-0998', 100, 'Ajuste solicitado', 'denied', NOW);
     expect(tariff.issues).toContain('Perfil sem permissao para publicar tarifas.');
     expect(refund.issues).toContain('Perfil sem permissao para reembolsar esta transacao.');
   });
