@@ -41,7 +41,7 @@ const fiapChargers: Charger[] = [
   ["CG-FIAP-03", "FIAP-ACL-03", "available", 60, 9.8, 28.91],
   ["CG-FIAP-05", "FIAP-ACL-05", "available", 22, 12.6, 37.17]
 ].map(([id, internalId, status, powerKw, todayEnergyKwh, revenueToday], index) => ({
-  id: String(id), establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", identifier: String(id), internalId: String(internalId), serial: `GWFIAP000${index + 1}`, model: "GoodWe AC 22", powerKw: Number(powerKw), installationDate: "2026-01-15", status: status as Charger["status"], todayEnergyKwh: Number(todayEnergyKwh), revenueToday: Number(revenueToday)
+  id: String(id), establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", identifier: String(id), internalId: String(internalId), serial: `GWFIAP000${index + 1}`, model: "GoodWe AC 22", powerKw: Number(powerKw), installationDate: "2026-01-15", status: status as Charger["status"], commercialStatus: "PUBLISHED", todayEnergyKwh: Number(todayEnergyKwh), revenueToday: Number(revenueToday)
 }));
 
 const sessionEvents: SessionEvent[] = [
@@ -61,14 +61,19 @@ export function createInitialState(): AdminState {
   const observedAt = new Date().toISOString();
   return {
     accounts: [
-      { id: "acc-goodwe", email: "goodwe@teste.com", password: "teste", profile: "GOODWE", role: "GOODWE_ADMIN", displayName: "Painel Executivo GoodWe" },
-      { id: "acc-est-fiap", email: "estabelecimento@teste.com", password: "teste", profile: "ESTABELECIMENTO", role: "ESTABLISHMENT_ADMIN", displayName: "Gestora FIAP", establishmentId: "est-fiap" },
-      { id: "acc-operator-fiap", email: "operador@teste.com", password: "teste", profile: "ESTABELECIMENTO", role: "ESTABLISHMENT_OPERATOR", displayName: "Operacao FIAP", establishmentId: "est-fiap" },
-      { id: "acc-reports-fiap", email: "relatorios@teste.com", password: "teste", profile: "ESTABELECIMENTO", role: "REPORT_VIEWER", displayName: "Analista FIAP", establishmentId: "est-fiap" }
+      { id: "acc-goodwe", email: "goodwe@teste.com", password: "teste", profile: "GOODWE", semsAccountType: "DISTRIBUTOR_INSTALLER", role: "GOODWE_CENTRAL", semsOrganizationFunction: "ADMINISTRATOR", displayName: "Central GoodWe Brasil" },
+      { id: "acc-goodwe-consultant", email: "consultor@teste.com", password: "teste", profile: "GOODWE", semsAccountType: "DISTRIBUTOR_INSTALLER", role: "GOODWE_PORTFOLIO_MANAGER", semsOrganizationFunction: "NAVIGATOR", displayName: "Consultora GoodWe SP" },
+      { id: "acc-goodwe-support", email: "suporte@teste.com", password: "teste", profile: "GOODWE", semsAccountType: "DISTRIBUTOR_INSTALLER", role: "GOODWE_TECH_SUPPORT", semsOrganizationFunction: "TECHNICIAN", displayName: "Suporte técnico GoodWe" },
+      { id: "acc-est-fiap", email: "estabelecimento@teste.com", password: "teste", profile: "ESTABELECIMENTO", semsAccountType: "OWNER", role: "ESTABLISHMENT_ADMIN", displayName: "Gestora FIAP", establishmentId: "est-fiap" },
+      { id: "acc-operator-fiap", email: "operador@teste.com", password: "teste", profile: "ESTABELECIMENTO", semsAccountType: "OWNER", role: "ESTABLISHMENT_OPERATOR", displayName: "Operacao FIAP", establishmentId: "est-fiap" },
+      { id: "acc-reports-fiap", email: "relatorios@teste.com", password: "teste", profile: "ESTABELECIMENTO", semsAccountType: "OWNER", role: "REPORT_VIEWER", displayName: "Analista FIAP", establishmentId: "est-fiap" },
+      { id: "acc-sems-owner", email: "usuario@teste.com", password: "teste", profile: "ESTABELECIMENTO", semsAccountType: "OWNER", displayName: "Usuário SEMS+", establishmentId: "est-mercadox" }
     ],
     accessGrants: [
-      { id: "grant-acc-goodwe-initial", accountId: "acc-goodwe", role: "GOODWE_ADMIN", establishmentIds: [], status: "ACTIVE", grantedAt: "2026-01-01T09:00:00-03:00", grantedBy: "Bootstrap ChargeGrid" },
-      { id: "grant-acc-est-fiap-initial", accountId: "acc-est-fiap", role: "ESTABLISHMENT_ADMIN", establishmentIds: ["est-fiap"], status: "ACTIVE", grantedAt: "2026-01-15T09:00:00-03:00", grantedBy: "Painel Executivo GoodWe" },
+      { id: "grant-acc-goodwe-initial", accountId: "acc-goodwe", role: "GOODWE_CENTRAL", establishmentIds: establishments.map((item) => item.id), status: "ACTIVE", grantedAt: "2026-01-01T09:00:00-03:00", grantedBy: "Governança GoodWe" },
+      { id: "grant-acc-goodwe-consultant", accountId: "acc-goodwe-consultant", role: "GOODWE_PORTFOLIO_MANAGER", establishmentIds: ["est-fiap", "est-mercadox"], status: "ACTIVE", grantedAt: "2026-01-10T09:00:00-03:00", grantedBy: "Central GoodWe Brasil" },
+      { id: "grant-acc-goodwe-support", accountId: "acc-goodwe-support", role: "GOODWE_TECH_SUPPORT", establishmentIds: ["est-fiap", "est-mercadox"], status: "ACTIVE", grantedAt: "2026-01-10T09:10:00-03:00", grantedBy: "Central GoodWe Brasil" },
+      { id: "grant-acc-est-fiap-initial", accountId: "acc-est-fiap", role: "ESTABLISHMENT_ADMIN", establishmentIds: ["est-fiap"], status: "ACTIVE", grantedAt: "2026-01-15T09:00:00-03:00", grantedBy: "Consultora GoodWe SP" },
       { id: "grant-acc-operator-fiap-initial", accountId: "acc-operator-fiap", role: "ESTABLISHMENT_OPERATOR", establishmentIds: ["est-fiap"], status: "ACTIVE", grantedAt: "2026-02-01T09:00:00-03:00", grantedBy: "Gestora FIAP" },
       { id: "grant-acc-reports-fiap-initial", accountId: "acc-reports-fiap", role: "REPORT_VIEWER", establishmentIds: ["est-fiap"], status: "ACTIVE", grantedAt: "2026-02-01T09:05:00-03:00", grantedBy: "Gestora FIAP" }
     ],
@@ -93,10 +98,10 @@ export function createInitialState(): AdminState {
     locations,
     chargers: [
       ...fiapChargers,
-      { id: "CG-MX-01", establishmentId: "est-mercadox", locationId: "loc-mercadox-pinheiros", identifier: "CARREGADORMX01", internalId: "MX-PIN-01", serial: "GWMX0001", model: "GoodWe AC 22", powerKw: 22, installationDate: "2026-03-10", status: "offline", todayEnergyKwh: 4.2, revenueToday: 13.02 },
-      { id: "CG-US-01", establishmentId: "est-goodwe-california", locationId: "loc-goodwe-california", identifier: "GW-CALIFORNIA-01", internalId: "US-HUB-01", serial: "GWUS0001", model: "GoodWe DC 80", powerKw: 80, installationDate: "2026-02-18", status: "available", todayEnergyKwh: 31.2, revenueToday: 16.22 },
-      { id: "CG-DE-01", establishmentId: "est-goodwe-europe", locationId: "loc-goodwe-europe", identifier: "GW-EUROPE-01", internalId: "DE-CENTER-01", serial: "GWDE0001", model: "GoodWe AC 22", powerKw: 22, installationDate: "2026-04-07", status: "charging", todayEnergyKwh: 24.7, revenueToday: 12.1 },
-      { id: "CG-CN-01", establishmentId: "est-goodwe-shanghai", locationId: "loc-goodwe-shanghai", identifier: "GW-SHANGHAI-01", internalId: "CN-LAB-01", serial: "GWCN0001", model: "GoodWe DC 120", powerKw: 120, installationDate: "2026-05-12", status: "available", todayEnergyKwh: 48.9, revenueToday: 38.14 }
+      { id: "CG-MX-01", establishmentId: "est-mercadox", locationId: "loc-mercadox-pinheiros", identifier: "CARREGADORMX01", internalId: "MX-PIN-01", serial: "GWMX0001", model: "GoodWe AC 22", powerKw: 22, installationDate: "2026-03-10", status: "offline", commercialStatus: "PUBLISHED", todayEnergyKwh: 4.2, revenueToday: 13.02 },
+      { id: "CG-US-01", establishmentId: "est-goodwe-california", locationId: "loc-goodwe-california", identifier: "GW-CALIFORNIA-01", internalId: "US-HUB-01", serial: "GWUS0001", model: "GoodWe DC 80", powerKw: 80, installationDate: "2026-02-18", status: "available", commercialStatus: "PUBLISHED", todayEnergyKwh: 31.2, revenueToday: 16.22 },
+      { id: "CG-DE-01", establishmentId: "est-goodwe-europe", locationId: "loc-goodwe-europe", identifier: "GW-EUROPE-01", internalId: "DE-CENTER-01", serial: "GWDE0001", model: "GoodWe AC 22", powerKw: 22, installationDate: "2026-04-07", status: "charging", commercialStatus: "PUBLISHED", todayEnergyKwh: 24.7, revenueToday: 12.1 },
+      { id: "CG-CN-01", establishmentId: "est-goodwe-shanghai", locationId: "loc-goodwe-shanghai", identifier: "GW-SHANGHAI-01", internalId: "CN-LAB-01", serial: "GWCN0001", model: "GoodWe DC 120", powerKw: 120, installationDate: "2026-05-12", status: "available", commercialStatus: "PUBLISHED", todayEnergyKwh: 48.9, revenueToday: 38.14 }
     ],
     chargerTelemetry: [
       { chargerId: "CG-FIAP-01", connectorState: "CHARGING", currentPowerKw: 18.4, observedAt: "2026-08-18T18:00:00-03:00", vehicleConnected: true },

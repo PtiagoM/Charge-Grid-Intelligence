@@ -1,6 +1,6 @@
 # ChargeGrid Intelligence — fonte única de verdade
 
-**Atualizado em:** 22 de agosto de 2026  
+**Atualizado em:** 23 de agosto de 2026  
 **Escopo:** GoodWe, produto, negócio, operação, arquitetura, implementação, histórico e decisões vigentes  
 **Status:** documento canônico para continuidade do projeto
 
@@ -59,6 +59,42 @@ Não confundir documentação com homologação, sandbox com produção, ou fixt
 19. Em todos os destinos autenticados que pertencem ao fluxo comercial (detalhe, QR, fila, checkout, sessão e comprovante), a navegação inferior permanece visível e marca `Sessão` como ativa.
 20. Ilustrações próprias e a expansão da identidade visual são roadmap: os assets serão fornecidos separadamente antes de qualquer integração na PWA.
 
+### Decisões vigentes do Admin SEMS+ + ChargeGrid — 23/08/2026
+
+1. O SEMS+ permanece a plataforma e verdade técnica; o ChargeGrid é uma camada comercial e operacional aditiva por planta.
+2. Habilitar o ChargeGrid não substitui o shell, não remove funções SEMS+ e não converte todas as plantas da conta.
+3. Permanecem os tipos de conta `Proprietário` e `Distribuidor/Instalador`; a conta profissional depende de aprovação e código organizacional.
+4. O técnico/instalador mantém o papel técnico SEMS+ e não recebe dados comerciais por padrão.
+5. `Usuário comercial` é uma condição derivada do acesso comercial a pelo menos uma planta, não um terceiro tipo permanente de conta.
+6. Uma conta pode possuir simultaneamente plantas somente SEMS+ e plantas ChargeGrid.
+7. Cada contrato ChargeGrid cobre exatamente uma planta e tem o estabelecimento como parte contratante.
+8. O consultor GoodWe que conduziu o contrato autoriza a emissão; o backend gera um código único que vincula contrato, estabelecimento, consultor e planta quando conhecida.
+9. Dados contratuais chegam de sistema comercial/contratual ou backoffice restrito; o usuário não redigita o contrato no SEMS+.
+10. Resgatar o código inicia o onboarding, mas publicação exige vínculo válido, prontidão técnica e configuração comercial.
+11. Compartilhamento SEMS+ não concede automaticamente contrato, tarifa, sessões, fila, pagamentos ou financeiro.
+12. Encerrar o contrato suspende somente a camada comercial da planta e preserva toda a experiência técnica SEMS+.
+13. Novos carregadores da planta ficam elegíveis, mas não são publicados automaticamente.
+14. Usuários GoodWe recebem responsabilidade e escopo de carteira, região, parceiro ou planta; visão nacional é capacidade estratégica adicional e agregada por padrão.
+15. A apresentação ChargeGrid segue a densidade e a hierarquia do SEMS+: listas, tabelas, gráficos, estados inline e resumos compactos prevalecem sobre grades genéricas de cards grandes com números.
+
+O registro completo e canônico destas decisões está em `docs/admin-dashboard/PRODUCT_DECISIONS.md`.
+
+### Implementação local da decisão — 23/08/2026
+
+- inventário SEMS+ preservado com abas de inversores, dongles, carregadores veiculares e inversores de terceiros;
+- somente o carregador possui detalhe reconstruído nesta fase, com palco do equipamento, último carregamento, monitoramento e registros; os demais dispositivos permanecem no inventário técnico;
+- Central GoodWe, gestor de carteira e suporte técnico possuem escopos explícitos nas fixtures do Admin;
+- a função organizacional SEMS+ (`Administrador`, `Navegador` ou `Técnico`) é armazenada separadamente do papel ChargeGrid;
+- a Gestão da organização reúne informações organizacionais, usuários e funções, contratos e ativações e logs;
+- o código autorizado localiza um contrato de uma planta e inicia o onboarding sem permitir redigitação do estabelecimento, consultor ou vínculo técnico;
+- uma conta SEMS+ sem concessão ChargeGrid autentica normalmente e não recebe conteúdo comercial;
+- revogar uma concessão ChargeGrid remove o papel comercial, sem desativar a conta SEMS+;
+- a lateral preserva as sete superfícies SEMS+ e integra as jornadas ChargeGrid em navegação contextual;
+- formulários manuais de cliente, ponto e carregador GoodWe foram removidos do fluxo executável;
+- carregadores descobertos entram como elegíveis e exigem configuração e publicação individual pelo administrador do estabelecimento;
+- a janela de chamada da fila foi unificada em dez minutos;
+- esta implementação permanece frontend/fixture; autoridade produtiva, RLS, integração contratual e emissão segura do código continuam pendentes no backend.
+
 ## Registro da entrega atual — 21 de agosto de 2026
 
 - `Explorar` combina prévia do mapa, abertura imersiva por busca e recomendações explícitas de locais. No mapa, o primeiro toque aproxima o pino e o segundo abre o card com dados essenciais e acesso à planta.
@@ -71,7 +107,7 @@ Não confundir documentação com homologação, sandbox com produção, ou fixt
 
 > **A GoodWe já possui infraestrutura, equipamentos, dados energéticos, software e canais comerciais. O ChargeGrid adiciona a camada comercial e operacional que transforma carregadores instalados em estabelecimentos em um serviço de recarga para múltiplos usuários.**
 
-O ChargeGrid é um módulo/camada incorporado à experiência do SEMS+. A decisão anterior de manter um Dashboard ChargeGrid separado foi superada em 22/08/2026. A reconstrução será feita em um novo projeto, reproduzindo somente as partes observáveis e necessárias do SEMS+ para hospedar o módulo, sem acesso ou cópia de código proprietário. O backend pode continuar modular e integrado por APIs, mas a experiência administrativa deve ser centralizada no SEMS+.
+O ChargeGrid é um módulo/camada incorporado à experiência do SEMS+. A decisão anterior de manter um Dashboard ChargeGrid separado foi superada em 22/08/2026 e refinada em 23/08/2026: a camada é literalmente aditiva. A reconstrução usa somente evidência observável, sem acesso ou cópia de código proprietário, preserva as superfícies e fluxos SEMS+ reconstruídos e acrescenta contexto comercial por planta. Ativar o ChargeGrid não troca o shell nem remove funções técnicas. O backend pode continuar modular e integrado por APIs, mas a experiência administrativa permanece centralizada no SEMS+.
 
 A Driver PWA permanece uma aplicação separada e está congelada nesta etapa: UI, UX, jornadas, funcionalidades e regras específicas não devem ser alteradas pela reconstrução do Dashboard.
 
@@ -306,17 +342,21 @@ Disponibilidade técnica ≠ comercial. Um carregador online pode estar fechado,
 
 ## 7. Atores
 
-### GoodWe/admin ChargeGrid
+### GoodWe comercial
 
-Rede, plantas, carregadores, sessões, kWh, utilização, volume, comissão parametrizada, incidentes, saturação e expansão. Não substitui comissionamento nem rotina local.
+- gestor de carteira/consultor: estabelecimentos e plantas atribuídos, contratos, ativações, pendências, qualidade comercial e expansão;
+- Central GoodWe: indicadores agregados por região, carteira ou parceiro; a visão nacional é capacidade estratégica adicional;
+- suporte técnico: permanece nas permissões SEMS+ das plantas/equipamentos autorizados e não recebe dados comerciais por padrão.
+
+A GoodWe não é um único superadministrador nacional. Não substitui comissionamento nem rotina local.
 
 ### Estabelecimento/admin e operador
 
 O estabelecimento define horários, preço e políticas; acompanha carregadores, sessões, fila, energia, incidentes e relatórios; arca com energia/custos locais e recebe a maior receita. Operador atua na rotina sem parâmetros sensíveis.
 
-### Distribuidor/integrador/EPC
+### Distribuidor/instalador/integrador/EPC
 
-Venda, dimensionamento, instalação, comissionamento, habilitação, suporte e expansão. Sem app ChargeGrid próprio na v1 e sem operar comercialmente por padrão.
+Conta profissional sujeita a aprovação e código organizacional. Atua em venda, dimensionamento, instalação, comissionamento, habilitação, suporte e expansão. Sem app ChargeGrid próprio na v1 e sem operar comercialmente por padrão.
 
 ### Motorista cadastrado
 
@@ -359,13 +399,15 @@ líquido do estabelecimento
 
 ## 9. Superfícies
 
-### Dashboard SEMS+ com módulo ChargeGrid
+### Dashboard SEMS+ com camada ChargeGrid
 
-- `GOODWE_ADMIN`: rede, utilização, volume, comissão, incidentes e expansão;
-- `ESTABLISHMENT_ADMIN`: plantas, tarifa, pagamentos, energia e relatórios;
-- `ESTABLISHMENT_OPERATOR`: rotina sem parâmetros sensíveis.
+- usuário SEMS+ sem vínculo comercial: experiência técnica preservada;
+- administrador do estabelecimento: plantas comerciais autorizadas, tarifa, pagamentos, energia e relatórios;
+- operador do estabelecimento: rotina comercial sem parâmetros sensíveis;
+- gestor de carteira/consultor GoodWe: contratos, ativações, qualidade e expansão dentro do escopo;
+- Central GoodWe: agregados estratégicos por região, carteira ou parceiro.
 
-O Dashboard está sendo reconstruído sobre a linha `develop/admin-web`. O shell e as partes relevantes do SEMS+ servem como referência, enquanto as jornadas administrativas do ChargeGrid são implementadas por vertical slices. Não se pretende clonar toda a plataforma. O Dashboard reutiliza o contexto técnico da planta sem duplicar desnecessariamente o SEMS+ e não reproduz jornadas de motorista ou visitante da PWA.
+O Dashboard está sendo reconstruído sobre a linha `develop/admin-web`. O shell e os fluxos SEMS+ reconstruídos são preservados; o ChargeGrid acrescenta cards, filtros e abas contextuais ou cria páginas dentro do mesmo shell quando não houver encaixe coerente. Uma conta pode misturar plantas técnicas e comerciais. O Dashboard não duplica a verdade técnica e não reproduz jornadas de motorista ou visitante da PWA.
 
 ### Driver PWA
 
@@ -414,10 +456,14 @@ rede → plantas → utilização/volume → incidentes
 ### Onboarding de planta
 
 ```text
-planta GoodWe existente → autorização → validação
+estabelecimento → consultor GoodWe → contrato por planta
+→ instalação ou validação SEMS+ → código autorizado/emitido
+→ resgate pelo estabelecimento → vínculo da planta
 → detectar EV Chargers → perfil comercial
-→ preço/horários/políticas → testar → publicar
+→ preço/horários/políticas → revisar → publicar
 ```
+
+O código inicia o onboarding e não publica sozinho. A planta continua técnica no SEMS+ mesmo se o contrato for encerrado.
 
 ## 11. Sessão e pagamento
 
@@ -674,8 +720,10 @@ dashboard inteligente
 | Tema | Histórico | Vigente |
 | --- | --- | --- |
 | GoodWe | fabricante/futura CPO | ecossistema; habilita, estabelecimento opera |
-| ChargeGrid | SaaS externo ou Dashboard administrativo separado | módulo/camada incorporado à experiência SEMS+; PWA permanece separado |
-| SEMS+ | referência técnica integrada a um Admin próprio | host da experiência administrativa reconstruída; clonar somente o necessário |
+| ChargeGrid | SaaS externo ou Dashboard administrativo separado | camada comercial/operacional aditiva por planta dentro do SEMS+; PWA permanece separado |
+| SEMS+ | referência técnica integrada a um Admin próprio | plataforma técnica preservada; ativar ChargeGrid não troca o shell, não remove função e não converte toda a conta |
+| Contas Admin | superadmin GoodWe + papéis ChargeGrid isolados | `Proprietário` e `Distribuidor/Instalador` permanecem; vínculos comerciais são adicionais e por planta |
+| Ativação | botão de onboarding para planta autorizada | contrato por planta + código autorizado pelo consultor + prontidão antes da publicação |
 | Integração | OCPP/MODBUS/MQTT amplos | GoodWe Adapter/OpenAPI |
 | Comandos | controle fino | `StartCharge`/`StopCharge`; outros não validados |
 | RFID | cobrança | autorização local |
@@ -750,7 +798,7 @@ dashboard inteligente
 ### Financeiro/jurídico/dados
 
 - monetização definitiva;
-- contratos e recebedor legal;
+- sistema contratual de origem, integração e recebedor financeiro; o estabelecimento já está definido como parte contratante e cada contrato cobre uma planta;
 - split, fiscalidade, LGPD, fraude e chargeback;
 - Stripe live;
 - schema, RLS e autorização.
@@ -779,6 +827,10 @@ dashboard inteligente
 - não desintermediar o canal;
 - usar `@chargegrid/shared` para contratos/enums;
 - manter Admin/PWA coerentes sem torná-los idênticos;
+- preservar funcionalidades e fluxos SEMS+ ao habilitar a camada ChargeGrid;
+- nunca promover compartilhamento técnico SEMS+ a acesso comercial implícito;
+- aplicar contrato e ativação ChargeGrid por planta, não por conta inteira;
+- não usar `GOODWE_ADMIN` como persona nacional única; combinar papel, escopo e capacidade;
 - atualizar este documento e a spec ao mudar fronteiras.
 
 ## 27. Execução local

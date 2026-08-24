@@ -9,12 +9,12 @@ function account(state, id) {
 }
 
 describe('report operations', () => {
-  it('bloqueia escopo externo e operador sem capacidade', () => {
+  it('bloqueia escopo externo e preserva relatórios SEMS+ para o operador', () => {
     const state = createInitialState();
     const outside = requestReport(state, account(state, 'acc-reports-fiap'), { type: 'SESSIONS', establishmentIds: ['est-mercadox'], periodFrom: '2026-08-01', periodTo: '2026-08-22' }, NOW);
     const operator = requestReport(state, account(state, 'acc-operator-fiap'), { type: 'SESSIONS', establishmentIds: ['est-fiap'], periodFrom: '2026-08-01', periodTo: '2026-08-22' }, NOW);
     expect(outside.issues).toContain('O relatorio solicita dados fora do escopo autorizado.');
-    expect(operator.issues).toContain('Perfil sem permissao para gerar relatorios.');
+    expect(operator.job).toMatchObject({ status: 'QUEUED', establishmentIds: ['est-fiap'] });
   });
 
   it('gera CSV apenas do escopo e periodo autorizados em estados assincronos', () => {

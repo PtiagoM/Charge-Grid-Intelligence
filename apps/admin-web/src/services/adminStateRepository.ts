@@ -9,7 +9,11 @@ const storageKey = "chargegrid-admin-state-v3";
 
 export function normalizeAdminState(candidate: AdminState, fallback: AdminState): AdminState {
   const fallbackAccounts = new Map(fallback.accounts.map((item) => [item.id, item]));
-  const chargers = Array.isArray(candidate.chargers) ? candidate.chargers : fallback.chargers;
+  const fallbackChargers = new Map(fallback.chargers.map((item) => [item.id, item]));
+  const chargers = (Array.isArray(candidate.chargers) ? candidate.chargers : fallback.chargers).map((item) => ({
+    ...item,
+    commercialStatus: item.commercialStatus ?? fallbackChargers.get(item.id)?.commercialStatus ?? "PUBLISHED" as const
+  }));
   const chargerIds = new Set(chargers.map((item) => item.id));
   const fallbackEnergy = new Map(fallback.energy.map((item) => [item.establishmentId, item]));
   const energy = (Array.isArray(candidate.energy) ? candidate.energy : fallback.energy).map((item) => {
@@ -29,15 +33,27 @@ export function normalizeAdminState(candidate: AdminState, fallback: AdminState)
     requiredConnector: item.requiredConnector ?? fallbackQueue.get(item.id)?.requiredConnector ?? "TYPE_2",
     joinedAt: item.joinedAt ?? fallbackQueue.get(item.id)?.joinedAt ?? new Date(Date.UTC(2026, 7, 18, 20, index)).toISOString()
   }));
+  const candidateAccounts = candidate.accounts.filter((item) => item.profile === "GOODWE" || item.profile === "ESTABELECIMENTO").map((item) => ({
+    ...item,
+    semsAccountType: item.semsAccountType ?? fallbackAccounts.get(item.id)?.semsAccountType ?? (item.profile === "GOODWE" ? "DISTRIBUTOR_INSTALLER" as const : "OWNER" as const),
+    role: item.role === "GOODWE_ADMIN" ? "GOODWE_CENTRAL" as const : item.role ?? fallbackAccounts.get(item.id)?.role,
+    semsOrganizationFunction: item.semsOrganizationFunction ?? fallbackAccounts.get(item.id)?.semsOrganizationFunction
+  }));
+  const candidateAccountIds = new Set(candidateAccounts.map((item) => item.id));
+  const accounts = [...candidateAccounts, ...fallback.accounts.filter((item) => !candidateAccountIds.has(item.id))];
+  const migratedGrants = (Array.isArray(candidate.accessGrants) ? candidate.accessGrants : fallback.accessGrants).map((item) => ({
+    ...item,
+    role: item.role === "GOODWE_ADMIN" ? "GOODWE_CENTRAL" as const : item.role,
+    establishmentIds: item.role === "GOODWE_ADMIN" && !item.establishmentIds.length ? fallback.establishments.map((establishment) => establishment.id) : item.establishmentIds
+  }));
+  const grantedAccountIds = new Set(migratedGrants.map((item) => item.accountId));
+  const accessGrants = [...migratedGrants, ...fallback.accessGrants.filter((item) => !grantedAccountIds.has(item.accountId))];
 
   return {
     ...fallback,
     ...candidate,
-    accounts: candidate.accounts.filter((item) => item.profile === "GOODWE" || item.profile === "ESTABELECIMENTO").map((item) => ({
-      ...item,
-      role: item.role ?? fallbackAccounts.get(item.id)?.role ?? (item.profile === "GOODWE" ? "GOODWE_ADMIN" : "ESTABLISHMENT_ADMIN")
-    })),
-    accessGrants: Array.isArray(candidate.accessGrants) ? candidate.accessGrants : fallback.accessGrants,
+    accounts,
+    accessGrants,
     commercialPlants: Array.isArray(candidate.commercialPlants) ? candidate.commercialPlants : fallback.commercialPlants,
     plantOnboardingDraft: {
       ...fallback.plantOnboardingDraft,

@@ -5,6 +5,15 @@
 - Conta A: `Distribuidor/Instalador` — `OBSERVED`, confiança alta.
 - Conta B: `Proprietário` — `OBSERVED`, confiança alta.
 
+## Cadastro e natureza das contas
+
+- `Proprietário`: conta comum criada por autosserviço. Pode criar e administrar plantas próprias conforme as permissões SEMS+.
+- `Distribuidor/Instalador`: conta profissional/organizacional sujeita a aprovação e código da organização. O cadastro direto representa a administração da organização; técnicos e profissionais comerciais subordinados são criados pela gestão organizacional.
+
+A exigência de aprovação/código da conta profissional foi confirmada pelo produto em 23/08/2026 e é coerente com a documentação GoodWe consultada. Ela complementa a evidência observacional da auditoria, que havia registrado os papéis e escopos, mas não formalizado o gate de cadastro.
+
+Iniciar o cadastro de um dispositivo como `Proprietário` não garante sua inclusão: o fluxo exige identidade técnica válida, como SN/código de verificação. Criar uma planta vazia não cria um ativo técnico legitimado.
+
 ## Matriz consolidada do que foi visível/testado
 
 | Capacidade/escopo | Distribuidor/Instalador | Proprietário | Conclusão |
@@ -39,16 +48,33 @@ O SEMS+ combina três camadas:
 
 `INFERRED`, confiança média: esse modelo é um bom antecedente conceitual para o RBAC ChargeGrid, mas as capacidades exatas de backend ainda precisam de uma matriz controlada. A presença de uma ação na interface não garante autorização efetiva.
 
-## RBAC ChargeGrid proposto
+## Modelo de acesso ChargeGrid vigente
 
-| Capacidade | GoodWe admin | Estabelecimento admin | Operador | Classificação |
-| --- | --- | --- | --- | --- |
-| rede e agregados | rede autorizada | próprias plantas | próprias plantas operacionais | `INFERRED`, alta |
-| perfil comercial | supervisiona/assiste | cria e altera | leitura | `INFERRED`, alta |
-| tarifa, ociosidade e usuários | somente quando contratualmente autorizado | altera | sem acesso de escrita | `INFERRED`, alta |
-| sessões e fila | agregado/auditoria | próprias plantas | opera próprias plantas | `INFERRED`, alta |
-| comandos | capacidade explícita | capacidade explícita | somente ação operacional concedida | `INFERRED`, média |
-| financeiro | agregado/comissão autorizada | detalhe local | estado operacional mínimo | `INFERRED`, alta |
-| incidentes | rede conforme escopo | administra localmente | trata rotina | `INFERRED`, alta |
+O ChargeGrid não cria um terceiro tipo público de conta nem substitui o papel SEMS+. O acesso é adicional e por planta:
 
-A matriz final permanece `OPEN QUESTION`. Toda autorização deve existir no backend/RLS; `PermissionBoundary` na UI serve apenas para experiência.
+```text
+identidade SEMS+
++ organização
++ papel comercial
++ escopo de plantas/carteira/região/parceiro
++ capacidade
+```
+
+`Usuário comercial` é um estado derivado: existe enquanto a identidade possui acesso comercial a pelo menos uma planta. Uma conta pode manter plantas somente SEMS+ e plantas ChargeGrid simultaneamente.
+
+Compartilhamento SEMS+ não concede acesso comercial automaticamente. Monitoramento/controle técnico e contrato/tarifa/sessões/financeiro são autorizações independentes.
+
+## Matriz ChargeGrid consolidada
+
+| Capacidade | Consultor/gestor GoodWe | Central GoodWe | Estabelecimento admin | Operador local | Técnico/instalador SEMS+ |
+| --- | --- | --- | --- | --- | --- |
+| carteira/rede | carteira, região ou parceiro atribuído | agregado estratégico autorizado | próprias plantas comerciais | próprias plantas operacionais | escopo técnico SEMS+ |
+| contrato/ativação | conduz, autoriza código e acompanha | governa exceções/agregados | resgata código e conclui onboarding | sem acesso | sem acesso comercial por padrão |
+| perfil/publicação | acompanha e revisa conforme capacidade | políticas agregadas | configura plantas contratadas | leitura operacional | sem acesso comercial por padrão |
+| tarifa/usuários | somente se capacidade contratual explícita | agregado autorizado | altera | sem escrita | sem acesso |
+| sessões/fila | agregado ou auditoria do escopo | agregado | administra localmente | opera | sem acesso comercial por padrão |
+| comandos técnicos | somente capacidade explícita | sem operação por padrão | capacidade explícita | ação concedida | conforme SEMS+ e ativo autorizado |
+| financeiro | agregado contratualmente autorizado | agregado estratégico | detalhe local autorizado | estado operacional mínimo | sem acesso |
+| incidentes | acompanha qualidade da carteira | tendências/agregados | administra localmente | trata rotina | diagnóstico técnico no SEMS+ |
+
+`GOODWE_ADMIN` deixa de ser uma persona canônica única. Implementações futuras devem decompor responsabilidade, escopo e capacidade. Toda autorização existe no backend/RLS; `PermissionBoundary` na UI serve apenas para experiência.

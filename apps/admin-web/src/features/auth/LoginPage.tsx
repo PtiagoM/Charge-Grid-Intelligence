@@ -3,7 +3,6 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { assets } from "../../constants/assets";
 import { useAdminState } from "../../app/AdminState";
 import type { Profile } from "../../domain/admin";
-import { activeGrantFor } from "../../domain/accessOperations";
 
 export function homeFor(_profile: Profile) {
   return "/mvp/overview";
@@ -46,7 +45,7 @@ export function LoginPage() {
       {error ? <p className="auth-error" data-testid="login-error">{error}</p> : null}
       <details className="demo-account-list" data-testid="demo-account-list">
         <summary>Usar uma conta de demonstracao</summary>
-        {state.accounts.filter((item) => activeGrantFor(state, item.id)).map((item) => <button key={item.id} type="button" className="demo-account" onClick={() => { setEmail(item.email); setPassword(item.password); setError(""); }}>{item.role} · {item.email}</button>)}
+        {state.accounts.map((item) => <button key={item.id} type="button" className="demo-account" onClick={() => { setEmail(item.email); setPassword(item.password); setError(""); }}><strong>{item.role ?? "Somente SEMS+"}</strong><span>{item.email}</span></button>)}
       </details>
       <p className="auth-create-account">Ainda nao possui uma conta? <button type="button">Criar conta</button></p></div>
       <footer><span>Declaração de privacidade</span><span>Termos de uso</span><span>© 2026 GoodWe Technologies Co., Ltd.</span></footer>

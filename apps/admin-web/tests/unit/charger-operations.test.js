@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createInitialState } from '../../src/fixtures/adminDemo.js';
-import { acceptChargerCommand, requestChargerCommand, resolveChargerCommand } from '../../src/domain/chargerOperations.js';
+import { acceptChargerCommand, requestChargerCommand, resolveChargerCommand, updateChargerCommercialStatus } from '../../src/domain/chargerOperations.js';
 
 const NOW = '2026-08-22T12:00:00-03:00';
 
@@ -100,5 +100,35 @@ describe('charger operations', () => {
     expect(expired.command?.status).toBe('EXPIRED');
     expect(expired.state.sessions.find((item) => item.id === 'CG-2026-1002')?.status).toBe('authorized');
     expect(expired.state.sessionEvents.some((item) => item.type === 'COMMAND_EXPIRED')).toBe(true);
+  });
+
+  it('publica cada carregador individualmente e apenas pelo administrador do estabelecimento', () => {
+    const initial = createInitialState();
+    const eligibleState = {
+      ...initial,
+      chargers: initial.chargers.map((item) => item.id === 'CG-FIAP-03' ? { ...item, commercialStatus: 'ELIGIBLE' } : item)
+    };
+    const denied = updateChargerCommercialStatus(eligibleState, account(eligibleState, 'acc-goodwe-consultant'), 'CG-FIAP-03', 'CONFIGURED', NOW);
+    const configured = updateChargerCommercialStatus(eligibleState, account(eligibleState), 'CG-FIAP-03', 'CONFIGURED', NOW);
+    const published = updateChargerCommercialStatus(configured.state, account(configured.state), 'CG-FIAP-03', 'PUBLISHED', NOW);
+    const invalid = updateChargerCommercialStatus(published.state, account(published.state), 'CG-FIAP-03', 'CONFIGURED', NOW);
+
+    expect(denied.issues).toContain('Somente o administrador comercial do estabelecimento pode alterar a publicacao.');
+    expect(configured.charger?.commercialStatus).toBe('CONFIGURED');
+    expect(published.charger?.commercialStatus).toBe('PUBLISHED');
+    expect(invalid.issues).toContain('Transicao comercial invalida para o estado atual.');
+  });
+
+  it('bloqueia comandos ChargeGrid enquanto o carregador não estiver publicado', () => {
+    const initial = createInitialState();
+    const eligibleState = {
+      ...initial,
+      chargers: initial.chargers.map((item) => item.id === 'CG-FIAP-03' ? { ...item, commercialStatus: 'ELIGIBLE' } : item)
+    };
+    const result = requestChargerCommand(eligibleState, account(eligibleState), {
+      chargerId: 'CG-FIAP-03', type: 'START_CHARGE', reason: 'Motorista confirmou conexao', idempotencyKey: 'eligible-not-published'
+    }, NOW);
+
+    expect(result.issues).toContain('Carregador ainda nao esta publicado na operacao ChargeGrid.');
   });
 });

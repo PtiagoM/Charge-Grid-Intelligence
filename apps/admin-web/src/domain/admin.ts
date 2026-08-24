@@ -1,6 +1,16 @@
 export type Profile = "GOODWE" | "ESTABELECIMENTO";
-export type AdminRole = "GOODWE_ADMIN" | "ESTABLISHMENT_ADMIN" | "ESTABLISHMENT_OPERATOR" | "REPORT_VIEWER";
+export type SemsAccountType = "OWNER" | "DISTRIBUTOR_INSTALLER";
+export type SemsOrganizationFunction = "ADMINISTRATOR" | "NAVIGATOR" | "TECHNICIAN";
+export type AdminRole =
+  | "GOODWE_CENTRAL"
+  | "GOODWE_PORTFOLIO_MANAGER"
+  | "GOODWE_TECH_SUPPORT"
+  | "GOODWE_ADMIN"
+  | "ESTABLISHMENT_ADMIN"
+  | "ESTABLISHMENT_OPERATOR"
+  | "REPORT_VIEWER";
 export type ChargerStatus = "available" | "charging" | "limited" | "offline";
+export type ChargerCommercialStatus = "ELIGIBLE" | "CONFIGURED" | "PUBLISHED" | "SUSPENDED";
 export type SessionStatus = "authorized" | "starting" | "active" | "finished" | "start_failed";
 export type ChargerCommandType = "START_CHARGE" | "STOP_CHARGE";
 export type ChargerCommandStatus = "REQUESTED" | "ACCEPTED" | "CONFIRMED" | "FAILED" | "EXPIRED";
@@ -67,6 +77,8 @@ export type PlantOnboardingIssueCode =
   | "PLANT_NOT_READY"
   | "PLANT_WITHOUT_EV"
   | "PLANT_ALREADY_LINKED"
+  | "CONTRACT_REQUIRED"
+  | "CONTRACT_NOT_AUTHORIZED"
   | "ESTABLISHMENT_REQUIRED"
   | "ESTABLISHMENT_NOT_FOUND"
   | "COMMERCIAL_NAME_REQUIRED"
@@ -88,7 +100,9 @@ export interface Account {
   email: string;
   password: string;
   profile: Profile;
-  role: AdminRole;
+  semsAccountType: SemsAccountType;
+  role?: AdminRole;
+  semsOrganizationFunction?: SemsOrganizationFunction;
   displayName: string;
   establishmentId?: string;
 }
@@ -140,6 +154,7 @@ export interface Charger {
   powerKw: number;
   installationDate: string;
   status: ChargerStatus;
+  commercialStatus: ChargerCommercialStatus;
   todayEnergyKwh: number;
   revenueToday: number;
 }

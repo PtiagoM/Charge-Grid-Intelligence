@@ -30,8 +30,9 @@ describe('normalizeAdminState', () => {
 
     const result = normalizeAdminState(stale, fallback);
 
-    expect(result.accounts.map((item) => item.profile)).toEqual(['GOODWE', 'ESTABELECIMENTO', 'ESTABELECIMENTO', 'ESTABELECIMENTO']);
-    expect(result.accounts[0].role).toBe('GOODWE_ADMIN');
+    expect(result.accounts.map((item) => item.profile)).toEqual(fallback.accounts.map((item) => item.profile));
+    expect(result.accounts[0].role).toBe('GOODWE_CENTRAL');
+    expect(result.accounts[0].semsOrganizationFunction).toBe('ADMINISTRATOR');
     expect(result.energy[0].demandKw).toBe(76);
     expect(result.energy[0].contractedLimitKw).toBe(100);
     expect(result.chargers.some((item) => item.id === result.sessions[0].chargerId)).toBe(true);

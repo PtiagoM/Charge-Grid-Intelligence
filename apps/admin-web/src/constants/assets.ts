@@ -5,7 +5,11 @@ export const assets = {
   logoCollapsed: `${base}/logos/goodwe_logo_w.e0d65374.png`,
   avatar: `${base}/avatars/personal_installer.d222d640.png`,
   assistant: `${base}/icons/ai_icon_no_eye.9dad5490.png`,
-  charger: `${base}/devices/charging_pile_off.b86d796d.png`,
+  charger: `${base}/devices/charger-device-off.png`,
+  chargerChargingLight: `${base}/devices/charger-charging-light.png`,
+  chargerStatusIdle: `${base}/devices/charger-status-idle.png`,
+  chargerNoConnectedCar: `${base}/devices/charger-no-connected-car.png`,
+  chargerDeviceInformation: `${base}/devices/charger-device-information.png`,
   plant: `${base}/plants/136287ad-ae2c-4034-bb53-015701b5fe9d.jpg`,
   dashboard: {
     power: `${base}/dashboard/SEMS-ASSET-DASHBOARD-POWER-DARK_40x34.png`,

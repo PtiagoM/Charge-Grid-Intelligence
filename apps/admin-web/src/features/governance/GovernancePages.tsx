@@ -2,16 +2,9 @@ import { useState, type FormEvent } from "react";
 import { Navigate } from "react-router-dom";
 import { useAdminState } from "../../app/AdminState";
 import { Badge, DataTable, KpiCard, SectionHeader } from "../../components/AdminUi";
-import type { AdminRole, ReportJob, ReportType } from "../../domain/admin";
+import type { ReportJob, ReportType } from "../../domain/admin";
 import { accessibleEstablishmentIds } from "../../domain/accessOperations";
 import { hasAdminCapability } from "../../domain/adminCapabilities";
-
-const ROLE_LABELS: Record<AdminRole, string> = {
-  GOODWE_ADMIN: "Administrador GoodWe",
-  ESTABLISHMENT_ADMIN: "Administrador do estabelecimento",
-  ESTABLISHMENT_OPERATOR: "Operador do estabelecimento",
-  REPORT_VIEWER: "Analista de relatorios"
-};
 
 const REPORT_LABELS: Record<ReportType, string> = {
   SESSIONS: "Sessoes",
@@ -26,36 +19,6 @@ function localDate(value?: string) {
 
 export function AccessDeniedPage() {
   return <section className="surface panel access-state" data-testid="access-denied" role="alert"><span className="access-state-icon" aria-hidden="true">!</span><div><p className="eyebrow">Acesso protegido</p><h2>Seu papel nao permite abrir esta area</h2><p>A rota foi bloqueada no controle de capacidade, mesmo quando acessada diretamente. Solicite revisao ao administrador do seu escopo.</p><a className="ghost-button" href="#/mvp/overview">Voltar para a visao geral</a></div></section>;
-}
-
-export function AccessManagementPage() {
-  const { state, account, grantAccess, revokeAccess } = useAdminState();
-  const [feedback, setFeedback] = useState("");
-  const [reasons, setReasons] = useState<Record<string, string>>({});
-  if (!account || !hasAdminCapability(account, "access:manage")) return <AccessDeniedPage />;
-  const actorScopes = accessibleEstablishmentIds(state, account);
-  const actorScopeSet = new Set(actorScopes);
-  const visibleGrants = state.accessGrants.filter((item) => account.role === "GOODWE_ADMIN" || item.establishmentIds.some((scope) => actorScopeSet.has(scope)));
-  const targetAccounts = state.accounts.filter((item) => item.id !== account.id && (account.role === "GOODWE_ADMIN" || item.profile === "ESTABELECIMENTO"));
-  const roles: AdminRole[] = account.role === "GOODWE_ADMIN" ? ["GOODWE_ADMIN", "ESTABLISHMENT_ADMIN", "ESTABLISHMENT_OPERATOR", "REPORT_VIEWER"] : ["ESTABLISHMENT_OPERATOR", "REPORT_VIEWER"];
-
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const result = grantAccess({ accountId: String(data.get("accountId")), role: String(data.get("role")) as AdminRole, establishmentIds: data.getAll("establishmentIds").map(String) });
-    setFeedback(result.ok ? "Concessao registrada e auditada." : result.issues.join(" "));
-  }
-
-  function revoke(grantId: string) {
-    const result = revokeAccess(grantId, reasons[grantId] ?? "");
-    setFeedback(result.ok ? "Acesso revogado imediatamente." : result.issues.join(" "));
-  }
-
-  return <div className="operations-detail" data-testid="access-management-page">
-    <section className="surface panel"><SectionHeader eyebrow="Governanca por capacidade" title="Usuarios e acessos" subtitle="Cada conta recebe papel, escopo explicito e trilha de concessao ou revogacao." /><div className="kpi-grid four-cols"><KpiCard label="Contas visiveis" value={new Set(visibleGrants.map((item) => item.accountId)).size} help="no seu escopo" /><KpiCard label="Acessos ativos" value={visibleGrants.filter((item) => item.status === "ACTIVE").length} help="avaliados no dominio" accent="good" /><KpiCard label="Revogados" value={visibleGrants.filter((item) => item.status === "REVOKED").length} help="historico preservado" /><KpiCard label="Escopos administrados" value={actorScopes.length} help={account.role === "GOODWE_ADMIN" ? "rede completa" : "estabelecimentos"} /></div></section>
-    <section className="surface panel governance-grid"><div><SectionHeader title="Conceder ou alterar acesso" subtitle="Uma nova concessao aposenta a anterior sem apagar seu historico." /><form className="access-editor" onSubmit={submit}><label>Conta<select name="accountId" required defaultValue=""><option value="" disabled>Selecione uma conta</option>{targetAccounts.map((item) => <option key={item.id} value={item.id}>{item.displayName} · {item.email}</option>)}</select></label><label>Papel<select name="role" required defaultValue={roles[0]}>{roles.map((role) => <option key={role} value={role}>{ROLE_LABELS[role]}</option>)}</select></label><fieldset><legend>Estabelecimentos permitidos</legend>{state.establishments.filter((item) => account.role === "GOODWE_ADMIN" || actorScopeSet.has(item.id)).map((item) => <label className="access-scope-option" key={item.id}><input type="checkbox" name="establishmentIds" value={item.id} defaultChecked={account.role !== "GOODWE_ADMIN"} />{item.name}</label>)}</fieldset><button type="submit">Registrar concessao</button></form></div><aside className="access-policy-note"><span>Politica efetiva</span><h3>Ocultar controles nao substitui autorizacao</h3><p>As mesmas capacidades usadas na navegacao bloqueiam as operacoes de dominio e as rotas diretas. Operadores nao recebem tarifa, financeiro, acessos ou relatorios.</p><ul><li>GoodWe administra a rede inteira.</li><li>Administrador local delega apenas seu escopo.</li><li>Revogacao impede o proximo login.</li></ul></aside></section>
-    <section className="surface panel"><SectionHeader title="Matriz de concessoes" subtitle="Concessoes revogadas permanecem como evidencia de auditoria." /><DataTable columns={["Usuario", "Papel", "Escopo", "Estado", "Concedido", "Gestao"]}>{visibleGrants.map((grant) => { const user = state.accounts.find((item) => item.id === grant.accountId); return <tr key={grant.id}><td><strong>{user?.displayName ?? grant.accountId}</strong><span>{user?.email}</span></td><td>{ROLE_LABELS[grant.role]}</td><td>{grant.establishmentIds.length ? grant.establishmentIds.map((id) => state.establishments.find((item) => item.id === id)?.name ?? id).join(", ") : "Toda a rede"}</td><td><Badge value={grant.status} /></td><td>{localDate(grant.grantedAt)}<span>por {grant.grantedBy}</span></td><td>{grant.status === "ACTIVE" && grant.accountId !== account.id ? <div className="access-revoke"><label><span className="sr-only">Motivo para revogar {user?.displayName}</span><input aria-label={`Motivo para revogar ${user?.displayName}`} value={reasons[grant.id] ?? ""} onChange={(event) => setReasons((current) => ({ ...current, [grant.id]: event.target.value }))} placeholder="Motivo da revogacao" /></label><button type="button" className="ghost-button" onClick={() => revoke(grant.id)}>Revogar</button></div> : <span>{grant.revocationReason ?? "Conta atual"}</span>}</td></tr>; })}</DataTable>{!visibleGrants.length ? <p className="operations-empty">Nenhuma concessao encontrada no escopo atual.</p> : null}{feedback ? <p className="command-feedback" role="status">{feedback}</p> : null}</section>
-  </div>;
 }
 
 function downloadReport(job: ReportJob) {

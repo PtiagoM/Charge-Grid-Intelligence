@@ -1,5 +1,6 @@
 import type { Account, AdminState, QueueActionResult, QueueEntry, QueueEvent } from "./admin";
 import { hasAdminCapability } from "./adminCapabilities";
+import { canAccessEstablishment } from "./accessOperations";
 
 export interface QueueTransitionResult extends QueueActionResult {
   state: AdminState;
@@ -15,10 +16,8 @@ export interface EnqueueDriverInput {
   requiredConnector: QueueEntry["requiredConnector"];
 }
 
-function canManage(account: Account | null, establishmentId: string) {
-  return Boolean(account && hasAdminCapability(account, "queue:manage") && (
-    account.profile === "GOODWE" || account.establishmentId === establishmentId
-  ));
+function canManage(state: AdminState, account: Account | null, establishmentId: string) {
+  return Boolean(account && hasAdminCapability(account, "queue:manage") && canAccessEstablishment(state, account, establishmentId));
 }
 
 function event(entry: QueueEntry, type: QueueEvent["type"], label: string, at: string, actor: string, detail?: string): QueueEvent {
@@ -50,8 +49,8 @@ export function enqueueDriver(state: AdminState, input: EnqueueDriverInput, join
   return { ok: true, issues: [], entry, state: { ...state, queue: [...state.queue, entry], queueEvents: [...state.queueEvents, joined] } };
 }
 
-export function callNextDriver(state: AdminState, account: Account | null, establishmentId: string, now = new Date().toISOString(), windowMinutes = 5): QueueTransitionResult {
-  if (!canManage(account, establishmentId)) return { ok: false, issues: ["Perfil sem permissao para gerenciar esta fila."], state };
+export function callNextDriver(state: AdminState, account: Account | null, establishmentId: string, now = new Date().toISOString(), windowMinutes = 10): QueueTransitionResult {
+  if (!canManage(state, account, establishmentId)) return { ok: false, issues: ["Perfil sem permissao para gerenciar esta fila."], state };
   if (state.queue.some((item) => item.establishmentId === establishmentId && item.status === "called")) {
     return { ok: false, issues: ["Ja existe um motorista em janela de chamada neste estabelecimento."], state };
   }
@@ -62,7 +61,7 @@ export function callNextDriver(state: AdminState, account: Account | null, estab
   if (!entry) return { ok: false, issues: ["Nao ha motoristas aguardando neste estabelecimento."], state };
 
   const charger = state.chargers
-    .filter((item) => item.establishmentId === establishmentId && item.status === "available" && connectorForModel(item.model) === entry.requiredConnector)
+    .filter((item) => item.establishmentId === establishmentId && item.status === "available" && item.commercialStatus === "PUBLISHED" && connectorForModel(item.model) === entry.requiredConnector)
     .sort((a, b) => a.id.localeCompare(b.id))[0];
   if (!charger) return { ok: false, issues: ["Nao ha carregador compativel e disponivel para a proxima chamada."], state };
 
@@ -77,7 +76,7 @@ export function callNextDriver(state: AdminState, account: Account | null, estab
 export function confirmQueueArrival(state: AdminState, account: Account | null, entryId: string, now = new Date().toISOString()): QueueTransitionResult {
   const current = state.queue.find((item) => item.id === entryId);
   if (!current) return { ok: false, issues: ["Entrada de fila nao encontrada."], state };
-  if (!canManage(account, current.establishmentId)) return { ok: false, issues: ["Perfil sem permissao para gerenciar esta fila."], state };
+  if (!canManage(state, account, current.establishmentId)) return { ok: false, issues: ["Perfil sem permissao para gerenciar esta fila."], state };
   if (current.status !== "called") return { ok: false, issues: ["Motorista nao esta em janela de chamada."], entry: current, state };
   if (current.callExpiresAt && new Date(now).getTime() > new Date(current.callExpiresAt).getTime()) return { ok: false, issues: ["Janela de chamada expirada."], entry: current, state };
 
@@ -89,7 +88,7 @@ export function confirmQueueArrival(state: AdminState, account: Account | null, 
 export function markQueueNoShow(state: AdminState, account: Account | null, entryId: string, now = new Date().toISOString()): QueueTransitionResult {
   const current = state.queue.find((item) => item.id === entryId);
   if (!current) return { ok: false, issues: ["Entrada de fila nao encontrada."], state };
-  if (!canManage(account, current.establishmentId)) return { ok: false, issues: ["Perfil sem permissao para gerenciar esta fila."], state };
+  if (!canManage(state, account, current.establishmentId)) return { ok: false, issues: ["Perfil sem permissao para gerenciar esta fila."], state };
   if (current.status !== "called") return { ok: false, issues: ["Motorista nao esta em janela de chamada."], entry: current, state };
   if (current.callExpiresAt && new Date(now).getTime() < new Date(current.callExpiresAt).getTime()) return { ok: false, issues: ["A janela de chamada ainda esta ativa."], entry: current, state };
 
@@ -101,7 +100,7 @@ export function markQueueNoShow(state: AdminState, account: Account | null, entr
 export function releaseQueueEntry(state: AdminState, account: Account | null, entryId: string, now = new Date().toISOString()): QueueTransitionResult {
   const current = state.queue.find((item) => item.id === entryId);
   if (!current) return { ok: false, issues: ["Entrada de fila nao encontrada."], state };
-  if (!canManage(account, current.establishmentId)) return { ok: false, issues: ["Perfil sem permissao para gerenciar esta fila."], state };
+  if (!canManage(state, account, current.establishmentId)) return { ok: false, issues: ["Perfil sem permissao para gerenciar esta fila."], state };
   if (current.status !== "assigned") return { ok: false, issues: ["Entrada ainda nao foi atribuida."], entry: current, state };
   const released: QueueEntry = { ...current, status: "released", completedAt: now };
   const releasedEvent = event(released, "RELEASED", "Fila concluida pela operacao", now, account?.displayName ?? "Operacao");

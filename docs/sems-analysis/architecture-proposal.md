@@ -1,6 +1,6 @@
 # Proposta de arquitetura — experiência SEMS+ com ChargeGrid incorporado
 
-**Status:** proposta adotada. A consolidação M0/M1 foi iniciada em `feature/admin-foundation-consolidation`; consultar `docs/admin-dashboard/CRITICAL_REVIEW.md` antes de novas telas.
+**Status:** proposta adotada e refinada pelas decisões de produto de 23/08/2026. Consultar `docs/admin-dashboard/PRODUCT_DECISIONS.md` e `docs/admin-dashboard/CRITICAL_REVIEW.md` antes de novas telas.
 
 **Classificação:** `INFERRED`, confiança alta para fronteiras e estratégia; média para integração/SSO GoodWe, que depende de homologação.
 
@@ -32,20 +32,19 @@ A combinação une shell-first, contratos mínimos, vertical slices orientados a
 ## Arquitetura de experiência
 
 ```text
-Shell SEMS+ reconstruído
+Experiência SEMS+ reconstruída e preservada
 ├── contexto: organização, planta, papel, tema e notificações
-├── páginas técnicas necessárias: portfólio, planta, energia e EV
-└── módulo ChargeGrid
-    ├── visão geral
-    ├── plantas comerciais e carregadores
+├── páginas técnicas: painel, plantas, dispositivos, alarmes, relatórios, análise e serviço
+└── camada ChargeGrid por planta contratada
+    ├── cards, badges, filtros e abas contextuais
+    ├── ativação e perfil/publicação comercial
     ├── sessões e fila
-    ├── energia e demanda
-    ├── financeiro
-    ├── incidentes
-    └── recomendações e relatórios
+    ├── tarifa e financeiro
+    ├── incidentes comerciais
+    └── carteira, qualidade e expansão GoodWe
 ```
 
-O ChargeGrid não aparece como outro produto administrativo. O ponto de entrada pode ser uma entrada na sidebar e tabs contextuais na planta, mantendo header, breadcrumbs, densidade, tema e escopo comuns.
+O ChargeGrid não aparece como outro produto administrativo e não substitui o shell quando habilitado. O ponto de entrada preferencial é contextual; páginas próprias existem apenas para jornadas sem equivalente coerente. Plantas sem contrato preservam a experiência SEMS+ normal.
 
 ## Stack do novo projeto
 
@@ -67,7 +66,7 @@ Não introduzir Redux, GraphQL, microserviços, fila distribuída ou ORM dedicad
 
 ## Rotas propostas
 
-Rotas são internas do novo projeto e não tentam reproduzir identificadores/query strings proprietários.
+Rotas são internas do projeto e não tentam reproduzir identificadores/query strings proprietários. Rotas `/chargegrid/*` representam jornadas próprias dentro do mesmo shell, não um Dashboard paralelo; entradas contextuais preservam `plantId` e voltam à entidade SEMS+ correspondente.
 
 | Rota | Função | Escopo |
 | --- | --- | --- |
@@ -115,6 +114,7 @@ Tokens devem ser semânticos (`canvas`, `surface`, `text`, `border`, `status`, `
 Reutilizar os contratos vigentes e manter IDs internos separados dos IDs externos:
 
 - identidade: `UserProfile`, organização, papel e plantas autorizadas;
+- ativação: `CommercialContract`, `ActivationCase`, `ActivationInvite`, `PlantCommercialLink` e `CommercialPlantMembership`;
 - oferta: `Establishment`, `Plant`, `Charger` e projeções resumidas;
 - energia: `PlantEnergySnapshot`, `PlantEnergyStatus`;
 - operação: `CommercialSession`, `QueueEntry`, `IdlePolicy`, `Incident`;
@@ -145,6 +145,7 @@ Fixtures devem cobrir papel + tema + cenário e usar contratos reais:
 Interfaces de serviço propostas:
 
 - `AuthService` e `ScopeService`;
+- `ContractProvider` para projeção idempotente do sistema comercial/contratual;
 - `GoodWeProvider` (`MockGoodWeProvider` → `OpenApiGoodWeProvider`);
 - `ChargeGridApiClient`;
 - `PaymentProvider`;
@@ -155,16 +156,19 @@ Mock e integração usam os mesmos DTOs e estados. Nenhum mock pode atribuir à 
 
 ## Autenticação e RBAC
 
-- identidade autenticada resolve `organizationId`, `UserRole`, status e plantas autorizadas;
+- identidade autenticada resolve tipo de conta SEMS+, organização, status, plantas técnicas e memberships comerciais independentes;
 - backend aplica autorização por recurso e capacidade; esconder botão não é segurança;
 - Supabase RLS protege leituras diretas que forem deliberadamente expostas;
-- `GOODWE_ADMIN` recebe rede e agregados autorizados;
+- gestor/consultor GoodWe recebe carteira, região, parceiro ou plantas atribuídas;
+- Central GoodWe recebe agregados estratégicos autorizados; visão nacional não é padrão;
 - `ESTABLISHMENT_ADMIN` configura própria organização/plantas;
 - `ESTABLISHMENT_OPERATOR` executa rotina sem tarifa, comissão, usuários ou políticas globais;
+- técnico/instalador mantém capacidades SEMS+ e não recebe acesso comercial automaticamente;
+- compartilhamento SEMS+ nunca implica membership ChargeGrid;
 - comandos exigem capacidade explícita, motivo, idempotência, correlação e auditoria;
 - motorista/visitante não acessam a aplicação administrativa.
 
-O modelo SEMS+ de papel + propriedade/compartilhamento + nível monitoramento/controle é referência conceitual, não matriz final de backend.
+O modelo SEMS+ de papel + propriedade/compartilhamento + nível monitoramento/controle permanece íntegro no plano técnico. O plano comercial adiciona contrato e membership por planta, sem herança automática entre os dois.
 
 ## Estrutura de pastas proposta
 

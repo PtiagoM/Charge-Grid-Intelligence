@@ -4,7 +4,7 @@ import { acknowledgeIncident, correlateOperationalSignals, decideRecommendation,
 
 const NOW = '2026-08-22T12:00:00-03:00';
 
-function account(state, id = 'acc-goodwe') {
+function account(state, id = 'acc-goodwe-consultant') {
   return state.accounts.find((item) => item.id === id);
 }
 
@@ -59,7 +59,7 @@ describe('incident and recommendation operations', () => {
   it('aplica escopo na atribuicao e exige resolucao descritiva', () => {
     const state = createInitialState();
     const incidentId = 'incident-goodwe-CG-MX-01-offline';
-    const denied = acknowledgeIncident(state, account(state, 'acc-est-fiap'), incidentId, 'Equipe FIAP', NOW);
+    const denied = acknowledgeIncident(state, account(state, 'acc-reports-fiap'), incidentId, 'Equipe FIAP', NOW);
     const assigned = acknowledgeIncident(state, account(state), incidentId, 'NOC GoodWe', NOW);
     const short = resolveIncident(assigned.state, account(assigned.state), incidentId, 'feito', NOW);
     const resolved = resolveIncident(assigned.state, account(assigned.state), incidentId, 'Comunicacao do equipamento restabelecida.', NOW);

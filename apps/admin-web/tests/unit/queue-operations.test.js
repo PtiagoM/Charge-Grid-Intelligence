@@ -44,7 +44,7 @@ describe('queue operations', () => {
     const initial = createInitialState();
     const called = callNextDriver(initial, account(initial), 'est-fiap', NOW);
     const early = markQueueNoShow(called.state, account(called.state), 'Q-001', '2026-08-22T12:04:00-03:00');
-    const expired = markQueueNoShow(called.state, account(called.state), 'Q-001', '2026-08-22T12:06:00-03:00');
+    const expired = markQueueNoShow(called.state, account(called.state), 'Q-001', '2026-08-22T12:11:00-03:00');
 
     expect(early.issues).toContain('A janela de chamada ainda esta ativa.');
     expect(expired.entry?.status).toBe('no_show');

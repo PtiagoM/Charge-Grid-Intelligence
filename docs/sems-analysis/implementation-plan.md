@@ -24,7 +24,7 @@
 - **Páginas/fluxos:** login/fallback, dashboard vazio, `/chargegrid`, acesso negado e logout.
 - **Componentes:** `AppShell`, sidebar, topbar, conta, escopo, breadcrumb, header e estados globais.
 - **Dependências:** M0; matriz inicial de capacidades.
-- **Mocks:** GoodWe admin, estabelecimento admin, operador, sessão expirada e organização sem plantas.
+- **Mocks:** gestor/consultor GoodWe com carteira, Central GoodWe agregada, estabelecimento admin, operador, sessão expirada e organização sem plantas. `GOODWE_ADMIN` permanece apenas como alias legado até migração das fixtures.
 - **Funcionalidades:** claro/escuro persistido, rotas protegidas e navegação condicionada.
 - **Aceite:** mesma rota projeta conteúdo permitido por papel; backend/mock nega ação indevida.
 - **Validação visual:** comparar shell, densidade, topbar, sidebar e temas com SEMS-SHELL-002/003/004.
