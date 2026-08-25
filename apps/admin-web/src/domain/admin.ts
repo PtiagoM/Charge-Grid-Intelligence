@@ -105,6 +105,7 @@ export interface Account {
   semsOrganizationFunction?: SemsOrganizationFunction;
   displayName: string;
   establishmentId?: string;
+  technicalEstablishmentIds?: string[];
 }
 
 export interface Client {

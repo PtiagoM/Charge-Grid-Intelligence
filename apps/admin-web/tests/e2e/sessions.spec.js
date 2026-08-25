@@ -9,7 +9,7 @@ async function login(page, email, password) {
 }
 
 test('sessão ativa referencia um carregador existente e abre seu detalhe', async ({ page }) => {
-  await login(page, 'goodwe@teste.com', 'teste');
+  await login(page, 'estabelecimento@teste.com', 'teste');
 
   await page.goto('/#/mvp/sessions');
   await expect(page.getByTestId('mvp-sessions-active')).toContainText('CG-FIAP-01');

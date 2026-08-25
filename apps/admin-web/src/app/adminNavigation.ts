@@ -1,7 +1,7 @@
 import type { Account, Profile } from "../domain/admin";
 import { hasAdminCapability, type AdminCapability } from "../domain/adminCapabilities";
 
-export type AdminDomainId = "overview" | "plants" | "devices" | "alarms" | "reports" | "analysis" | "service" | "organization";
+export type AdminDomainId = "overview" | "plants" | "devices" | "chargegrid" | "alarms" | "reports" | "analysis" | "service" | "organization";
 
 export interface AdminContextLink {
   route: string;
@@ -21,9 +21,7 @@ export interface AdminDomain {
 
 export const ADMIN_DOMAINS: readonly AdminDomain[] = [
   {
-    id: "overview",
-    label: "Painel",
-    icon: "layout-dashboard",
+    id: "overview", label: "Painel", icon: "layout-dashboard",
     entryRoute: { GOODWE: "overview", ESTABELECIMENTO: "overview" },
     description: {
       GOODWE: "Prioridades do escopo autorizado, sem substituir a leitura técnica do SEMS+.",
@@ -32,43 +30,45 @@ export const ADMIN_DOMAINS: readonly AdminDomain[] = [
     links: [{ route: "overview", label: "Painel", capability: "overview:view" }]
   },
   {
-    id: "plants",
-    label: "Lista de usinas",
-    icon: "map-pinned",
+    id: "plants", label: "Lista de usinas", icon: "map-pinned",
     entryRoute: { GOODWE: "plants", ESTABELECIMENTO: "plants" },
     description: {
-      GOODWE: "Usinas do escopo técnico e ativações comerciais da carteira atribuída.",
-      ESTABELECIMENTO: "Usinas SEMS+ próprias e vínculos ChargeGrid contratados por planta."
+      GOODWE: "Usinas do escopo técnico e contexto comercial da carteira atribuída.",
+      ESTABELECIMENTO: "Usinas SEMS+ próprias, com estado ChargeGrid somente nas plantas contratadas."
     },
     links: [
       { route: "plants", label: "Lista de usinas", capability: "network:assets" },
-      { route: "plant-onboarding", label: "Ativações ChargeGrid", capability: "commercial:activate" },
-      { route: "clients", label: "Carteira comercial", capability: "network:portfolio" },
-      { route: "contracts", label: "Contratos por planta", capability: "commercial:manage" }
+      { route: "clients", label: "Carteira comercial", capability: "network:portfolio" }
     ],
     relatedRoutes: ["plant", "client", "establishments", "establishment", "locations", "location"]
   },
   {
-    id: "devices",
-    label: "Lista de dispositivos",
-    icon: "plug-zap",
+    id: "devices", label: "Lista de dispositivos", icon: "plug-zap",
     entryRoute: { GOODWE: "chargers", ESTABELECIMENTO: "chargers" },
     description: {
-      GOODWE: "Inventário técnico SEMS+ e contexto ChargeGrid somente para carregadores autorizados.",
-      ESTABELECIMENTO: "Dispositivos técnicos e operação comercial dos carregadores publicados."
+      GOODWE: "Inventário técnico SEMS+ dos equipamentos autorizados.",
+      ESTABELECIMENTO: "Dispositivos técnicos das plantas autorizadas."
     },
-    links: [
-      { route: "chargers", label: "Inventário SEMS+", capability: "network:assets" },
-      { route: "operations", label: "Operação ChargeGrid", capability: "operations:monitor" },
-      { route: "sessions", label: "Sessões", capability: "operations:monitor" },
-      { route: "queue", label: "Fila", capability: "queue:manage" }
-    ],
-    relatedRoutes: ["charger", "session"]
+    links: [{ route: "chargers", label: "Inventário SEMS+", capability: "network:assets" }],
+    relatedRoutes: ["charger"]
   },
   {
-    id: "alarms",
-    label: "Central de alarmes",
-    icon: "triangle-alert",
+    id: "chargegrid", label: "ChargeGrid", icon: "badge-dollar-sign",
+    entryRoute: { GOODWE: "operations", ESTABELECIMENTO: "operations" },
+    description: {
+      GOODWE: "Operação local indisponível para responsabilidades de carteira.",
+      ESTABELECIMENTO: "Operação, sessões, fila e resultado financeiro das plantas comerciais próprias."
+    },
+    links: [
+      { route: "operations", label: "Operação", capability: "operations:monitor" },
+      { route: "sessions", label: "Sessões", capability: "operations:monitor" },
+      { route: "queue", label: "Fila", capability: "queue:manage" },
+      { route: "finance", label: "Resumo financeiro", capability: "finance:manage" }
+    ],
+    relatedRoutes: ["session", "financial-session", "invoices"]
+  },
+  {
+    id: "alarms", label: "Central de alarmes", icon: "triangle-alert",
     entryRoute: { GOODWE: "incidents", ESTABELECIMENTO: "incidents" },
     description: {
       GOODWE: "Alarmes técnicos e impacto comercial dentro da responsabilidade atribuída.",
@@ -81,25 +81,16 @@ export const ADMIN_DOMAINS: readonly AdminDomain[] = [
     relatedRoutes: ["incident"]
   },
   {
-    id: "reports",
-    label: "Central de relatórios",
-    icon: "file-chart-column",
+    id: "reports", label: "Central de relatórios", icon: "file-chart-column",
     entryRoute: { GOODWE: "reports", ESTABELECIMENTO: "reports" },
     description: {
-      GOODWE: "Relatórios técnicos e comerciais limitados ao escopo autorizado.",
+      GOODWE: "Geração e exportação de relatórios limitadas ao escopo autorizado.",
       ESTABELECIMENTO: "Relatórios SEMS+ e exportações ChargeGrid disponíveis para suas plantas."
     },
-    links: [
-      { route: "reports", label: "Central de relatórios", capability: "reports:generate" },
-      { route: "finance", label: "Resumo financeiro", capability: "commercial:read" },
-      { route: "pricing", label: "Políticas tarifárias", capability: "commercial:read" }
-    ],
-    relatedRoutes: ["invoices", "financial-session"]
+    links: [{ route: "reports", label: "Central de relatórios", capability: "reports:generate" }]
   },
   {
-    id: "analysis",
-    label: "Ferramentas de análise",
-    icon: "chart-no-axes-combined",
+    id: "analysis", label: "Ferramentas de análise", icon: "chart-no-axes-combined",
     entryRoute: { GOODWE: "analysis-iv", ESTABELECIMENTO: "analysis-iv" },
     description: {
       GOODWE: "Análise técnica SEMS+ e evidências comerciais adequadas à responsabilidade.",
@@ -110,29 +101,21 @@ export const ADMIN_DOMAINS: readonly AdminDomain[] = [
       { route: "analysis-comparison", label: "Comparação de dados", capability: "analysis:technical" },
       { route: "analysis-battery", label: "Consistência da bateria", capability: "analysis:technical" },
       { route: "energy", label: "Energia e demanda", capability: "energy:monitor" },
-      { route: "ai", label: "Inteligência ChargeGrid", capability: "intelligence:read" },
       { route: "expansion", label: "Oportunidades", capability: "intelligence:portfolio" }
     ]
   },
   {
-    id: "service",
-    label: "Centro de serviço",
-    icon: "headphones",
+    id: "service", label: "Centro de serviço", icon: "headphones",
     entryRoute: { GOODWE: "support", ESTABELECIMENTO: "support" },
     description: {
       GOODWE: "Suporte técnico, garantias e chamados do escopo autorizado.",
       ESTABELECIMENTO: "Conteúdo técnico e atendimento das suas plantas e equipamentos."
     },
-    links: [
-      { route: "support", label: "Centro de serviço", capability: "service:view" },
-      { route: "documents", label: "Documentos comerciais", capability: "commercial:self-service" }
-    ],
+    links: [{ route: "support", label: "Centro de serviço", capability: "service:view" }],
     relatedRoutes: ["ticket"]
   },
   {
-    id: "organization",
-    label: "Gestão da organização",
-    icon: "settings",
+    id: "organization", label: "Gestão da organização", icon: "settings",
     entryRoute: { GOODWE: "access", ESTABELECIMENTO: "access" },
     description: {
       GOODWE: "Conta SEMS+, responsabilidades ChargeGrid e escopos permanecem separados.",
@@ -140,6 +123,9 @@ export const ADMIN_DOMAINS: readonly AdminDomain[] = [
     },
     links: [
       { route: "access", label: "Organização e usuários", capability: "organization:view" },
+      { route: "plant-onboarding", label: "Ativação de planta", capability: "commercial:activate" },
+      { route: "contracts", label: "Contratos e ativações", capability: "commercial:read" },
+      { route: "pricing", label: "Política tarifária", capability: "finance:manage" },
       { route: "audit", label: "Auditoria", capability: "governance:audit" }
     ],
     relatedRoutes: ["settings", "contract"]
@@ -147,9 +133,7 @@ export const ADMIN_DOMAINS: readonly AdminDomain[] = [
 ];
 
 export function getAdminDomainForRoute(route: string) {
-  return ADMIN_DOMAINS.find((domain) =>
-    domain.links.some((link) => link.route === route) || domain.relatedRoutes?.includes(route)
-  );
+  return ADMIN_DOMAINS.find((domain) => domain.links.some((link) => link.route === route) || domain.relatedRoutes?.includes(route));
 }
 
 export function getAdminContextLinks(domain: AdminDomain, subject: Profile | Account) {
@@ -169,22 +153,11 @@ export function getAdminRouteCapability(route: string): AdminCapability | undefi
   const direct = ADMIN_DOMAINS.flatMap((domain) => domain.links).find((item) => item.route === route)?.capability;
   if (direct) return direct;
   const related: Record<string, AdminCapability> = {
-    plant: "network:assets",
-    client: "network:portfolio",
-    establishments: "network:portfolio",
-    establishment: "network:portfolio",
-    locations: "network:assets",
-    location: "network:assets",
-    charger: "network:assets",
-    session: "operations:monitor",
-    incident: "alarms:view",
-    ticket: "service:view",
-    "financial-session": "commercial:read",
-    finance: "commercial:read",
-    pricing: "commercial:read",
-    invoices: "commercial:read",
-    contract: "commercial:self-service",
-    settings: "organization:view"
+    plant: "network:assets", client: "network:portfolio", establishments: "network:portfolio",
+    establishment: "network:portfolio", locations: "network:assets", location: "network:assets",
+    charger: "network:assets", session: "operations:monitor", incident: "alarms:view", ticket: "service:view",
+    "financial-session": "finance:manage", finance: "finance:manage", pricing: "finance:manage",
+    invoices: "finance:manage", contract: "commercial:read", settings: "organization:view"
   };
   return related[route];
 }

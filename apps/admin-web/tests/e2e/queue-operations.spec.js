@@ -28,13 +28,10 @@ test('fila chama em FIFO, confirma chegada e conclui admissao', async ({ page })
   await expect(queue).toContainText('Concluido');
 });
 
-test('GoodWe escolhe o estabelecimento antes de gerenciar a fila', async ({ page }) => {
+test('Central GoodWe nao recebe operacao local de fila', async ({ page }) => {
   await login(page, 'goodwe@teste.com');
   await page.goto('/#/mvp/queue');
-  await expect(page.getByTestId('queue-portfolio')).toContainText('Shopping FIAP');
-  await expect(page.getByTestId('queue-portfolio')).toContainText('GoodWe Shanghai Lab');
-  await page.getByRole('link', { name: 'Gerenciar fila' }).first().click();
-  await expect(page.getByTestId('queue-operations-page')).toContainText('Shopping FIAP');
+  await expect(page.getByTestId('access-denied')).toBeVisible();
 });
 
 test('central operacional oferece progressao vertical para fila e sessoes', async ({ page }) => {

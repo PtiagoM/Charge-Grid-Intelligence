@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-async function login(page, email = 'goodwe@teste.com') {
+async function login(page, email = 'estabelecimento@teste.com') {
   await page.goto('/#/logout');
   await page.goto('/#/login');
   await page.getByTestId('login-email').fill(email);
@@ -8,7 +8,7 @@ async function login(page, email = 'goodwe@teste.com') {
   await page.getByTestId('login-submit').click();
 }
 
-test('GoodWe publica nova versao de tarifa com parametros explicitos', async ({ page }) => {
+test('proprietario comercial publica nova versao de tarifa com parametros explicitos', async ({ page }) => {
   await login(page);
   await page.goto('/#/mvp/pricing?est=est-fiap');
   await expect(page.getByTestId('mvp-pricing-panel')).toContainText('Versao 1');

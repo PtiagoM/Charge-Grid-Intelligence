@@ -875,8 +875,10 @@
 .sems-governance-menu header small { color: rgba(255,255,255,.46); font-size: 10px; }
 .sems-governance-menu header strong { font-size: 14px; line-height: 1.35; }
 .sems-governance-menu nav { display: grid; padding-top: 10px; }
-.sems-governance-menu button { position: relative; min-height: 48px; padding: 0 18px; border: 0; background: transparent; color: rgba(255,255,255,.62); text-align: left; cursor: pointer; }
+.sems-governance-menu button,
+.sems-governance-menu nav > a { position: relative; display: flex; min-height: 48px; padding: 0 18px; border: 0; background: transparent; color: rgba(255,255,255,.62); text-align: left; align-items: center; cursor: pointer; text-decoration: none; }
 .sems-governance-menu button:hover,
+.sems-governance-menu nav > a:hover,
 .sems-governance-menu button.is-active { background: rgba(255,255,255,.055); color: #fff; }
 .sems-governance-menu button.is-active::before { content: ""; position: absolute; inset: 8px auto 8px 0; width: 3px; border-radius: 0 3px 3px 0; background: #ff323a; }
 .sems-governance-content { min-width: 0; display: grid; gap: 14px; }

@@ -47,12 +47,16 @@ export function PlantsPortfolioPage() {
   const { plants, loading } = usePlantCatalog();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("ALL");
-  const linkedIds = useMemo(() => new Set(state.commercialPlants.map((link) => link.goodwePlantId)), [state.commercialPlants]);
+  const [scopeFilter, setScopeFilter] = useState("ALL");
+  const canViewCommercial = Boolean(account?.role);
+  const linkedIds = useMemo(() => new Set(canViewCommercial ? state.commercialPlants.map((link) => link.goodwePlantId) : []), [canViewCommercial, state.commercialPlants]);
   const actorScopeSet = new Set(accessibleEstablishmentIds(state, account));
+  const scopeOptions = state.establishments.filter((item) => actorScopeSet.has(item.id));
   const scopedPlants = plants.filter((plant) => {
     const linkedScope = state.commercialPlants.find((item) => item.goodwePlantId === plant.id)?.establishmentId;
     const contractScopes = COMMERCIAL_PLANT_CONTRACTS.filter((item) => item.goodwePlantId === plant.id).map((item) => item.establishmentId);
-    return Boolean(linkedScope && actorScopeSet.has(linkedScope)) || contractScopes.some((scope) => actorScopeSet.has(scope));
+    const plantScopes = [...contractScopes, ...(linkedScope ? [linkedScope] : [])];
+    return plantScopes.some((scope) => actorScopeSet.has(scope) && (scopeFilter === "ALL" || scope === scopeFilter));
   });
   const visiblePlants = scopedPlants.filter((plant) => {
     const status = technicalState(plant, linkedIds.has(plant.id)).label;
@@ -66,12 +70,18 @@ export function PlantsPortfolioPage() {
 
   return <>
     <section className="surface panel plant-portfolio sems-reference-list" data-testid="plants-portfolio">
-      <div className="sems-reference-actions"><div className="plant-toolbar"><button className="sems-filter-button" type="button">⌁ Filtro</button><label><span className="sr-only">Buscar usina</span><input aria-label="Buscar planta" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nome da usina, organização ou cidade" /></label><label><span className="sr-only">Situação</span><select aria-label="Filtrar situação da planta" value={filter} onChange={(event) => setFilter(event.target.value)}><option value="ALL">Todos os status</option><option>Vinculada</option><option>Disponível</option><option>Dados incompletos</option><option>Sem EV</option><option>Sem autorização</option></select></label><button className="sems-icon-action" type="button" aria-label="Pesquisar">⌕</button><button className="sems-icon-action" type="button" aria-label="Atualizar">↻</button></div>{account && (hasAdminCapability(account, "network:onboard") || hasAdminCapability(account, "commercial:self-service")) ? <a className="sems-primary-action" href="#/mvp/access?section=contracts">Ativar planta comercial</a> : null}</div>
-      <nav className="sems-reference-status-tabs" aria-label="Status das usinas"><button className="is-active" type="button" onClick={() => setFilter("ALL")}>Todos <b>({scopedPlants.length})</b></button><button type="button" onClick={() => setFilter("Vinculada")}>Em operação <b>({linkedVisible})</b></button><button type="button" onClick={() => setFilter("Disponível")}>Aguardando <b>({available})</b></button><button type="button" onClick={() => setFilter("Dados incompletos")}>Em construção <b>({blocked})</b></button></nav>
+      <div className="sems-reference-actions">
+        <div className="plant-toolbar">
+          <label><span className="sr-only">Buscar usina</span><input aria-label="Buscar planta" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nome da usina, organização ou cidade" /></label>
+          <label><span className="sr-only">Usina</span><select aria-label="Filtrar por usina" value={scopeFilter} onChange={(event) => setScopeFilter(event.target.value)}><option value="ALL">Todas as usinas autorizadas</option>{scopeOptions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+          <button className="sems-icon-action" type="button" aria-label="Limpar filtros" onClick={() => { setQuery(""); setFilter("ALL"); setScopeFilter("ALL"); }}>↻</button>
+        </div>
+      </div>
+      <nav className="sems-reference-status-tabs" aria-label="Status das usinas"><button className={filter === "ALL" ? "is-active" : ""} type="button" onClick={() => setFilter("ALL")}>Todos <b>({scopedPlants.length})</b></button><button className={filter === "Vinculada" ? "is-active" : ""} type="button" onClick={() => setFilter("Vinculada")}>Em operação <b>({linkedVisible})</b></button><button className={filter === "Disponível" ? "is-active" : ""} type="button" onClick={() => setFilter("Disponível")}>Aguardando <b>({available})</b></button><button className={filter === "Dados incompletos" ? "is-active" : ""} type="button" onClick={() => setFilter("Dados incompletos")}>Em construção <b>({blocked})</b></button></nav>
       {loading ? <div className="plant-loading" role="status">Consultando catálogo GoodWe…</div> : null}
       {!loading && !visiblePlants.length ? <div className="empty-state">Nenhuma planta corresponde aos filtros.</div> : null}
       <div className="table-wrap sems-table-wrap"><table className="data-table sems-reference-table"><thead><tr><th>Informações da usina</th><th>Status da usina</th><th>Geração de hoje</th><th>Geração total</th><th>Potência FV</th><th>Carregadores EV</th><th>Operação</th></tr></thead><tbody>{visiblePlants.map((plant) => {
-        const link = state.commercialPlants.find((candidate) => candidate.goodwePlantId === plant.id);
+        const link = canViewCommercial ? state.commercialPlants.find((candidate) => candidate.goodwePlantId === plant.id) : undefined;
         const establishment = state.establishments.find((item) => item.id === link?.establishmentId);
         return <tr key={plant.id} data-testid={`plant-card-${plant.id}`}><td><div className="sems-plant-cell"><img src={assets.plant} alt="" /><div><strong>{link?.commercialName ?? plant.name}</strong><span>{plant.organization}</span><small>{plant.city}/{plant.state} · {establishment?.name ?? plant.id}</small></div></div></td><td><PlantState plant={plant} linked={Boolean(link)} /></td><td>{number(plant.capacityKwp * 0.48)} kWh</td><td>{number(plant.capacityKwp * 483.5)} kWh</td><td>{number(plant.capacityKwp)} kW</td><td>{plant.evChargers.length}</td><td><a className="sems-row-action" href={`#/mvp/plant?plant=${plant.id}`}>Abrir ›</a></td></tr>;
       })}</tbody></table></div>
@@ -86,7 +96,7 @@ export function PlantDetailPage({ plantId }: { plantId: string }) {
   if (loading) return <div className="plant-loading" role="status">Consultando detalhes técnicos…</div>;
   if (!plant) return <section className="surface panel"><SectionHeader title="Planta não encontrada" subtitle="O identificador não existe no catálogo autorizado." /><a className="ghost-button" href="#/mvp/plants">Voltar ao portfólio</a></section>;
 
-  const link = state.commercialPlants.find((candidate) => candidate.goodwePlantId === plant.id);
+  const link = account?.role ? state.commercialPlants.find((candidate) => candidate.goodwePlantId === plant.id) : undefined;
   const establishment = state.establishments.find((item) => item.id === link?.establishmentId);
   const location = state.locations.find((item) => item.id === link?.locationId);
   const status = technicalState(plant, Boolean(link));

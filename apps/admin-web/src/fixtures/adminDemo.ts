@@ -61,9 +61,10 @@ export function createInitialState(): AdminState {
   const observedAt = new Date().toISOString();
   return {
     accounts: [
-      { id: "acc-goodwe", email: "goodwe@teste.com", password: "teste", profile: "GOODWE", semsAccountType: "DISTRIBUTOR_INSTALLER", role: "GOODWE_CENTRAL", semsOrganizationFunction: "ADMINISTRATOR", displayName: "Central GoodWe Brasil" },
-      { id: "acc-goodwe-consultant", email: "consultor@teste.com", password: "teste", profile: "GOODWE", semsAccountType: "DISTRIBUTOR_INSTALLER", role: "GOODWE_PORTFOLIO_MANAGER", semsOrganizationFunction: "NAVIGATOR", displayName: "Consultora GoodWe SP" },
+      { id: "acc-goodwe", email: "goodwe@teste.com", password: "teste", profile: "GOODWE", semsAccountType: "DISTRIBUTOR_INSTALLER", role: "GOODWE_CENTRAL", semsOrganizationFunction: "ADMINISTRATOR", displayName: "Central GoodWe Brasil", technicalEstablishmentIds: establishments.map((item) => item.id) },
+      { id: "acc-goodwe-consultant", email: "consultor@teste.com", password: "teste", profile: "GOODWE", semsAccountType: "DISTRIBUTOR_INSTALLER", role: "GOODWE_PORTFOLIO_MANAGER", semsOrganizationFunction: "NAVIGATOR", displayName: "Consultora GoodWe SP", technicalEstablishmentIds: ["est-fiap", "est-mercadox"] },
       { id: "acc-goodwe-support", email: "suporte@teste.com", password: "teste", profile: "GOODWE", semsAccountType: "DISTRIBUTOR_INSTALLER", role: "GOODWE_TECH_SUPPORT", semsOrganizationFunction: "TECHNICIAN", displayName: "Suporte técnico GoodWe" },
+      { id: "acc-sems-installer", email: "instalador@teste.com", password: "teste", profile: "GOODWE", semsAccountType: "DISTRIBUTOR_INSTALLER", semsOrganizationFunction: "ADMINISTRATOR", displayName: "Instaladora Solar SP", technicalEstablishmentIds: ["est-fiap", "est-mercadox"] },
       { id: "acc-est-fiap", email: "estabelecimento@teste.com", password: "teste", profile: "ESTABELECIMENTO", semsAccountType: "OWNER", role: "ESTABLISHMENT_ADMIN", displayName: "Gestora FIAP", establishmentId: "est-fiap" },
       { id: "acc-operator-fiap", email: "operador@teste.com", password: "teste", profile: "ESTABELECIMENTO", semsAccountType: "OWNER", role: "ESTABLISHMENT_OPERATOR", displayName: "Operacao FIAP", establishmentId: "est-fiap" },
       { id: "acc-reports-fiap", email: "relatorios@teste.com", password: "teste", profile: "ESTABELECIMENTO", semsAccountType: "OWNER", role: "REPORT_VIEWER", displayName: "Analista FIAP", establishmentId: "est-fiap" },

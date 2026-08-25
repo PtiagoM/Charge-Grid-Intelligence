@@ -13,6 +13,13 @@ test('inventario preserva abas tecnicas e integra a camada ChargeGrid nos carreg
   await page.goto('/#/mvp/chargers');
   const inventory = page.getByTestId('mvp-chargers-panel');
 
+  await expect(inventory.getByRole('button', { name: 'Filtro', exact: true })).toHaveCount(0);
+  await page.getByLabel('Buscar dispositivo').fill('CG-FIAP-03');
+  await expect(inventory).toContainText('CG-FIAP-03');
+  await expect(inventory).not.toContainText('CG-FIAP-01');
+  await page.getByLabel('Limpar filtros').click();
+  await expect(inventory).toContainText('CG-FIAP-01');
+
   await expect(page.getByRole('tab', { name: 'Carregador veicular' })).toHaveAttribute('aria-selected', 'true');
   await expect(inventory).toContainText('ChargeGrid publicado');
   await expect(inventory.getByRole('button', { name: /Carregamento/ })).toContainText('(1)');

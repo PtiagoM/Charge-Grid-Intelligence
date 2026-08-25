@@ -61,7 +61,8 @@ export function OrganizationGovernancePage() {
   if (!account || !hasAdminCapability(account, "organization:view")) return <AccessDeniedPage />;
 
   const canManageAccess = hasAdminCapability(account, "access:manage");
-  const canViewContracts = hasAdminCapability(account, "commercial:manage") || hasAdminCapability(account, "commercial:self-service");
+  const canViewContracts = hasAdminCapability(account, "commercial:read") || hasAdminCapability(account, "commercial:self-service");
+  const canManageTariff = hasAdminCapability(account, "finance:manage");
   const canViewAudit = hasAdminCapability(account, "governance:audit") || canManageAccess;
   const requestedSection = query.get("section") as GovernanceSection | null;
   const allowedSections: GovernanceSection[] = ["organization", ...(canManageAccess ? ["users" as const] : []), ...(canViewContracts ? ["contracts" as const] : []), ...(canViewAudit ? ["audit" as const] : [])];
@@ -77,7 +78,7 @@ export function OrganizationGovernancePage() {
   const accountById = new Map(state.accounts.map((item) => [item.id, item]));
   const establishmentById = new Map(state.establishments.map((item) => [item.id, item]));
   const publishedPlantIds = new Set(state.commercialPlants.map((item) => item.goodwePlantId));
-  const isGoodWeCentral = account.role === "GOODWE_CENTRAL" || account.role === "GOODWE_ADMIN";
+  const isGoodWeOrganizationAdmin = account.profile === "GOODWE" && account.semsOrganizationFunction === "ADMINISTRATOR" && canManageAccess;
   const visibleEstablishments = state.establishments.filter((item) => actorScopeSet.has(item.id));
   const visibleGrants = state.accessGrants.filter((item) => {
     const target = accountById.get(item.accountId);
@@ -85,9 +86,9 @@ export function OrganizationGovernancePage() {
     return item.accountId === account.id || item.establishmentIds.some((scope) => actorScopeSet.has(scope));
   });
   const targetAccounts = state.accounts.filter((item) =>
-    item.id !== account.id && (isGoodWeCentral || item.profile === "ESTABELECIMENTO")
+    item.id !== account.id && (isGoodWeOrganizationAdmin || item.profile === "ESTABELECIMENTO")
   );
-  const roles: AdminRole[] = isGoodWeCentral
+  const roles: AdminRole[] = isGoodWeOrganizationAdmin
     ? ["GOODWE_CENTRAL", "GOODWE_PORTFOLIO_MANAGER", "GOODWE_TECH_SUPPORT", "ESTABLISHMENT_ADMIN", "ESTABLISHMENT_OPERATOR", "REPORT_VIEWER"]
     : account.profile === "GOODWE"
       ? ["ESTABLISHMENT_ADMIN", "ESTABLISHMENT_OPERATOR", "REPORT_VIEWER"]
@@ -99,9 +100,11 @@ export function OrganizationGovernancePage() {
       : item);
   const visibleContractById = new Map(visibleContracts.map((item) => [item.id, item]));
   const validatedContract = visibleContractById.get(validatedContractId);
-  const organizationName = account.profile === "GOODWE"
+  const organizationName = account.profile === "GOODWE" && account.role
     ? "GoodWe Brasil · ChargeGrid"
-    : visibleEstablishments[0]?.name ?? "Organização do estabelecimento";
+    : account.profile === "GOODWE"
+      ? account.displayName
+      : visibleEstablishments[0]?.name ?? "Organização do estabelecimento";
 
   function submitGrant(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -145,6 +148,7 @@ export function OrganizationGovernancePage() {
         <button className={section === "organization" ? "is-active" : ""} type="button" onClick={() => selectSection("organization")}>Informações da organização</button>
         {canManageAccess ? <button className={section === "users" ? "is-active" : ""} type="button" onClick={() => selectSection("users")}>Usuários e funções</button> : null}
         {canViewContracts ? <button className={section === "contracts" ? "is-active" : ""} type="button" onClick={() => selectSection("contracts")}>Contratos e ativações</button> : null}
+        {canManageTariff ? <a href="#/mvp/pricing">Política tarifária</a> : null}
         {canViewAudit ? <button className={section === "audit" ? "is-active" : ""} type="button" onClick={() => selectSection("audit")}>Gerenciamento de logs</button> : null}
       </nav>
     </aside>
@@ -188,7 +192,7 @@ export function OrganizationGovernancePage() {
             <form className="access-editor" onSubmit={submitGrant}>
               <label>Conta<select name="accountId" required defaultValue=""><option value="" disabled>Selecione uma conta</option>{targetAccounts.map((item) => <option key={item.id} value={item.id}>{item.displayName} · {item.email}</option>)}</select></label>
               <label>Papel ChargeGrid<select name="role" required defaultValue={roles[0]}>{roles.map((role) => <option key={role} value={role}>{ROLE_LABELS[role]}</option>)}</select></label>
-              <fieldset><legend>Estabelecimentos e plantas permitidos</legend>{visibleEstablishments.map((item) => <label className="access-scope-option" key={item.id}><input type="checkbox" name="establishmentIds" value={item.id} defaultChecked={!isGoodWeCentral} />{item.name}</label>)}</fieldset>
+              <fieldset><legend>Estabelecimentos e plantas permitidos</legend>{visibleEstablishments.map((item) => <label className="access-scope-option" key={item.id}><input type="checkbox" name="establishmentIds" value={item.id} defaultChecked={!isGoodWeOrganizationAdmin} />{item.name}</label>)}</fieldset>
               <button type="submit">Registrar concessão</button>
             </form>
           </div>
