@@ -59,14 +59,37 @@ Os papeis comerciais nao substituem os papeis SEMS+:
 
 | Papel | Escopo e responsabilidade |
 | --- | --- |
-| Administrador do estabelecimento | configura e publica a operacao comercial das plantas contratadas; administra politica comercial e usuarios autorizados |
+| Proprietario comercial do estabelecimento | e o proprietario SEMS+ da planta contratada; configura e publica a operacao comercial, administra politica comercial e delega acessos locais |
 | Operador do estabelecimento | conduz sessoes, fila e rotina local sem alterar contrato, tarifa sensivel ou governanca |
 | Gestor de carteira/consultor GoodWe | conduz contratos e ativacoes, acompanha pendencias, qualidade comercial, relacionamento e expansao dentro da carteira atribuida |
 | Central GoodWe | consulta indicadores agregados por regiao, carteira ou parceiro para governanca e estrategia |
 
+`Administrador do estabelecimento` nao e uma persona separada: para uma planta comercial ativa, o proprietario SEMS+ e automaticamente o administrador daquela operacao. `Operador` e futuros perfis de consulta sao delegacoes concedidas pelo proprietario, nao substitutos de sua responsabilidade contratual.
+
 O tecnico/instalador permanece no plano tecnico SEMS+. Resultado de instalacao, conectividade e telemetria pode alimentar a prontidao ChargeGrid, mas o papel tecnico nao recebe dados comerciais automaticamente.
 
 A GoodWe nao e modelada como um unico superadministrador nacional. Cada usuario interno recebe escopo explicito de carteira, regiao, parceiro ou plantas. A visao nacional e uma capacidade estrategica adicional, agregada por padrao, e nao a permissao inicial de todos.
+
+### Central GoodWe nao e um novo tipo de conta
+
+A `Central GoodWe` nao e uma conta-mestre separada do SEMS+ nem uma persona com autorizacao implícita sobre tudo. Ela e um colaborador da organizacao profissional GoodWe que combina:
+
+```text
+funcao organizacional SEMS+ de administrador
++ responsabilidade ChargeGrid de consultor/governanca
++ escopo comercial de rede completa
+```
+
+O consultor e a Central compartilham a mesma base de jornadas ChargeGrid — carteira, contratos, ativacoes, pendencias, qualidade comercial e expansao. A Central recebe a mesma experiencia com escopo completo e, por ser administradora da organizacao, pode gerir colaboradores, carteiras, atribuicoes e auditoria.
+
+Nenhuma tela ou botao deve existir somente porque a pessoa e chamada de `Central`. Toda diferenca precisa ser atribuível a uma fonte explicita:
+
+- **funcao organizacional SEMS+**: por exemplo, acesso a Gestao da organizacao, usuarios e logs;
+- **responsabilidade ChargeGrid**: por exemplo, acompanhar contrato, ativacao ou oportunidade;
+- **escopo**: altera quais plantas, clientes e agregados aparecem, mas nao concede uma acao por si so;
+- **capacidade adicional documentada**: qualquer excecao futura deve ser declarada como extensao de governanca GoodWe, e nao escondida em um papel-mestre.
+
+O painel da Central pode iniciar em agregados de rede por causa do escopo amplo, mas deve reutilizar a linguagem e as jornadas do consultor. Consulta de excecao em uma planta nao implica comando local, fila, sessao, publicacao de carregador, tarifa ou financeiro detalhado.
 
 Autorizacao administrativa combina:
 
@@ -241,7 +264,11 @@ Diagnostico detalhado, alarmes, equipamentos e energia continuam nas superficies
 
 ## Contrato de navegação, responsabilidade e apresentação
 
-A navegação principal deve reproduzir as superfícies reconhecíveis do SEMS+: `Painel`, `Lista de usinas`, `Lista de dispositivos`, `Central de alarmes`, `Central de relatórios`, `Ferramentas de análise` e `Centro de serviço`. Gestão da organização permanece como destino secundário da conta. As jornadas ChargeGrid aparecem como navegação contextual dentro dessas superfícies, sem recriar uma lateral paralela de domínios comerciais.
+A navegação principal preserva as superfícies reconhecíveis do SEMS+: `Painel`, `Lista de usinas`, `Lista de dispositivos`, `Central de alarmes`, `Central de relatórios`, `Ferramentas de análise` e `Centro de serviço`. Gestão da organização permanece como destino secundário da conta.
+
+Para proprietário comum e instalador sem vínculo ChargeGrid, essas sete superfícies formam toda a navegação principal. Quando o proprietário possui ao menos uma planta comercial ativa, surge uma oitava entrada `ChargeGrid` logo abaixo de Lista de dispositivos. Ela reúne somente a operação local que não pertence semanticamente ao inventário técnico: visão operacional, sessões, fila e resumo financeiro.
+
+Consultor e Central GoodWe não recebem essa entrada na primeira implementação. A camada comercial deles aparece contextualmente em Painel, Lista de usinas, Alarmes, Ferramentas de análise e Gestão da organização. Uma entrada GoodWe própria fica como possibilidade secundária apenas para `Visão geral` e `Oportunidades`, caso essas funções provem utilidade e não caibam com clareza nas superfícies existentes. Ela não pode introduzir CRM, fila comercial, responsáveis ou gestão de tarefas.
 
 A composição visível segue esta matriz:
 
@@ -251,8 +278,40 @@ A composição visível segue esta matriz:
 | Técnico/suporte | inventário, telemetria, alarmes, diagnóstico, comandos técnicos autorizados e serviço | prontidão técnica, sem sessões, motorista, contrato, tarifa ou financeiro |
 | Consultor GoodWe | núcleo técnico do escopo e plantas da carteira | contratos, ativações, pendências, qualidade e expansão; sem operação local de sessões/fila |
 | Central GoodWe | núcleo técnico e indicadores agregados autorizados | governança, tendências e exceções; não recebe operação detalhada como padrão |
-| Administrador do estabelecimento | núcleo técnico das plantas próprias | contrato por planta, publicação individual, operação, tarifa, financeiro e usuários locais |
+| Proprietário comercial | núcleo técnico das plantas próprias | contrato por planta, publicação individual, operação, tarifa, financeiro e delegações locais; o proprietário é o administrador por definição |
 | Operador do estabelecimento | núcleo técnico das plantas próprias | sessões, fila, incidentes e comandos locais; sem contrato, tarifa sensível ou governança |
+
+### Local definitivo das funções ChargeGrid
+
+| Função | Superfície responsável |
+| --- | --- |
+| operação local, sessões e fila | entrada dinâmica `ChargeGrid` do proprietário comercial |
+| resumo financeiro da operação | entrada dinâmica `ChargeGrid` |
+| contratos e ativações | Gestão da organização, conforme responsabilidade e escopo |
+| política tarifária | Gestão da organização do proprietário comercial |
+| geração, exportação, tarefa e histórico de relatório | Central de relatórios |
+| estado comercial de uma planta | Lista/detalhe de usinas |
+| estado e publicação individual do carregador | detalhe do carregador |
+| impacto comercial de falha técnica | Central de alarmes, sem substituir o alarme SEMS+ |
+
+`Pendência` é estado de contrato, ativação, planta ou dispositivo no local correspondente. O SEMS+ não recebe fila de trabalho comercial, atribuição de tarefa, responsável por pendência ou gestão de produtividade de consultor.
+
+### Inteligência e oportunidades
+
+`Inteligência ChargeGrid` não é página obrigatória nem justificativa para exibir conteúdo genérico. Inteligência deve aparecer dentro de uma decisão real:
+
+- recomendação com evidência, causa, impacto, confiança e ação possível;
+- previsão de demanda dentro da análise energética, apenas para responsabilidade que utiliza essa decisão;
+- oportunidade de expansão dentro da carteira do consultor/Central;
+- indicador explicado no Painel, sem afirmar automação quando os dados não sustentarem isso.
+
+Uma visão transversal ou entrada ChargeGrid GoodWe só será criada depois que essas aplicações estiverem funcionais e visualmente compreensíveis.
+
+### Centro de serviço e documentos
+
+Proprietário comum e instalador preservam o Centro de serviço SEMS+. Proprietário comercial pode receber atendimento relacionado à própria operação quando o fluxo for definido. Consultor e Central não exibem `Abrir chamado para a GoodWe` como ação externa; eventual escalonamento interno é outro produto e permanece fora da próxima rodada.
+
+`Documentos comerciais` só permanece como repositório de leitura vinculado ao contrato — contrato assinado, aditivos, termos e políticas aplicáveis. Enquanto esse conteúdo e sua fonte não estiverem definidos, o destino fica oculto ou deferido.
 
 A autorização conceitual deve permanecer separada em seis dimensões, mesmo quando a demonstração local ainda usa fixtures:
 
@@ -280,7 +339,8 @@ Esta regra é uma decisão de produto e design, não uma autorização para cria
 ## Consequencias para o produto atual
 
 - `GOODWE_ADMIN` nao deve continuar como persona unica de produto; fixtures e codigo futuros devem evoluir para papel, escopo e capacidades explicitos;
-- `ESTABLISHMENT_ADMIN` e `ESTABLISHMENT_OPERATOR` continuam uteis como papeis ChargeGrid, sempre vinculados a plantas comerciais autorizadas;
+- `ESTABLISHMENT_ADMIN` pode continuar temporariamente como nome interno de capacidade, mas não representa persona distinta: o proprietário da planta contratada é seu administrador comercial por definição;
+- `ESTABLISHMENT_OPERATOR` continua útil como delegação vinculada a plantas comerciais autorizadas;
 - a ativacao comercial nao pode ser um botao irrestrito disponivel a qualquer proprietario;
 - uma entrada publica pode apenas apresentar o ChargeGrid ou encaminhar contato comercial;
 - a lista de plantas precisa suportar portfolio misto, sem converter automaticamente novas plantas;

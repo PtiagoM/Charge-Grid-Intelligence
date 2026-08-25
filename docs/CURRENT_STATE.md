@@ -78,8 +78,16 @@ Não confundir documentação com homologação, sandbox com produção, ou fixt
 15. A apresentação ChargeGrid segue a densidade e a hierarquia do SEMS+: listas, tabelas, gráficos, estados inline e resumos compactos prevalecem sobre grades genéricas de cards grandes com números.
 16. As funções organizacionais `Administrador`, `Navegador` e `Técnico` continuam distintas dos papéis ChargeGrid; a demonstração não pretende reconstruir toda a matriz proprietária de permissões do SEMS+.
 17. Permissões internas do SEMS+ só são reproduzidas quando confirmadas por evidência ou necessárias ao modelo ChargeGrid; diferenças desconhecidas de acesso a dispositivos não devem ser inventadas.
+18. Central GoodWe não é conta-mestre nem novo tipo de login: é colaborador profissional GoodWe com função organizacional de administrador, responsabilidade ChargeGrid de consultor/governança e escopo de rede completo; diferenças de tela ou ação exigem origem explícita.
+19. O proprietário SEMS+ da planta contratada é automaticamente o administrador da operação ChargeGrid; não existe uma persona separada de administrador do estabelecimento.
+20. Proprietário com planta comercial recebe entrada dinâmica `ChargeGrid` para operação, sessões, fila e financeiro; proprietário comum e instalador sem vínculo preservam apenas as sete superfícies SEMS+.
+21. Consultor e Central usam inicialmente as superfícies SEMS+ existentes; uma entrada ChargeGrid GoodWe para Visão geral/Oportunidades é secundária e só será criada se provar utilidade sem introduzir CRM ou gestão de tarefas.
+22. Contratos, ativações e tarifa pertencem à Gestão da organização; Central de relatórios fica dedicada a geração, exportação, tarefas e histórico de relatórios.
+23. Inteligência não é página decorativa: deve aparecer em recomendação, demanda, oportunidade ou indicador com evidência e decisão associada.
 
 O registro completo e canônico destas decisões está em `docs/admin-dashboard/PRODUCT_DECISIONS.md`.
+
+O plano aprovado para a próxima construção está em `docs/admin-dashboard/NEXT_EXECUTION_PLAN.md`.
 
 ### Implementação local da decisão — 23/08/2026
 
