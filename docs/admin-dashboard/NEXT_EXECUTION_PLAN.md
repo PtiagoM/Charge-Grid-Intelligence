@@ -70,7 +70,7 @@ Não avançar ao perfil seguinte deixando defeitos conhecidos de estrutura, cont
 
 ### Registro de execução — 25/08/2026
 
-**Estado:** `IMPLEMENTADA — revisão visual do produto pendente`
+**Estado:** `CONSOLIDADA — revisão de fluxo e coerência visual aprovada pelo produto`
 
 - separação explícita entre escopo técnico SEMS+ e concessão comercial ChargeGrid nos fixtures e no estado local;
 - nova conta demonstrativa `instalador@teste.com`, profissional aprovada sem qualquer papel ChargeGrid;
@@ -80,7 +80,7 @@ Não avançar ao perfil seguinte deixando defeitos conhecidos de estrutura, cont
 - Ativações/Contratos foram para Gestão da organização; Sessões/Fila/Financeiro para a entrada ChargeGrid; Tarifa para a organização; Relatórios ficaram restritos a geração e exportação;
 - buscas e filtros de usinas, dispositivos e alarmes agora alteram a lista apresentada; controles duplicados ou apenas decorativos foram removidos.
 
-Validação automatizada registrada nesta rodada: build, lint, 76 testes unitários e E2E focal das personas, dos filtros e do painel. A inspeção visual humana das telas principais continua obrigatória antes de declarar o perfil pronto e começar a Fase 1.
+Validação automatizada registrada nesta rodada: build, lint, 76 testes unitários e E2E focal das personas, dos filtros e do painel. A revisão do produto confirmou a coerência dos fluxos e das superfícies principais; a criação de baseline, snapshots e matriz visual continua reservada para a finalização visual, conforme definido no workflow.
 
 ## Fase 1 — Proprietário comercial
 
