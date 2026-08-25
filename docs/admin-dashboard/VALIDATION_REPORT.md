@@ -1,10 +1,12 @@
-# Relatório de validação do Dashboard Admin — M9
+# Relatório histórico de validação do Dashboard Admin — M9
 
 **Data:** 23 de agosto de 2026  
-**Branch:** `chore/admin-release-hardening`  
+**Branch histórica:** `chore/admin-release-hardening`  
 **Escopo:** fechamento local dos marcos M0–M9, sem alterações no Driver PWA e sem integração na `main`.
 
 ## Resultado
+
+Este documento registra a rodada M9 anterior. A validação vigente da Fase 0 está no PR #9 e no plano `docs/admin-dashboard/NEXT_EXECUTION_PLAN.md`.
 
 O Admin está coerente com a arquitetura nativa vigente e pronto para servir de base ao próximo redesenho. O hardening removeu páginas paralelas que ainda simulavam carregadores, sessões, energia, financeiro, recomendações e relatórios, preservando apenas as verticais de domínio introduzidas em M3–M8. A participação contratual deixou de usar percentual fixo e agora deriva da política tarifária ativa.
 

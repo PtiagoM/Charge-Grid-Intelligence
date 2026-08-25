@@ -1,21 +1,29 @@
 import { describe, expect, it } from "vitest";
 import {
   ChargerCommercialStatus,
+  ChargerPublicationStatus,
   ChargerTechnicalStatus,
   CommercialAvailability,
   CommercialSessionStatus,
   PaymentStatus,
   PlantEnergyStatus,
   QueueStatus,
-  UserRole
+  UserRole,
+  ChargeGridRole,
+  SemsAccountType,
+  SemsOrganizationFunction
 } from "../enums/index.js";
 import { demoScenarioD0 } from "./demoScenario.js";
 
 describe("shared baseline", () => {
   it("preserva os enums oficiais", () => {
     expect(Object.values(UserRole)).toEqual(["GOODWE_ADMIN", "ESTABLISHMENT_ADMIN", "ESTABLISHMENT_OPERATOR", "DRIVER", "GUEST"]);
+    expect(Object.values(SemsAccountType)).toEqual(["OWNER", "DISTRIBUTOR_INSTALLER"]);
+    expect(Object.values(SemsOrganizationFunction)).toEqual(["ADMINISTRATOR", "NAVIGATOR", "TECHNICIAN"]);
+    expect(Object.values(ChargeGridRole)).toEqual(["GOODWE_CENTRAL", "GOODWE_PORTFOLIO_MANAGER", "GOODWE_TECH_SUPPORT", "ESTABLISHMENT_ADMIN", "ESTABLISHMENT_OPERATOR", "REPORT_VIEWER"]);
     expect(Object.values(ChargerTechnicalStatus)).toEqual(["AVAILABLE", "CONNECTED", "STARTING", "CHARGING", "UNAVAILABLE", "FAULT", "OFFLINE"]);
     expect(Object.values(ChargerCommercialStatus)).toEqual(["AVAILABLE_TO_START", "OCCUPIED", "RESTRICTED_BY_ENERGY", "MAINTENANCE", "FAULTED", "CLOSED", "UNKNOWN"]);
+    expect(Object.values(ChargerPublicationStatus)).toEqual(["ELIGIBLE", "CONFIGURED", "PUBLISHED", "SUSPENDED"]);
     expect(Object.values(CommercialAvailability)).toEqual(["OPEN_AVAILABLE", "OPEN_PARTIAL", "FULL_QUEUE", "CLOSED", "MAINTENANCE", "FAULT"]);
     expect(Object.values(CommercialSessionStatus)).toEqual(["SESSION_CREATED", "AWAITING_PAYMENT", "AUTHORIZED", "WAITING_START", "STARTING", "CHARGING", "SUSPENDED_BY_DEMAND", "ENERGY_FINISHED", "IDLE_GRACE_PERIOD", "IDLE_FEE", "SETTLING", "COMPLETED", "PAYMENT_FAILED", "START_FAILED", "FAULTED", "CANCELLED", "SETTLEMENT_PENDING", "DISPUTED", "OUTSTANDING_BALANCE"]);
     expect(Object.values(PaymentStatus)).toEqual(["PENDING", "AUTHORIZED", "PAID", "REFUND_PENDING", "REFUNDED", "FAILED", "SETTLEMENT_PENDING", "DISPUTED", "OUTSTANDING_BALANCE"]);

@@ -41,7 +41,7 @@ const fiapChargers: Charger[] = [
   ["CG-FIAP-03", "FIAP-ACL-03", "available", 60, 9.8, 28.91],
   ["CG-FIAP-05", "FIAP-ACL-05", "available", 22, 12.6, 37.17]
 ].map(([id, internalId, status, powerKw, todayEnergyKwh, revenueToday], index) => ({
-  id: String(id), establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", identifier: String(id), internalId: String(internalId), serial: `GWFIAP000${index + 1}`, model: "GoodWe AC 22", powerKw: Number(powerKw), installationDate: "2026-01-15", status: status as Charger["status"], commercialStatus: "PUBLISHED", todayEnergyKwh: Number(todayEnergyKwh), revenueToday: Number(revenueToday)
+  id: String(id), establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", identifier: String(id), internalId: String(internalId), serial: `GWFIAP000${index + 1}`, model: "GoodWe AC 22", powerKw: Number(powerKw), installationDate: "2026-01-15", status: status as Charger["status"], publicationStatus: "PUBLISHED", todayEnergyKwh: Number(todayEnergyKwh), revenueToday: Number(revenueToday)
 }));
 
 const sessionEvents: SessionEvent[] = [
@@ -99,10 +99,10 @@ export function createInitialState(): AdminState {
     locations,
     chargers: [
       ...fiapChargers,
-      { id: "CG-MX-01", establishmentId: "est-mercadox", locationId: "loc-mercadox-pinheiros", identifier: "CARREGADORMX01", internalId: "MX-PIN-01", serial: "GWMX0001", model: "GoodWe AC 22", powerKw: 22, installationDate: "2026-03-10", status: "offline", commercialStatus: "PUBLISHED", todayEnergyKwh: 4.2, revenueToday: 13.02 },
-      { id: "CG-US-01", establishmentId: "est-goodwe-california", locationId: "loc-goodwe-california", identifier: "GW-CALIFORNIA-01", internalId: "US-HUB-01", serial: "GWUS0001", model: "GoodWe DC 80", powerKw: 80, installationDate: "2026-02-18", status: "available", commercialStatus: "PUBLISHED", todayEnergyKwh: 31.2, revenueToday: 16.22 },
-      { id: "CG-DE-01", establishmentId: "est-goodwe-europe", locationId: "loc-goodwe-europe", identifier: "GW-EUROPE-01", internalId: "DE-CENTER-01", serial: "GWDE0001", model: "GoodWe AC 22", powerKw: 22, installationDate: "2026-04-07", status: "charging", commercialStatus: "PUBLISHED", todayEnergyKwh: 24.7, revenueToday: 12.1 },
-      { id: "CG-CN-01", establishmentId: "est-goodwe-shanghai", locationId: "loc-goodwe-shanghai", identifier: "GW-SHANGHAI-01", internalId: "CN-LAB-01", serial: "GWCN0001", model: "GoodWe DC 120", powerKw: 120, installationDate: "2026-05-12", status: "available", commercialStatus: "PUBLISHED", todayEnergyKwh: 48.9, revenueToday: 38.14 }
+      { id: "CG-MX-01", establishmentId: "est-mercadox", locationId: "loc-mercadox-pinheiros", identifier: "CARREGADORMX01", internalId: "MX-PIN-01", serial: "GWMX0001", model: "GoodWe AC 22", powerKw: 22, installationDate: "2026-03-10", status: "offline", publicationStatus: "PUBLISHED", todayEnergyKwh: 4.2, revenueToday: 13.02 },
+      { id: "CG-US-01", establishmentId: "est-goodwe-california", locationId: "loc-goodwe-california", identifier: "GW-CALIFORNIA-01", internalId: "US-HUB-01", serial: "GWUS0001", model: "GoodWe DC 80", powerKw: 80, installationDate: "2026-02-18", status: "available", publicationStatus: "PUBLISHED", todayEnergyKwh: 31.2, revenueToday: 16.22 },
+      { id: "CG-DE-01", establishmentId: "est-goodwe-europe", locationId: "loc-goodwe-europe", identifier: "GW-EUROPE-01", internalId: "DE-CENTER-01", serial: "GWDE0001", model: "GoodWe AC 22", powerKw: 22, installationDate: "2026-04-07", status: "charging", publicationStatus: "PUBLISHED", todayEnergyKwh: 24.7, revenueToday: 12.1 },
+      { id: "CG-CN-01", establishmentId: "est-goodwe-shanghai", locationId: "loc-goodwe-shanghai", identifier: "GW-SHANGHAI-01", internalId: "CN-LAB-01", serial: "GWCN0001", model: "GoodWe DC 120", powerKw: 120, installationDate: "2026-05-12", status: "available", publicationStatus: "PUBLISHED", todayEnergyKwh: 48.9, revenueToday: 38.14 }
     ],
     chargerTelemetry: [
       { chargerId: "CG-FIAP-01", connectorState: "CHARGING", currentPowerKw: 18.4, observedAt: "2026-08-18T18:00:00-03:00", vehicleConnected: true },

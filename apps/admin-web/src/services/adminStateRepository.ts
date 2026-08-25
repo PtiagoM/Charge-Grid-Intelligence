@@ -12,7 +12,7 @@ export function normalizeAdminState(candidate: AdminState, fallback: AdminState)
   const fallbackChargers = new Map(fallback.chargers.map((item) => [item.id, item]));
   const chargers = (Array.isArray(candidate.chargers) ? candidate.chargers : fallback.chargers).map((item) => ({
     ...item,
-    commercialStatus: item.commercialStatus ?? fallbackChargers.get(item.id)?.commercialStatus ?? "PUBLISHED" as const
+    publicationStatus: item.publicationStatus ?? fallbackChargers.get(item.id)?.publicationStatus ?? "PUBLISHED" as const
   }));
   const chargerIds = new Set(chargers.map((item) => item.id));
   const fallbackEnergy = new Map(fallback.energy.map((item) => [item.establishmentId, item]));

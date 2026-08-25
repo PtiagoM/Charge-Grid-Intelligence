@@ -23,10 +23,10 @@
 ## M1 — Shell, navegação, temas e RBAC
 
 - **Objetivo:** entregar o shell administrativo integrado e a troca segura de contexto.
-- **Páginas/fluxos:** login/fallback, dashboard vazio, `/chargegrid`, acesso negado e logout.
+- **Páginas/fluxos:** login/fallback, dashboard vazio, operação ChargeGrid contextual do proprietário comercial, acesso negado e logout.
 - **Componentes:** `AppShell`, sidebar, topbar, conta, escopo, breadcrumb, header e estados globais.
 - **Dependências:** M0; matriz inicial de capacidades.
-- **Mocks:** gestor/consultor GoodWe com carteira, Central GoodWe agregada, estabelecimento admin, operador, sessão expirada e organização sem plantas. `GOODWE_ADMIN` permanece apenas como alias legado até migração das fixtures.
+- **Mocks:** consultor GoodWe com carteira, Central GoodWe agregada, estabelecimento admin, operador, instalador SEMS+ sem ChargeGrid, proprietário SEMS+ comum, sessão expirada e organização sem plantas. `GOODWE_ADMIN` permanece apenas como alias de transporte legado e nunca como autorização global.
 - **Funcionalidades:** claro/escuro persistido, rotas protegidas e navegação condicionada.
 - **Aceite:** mesma rota projeta conteúdo permitido por papel; backend/mock nega ação indevida.
 - **Validação visual:** comparar shell, densidade, topbar, sidebar e temas com SEMS-SHELL-002/003/004.
@@ -140,7 +140,7 @@
 
 ## M9 — Validação visual completa e prontidão
 
-**Estado atual:** hardening local concluído dentro do escopo desta etapa. Build, lint, 70 testes unitários e 14 cenários E2E focados passaram; a regressão E2E integral foi interrompida por decisão do produto porque telas, fluxos e linguagem visual serão redesenhados nos próximos marcos. Não há divergência S0/S1 conhecida nos cenários exercitados, e o relatório de validação registra explicitamente o que foi adiado.
+**Estado histórico:** hardening M0–M9 foi concluído em rodada anterior. Os números daquela rodada estão preservados no relatório histórico; a execução vigente e suas validações ficam registradas em `docs/admin-dashboard/NEXT_EXECUTION_PLAN.md` e no relatório do PR correspondente.
 
 - **Objetivo:** fechar fidelidade, regressão e critérios de entrega do módulo.
 - **Páginas/fluxos:** matriz completa MUST e SHOULD que entrou na release.

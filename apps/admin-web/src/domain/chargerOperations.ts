@@ -2,7 +2,7 @@ import type {
   Account,
   AdminState,
   Charger,
-  ChargerCommercialStatus,
+  ChargerPublicationStatus,
   ChargerCommand,
   ChargerCommandStatus,
   ChargerTelemetry,
@@ -33,7 +33,7 @@ export interface ChargerCommercialTransitionResult {
   state: AdminState;
 }
 
-const COMMERCIAL_TRANSITIONS: Record<ChargerCommercialStatus, readonly ChargerCommercialStatus[]> = {
+const COMMERCIAL_TRANSITIONS: Record<ChargerPublicationStatus, readonly ChargerPublicationStatus[]> = {
   ELIGIBLE: ["CONFIGURED"],
   CONFIGURED: ["PUBLISHED"],
   PUBLISHED: ["SUSPENDED"],
@@ -44,7 +44,7 @@ export function updateChargerCommercialStatus(
   state: AdminState,
   account: Account | null,
   chargerId: string,
-  target: ChargerCommercialStatus,
+  target: ChargerPublicationStatus,
   changedAt = new Date().toISOString()
 ): ChargerCommercialTransitionResult {
   const current = state.chargers.find((item) => item.id === chargerId);
@@ -52,10 +52,10 @@ export function updateChargerCommercialStatus(
   if (!account || account.role !== "ESTABLISHMENT_ADMIN" || !hasAdminCapability(account, "commercial:manage") || !canAccessEstablishment(state, account, current.establishmentId)) {
     return { ok: false, issues: ["Somente o administrador comercial do estabelecimento pode alterar a publicacao."], charger: current, state };
   }
-  if (!COMMERCIAL_TRANSITIONS[current.commercialStatus].includes(target)) {
+  if (!COMMERCIAL_TRANSITIONS[current.publicationStatus].includes(target)) {
     return { ok: false, issues: ["Transicao comercial invalida para o estado atual."], charger: current, state };
   }
-  const charger = { ...current, commercialStatus: target };
+  const charger = { ...current, publicationStatus: target };
   return {
     ok: true,
     issues: [],
@@ -63,7 +63,7 @@ export function updateChargerCommercialStatus(
     state: {
       ...state,
       chargers: state.chargers.map((item) => item.id === chargerId ? charger : item),
-      audit: [...state.audit, { id: `audit-charger-commercial-${chargerId}-${changedAt}`, summary: `Carregador ${chargerId}: ${current.commercialStatus} -> ${target} por ${account.displayName}`, at: changedAt }]
+      audit: [...state.audit, { id: `audit-charger-commercial-${chargerId}-${changedAt}`, summary: `Carregador ${chargerId}: ${current.publicationStatus} -> ${target} por ${account.displayName}`, at: changedAt }]
     }
   };
 }
@@ -118,7 +118,7 @@ export function requestChargerCommand(
   if (charger && !canAccessEstablishment(state, account, charger.establishmentId)) {
     issues.push("Carregador fora do escopo do estabelecimento.");
   }
-  if (charger && charger.commercialStatus !== "PUBLISHED") issues.push("Carregador ainda nao esta publicado na operacao ChargeGrid.");
+  if (charger && charger.publicationStatus !== "PUBLISHED") issues.push("Carregador ainda nao esta publicado na operacao ChargeGrid.");
   if (charger && state.chargerCommands.some((item) => item.chargerId === charger.id && (item.status === "REQUESTED" || item.status === "ACCEPTED"))) {
     issues.push("Ja existe um comando em processamento para este carregador.");
   }
