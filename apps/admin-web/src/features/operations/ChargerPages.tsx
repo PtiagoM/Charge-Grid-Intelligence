@@ -179,13 +179,13 @@ export function ChargersInventoryPage({ establishmentId }: { establishmentId?: s
   const locationById = new Map(state.locations.map((item) => [item.id, item]));
   const [kind, setKind] = useState<SemsDeviceKind>("charger");
   const [status, setStatus] = useState<"all" | SemsDeviceStatus>("all");
-  const [locationId, setLocationId] = useState("all");
+  const [scopeFilter, setScopeFilter] = useState(establishmentId ?? "all");
   const [search, setSearch] = useState("");
   const [email, setEmail] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
   const chargerRows: InventoryRow[] = state.chargers
-    .filter((item) => accessibleScopeSet.has(item.establishmentId) && (!establishmentId || item.establishmentId === establishmentId))
+    .filter((item) => accessibleScopeSet.has(item.establishmentId) && (!establishmentId || item.establishmentId === establishmentId) && (scopeFilter === "all" || item.establishmentId === scopeFilter))
     .map((charger) => {
       const telemetry = telemetryByChargerId.get(charger.id);
       return {
@@ -204,15 +204,15 @@ export function ChargersInventoryPage({ establishmentId }: { establishmentId?: s
       };
     });
   const technicalRows: InventoryRow[] = SEMS_TECHNICAL_DEVICES
-    .filter((item) => accessibleScopeSet.has(item.establishmentId) && (!establishmentId || item.establishmentId === establishmentId));
+    .filter((item) => accessibleScopeSet.has(item.establishmentId) && (!establishmentId || item.establishmentId === establishmentId) && (scopeFilter === "all" || item.establishmentId === scopeFilter));
   const rows = kind === "charger" ? chargerRows : technicalRows.filter((item) => item.kind === kind);
-  const locations = state.locations.filter((location) => rows.some((item) => item.locationId === location.id));
+  const scopeOptions = state.establishments.filter((item) => accessibleScopeSet.has(item.id));
   const items = rows.filter((item) => {
     const term = search.trim().toLowerCase();
     const emailTerm = email.trim().toLowerCase();
     const matchesSearch = !term || [item.id, item.name, item.serial, item.typeLabel].some((value) => value.toLowerCase().includes(term));
     const matchesEmail = !emailTerm || item.email?.toLowerCase().includes(emailTerm);
-    return matchesSearch && matchesEmail && (status === "all" || item.status === status) && (locationId === "all" || item.locationId === locationId);
+    return matchesSearch && matchesEmail && (status === "all" || item.status === status);
   });
   const pageCount = Math.max(1, Math.ceil(items.length / pageSize));
   const currentPage = Math.min(page, pageCount);
@@ -229,13 +229,13 @@ export function ChargersInventoryPage({ establishmentId }: { establishmentId?: s
   function selectKind(value: SemsDeviceKind) {
     setKind(value);
     setStatus("all");
-    setLocationId("all");
+    setScopeFilter(establishmentId ?? "all");
     setPage(1);
   }
 
   function resetFilters() {
     setStatus("all");
-    setLocationId("all");
+    setScopeFilter(establishmentId ?? "all");
     setSearch("");
     setEmail("");
     setPage(1);
@@ -244,7 +244,13 @@ export function ChargersInventoryPage({ establishmentId }: { establishmentId?: s
   return <>
     <nav className="sems-device-type-tabs" aria-label="Tipos de dispositivos" role="tablist">{DEVICE_TABS.map((tab) => <button key={tab.value} className={kind === tab.value ? "is-active" : ""} type="button" role="tab" aria-selected={kind === tab.value} onClick={() => selectKind(tab.value)}>{tab.label}</button>)}</nav>
     <section className="surface panel operations-page sems-reference-list sems-device-inventory" data-testid="mvp-chargers-panel">
-      <form className="operations-filter sems-reference-filter" onSubmit={(event) => event.preventDefault()}><button className="sems-filter-button" type="button" aria-expanded="false">⌁ Filtro</button><label><span className="sr-only">Usina</span><select aria-label="Filtrar por usina" value={locationId} onChange={(event) => { setLocationId(event.target.value); setPage(1); }}><option value="all">Nome da usina</option>{locations.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label><span className="sr-only">Buscar equipamento</span><input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Nome do dispositivo, SN" /></label><label><span className="sr-only">E-mail</span><input type="email" value={email} onChange={(event) => { setEmail(event.target.value); setPage(1); }} placeholder="Email" /></label><button className="sems-icon-action" type="submit" aria-label="Pesquisar">⌕</button><button className="sems-icon-action" type="button" aria-label="Atualizar" onClick={resetFilters}>↻</button></form>
+      <form className="operations-filter sems-reference-filter" onSubmit={(event) => event.preventDefault()}>
+        <label><span className="sr-only">Usina</span><select aria-label="Filtrar por usina" value={scopeFilter} onChange={(event) => { setScopeFilter(event.target.value); setPage(1); }} disabled={Boolean(establishmentId)}><option value="all">Todas as usinas autorizadas</option>{scopeOptions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+        <label><span className="sr-only">Buscar equipamento</span><input aria-label="Buscar dispositivo" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Nome do dispositivo, SN" /></label>
+        {kind !== "charger" ? <label><span className="sr-only">E-mail</span><input type="email" value={email} onChange={(event) => { setEmail(event.target.value); setPage(1); }} placeholder="Email" /></label> : null}
+        <button className="sems-icon-action" type="submit" aria-label="Pesquisar">⌕</button>
+        <button className="sems-icon-action" type="button" aria-label="Limpar filtros" onClick={resetFilters}>↻</button>
+      </form>
       <nav className="sems-reference-status-tabs" aria-label="Status dos dispositivos">{statusTabs.map((tab) => <button key={tab.value} className={status === tab.value ? "is-active" : ""} type="button" onClick={() => { setStatus(tab.value); setPage(1); }}>{tab.label} <b>({tab.value === "all" ? rows.length : rows.filter((item) => item.status === tab.value).length})</b></button>)}</nav>
       <DataTable columns={columns}>
         {groupedItems.map(([groupLocationId, group]) => <Fragment key={groupLocationId}>

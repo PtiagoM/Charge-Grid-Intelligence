@@ -35,10 +35,10 @@ test('GoodWe abre unidade critica e recebe recomendacao sem autoexecucao', async
   await expect(page.getByTestId('energy-recommendation').getByRole('link')).toHaveCount(0);
 });
 
-test('navegacao preserva escopo GoodWe na vertical de energia', async ({ page }) => {
+test('contexto GoodWe e selecionado dentro da vertical de energia', async ({ page }) => {
   await login(page, 'goodwe@teste.com');
-  await page.getByLabel('Escopo operacional').selectOption('est-fiap');
-  await page.getByRole('link', { name: 'Energia', exact: true }).click();
+  await page.goto('/#/mvp/energy');
+  await page.getByRole('link', { name: 'Abrir energia' }).first().click();
   await expect(page).toHaveURL(/#\/mvp\/energy\?est=est-fiap/);
   await expect(page.getByTestId('mvp-energy-panel')).toContainText('Shopping FIAP');
 });

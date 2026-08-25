@@ -21,10 +21,29 @@ export function activeGrantFor(state: AdminState, accountId: string) {
   return state.accessGrants.find((item) => item.accountId === accountId && item.status === "ACTIVE");
 }
 
+export function technicalAccessibleEstablishmentIds(account: Account | null) {
+  if (!account) return [];
+  if (account.semsAccountType === "OWNER") return account.establishmentId ? [account.establishmentId] : [];
+  return account.technicalEstablishmentIds ?? [];
+}
+
+export function commercialAccessibleEstablishmentIds(state: AdminState, account: Account | null) {
+  if (!account?.role) return [];
+  return activeGrantFor(state, account.id)?.establishmentIds ?? [];
+}
+
 export function accessibleEstablishmentIds(state: AdminState, account: Account | null) {
   if (!account) return [];
-  const grant = activeGrantFor(state, account.id);
-  return grant?.establishmentIds ?? (account.establishmentId ? [account.establishmentId] : []);
+  return [...new Set([
+    ...technicalAccessibleEstablishmentIds(account),
+    ...commercialAccessibleEstablishmentIds(state, account)
+  ])];
+}
+
+export function hasOwnChargeGridOperation(state: AdminState, account: Account | null) {
+  if (!account || account.profile !== "ESTABELECIMENTO" || account.semsAccountType !== "OWNER" || account.role !== "ESTABLISHMENT_ADMIN") return false;
+  const commercialScopes = new Set(commercialAccessibleEstablishmentIds(state, account));
+  return state.commercialPlants.some((item) => commercialScopes.has(item.establishmentId));
 }
 
 export function canAccessEstablishment(state: AdminState, account: Account | null, establishmentId: string) {
@@ -42,7 +61,7 @@ function grantIssues(state: AdminState, actor: Account | null, input: GrantAcces
   if (!actor || !hasAdminCapability(actor, "access:manage")) issues.push("Perfil sem permissao para gerenciar acessos.");
   if (!target) issues.push("Conta de destino nao encontrada.");
   if (isGoodWeRole(input.role)) {
-    if (actor?.role !== "GOODWE_CENTRAL" && actor?.role !== "GOODWE_ADMIN") issues.push("Somente a Central GoodWe pode atribuir responsabilidades GoodWe.");
+    if (actor?.profile !== "GOODWE" || actor.semsOrganizationFunction !== "ADMINISTRATOR" || !hasAdminCapability(actor, "access:manage")) issues.push("Somente um administrador da organizaÃ§Ã£o GoodWe pode atribuir responsabilidades GoodWe.");
     if (target?.profile !== "GOODWE") issues.push("A responsabilidade selecionada exige uma conta GoodWe.");
     if (!scopes.length) issues.push("Toda responsabilidade GoodWe exige carteira, regiao ou plantas explicitas.");
   } else {

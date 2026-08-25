@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-async function login(page, email, password) {
+async function login(page, email, password = 'teste') {
   await page.goto('/#/logout');
   await page.goto('/#/login');
   await page.getByTestId('login-email').fill(email);
@@ -8,8 +8,8 @@ async function login(page, email, password) {
   await page.getByTestId('login-submit').click();
 }
 
-test('MVP exibe visão executiva com indicadores essenciais', async ({ page }) => {
-  await login(page, 'goodwe@teste.com', 'teste');
+test('proprietário comercial recebe os indicadores de sua operação local', async ({ page }) => {
+  await login(page, 'estabelecimento@teste.com');
 
   await expect(page).toHaveURL(/#\/mvp\/overview/);
   await expect(page.getByTestId('mvp-overview-panel')).toBeVisible();
@@ -21,22 +21,24 @@ test('MVP exibe visão executiva com indicadores essenciais', async ({ page }) =
   await expect(page.getByTestId('mvp-overview-recommendation')).toContainText('Fila atual');
 });
 
-test('Mapa mundial mostra carregadores por endereco cadastrado', async ({ page }) => {
-  await login(page, 'goodwe@teste.com', 'teste');
+test('Central GoodWe mantém mapa agregado sem receber operação local', async ({ page }) => {
+  await login(page, 'goodwe@teste.com');
 
   await expect(page.getByTestId('world-charger-map')).toBeVisible();
   await expect(page.getByTestId('google-world-map')).toBeVisible();
   await expect(page.getByTestId('mvp-overview-kpis')).toContainText('Station Number');
   await expect(page.locator('[data-form="google-map-address-search"]')).toHaveCount(0);
   await expect(page.getByTestId('world-map-popover')).toHaveCount(0);
+  await expect(page.getByTestId('mvp-kpi-active-sessions')).toHaveCount(0);
+  await expect(page.getByText('Operação dos carregadores', { exact: true })).toHaveCount(0);
 });
 
-test('MVP mostra carregadores, sessões e tarifação', async ({ page }) => {
-  await login(page, 'goodwe@teste.com', 'teste');
+test('proprietário comercial acessa carregadores, sessões e tarifação', async ({ page }) => {
+  await login(page, 'estabelecimento@teste.com');
 
   await page.goto('/#/mvp/chargers');
   await expect(page.getByTestId('mvp-chargers-panel')).toBeVisible();
-  await page.getByRole('link', { name: 'Abrir carregador' }).first().click();
+  await page.getByRole('link', { name: /Abrir CG-FIAP/ }).first().click();
   await expect(page.getByTestId('mvp-charger-detail')).toBeVisible();
 
   await page.goto('/#/mvp/sessions');

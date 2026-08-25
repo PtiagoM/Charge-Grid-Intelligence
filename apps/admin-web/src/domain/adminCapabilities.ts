@@ -33,8 +33,7 @@ const CAPABILITIES_BY_PROFILE = {
     "alarms:view",
     "analysis:technical",
     "service:view",
-    "reports:generate",
-    "organization:view"
+    "reports:generate"
   ],
   ESTABELECIMENTO: [
     "overview:view",
@@ -48,9 +47,14 @@ const CAPABILITIES_BY_PROFILE = {
 
 const CAPABILITIES_BY_ROLE = {
   GOODWE_CENTRAL: [
+    "organization:view",
     "network:portfolio",
+    "network:onboard",
     "energy:monitor",
+    "incidents:manage",
     "commercial:read",
+    "commercial:activate",
+    "commercial:manage",
     "intelligence:read",
     "intelligence:portfolio",
     "governance:audit",

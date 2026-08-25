@@ -14,15 +14,25 @@ test('login apresenta contas SEMS+ com e sem responsabilidade ChargeGrid', async
   await expect(page.getByTestId('demo-account-list')).toContainText('GOODWE');
   await expect(page.getByTestId('demo-account-list')).toContainText('ESTABLISHMENT_ADMIN');
   await expect(page.getByTestId('demo-account-list')).toContainText('Somente SEMS+');
+  await expect(page.getByTestId('demo-account-list')).toContainText('instalador@teste.com');
 });
 
-test('consultor GoodWe acompanha plantas e inicia a ativação pela governança contratual', async ({ page }) => {
+test('consultor filtra plantas e inicia a ativação somente pela governança contratual', async ({ page }) => {
   await login(page);
   await page.goto('/#/mvp/plants');
 
   await expect(page.getByTestId('plants-portfolio')).toBeVisible();
   await expect(page.getByTestId('plant-card-gw-plant-fiap-vila-mariana')).toContainText('Disponível');
-  await page.getByRole('link', { name: 'Ativar planta comercial' }).click();
+  await page.getByLabel('Buscar planta').fill('Vila Mariana');
+  await expect(page.getByTestId('plant-card-gw-plant-fiap-vila-mariana')).toBeVisible();
+  await expect(page.getByTestId('plant-card-gw-plant-mercadox-pinheiros')).toHaveCount(0);
+  await page.getByLabel('Limpar filtros').click();
+  await page.getByLabel('Filtrar por usina').selectOption('est-fiap');
+  await expect(page.getByTestId('plant-card-gw-plant-mercadox-pinheiros')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Ativar planta comercial' })).toHaveCount(0);
+
+  await page.getByRole('link', { name: 'Gestão da organização' }).click();
+  await page.getByRole('button', { name: 'Contratos e ativações' }).click();
   await expect(page).toHaveURL(/#\/mvp\/access\?section=contracts/);
   await expect(page.getByRole('heading', { name: 'Contratos e ativações por planta' })).toBeVisible();
   await expect(page.getByText('Ativações conduzidas pela carteira', { exact: true })).toBeVisible();

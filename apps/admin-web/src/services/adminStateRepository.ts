@@ -37,7 +37,8 @@ export function normalizeAdminState(candidate: AdminState, fallback: AdminState)
     ...item,
     semsAccountType: item.semsAccountType ?? fallbackAccounts.get(item.id)?.semsAccountType ?? (item.profile === "GOODWE" ? "DISTRIBUTOR_INSTALLER" as const : "OWNER" as const),
     role: item.role === "GOODWE_ADMIN" ? "GOODWE_CENTRAL" as const : item.role ?? fallbackAccounts.get(item.id)?.role,
-    semsOrganizationFunction: item.semsOrganizationFunction ?? fallbackAccounts.get(item.id)?.semsOrganizationFunction
+    semsOrganizationFunction: item.semsOrganizationFunction ?? fallbackAccounts.get(item.id)?.semsOrganizationFunction,
+    technicalEstablishmentIds: item.technicalEstablishmentIds ?? fallbackAccounts.get(item.id)?.technicalEstablishmentIds
   }));
   const candidateAccountIds = new Set(candidateAccounts.map((item) => item.id));
   const accounts = [...candidateAccounts, ...fallback.accounts.filter((item) => !candidateAccountIds.has(item.id))];

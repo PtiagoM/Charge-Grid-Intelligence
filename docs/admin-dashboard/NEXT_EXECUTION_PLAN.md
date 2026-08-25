@@ -68,6 +68,20 @@ Não avançar ao perfil seguinte deixando defeitos conhecidos de estrutura, cont
 
 **Gate F0:** cinco personas principais autenticam; menus e rotas refletem a matriz aprovada; nenhuma superfície principal possui link órfão; filtros compartilhados básicos funcionam.
 
+### Registro de execução — 25/08/2026
+
+**Estado:** `CONSOLIDADA — revisão de fluxo e coerência visual aprovada pelo produto`
+
+- separação explícita entre escopo técnico SEMS+ e concessão comercial ChargeGrid nos fixtures e no estado local;
+- nova conta demonstrativa `instalador@teste.com`, profissional aprovada sem qualquer papel ChargeGrid;
+- Central GoodWe derivada do consultor: mesma leitura comercial de carteira, contratos e ativações; administrador organizacional e escopo completo apenas por função, capacidade e concessão explícitas;
+- proprietário comercial recebe `ChargeGrid` abaixo de Dispositivos; Central, consultor, instalador puro e proprietário comum mantêm as sete superfícies SEMS+;
+- seletor global de escopo removido; seleção de contexto permanece dentro de cada vertical e é preservada ao abrir recursos;
+- Ativações/Contratos foram para Gestão da organização; Sessões/Fila/Financeiro para a entrada ChargeGrid; Tarifa para a organização; Relatórios ficaram restritos a geração e exportação;
+- buscas e filtros de usinas, dispositivos e alarmes agora alteram a lista apresentada; controles duplicados ou apenas decorativos foram removidos.
+
+Validação automatizada registrada nesta rodada: build, lint, 76 testes unitários e E2E focal das personas, dos filtros e do painel. A revisão do produto confirmou a coerência dos fluxos e das superfícies principais; a criação de baseline, snapshots e matriz visual continua reservada para a finalização visual, conforme definido no workflow.
+
 ## Fase 1 — Proprietário comercial
 
 ### Painel

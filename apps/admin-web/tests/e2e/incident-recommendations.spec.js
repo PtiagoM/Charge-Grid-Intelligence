@@ -8,12 +8,27 @@ async function login(page, email = 'goodwe@teste.com') {
   await page.getByTestId('login-submit').click();
 }
 
+test('pesquisa, severidade e usina filtram alarmes sem controles decorativos', async ({ page }) => {
+  await login(page);
+  await page.goto('/#/mvp/incidents');
+  const inbox = page.getByTestId('incident-inbox');
+
+  await expect(inbox.getByRole('button', { name: 'Filtro', exact: true })).toHaveCount(0);
+  await page.getByLabel('Buscar alarme').fill('inexistente');
+  await expect(inbox).toContainText('Nenhum incidente neste filtro');
+  await page.getByLabel('Limpar filtros').click();
+  await page.getByLabel('Filtrar por severidade').selectOption('HIGH');
+  await expect(inbox).toContainText('CG-MX-01 offline');
+  await page.getByLabel('Filtrar alarmes por usina').selectOption('est-fiap');
+  await expect(inbox).not.toContainText('CG-MX-01 offline');
+});
+
 test('GoodWe assume e resolve incidente com timeline auditavel', async ({ page }) => {
   await login(page);
   await page.goto('/#/mvp/incidents');
   const row = page.getByRole('row').filter({ hasText: 'CG-MX-01 offline' });
   await expect(row).toContainText('Alta');
-  await row.getByRole('link', { name: 'Abrir incidente' }).click();
+  await row.getByRole('link', { name: /Abrir/ }).click();
 
   const detail = page.getByTestId('incident-detail');
   await expect(detail).toContainText('GoodWe reportou COMMUNICATION_LOST');
@@ -30,8 +45,7 @@ test('GoodWe assume e resolve incidente com timeline auditavel', async ({ page }
 test('estabelecimento nao acessa incidente fora do seu escopo', async ({ page }) => {
   await login(page, 'estabelecimento@teste.com');
   await page.goto('/#/mvp/incident?incident=incident-goodwe-CG-MX-01-offline');
-  await expect(page.getByTestId('incident-inbox')).toBeVisible();
-  await expect(page.getByTestId('incident-inbox')).not.toContainText('CG-MX-01 offline');
+  await expect(page.getByTestId('access-denied')).toBeVisible();
 });
 
 test('aceitar recomendacao registra decisao sem autoexecutar comando', async ({ page }) => {
