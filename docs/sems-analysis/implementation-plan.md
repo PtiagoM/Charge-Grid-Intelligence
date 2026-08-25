@@ -1,5 +1,7 @@
 # Plano de implementação do Dashboard Admin
 
+> **Atualização de 25/08/2026:** este documento preserva o histórico da fundação M0–M9. A execução seguinte, orientada por personas completas, fidelidade SEMS+ e reorganização da camada ChargeGrid, está em `docs/admin-dashboard/NEXT_EXECUTION_PLAN.md`.
+
 **Status:** execução local de M0–M9 concluída no sandbox administrativo. As verticais possuem fluxos funcionais, papéis e escopos governam navegação, rotas e operações, e o hardening final removeu implementações paralelas obsoletas, corrigiu responsividade e alinhou a regressão aos fluxos nativos. Autorização backend/RLS, providers reais, entrega externa das assinaturas, tema claro e homologação de SLA permanecem pendentes. A evidência do M9 está em `docs/admin-dashboard/VALIDATION_REPORT.md` e a revisão crítica vigente em `docs/admin-dashboard/CRITICAL_REVIEW.md`.
 
 **Estimativas:** dias úteis de desenvolvimento e validação para uma pessoa experiente, usadas apenas para ordenar e dimensionar. Integrações não homologadas podem ampliar os intervalos.

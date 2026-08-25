@@ -186,3 +186,5 @@ Cada etapa nasce em `feature/admin-*`, retorna por PR para `develop/admin-web` e
 ## Critério para começar o redesenho
 
 O próximo trabalho visual deve partir deste documento e responder a uma vertical slice, não a uma aba isolada. Nenhuma tela é aceita apenas por parecer com o SEMS+: ela precisa demonstrar contexto, estado, evidência, ação, retorno e permissão.
+
+Os achados da auditoria manual posterior, seu estado de consolidação e a revisão de personas estão em [`AUDIT_BACKLOG.md`](AUDIT_BACKLOG.md). As decisões aprovadas foram promovidas para `PRODUCT_DECISIONS.md`, e a ordem operacional da próxima rodada está em [`NEXT_EXECUTION_PLAN.md`](NEXT_EXECUTION_PLAN.md).
