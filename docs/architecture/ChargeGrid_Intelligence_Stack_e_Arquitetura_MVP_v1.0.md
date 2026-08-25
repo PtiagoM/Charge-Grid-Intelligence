@@ -219,7 +219,7 @@ A identidade visual parte do SEMS+/GoodWe. O Admin mantém a linguagem grafite h
 ## 6.1 Admin Web
 
 - Uma única aplicação administrativa com visões condicionadas por papel.
-- GOODWE_ADMIN: visão agregada de plantas, utilização, comissão, incidentes e expansão.
+- Central/consultor GoodWe: visão agregada somente no escopo autorizado, com utilização, incidentes, qualidade e expansão; nenhuma autorização global decorre do nome do papel.
 - ESTABLISHMENT_ADMIN / OPERATOR: operação da própria planta, sessões, tarifa, fila, pagamentos, demanda e relatórios.
 - Desktop-first, tabelas, gráficos e configurações; não precisa funcionar como PWA.
 
@@ -349,7 +349,7 @@ A identidade visual parte do SEMS+/GoodWe. O Admin mantém a linguagem grafite h
 
 - Supabase Auth é a fonte remota de identidade. O fallback local da PWA existe somente para desenvolvimento sem credenciais.
 - profiles.id referencia auth.users.id.
-- Papéis de negócio: GOODWE_ADMIN, ESTABLISHMENT_ADMIN, ESTABLISHMENT_OPERATOR e DRIVER.
+- Papéis de negócio: Central/consultor GoodWe, administrador/operador do estabelecimento e motorista; tipo de conta SEMS+, função organizacional, papel ChargeGrid, escopo e capacidade são dimensões independentes.
 - Visitante pode usar identidade anônima/temporária ou token de sessão conforme a spec da PWA.
 - Integrador não possui aplicação própria no ChargeGrid v1.
 

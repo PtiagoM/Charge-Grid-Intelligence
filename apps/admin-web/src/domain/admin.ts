@@ -10,7 +10,8 @@ export type AdminRole =
   | "ESTABLISHMENT_OPERATOR"
   | "REPORT_VIEWER";
 export type ChargerStatus = "available" | "charging" | "limited" | "offline";
-export type ChargerCommercialStatus = "ELIGIBLE" | "CONFIGURED" | "PUBLISHED" | "SUSPENDED";
+/** Frontend-only publication lifecycle; commercial availability lives in @chargegrid/shared. */
+export type ChargerPublicationStatus = "ELIGIBLE" | "CONFIGURED" | "PUBLISHED" | "SUSPENDED";
 export type SessionStatus = "authorized" | "starting" | "active" | "finished" | "start_failed";
 export type ChargerCommandType = "START_CHARGE" | "STOP_CHARGE";
 export type ChargerCommandStatus = "REQUESTED" | "ACCEPTED" | "CONFIRMED" | "FAILED" | "EXPIRED";
@@ -155,7 +156,7 @@ export interface Charger {
   powerKw: number;
   installationDate: string;
   status: ChargerStatus;
-  commercialStatus: ChargerCommercialStatus;
+  publicationStatus: ChargerPublicationStatus;
   todayEnergyKwh: number;
   revenueToday: number;
 }

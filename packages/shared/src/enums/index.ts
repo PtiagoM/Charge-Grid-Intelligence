@@ -1,9 +1,32 @@
 export enum UserRole {
+  /** Legacy transport value. It must never be interpreted as global authorization. */
   GOODWE_ADMIN = "GOODWE_ADMIN",
   ESTABLISHMENT_ADMIN = "ESTABLISHMENT_ADMIN",
   ESTABLISHMENT_OPERATOR = "ESTABLISHMENT_OPERATOR",
   DRIVER = "DRIVER",
   GUEST = "GUEST"
+}
+
+/** SEMS+ account type, independent from organizational function and ChargeGrid grants. */
+export enum SemsAccountType {
+  OWNER = "OWNER",
+  DISTRIBUTOR_INSTALLER = "DISTRIBUTOR_INSTALLER"
+}
+
+export enum SemsOrganizationFunction {
+  ADMINISTRATOR = "ADMINISTRATOR",
+  NAVIGATOR = "NAVIGATOR",
+  TECHNICIAN = "TECHNICIAN"
+}
+
+/** ChargeGrid responsibility, always evaluated together with an explicit scope and capability. */
+export enum ChargeGridRole {
+  GOODWE_CENTRAL = "GOODWE_CENTRAL",
+  GOODWE_PORTFOLIO_MANAGER = "GOODWE_PORTFOLIO_MANAGER",
+  GOODWE_TECH_SUPPORT = "GOODWE_TECH_SUPPORT",
+  ESTABLISHMENT_ADMIN = "ESTABLISHMENT_ADMIN",
+  ESTABLISHMENT_OPERATOR = "ESTABLISHMENT_OPERATOR",
+  REPORT_VIEWER = "REPORT_VIEWER"
 }
 
 export enum ChargerTechnicalStatus {
@@ -24,6 +47,14 @@ export enum ChargerCommercialStatus {
   FAULTED = "FAULTED",
   CLOSED = "CLOSED",
   UNKNOWN = "UNKNOWN"
+}
+
+/** Publication lifecycle is distinct from commercial availability. */
+export enum ChargerPublicationStatus {
+  ELIGIBLE = "ELIGIBLE",
+  CONFIGURED = "CONFIGURED",
+  PUBLISHED = "PUBLISHED",
+  SUSPENDED = "SUSPENDED"
 }
 
 export enum CommercialAvailability {

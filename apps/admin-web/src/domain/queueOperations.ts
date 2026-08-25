@@ -61,7 +61,7 @@ export function callNextDriver(state: AdminState, account: Account | null, estab
   if (!entry) return { ok: false, issues: ["Nao ha motoristas aguardando neste estabelecimento."], state };
 
   const charger = state.chargers
-    .filter((item) => item.establishmentId === establishmentId && item.status === "available" && item.commercialStatus === "PUBLISHED" && connectorForModel(item.model) === entry.requiredConnector)
+    .filter((item) => item.establishmentId === establishmentId && item.status === "available" && item.publicationStatus === "PUBLISHED" && connectorForModel(item.model) === entry.requiredConnector)
     .sort((a, b) => a.id.localeCompare(b.id))[0];
   if (!charger) return { ok: false, issues: ["Nao ha carregador compativel e disponivel para a proxima chamada."], state };
 

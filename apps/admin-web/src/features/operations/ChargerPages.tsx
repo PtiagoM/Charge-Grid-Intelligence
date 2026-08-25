@@ -2,7 +2,7 @@ import { Fragment, useMemo, useState, type FormEvent } from "react";
 import { Navigate } from "react-router-dom";
 import { useAdminState } from "../../app/AdminState";
 import { Badge, DataTable, SectionHeader, money, number, statusLabel } from "../../components/AdminUi";
-import type { ChargerCommand, ChargerCommandType, ChargerCommercialStatus, Session } from "../../domain/admin";
+import type { ChargerCommand, ChargerCommandType, ChargerPublicationStatus, Session } from "../../domain/admin";
 import { SEMS_TECHNICAL_DEVICES, type SemsDeviceKind, type SemsDeviceStatus } from "../../fixtures/semsDeviceCatalog";
 import { accessibleEstablishmentIds } from "../../domain/accessOperations";
 import { assets } from "../../constants/assets";
@@ -33,7 +33,7 @@ interface InventoryRow {
   secondaryMetric: string;
   email?: string;
   actionHref?: string;
-  commercialStatus?: ChargerCommercialStatus;
+  publicationStatus?: ChargerPublicationStatus;
 }
 
 const DEVICE_TABS: ReadonlyArray<{ value: SemsDeviceKind; label: string }> = [
@@ -200,7 +200,7 @@ export function ChargersInventoryPage({ establishmentId }: { establishmentId?: s
         primaryMetric: number(telemetry?.currentPowerKw ?? 0),
         secondaryMetric: number(charger.todayEnergyKwh),
         actionHref: `#/mvp/charger?est=${charger.establishmentId}&charger=${charger.id}`,
-        commercialStatus: charger.commercialStatus
+        publicationStatus: charger.publicationStatus
       };
     });
   const technicalRows: InventoryRow[] = SEMS_TECHNICAL_DEVICES
@@ -259,7 +259,7 @@ export function ChargersInventoryPage({ establishmentId }: { establishmentId?: s
             <td><strong>{item.name}</strong></td>
             <td>{item.serial}</td>
             <td><span className={`sems-device-status tone-${deviceStatusTone(item.status)}`}><i />{deviceStatusLabel(item.status)}</span></td>
-            <td>{item.typeLabel}{item.kind === "charger" && account?.role ? <span className="chargegrid-device-tag">{item.commercialStatus === "PUBLISHED" ? "ChargeGrid publicado" : item.commercialStatus === "SUSPENDED" ? "ChargeGrid suspenso" : item.commercialStatus === "CONFIGURED" ? "ChargeGrid configurado" : "Elegível ao ChargeGrid"}</span> : null}</td>
+            <td>{item.typeLabel}{item.kind === "charger" && account?.role ? <span className="chargegrid-device-tag">{item.publicationStatus === "PUBLISHED" ? "ChargeGrid publicado" : item.publicationStatus === "SUSPENDED" ? "ChargeGrid suspenso" : item.publicationStatus === "CONFIGURED" ? "ChargeGrid configurado" : "Elegível ao ChargeGrid"}</span> : null}</td>
             <td>{item.primaryMetric}</td>
             <td>{item.secondaryMetric}</td>
             <td>{item.actionHref ? <a className="sems-device-menu" href={item.actionHref} aria-label={`Abrir ${item.name}`}>•••</a> : <button className="sems-device-menu" type="button" aria-label={`Mais opções para ${item.name}`}>•••</button>}</td>
@@ -300,13 +300,13 @@ export function ChargerDetailPage({ chargerId, establishmentId }: { chargerId: s
       ? "START_CHARGE"
       : null;
   const pending = commands.find((item) => item.status === "REQUESTED" || item.status === "ACCEPTED");
-  const nextCommercialStatus: ChargerCommercialStatus | null = charger.commercialStatus === "ELIGIBLE"
+  const nextCommercialStatus: ChargerPublicationStatus | null = charger.publicationStatus === "ELIGIBLE"
     ? "CONFIGURED"
-    : charger.commercialStatus === "CONFIGURED"
+    : charger.publicationStatus === "CONFIGURED"
       ? "PUBLISHED"
-      : charger.commercialStatus === "PUBLISHED"
+      : charger.publicationStatus === "PUBLISHED"
         ? "SUSPENDED"
-        : charger.commercialStatus === "SUSPENDED"
+        : charger.publicationStatus === "SUSPENDED"
           ? "PUBLISHED"
           : null;
 
@@ -369,7 +369,7 @@ export function ChargerDetailPage({ chargerId, establishmentId }: { chargerId: s
       </div>
     </section>
 
-    {canViewCommercial ? <section className="surface panel sems-chargegrid-device-context" id="charger-commercial"><SectionHeader eyebrow="Camada ChargeGrid" title="Publicação comercial" subtitle="O estado técnico do equipamento permanece separado da disponibilidade comercial." /><div className="charger-commercial-lifecycle"><div><span>Estado atual</span><Badge value={charger.commercialStatus} /><small>Elegível → configurado → publicado → suspenso</small></div>{canManagePublication && nextCommercialStatus ? <button type="button" className="ghost-button" onClick={changeCommercialStatus}>{nextCommercialStatus === "CONFIGURED" ? "Confirmar configuração" : nextCommercialStatus === "PUBLISHED" ? "Publicar no ChargeGrid" : "Suspender publicação"}</button> : <span>Somente o administrador comercial altera este estado.</span>}</div>{canViewSessions ? currentSession ? <div className="operations-session-summary"><div><Badge value={currentSession.status} /><h3>{currentSession.id}</h3><p>{currentSession.driverName} · {currentSession.vehicle}</p></div><div><strong>{number(currentSession.energyKwh)} kWh</strong><span>{currentSession.durationMinutes} min · {money(currentSession.consumedAmount)}</span></div><a className="ghost-button" href={`#/mvp/session?est=${charger.establishmentId}&session=${currentSession.id}`}>Abrir linha do tempo</a></div> : <p className="operations-empty">Nenhuma sessão ChargeGrid autorizada ou ativa neste conector.</p> : null}</section> : null}
+    {canViewCommercial ? <section className="surface panel sems-chargegrid-device-context" id="charger-commercial"><SectionHeader eyebrow="Camada ChargeGrid" title="Publicação comercial" subtitle="O estado técnico do equipamento permanece separado da disponibilidade comercial." /><div className="charger-commercial-lifecycle"><div><span>Estado atual</span><Badge value={charger.publicationStatus} /><small>Elegível → configurado → publicado → suspenso</small></div>{canManagePublication && nextCommercialStatus ? <button type="button" className="ghost-button" onClick={changeCommercialStatus}>{nextCommercialStatus === "CONFIGURED" ? "Confirmar configuração" : nextCommercialStatus === "PUBLISHED" ? "Publicar no ChargeGrid" : "Suspender publicação"}</button> : <span>Somente o administrador comercial altera este estado.</span>}</div>{canViewSessions ? currentSession ? <div className="operations-session-summary"><div><Badge value={currentSession.status} /><h3>{currentSession.id}</h3><p>{currentSession.driverName} · {currentSession.vehicle}</p></div><div><strong>{number(currentSession.energyKwh)} kWh</strong><span>{currentSession.durationMinutes} min · {money(currentSession.consumedAmount)}</span></div><a className="ghost-button" href={`#/mvp/session?est=${charger.establishmentId}&session=${currentSession.id}`}>Abrir linha do tempo</a></div> : <p className="operations-empty">Nenhuma sessão ChargeGrid autorizada ou ativa neste conector.</p> : null}</section> : null}
 
     {canViewSessions ? <section id="charger-control" className="surface panel command-panel"><div className="sems-command-heading"><SectionHeader eyebrow="Ação sensível" title="Controle do carregador" subtitle="Todo comando registra autor, motivo, protocolo e resultado observado." /><button type="button" className="ghost-button" onClick={() => setDrawer("controls")}>Abrir registro de controle</button></div>
       {commandType ? <form onSubmit={submit} className="command-form" data-testid="charger-command-form"><div className="command-intent"><span>{commandLabel(commandType)}</span><strong>{currentSession?.id}</strong><p>{commandType === "START_CHARGE" ? "A recarga só será exibida como ativa após a telemetria indicar fluxo de energia." : "O encerramento só será concluído após a telemetria indicar fim do fluxo."}</p></div><label><span>Motivo da ação</span><textarea value={reason} onChange={(event) => setReason(event.target.value)} minLength={8} required placeholder="Descreva por que este comando esta sendo enviado" /></label><label className="command-confirm"><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} /> Confirmo que validei o carregador, o veículo e a sessão.</label><button type="submit" disabled={!confirmed || reason.trim().length < 8 || submitting || Boolean(pending)}>{submitting ? "Aguardando telemetria..." : pending ? "Comando em processamento" : commandLabel(commandType)}</button></form> : <div className="operations-empty"><strong>Somente monitoramento neste momento.</strong><span>{charger.status === "offline" ? "O equipamento está offline." : "Não há sessão elegível para iniciar ou encerrar."}</span></div>}

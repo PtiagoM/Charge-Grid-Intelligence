@@ -61,9 +61,9 @@ Relatório → seleção de plantas/dispositivos → tarefa de download
 | `PlantCommercialLink` | liga uma planta SEMS+ a estabelecimento e contrato sem duplicar a planta | ChargeGrid + referência GoodWe |
 | `CommercialPlantMembership` | concede capacidade comercial a usuário/organização somente naquela planta | ChargeGrid/Auth |
 | `CommercialProfile` | horários, acesso, tarifa, disponibilidade e publicação | ChargeGrid |
-| `ConsultantAssignment` | liga usuário GoodWe a carteira, região, parceiro, contrato ou ativação | ChargeGrid/CRM |
-| `GoodWePortfolio` | agrupa estabelecimentos/plantas sob responsabilidade comercial | CRM/ChargeGrid |
-| `ExpansionOpportunity` | registra oportunidade comercial explicável no estabelecimento/planta | CRM/ChargeGrid |
+| `ConsultantAssignment` | liga usuário GoodWe a carteira, região, parceiro, contrato ou ativação | ChargeGrid; futuro/não validado como CRM |
+| `GoodWePortfolio` | agrupa estabelecimentos/plantas sob responsabilidade comercial | ChargeGrid; futuro/não validado como CRM |
+| `ExpansionOpportunity` | registra oportunidade comercial explicável no estabelecimento/planta | ChargeGrid; não implica gestão de tarefas |
 
 ```text
 Conta SEMS+

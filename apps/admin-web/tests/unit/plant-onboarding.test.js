@@ -28,7 +28,7 @@ describe('plant onboarding', () => {
       latitude: -23.5891
     });
     expect(publication.state.chargers.slice(-2).map((charger) => charger.serial)).toEqual(['GWVM0001', 'GWVM0002']);
-    expect(publication.state.chargers.slice(-2).map((charger) => charger.commercialStatus)).toEqual(['ELIGIBLE', 'ELIGIBLE']);
+    expect(publication.state.chargers.slice(-2).map((charger) => charger.publicationStatus)).toEqual(['ELIGIBLE', 'ELIGIBLE']);
     expect(publication.state.plantOnboardingDraft.plantId).toBe('');
   });
 

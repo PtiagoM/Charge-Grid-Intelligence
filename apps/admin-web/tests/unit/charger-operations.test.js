@@ -106,7 +106,7 @@ describe('charger operations', () => {
     const initial = createInitialState();
     const eligibleState = {
       ...initial,
-      chargers: initial.chargers.map((item) => item.id === 'CG-FIAP-03' ? { ...item, commercialStatus: 'ELIGIBLE' } : item)
+      chargers: initial.chargers.map((item) => item.id === 'CG-FIAP-03' ? { ...item, publicationStatus: 'ELIGIBLE' } : item)
     };
     const denied = updateChargerCommercialStatus(eligibleState, account(eligibleState, 'acc-goodwe-consultant'), 'CG-FIAP-03', 'CONFIGURED', NOW);
     const configured = updateChargerCommercialStatus(eligibleState, account(eligibleState), 'CG-FIAP-03', 'CONFIGURED', NOW);
@@ -114,8 +114,8 @@ describe('charger operations', () => {
     const invalid = updateChargerCommercialStatus(published.state, account(published.state), 'CG-FIAP-03', 'CONFIGURED', NOW);
 
     expect(denied.issues).toContain('Somente o administrador comercial do estabelecimento pode alterar a publicacao.');
-    expect(configured.charger?.commercialStatus).toBe('CONFIGURED');
-    expect(published.charger?.commercialStatus).toBe('PUBLISHED');
+    expect(configured.charger?.publicationStatus).toBe('CONFIGURED');
+    expect(published.charger?.publicationStatus).toBe('PUBLISHED');
     expect(invalid.issues).toContain('Transicao comercial invalida para o estado atual.');
   });
 
@@ -123,7 +123,7 @@ describe('charger operations', () => {
     const initial = createInitialState();
     const eligibleState = {
       ...initial,
-      chargers: initial.chargers.map((item) => item.id === 'CG-FIAP-03' ? { ...item, commercialStatus: 'ELIGIBLE' } : item)
+      chargers: initial.chargers.map((item) => item.id === 'CG-FIAP-03' ? { ...item, publicationStatus: 'ELIGIBLE' } : item)
     };
     const result = requestChargerCommand(eligibleState, account(eligibleState), {
       chargerId: 'CG-FIAP-03', type: 'START_CHARGE', reason: 'Motorista confirmou conexao', idempotencyKey: 'eligible-not-published'

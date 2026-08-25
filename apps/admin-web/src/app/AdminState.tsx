@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { AccessActionResult, Account, AdminState, ChargerCommercialStatus, FinancialActionResult, IncidentActionResult, PlantOnboardingDraft, PlantOnboardingPublishResult, QueueActionResult, Recommendation, ReportActionResult, ReportSubscription, RequestChargerCommandInput, RequestChargerCommandResult, SupportTicket } from "../domain/admin";
+import type { AccessActionResult, Account, AdminState, ChargerPublicationStatus, FinancialActionResult, IncidentActionResult, PlantOnboardingDraft, PlantOnboardingPublishResult, QueueActionResult, Recommendation, ReportActionResult, ReportSubscription, RequestChargerCommandInput, RequestChargerCommandResult, SupportTicket } from "../domain/admin";
 import { createInitialState } from "../fixtures/adminDemo";
 import { GOODWE_PLANT_CATALOG } from "../fixtures/goodwePlantCatalog";
 import { createEmptyPlantOnboardingDraft, publishPlantOnboarding as publishPlantDraft } from "../domain/plantOnboarding";
@@ -22,7 +22,7 @@ interface AdminContextValue {
   account: Account | null;
   login: (email: string, password: string) => Account | null;
   logout: () => void;
-  updateChargerCommercialStatus: (chargerId: string, target: ChargerCommercialStatus) => AccessActionResult;
+  updateChargerCommercialStatus: (chargerId: string, target: ChargerPublicationStatus) => AccessActionResult;
   requestChargerCommand: (input: RequestChargerCommandInput) => Promise<RequestChargerCommandResult>;
   callNextQueueDriver: (establishmentId: string) => QueueActionResult;
   confirmQueueArrival: (entryId: string) => QueueActionResult;
@@ -62,7 +62,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => setState((current) => ({ ...current, currentAccountId: null })), []);
 
-  const updateChargerCommercialStatus = useCallback((chargerId: string, target: ChargerCommercialStatus) => {
+  const updateChargerCommercialStatus = useCallback((chargerId: string, target: ChargerPublicationStatus) => {
     const transition = updateCommercialStatus(state, account, chargerId, target);
     if (transition.ok) setState(transition.state);
     return { ok: transition.ok, issues: transition.issues };

@@ -1,4 +1,6 @@
-# Handoff da sessão — Admin SEMS+ + ChargeGrid
+# Handoff histórico da sessão — Admin SEMS+ + ChargeGrid
+
+> Este registro descreve a rodada de 23/08/2026. Para o estado vigente, consulte `docs/CURRENT_STATE.md` e `docs/admin-dashboard/NEXT_EXECUTION_PLAN.md`.
 
 **Data:** 23 de agosto de 2026  
 **Branch:** `feature/admin-responsibility-flows`  

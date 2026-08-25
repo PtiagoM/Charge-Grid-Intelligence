@@ -1,6 +1,6 @@
 # ChargeGrid Intelligence — fonte única de verdade
 
-**Atualizado em:** 23 de agosto de 2026  
+**Atualizado em:** 25 de agosto de 2026  
 **Escopo:** GoodWe, produto, negócio, operação, arquitetura, implementação, histórico e decisões vigentes  
 **Status:** documento canônico para continuidade do projeto
 
@@ -106,13 +106,21 @@ O plano aprovado para a próxima construção está em `docs/admin-dashboard/NEX
 - a janela de chamada da fila foi unificada em dez minutos;
 - esta implementação permanece frontend/fixture; autoridade produtiva, RLS, integração contratual e emissão segura do código continuam pendentes no backend.
 
-### Integração mais recente do Admin — 23/08/2026
+### Integração histórica do Admin — 23/08/2026
 
 - `7fe0205` — `feat(admin): align ChargeGrid flows with SEMS responsibilities` — foi integrado em `develop/admin-web` pelo PR #5 (`b7d3fea`);
 - a entrega consolida a camada ChargeGrid sobre as superfícies SEMS+, sem alterar o Driver PWA, API, pacotes compartilhados ou `main`;
 - CI do PR aprovou lint, testes e build; a regressão E2E integral permaneceu fora da execução automática conforme a estratégia vigente;
 - a validação local proporcional registrou 20 arquivos/72 testes unitários e 20 cenários E2E focais aprovados; o navegador integrado não estava disponível para uma nova inspeção manual;
 - o modelo de permissões apresentado no frontend é demonstrativo: reproduz a estrutura e as restrições ChargeGrid confirmadas, mas não afirma equivalência integral à matriz proprietária de autorização GoodWe.
+
+### Estado atual do Admin — 25/08/2026
+
+- Fase 0 consolidada no PR #9, branch `feature/admin-persona-foundation`, commit funcional `dd81549` e consolidação documental `d8df92a`.
+- A branch parte de `origin/develop/admin-web` no merge do PR #8 (`31401e6`).
+- Foram aprovados 76 testes unitários Admin, lint, build e E2E focais de personas, navegação, filtros e painel.
+- O CI integral do PR permanece responsável pela validação remota; nenhum snapshot ou baseline visual foi criado.
+- Registros anteriores de M0–M9, PR #5 e branch `feature/admin-responsibility-flows` são históricos e não descrevem a base vigente.
 
 ## Registro da entrega atual — 21 de agosto de 2026
 
