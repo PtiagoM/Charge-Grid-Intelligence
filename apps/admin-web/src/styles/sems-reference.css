@@ -712,12 +712,47 @@
 .sems-device-type-tabs { margin: -8px 0 12px; }
 .sems-device-type-tabs[role="tablist"] { margin-top: -12px; }
 .sems-device-type-tabs[role="tablist"] button { cursor: pointer; }
-.sems-device-inventory { align-content: start; gap: 0; }
+.sems-device-inventory { position: relative; align-content: start; gap: 0; overflow: hidden; }
+.sems-device-toolbar {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(240px, 1fr) minmax(260px, 1.08fr) minmax(240px, 1fr) 42px 42px;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.sems-device-toolbar label { min-width: 0; }
+.sems-device-toolbar input {
+  width: 100%;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  outline: 0;
+  background: #393a3d;
+  color: #fff;
+}
+.sems-device-toolbar input:focus { border-color: rgba(255,55,65,.7); }
+.sems-device-toolbar input::placeholder { color: rgba(255,255,255,.28); }
+.sems-device-toolbar .sems-filter-button { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.sems-device-toolbar .sems-filter-button.is-active { color: #ff323a; }
+.sems-device-inventory .sems-device-filter-panel { top: 68px; width: min(640px, calc(100% - 40px)); }
+.sems-device-filter-panel .sems-plants-filter-body { padding-block: 24px; }
 .sems-device-inventory .sems-reference-filter { gap: 14px; }
 .sems-device-inventory .sems-reference-filter label:first-of-type { flex: 1.08; }
 .sems-device-inventory .sems-reference-filter label:nth-of-type(2) { flex: 1.1; }
 .sems-device-inventory .sems-reference-filter label:nth-of-type(3) { flex: 1.12; }
-.sems-device-inventory .data-table tbody tr:not(.sems-device-group-row) { height: 54px; }
+.sems-device-inventory .data-table { min-width: 1280px; table-layout: fixed; }
+.sems-device-inventory .data-table thead th { height: 58px; padding: 10px 14px; line-height: 1.05; }
+.sems-device-inventory .data-table thead th:first-child { width: 22%; }
+.sems-device-inventory .data-table thead th:nth-child(2) { width: 19%; }
+.sems-device-inventory .data-table thead th:nth-child(3) { width: 13%; }
+.sems-device-inventory .data-table thead th:nth-child(4) { width: 19%; }
+.sems-device-inventory .data-table thead th:nth-child(5) { width: 12%; }
+.sems-device-inventory .data-table thead th:nth-child(6) { width: 7%; }
+.sems-device-inventory .data-table thead th:nth-child(7) { width: 6%; }
+.sems-device-inventory .data-table thead th:last-child { width: 34px; text-align: center; }
+.sems-device-inventory .data-table tbody tr:not(.sems-device-group-row) { height: 64px; }
 .sems-device-inventory .data-table tbody tr:not(.sems-device-group-row) td { padding-top: 12px; padding-bottom: 12px; vertical-align: middle; }
 .sems-device-group-row { height: 56px !important; }
 .sems-device-group-row td { padding: 12px 16px !important; background: linear-gradient(90deg, #36373a, #303134) !important; vertical-align: middle; }
@@ -725,7 +760,7 @@
 .sems-device-group-row td > strong { margin-right: 16px; }
 .sems-device-group-row td > b { padding: 6px 10px; border-radius: 5px; background: rgba(255,255,255,.07); color: rgba(255,255,255,.78); font-size: 11px; font-weight: 600; }
 .sems-device-status { display: inline-flex !important; align-items: center; gap: 7px; margin: 0 !important; white-space: nowrap; }
-.sems-device-status i { width: 9px; height: 9px; border: 2px solid currentColor; border-radius: 50%; }
+.sems-device-status i { width: 16px; height: 16px; display: grid; place-items: center; border: 2px solid currentColor; border-radius: 4px; font-size: 9px; font-style: normal; line-height: 1; }
 .sems-device-status.tone-good { color: #16d68a !important; }
 .sems-device-status.tone-warn { color: #e4a63c !important; }
 .sems-device-status.tone-danger { color: #ff4851 !important; }
@@ -740,6 +775,10 @@
 .sems-device-pagination > strong { border-color: #ff323a; color: #ff323a; }
 .sems-device-pagination > button:disabled { opacity: .35; }
 .sems-device-pagination select { height: 34px; margin-left: 8px; padding: 0 28px 0 12px; border: 1px solid rgba(255,255,255,.12); border-radius: 6px; background: #202123; color: #fff; }
+@media (max-width: 1180px) {
+  .sems-device-toolbar { grid-template-columns: auto minmax(220px, 1fr) minmax(240px, 1fr) 42px 42px; }
+  .sems-device-toolbar label:nth-of-type(3) { display: none; }
+}
 .sems-reference-table { min-width: 980px; }
 .sems-reference-table thead th,
 .sems-reference-list .data-table thead th { background: #3b3b3e; }

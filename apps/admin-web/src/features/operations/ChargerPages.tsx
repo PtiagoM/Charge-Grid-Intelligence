@@ -72,10 +72,10 @@ const STATUS_TABS: Record<SemsDeviceKind, ReadonlyArray<{ value: "all" | SemsDev
 };
 
 const DEVICE_COLUMNS: Record<SemsDeviceKind, string[]> = {
-  inverter: ["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Potência ativa (kW)", "Carga", "Operação"],
-  dongle: ["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Número do SIM", "Observação", "Operação"],
-  charger: ["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Potência de carregamento (kW)", "Carga diária (kWh)", "Operação"],
-  "third-party-inverter": ["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Potência ativa (kW)", "Geração diária (kWh)", "Operação"]
+  inverter: ["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Potência ativa (kW)", "Carga", "Operação", "⬡"],
+  dongle: ["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Número do SIM", "Observação", "Operação", "⬡"],
+  charger: ["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Potência de carregamento (kW)", "Carga diária (kWh)", "Operação", "⬡"],
+  "third-party-inverter": ["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Potência ativa (kW)", "Geração diária (kWh)", "Operação", "⬡"]
 };
 
 function chargerInventoryStatus(value: string): SemsDeviceStatus {
@@ -177,9 +177,13 @@ export function ChargersInventoryPage({ establishmentId }: { establishmentId?: s
   const accessibleScopeSet = new Set(accessibleEstablishmentIds(state, account));
   const telemetryByChargerId = new Map(state.chargerTelemetry.map((item) => [item.chargerId, item]));
   const locationById = new Map(state.locations.map((item) => [item.id, item]));
-  const [kind, setKind] = useState<SemsDeviceKind>("charger");
+  const establishmentById = new Map(state.establishments.map((item) => [item.id, item]));
+  const canViewCommercial = Boolean(account && hasAdminCapability(account, "commercial:read"));
+  const [kind, setKind] = useState<SemsDeviceKind>("inverter");
   const [status, setStatus] = useState<"all" | SemsDeviceStatus>("all");
+  const [filterOpen, setFilterOpen] = useState(false);
   const [scopeFilter, setScopeFilter] = useState(establishmentId ?? "all");
+  const [plantSearch, setPlantSearch] = useState("");
   const [search, setSearch] = useState("");
   const [email, setEmail] = useState("");
   const [page, setPage] = useState(1);
@@ -208,11 +212,14 @@ export function ChargersInventoryPage({ establishmentId }: { establishmentId?: s
   const rows = kind === "charger" ? chargerRows : technicalRows.filter((item) => item.kind === kind);
   const scopeOptions = state.establishments.filter((item) => accessibleScopeSet.has(item.id));
   const items = rows.filter((item) => {
+    const plantTerm = plantSearch.trim().toLowerCase();
     const term = search.trim().toLowerCase();
     const emailTerm = email.trim().toLowerCase();
+    const plantIdentity = `${locationById.get(item.locationId)?.name ?? ""} ${establishmentById.get(item.establishmentId)?.name ?? ""}`.toLowerCase();
+    const matchesPlant = !plantTerm || plantIdentity.includes(plantTerm);
     const matchesSearch = !term || [item.id, item.name, item.serial, item.typeLabel].some((value) => value.toLowerCase().includes(term));
     const matchesEmail = !emailTerm || item.email?.toLowerCase().includes(emailTerm);
-    return matchesSearch && matchesEmail && (status === "all" || item.status === status);
+    return matchesPlant && matchesSearch && matchesEmail && (status === "all" || item.status === status);
   });
   const pageCount = Math.max(1, Math.ceil(items.length / pageSize));
   const currentPage = Math.min(page, pageCount);
@@ -236,6 +243,7 @@ export function ChargersInventoryPage({ establishmentId }: { establishmentId?: s
   function resetFilters() {
     setStatus("all");
     setScopeFilter(establishmentId ?? "all");
+    setPlantSearch("");
     setSearch("");
     setEmail("");
     setPage(1);
@@ -244,13 +252,15 @@ export function ChargersInventoryPage({ establishmentId }: { establishmentId?: s
   return <>
     <nav className="sems-device-type-tabs" aria-label="Tipos de dispositivos" role="tablist">{DEVICE_TABS.map((tab) => <button key={tab.value} className={kind === tab.value ? "is-active" : ""} type="button" role="tab" aria-selected={kind === tab.value} onClick={() => selectKind(tab.value)}>{tab.label}</button>)}</nav>
     <section className="surface panel operations-page sems-reference-list sems-device-inventory" data-testid="mvp-chargers-panel">
-      <form className="operations-filter sems-reference-filter" onSubmit={(event) => event.preventDefault()}>
-        <label><span className="sr-only">Usina</span><select aria-label="Filtrar por usina" value={scopeFilter} onChange={(event) => { setScopeFilter(event.target.value); setPage(1); }} disabled={Boolean(establishmentId)}><option value="all">Todas as usinas autorizadas</option>{scopeOptions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-        <label><span className="sr-only">Buscar equipamento</span><input aria-label="Buscar dispositivo" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Nome do dispositivo, SN" /></label>
-        {kind !== "charger" ? <label><span className="sr-only">E-mail</span><input type="email" value={email} onChange={(event) => { setEmail(event.target.value); setPage(1); }} placeholder="Email" /></label> : null}
+      <form className="sems-device-toolbar" onSubmit={(event) => event.preventDefault()}>
+        <button className={filterOpen ? "sems-filter-button is-active" : "sems-filter-button"} type="button" onClick={() => setFilterOpen((open) => !open)}><span aria-hidden="true">▽</span> Filtro</button>
+        <label><span className="sr-only">Nome da planta</span><input aria-label="Buscar usina" value={plantSearch} onChange={(event) => { setPlantSearch(event.target.value); setPage(1); }} placeholder="▣  Nome da planta" /></label>
+        <label><span className="sr-only">Nome ou série do dispositivo</span><input aria-label="Buscar dispositivo" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="▣  Nome do dispositivo, SN" /></label>
+        <label><span className="sr-only">E-mail</span><input type="email" aria-label="Buscar email" value={email} onChange={(event) => { setEmail(event.target.value); setPage(1); }} placeholder="✉  Email" /></label>
         <button className="sems-icon-action" type="submit" aria-label="Pesquisar">⌕</button>
         <button className="sems-icon-action" type="button" aria-label="Limpar filtros" onClick={resetFilters}>↻</button>
       </form>
+      {filterOpen ? <aside className="sems-plants-filter-panel sems-device-filter-panel" aria-label="Filtros avançados de dispositivos"><header><strong>Filtro</strong><div><button type="button" onClick={resetFilters}>Redefinir</button><button type="button" onClick={() => setFilterOpen(false)}>Confirmar</button></div></header><div className="sems-plants-filter-body"><label><span>Usina autorizada</span><select aria-label="Filtrar por usina" value={scopeFilter} onChange={(event) => { setScopeFilter(event.target.value); setPage(1); }} disabled={Boolean(establishmentId)}><option value="all">Todas as usinas autorizadas</option>{scopeOptions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label></div></aside> : null}
       <nav className="sems-reference-status-tabs" aria-label="Status dos dispositivos">{statusTabs.map((tab) => <button key={tab.value} className={status === tab.value ? "is-active" : ""} type="button" onClick={() => { setStatus(tab.value); setPage(1); }}>{tab.label} <b>({tab.value === "all" ? rows.length : rows.filter((item) => item.status === tab.value).length})</b></button>)}</nav>
       <DataTable columns={columns}>
         {groupedItems.map(([groupLocationId, group]) => <Fragment key={groupLocationId}>
@@ -258,11 +268,12 @@ export function ChargersInventoryPage({ establishmentId }: { establishmentId?: s
           {group.map((item) => <tr key={item.id}>
             <td><strong>{item.name}</strong></td>
             <td>{item.serial}</td>
-            <td><span className={`sems-device-status tone-${deviceStatusTone(item.status)}`}><i />{deviceStatusLabel(item.status)}</span></td>
-            <td>{item.typeLabel}{item.kind === "charger" && account?.role ? <span className="chargegrid-device-tag">{item.publicationStatus === "PUBLISHED" ? "ChargeGrid publicado" : item.publicationStatus === "SUSPENDED" ? "ChargeGrid suspenso" : item.publicationStatus === "CONFIGURED" ? "ChargeGrid configurado" : "Elegível ao ChargeGrid"}</span> : null}</td>
+            <td><span className={`sems-device-status tone-${deviceStatusTone(item.status)}`}><i>{item.status === "operating" ? "ϟ" : ""}</i>{deviceStatusLabel(item.status)}</span></td>
+            <td>{item.typeLabel}{item.kind === "charger" && canViewCommercial ? <span className="chargegrid-device-tag">{item.publicationStatus === "PUBLISHED" ? "ChargeGrid publicado" : item.publicationStatus === "SUSPENDED" ? "ChargeGrid suspenso" : item.publicationStatus === "CONFIGURED" ? "ChargeGrid configurado" : "Elegível ao ChargeGrid"}</span> : null}</td>
             <td>{item.primaryMetric}</td>
             <td>{item.secondaryMetric}</td>
             <td>{item.actionHref ? <a className="sems-device-menu" href={item.actionHref} aria-label={`Abrir ${item.name}`}>•••</a> : <button className="sems-device-menu" type="button" aria-label={`Mais opções para ${item.name}`}>•••</button>}</td>
+            <td />
           </tr>)}
         </Fragment>)}
       </DataTable>

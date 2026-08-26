@@ -27,6 +27,7 @@ As capturas deste manifesto ficam somente no ambiente local, dentro de `inbox/`,
 | `catalogued/SEMS-PLANT-DETAIL-EV-MONITOR_OPERATOR_1069x808_POPULATED.png` | Operador | Detalhe da usina - carregador veicular | Monitoramento diario da energia carregada pelo EV charger |
 | `catalogued/SEMS-PLANT-DETAIL-PRODUCTION-COMPARISON_OPERATOR_1066x806_YEAR.png` | Operador | Detalhe da usina - comparacao de producao | Serie anual comparativa e controles de periodo |
 | `catalogued/SEMS-DEVICES-LIST_OPERATOR_1872x1043_INVERTERS.png` | Operador | Lista de dispositivos | Abas por tipo, filtros, status e tabela agrupada |
+| `catalogued/SEMS-DEVICES-LIST_OPERATOR_1619x909_INVERTERS-ALT.png` | Operador | Lista de dispositivos - inversores | Estado compacto atualizado com buscas separadas por usina e dispositivo, agrupamento, status e paginacao de cinco itens |
 | `catalogued/SEMS-DEVICES-LIST_OPERATOR_1870x919_DONGLES.png` | Operador | Lista de dispositivos - dongles | Estados online/offline, agrupamento por usina, SIM e operacoes |
 | `catalogued/SEMS-DEVICES-LIST_OPERATOR_1873x935_EV-CHARGERS.png` | Operador | Lista de dispositivos - carregadores | Estados de carregamento, inatividade, manutencao, falha e metricas de carga |
 | `catalogued/SEMS-DEVICES-LIST_OPERATOR_1877x926_THIRD-PARTY-INVERTERS.png` | Operador | Lista de dispositivos - inversores de terceiros | Estados online/offline, potencia ativa, geracao diaria e rolagem horizontal |
