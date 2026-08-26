@@ -72,10 +72,10 @@ const STATUS_TABS: Record<SemsDeviceKind, ReadonlyArray<{ value: "all" | SemsDev
 };
 
 const DEVICE_COLUMNS: Record<SemsDeviceKind, string[]> = {
-  inverter: ["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Potência ativa (kW)", "Carga", "Operação", "⬡"],
-  dongle: ["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Número do SIM", "Observação", "Operação", "⬡"],
-  charger: ["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Potência de carregamento (kW)", "Carga diária (kWh)", "Operação", "⬡"],
-  "third-party-inverter": ["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Potência ativa (kW)", "Geração diária (kWh)", "Operação", "⬡"]
+  inverter: ["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Potência ativa (kW)", "Carga", "Operação", "⚙"],
+  dongle: ["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Número do SIM", "Observação", "Operação", "⚙"],
+  charger: ["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Potência de carregamento (kW)", "Carga diária (kWh)", "Operação", "⚙"],
+  "third-party-inverter": ["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Potência ativa (kW)", "Geração diária (kWh)", "Operação", "⚙"]
 };
 
 function chargerInventoryStatus(value: string): SemsDeviceStatus {
