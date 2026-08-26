@@ -15,7 +15,7 @@ import { AccessDeniedPage, ReportsOperationsPage } from "../governance/Governanc
 import { OrganizationGovernancePage } from "../governance/OrganizationGovernancePage";
 import { hasAdminCapability } from "../../domain/adminCapabilities";
 import { getAdminRouteCapability } from "../../app/adminNavigation";
-import { accessibleEstablishmentIds, hasOwnChargeGridOperation } from "../../domain/accessOperations";
+import { accessibleEstablishmentIds, commercialAccessibleEstablishmentIds, hasOwnChargeGridOperation, technicalAccessibleEstablishmentIds } from "../../domain/accessOperations";
 import { SemsBatteryConsistencyPage, SemsComparisonPage, SemsIvDiagnosisPage } from "../analysis/SemsAnalysisPages";
 
 const establishmentTabs = new Set(["overview", "plants", "plant", "locations", "location", "charger", "chargers", "sessions", "session", "operations", "queue", "incidents", "incident", "energy", "pricing", "finance", "financial-session", "invoices", "contract", "support", "ticket", "documents", "ai", "recommendations", "reports", "settings", "access", "plant-onboarding", "analysis-iv", "analysis-comparison", "analysis-battery"]);
@@ -28,52 +28,126 @@ function StatusPill({ value }: { value: string }) {
   return <span className={`enterprise-status ${value.toLowerCase().replaceAll(" ", "-")}`}>{value}</span>;
 }
 
-function Overview({ establishmentId }: { establishmentId?: string }) {
+type DashboardChartMode = "energy" | "revenue" | "demand" | "utilization";
+type DashboardPeriod = "day" | "week" | "month";
+
+type DashboardChartSeries = {
+  label: string;
+  color: string;
+  unit: string;
+  values: Array<number | null>;
+  kind?: "currency" | "percent";
+};
+
+const dashboardPeriodLabels: Record<DashboardPeriod, string[]> = {
+  day: ["00h", "04h", "08h", "12h", "16h", "20h", "Agora"],
+  week: ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"],
+  month: ["01", "05", "10", "15", "20", "25", "Hoje"]
+};
+
+const dashboardTrendWeights = [0.46, 0.61, 0.55, 0.76, 0.68, 0.9, 0.83];
+
+function optionalSum(values: Array<number | undefined>) {
+  const present = values.filter((value): value is number => typeof value === "number");
+  return present.length ? present.reduce((sum, value) => sum + value, 0) : null;
+}
+
+function chartValues(value: number | null) {
+  return value === null ? dashboardTrendWeights.map(() => null) : dashboardTrendWeights.map((weight) => Number((value * weight).toFixed(2)));
+}
+
+function chartPath(values: Array<number | null>, max: number) {
+  const valid = values.map((value, index) => value === null ? null : `${(index / Math.max(values.length - 1, 1)) * 100},${94 - (value / Math.max(max, 1)) * 78}`);
+  return valid.reduce<string>((path, point, index) => point ? `${path}${path ? " " : "M"}${point}` : (index ? path : ""), "");
+}
+
+function formatChartValue(value: number | null | undefined, series: DashboardChartSeries) {
+  if (value === null || value === undefined) return "Sem telemetria";
+  if (series.kind === "currency") return money(value);
+  if (series.kind === "percent") return `${number(value)}%`;
+  return `${number(value)} ${series.unit}`.trim();
+}
+
+function Overview() {
   const { state, account } = useAdminState();
-  const allowedEstablishmentIds = accessibleEstablishmentIds(state, account);
-  const establishmentIds = account?.profile === "GOODWE"
-    ? new Set(establishmentId ? [establishmentId] : allowedEstablishmentIds)
-    : new Set([account?.establishmentId ?? ""]);
-  const hasChargeGrid = hasOwnChargeGridOperation(state, account);
-  const chargers = state.chargers.filter((item) => establishmentIds.has(item.establishmentId));
-  const sessions = state.sessions.filter((item) => establishmentIds.has(item.establishmentId));
-  const locations = state.locations.filter((item) => establishmentIds.has(item.establishmentId));
-  const queue = state.queue.filter((item) => establishmentIds.has(item.establishmentId) && item.status === "waiting");
-  const available = chargers.filter((item) => item.status === "available").length;
-  const inUse = chargers.filter((item) => item.status === "charging").length;
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
+  const [chartMode, setChartMode] = useState<DashboardChartMode>("energy");
+  const [chartPeriod, setChartPeriod] = useState<DashboardPeriod>("week");
+  const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
+  const technicalScope = new Set(technicalAccessibleEstablishmentIds(account));
+  const commercialScope = new Set(commercialAccessibleEstablishmentIds(state, account).filter((id) => technicalScope.has(id)));
+  const canReadCommercial = Boolean(account && hasAdminCapability(account, "commercial:read") && commercialScope.size);
+  const canReadFinance = Boolean(account && hasAdminCapability(account, "finance:manage"));
+  const chargers = state.chargers.filter((item) => technicalScope.has(item.establishmentId));
+  const commercialChargers = chargers.filter((item) => commercialScope.has(item.establishmentId) && item.publicationStatus === "PUBLISHED");
+  const sessions = state.sessions.filter((item) => commercialScope.has(item.establishmentId));
+  const locations = state.locations.filter((item) => technicalScope.has(item.establishmentId));
+  const commercialPlants = state.commercialPlants.filter((item) => commercialScope.has(item.establishmentId) && item.status === "PUBLISHED");
   const totalPower = chargers.reduce((sum, item) => sum + item.powerKw, 0);
-  const technicalEnergy = state.energy
-    .filter((item) => establishmentIds.has(item.establishmentId))
-    .reduce((sum, item) => sum + (item.periodSolarKwh ?? 0), 0);
-  const delivered = hasChargeGrid ? sessions.reduce((sum, item) => sum + item.energyKwh, 0) : technicalEnergy;
-  const revenue = hasChargeGrid ? sessions.reduce((sum, item) => sum + (item.finalAmount ?? item.consumedAmount), 0) : delivered * 0.74;
+  const energySnapshots = state.energy.filter((item) => technicalScope.has(item.establishmentId));
+  const generatedEnergy = optionalSum(energySnapshots.map((item) => item.periodSolarKwh));
+  const chargedEnergy = optionalSum(energySnapshots.map((item) => item.periodBatteryKwh));
+  const gridEnergy = optionalSum(energySnapshots.map((item) => item.periodGridKwh));
+  const revenue = sessions.reduce((sum, item) => sum + (item.finalAmount ?? item.consumedAmount), 0);
   const offline = chargers.filter((item) => item.status === "offline").length;
-  const energy = state.energy.find((item) => establishmentIds.has(item.establishmentId)) ?? state.energy[0];
-  const currentPower = (energy?.solarPowerKw ?? 0) + (energy?.gridPowerKw ?? 0);
-  const activeSessions = sessions.filter((item) => item.status === "active").length;
-  const openIncidents = state.incidents.filter((item) => establishmentIds.has(item.establishmentId) && item.status !== "RESOLVED").length;
+  const solarPower = optionalSum(energySnapshots.map((item) => item.solarPowerKw));
+  const gridPower = optionalSum(energySnapshots.map((item) => item.gridPowerKw));
+  const currentPower = (solarPower ?? 0) + (gridPower ?? 0);
+  const demandPower = optionalSum(energySnapshots.map((item) => item.demandKw));
+  const contractedLimit = optionalSum(energySnapshots.map((item) => item.contractedLimitKw));
+  const openIncidents = state.incidents.filter((item) => technicalScope.has(item.establishmentId) && item.status !== "RESOLVED").length;
   const alarmTotal = openIncidents + offline;
-  const operatingPercent = chargers.length ? Math.round(((available + inUse) / chargers.length) * 100) : 0;
+  const operatingPercent = commercialChargers.length ? Math.round((commercialChargers.filter((item) => item.status !== "offline").length / commercialChargers.length) * 100) : 0;
+  const technicalValue = generatedEnergy === null ? null : generatedEnergy * 0.74;
+  const stationStates = [
+    ["Em operação", locations.filter((location) => chargers.some((charger) => charger.locationId === location.id && charger.status !== "offline")).length],
+    ["Aguardando", 0],
+    ["Offline", locations.filter((location) => chargers.some((charger) => charger.locationId === location.id && charger.status === "offline")).length],
+    ["Falha", new Set(state.incidents.filter((item) => technicalScope.has(item.establishmentId) && item.status !== "RESOLVED").map((item) => item.locationId)).size],
+    ["Em construção", 0]
+  ] as const;
+  const chartSeriesByMode: Record<DashboardChartMode, DashboardChartSeries[]> = {
+    energy: [
+      { label: "Geração", color: "#ff323a", unit: "kWh", values: chartValues(generatedEnergy) },
+      { label: "Energia carregada", color: "#f3bd46", unit: "kWh", values: chartValues(chargedEnergy) },
+      { label: "Energia da rede", color: "#7b858e", unit: "kWh", values: chartValues(gridEnergy) }
+    ],
+    revenue: [{ label: "Receita ChargeGrid", color: "#ff323a", unit: "", kind: "currency", values: chartValues(canReadFinance ? revenue : null) }],
+    demand: [
+      { label: "Demanda", color: "#ff323a", unit: "kW", values: chartValues(demandPower) },
+      { label: "Limite contratado", color: "#7b858e", unit: "kW", values: chartValues(contractedLimit) }
+    ],
+    utilization: [
+      { label: "Disponibilidade", color: "#ff323a", unit: "", kind: "percent", values: chartValues(canReadCommercial ? operatingPercent : null) },
+      { label: "Carregadores em uso", color: "#7b858e", unit: "", values: chartValues(canReadCommercial ? commercialChargers.filter((item) => item.status === "charging").length : null) }
+    ]
+  };
+  const chartSeries = chartSeriesByMode[chartMode];
+  const chartMax = Math.max(1, ...chartSeries.flatMap((series) => series.values.filter((value): value is number => value !== null)));
+  const lastAvailablePoint = chartSeries[0]?.values.reduce((last, value, index) => value !== null ? index : last, -1) ?? -1;
+  const activePoint = hoveredPoint ?? lastAvailablePoint;
+  const showCommercialChart = canReadCommercial;
+  const activeChartLabel = dashboardPeriodLabels[chartPeriod][Math.max(activePoint, 0)];
 
   return <>
     <section className="sems-dashboard-map" data-testid="mvp-overview-panel">
       <WorldMap state={{ ...state, locations, chargers }} />
       <article className="sems-station-summary world-station-summary" data-testid="mvp-overview-kpis">
-        <div className="station-row station-row-main"><div className="station-map-illustration" aria-hidden="true"><span /><i /><b /><em /></div><div className="station-value"><p><strong>{locations.length}</strong><button type="button" aria-label="Expandir estacoes">⌄</button></p><span>Station Number <small>?</small></span></div></div>
+        <div className="station-row station-row-main"><div className="station-map-illustration" aria-hidden="true"><span /><i /><b /><em /></div><div className="station-value"><p><strong>{locations.length}</strong><button type="button" aria-label="Expandir resumo das usinas" aria-expanded={summaryExpanded} onClick={() => setSummaryExpanded((value) => !value)}>⌄</button></p><span>Usinas monitoradas <small>?</small></span></div></div>
         <div className="station-row"><div className="station-solar-illustration" aria-hidden="true"><span /><span /><span /></div><div className="station-value"><p><strong>{number(totalPower)}</strong><small>kWp</small></p><span>Capacity</span></div></div>
-        <div className="station-row"><div className="station-storage-illustration" aria-hidden="true"><span /><span /><span /></div><div className="station-value"><p><strong>{number(34.84)}</strong><small>kWh</small></p><span>Capacity</span></div></div>
+        <div className="station-row"><div className="station-storage-illustration" aria-hidden="true"><span /><span /><span /></div><div className="station-value"><p><strong>{number(chargedEnergy ?? 0)}</strong><small>kWh</small></p><span>Energia armazenada</span></div></div>
+        {summaryExpanded ? <div className="station-state-list" data-testid="dashboard-station-state-list">{stationStates.map(([label, value]) => <p key={label}><span>{label}</span><strong>{value}</strong></p>)}</div> : null}
       </article>
     </section>
     <section className="sems-operator-dashboard" data-testid="mvp-overview-recommendation">
       <div className="sems-operator-column">
-        <article className="sems-dashboard-card sems-power-card"><header><div className="sems-card-heading"><img src={assets.dashboard.power} alt="" /><div><h2>Potência</h2><span>Tempo real</span></div></div></header><div className="sems-power-gauge" style={{ "--gauge-value": `${Math.min(100, Math.round((currentPower / Math.max(totalPower, 1)) * 100)) * 1.8}deg` } as CSSProperties}><div><strong>{number(currentPower)}</strong><span>kW</span></div></div><footer><span><i className="is-red" />Solar {number(energy?.solarPowerKw ?? 0)} kW</span><span><i />Rede {number(energy?.gridPowerKw ?? 0)} kW</span></footer></article>
+        <article className="sems-dashboard-card sems-power-card"><header><div className="sems-card-heading"><img src={assets.dashboard.power} alt="" /><div><h2>Potência</h2><span>Tempo real</span></div></div></header><div className="sems-power-gauge" style={{ "--gauge-value": `${Math.min(100, Math.round((currentPower / Math.max(totalPower, 1)) * 100)) * 1.8}deg` } as CSSProperties}><div><strong>{solarPower === null && gridPower === null ? "—" : number(currentPower)}</strong><span>kW</span></div></div><footer><span><i className="is-red" />Solar {solarPower === null ? "Sem telemetria" : `${number(solarPower)} kW`}</span><span><i />Rede {gridPower === null ? "Sem telemetria" : `${number(gridPower)} kW`}</span></footer></article>
         <article className="sems-dashboard-card sems-alarm-card"><header><div className="sems-card-heading"><img src={assets.dashboard.alarm} alt="" /><h2>Alarmes</h2></div><a href="#/mvp/incidents">Detalhes ›</a></header><div className="sems-alarm-body"><div className="sems-alarm-donut" style={{ "--alarm-share": `${Math.min(100, alarmTotal * 12)}%` } as CSSProperties}><strong>{alarmTotal}</strong><span>Total</span></div><ul><li><i className="is-critical" /><span>Falha</span><strong>{offline}</strong></li><li><i className="is-warning" /><span>Aviso</span><strong>{openIncidents}</strong></li></ul></div></article>
-        <article className="sems-dashboard-card sems-environment-card"><header><h2>Contribuições ambientais</h2><span>Desde o início da operação</span></header><div><p><img src={assets.dashboard.co2} alt="" /><span>CO₂ evitado</span><strong>{number(delivered * 0.081)} t</strong></p><p><img src={assets.dashboard.tree} alt="" /><span>Árvores equivalentes</span><strong>{Math.round(delivered * 0.42)}</strong></p><p><img src={assets.dashboard.generatedEnergy} alt="" /><span>Carvão padrão evitado</span><strong>{number(delivered * 0.033)} t</strong></p></div></article>
+        <article className="sems-dashboard-card sems-environment-card"><header><h2>Contribuições ambientais</h2><span>Desde o início da operação</span></header><div><p><img src={assets.dashboard.co2} alt="" /><span>CO₂ evitado</span><strong>{generatedEnergy === null ? "—" : `${number(generatedEnergy * 0.081)} t`}</strong></p><p><img src={assets.dashboard.tree} alt="" /><span>Árvores equivalentes</span><strong>{generatedEnergy === null ? "—" : Math.round(generatedEnergy * 0.42)}</strong></p><p><img src={assets.dashboard.generatedEnergy} alt="" /><span>Carvão padrão evitado</span><strong>{generatedEnergy === null ? "—" : `${number(generatedEnergy * 0.033)} t`}</strong></p></div></article>
       </div>
       <div className="sems-operator-main">
-        <article className="sems-dashboard-card sems-economy-card"><header><div><h2>Economia</h2><span>{hasChargeGrid ? "Energia e operação comercial acumuladas" : "Produção e benefícios energéticos acumulados"}</span></div><select aria-label="Período da economia"><option>Desde sempre</option></select></header><div className="sems-economy-metrics"><p><img src={assets.dashboard.generationIncome} alt="" /><span>{hasChargeGrid ? "Receita" : "Benefício estimado"}</span><strong>{money(revenue)}</strong></p><p><img src={assets.dashboard.chargingEnergy} alt="" /><span>{hasChargeGrid ? "Energia entregue" : "Energia gerada"}</span><strong>{number(delivered)} <small>kWh</small></strong></p><p><img src={assets.dashboard.generatedEnergy} alt="" /><span>{hasChargeGrid ? "Sessões" : "Plantas monitoradas"}</span><strong>{hasChargeGrid ? sessions.length : locations.length}</strong></p><p><img src={assets.dashboard.gridIncome} alt="" /><span>Disponibilidade</span><strong>{operatingPercent}<small>%</small></strong></p></div></article>
-        <article className="sems-dashboard-card sems-monitor-card"><header><div className="sems-card-heading"><img src={assets.dashboard.curve} alt="" /><div><h2>Monitoramento</h2><span>{hasChargeGrid ? "Energia entregue e sessões de recarga" : "Potência e energia das plantas"}</span></div></div><div><button className="is-active" type="button">Dia</button><button type="button">Mês</button><button type="button">Ano</button></div></header><div className="sems-monitor-legend"><span><i />{hasChargeGrid ? "Energia entregue" : "Energia"}</span><span><i />{hasChargeGrid ? "Sessões" : "Potência"}</span></div><div className="sems-monitor-chart" aria-label="Gráfico de monitoramento dos últimos sete dias"><span className="chart-grid" /><svg viewBox="0 0 760 250" preserveAspectRatio="none" role="img"><defs><linearGradient id="energy-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ff323a" stopOpacity=".34" /><stop offset="1" stopColor="#ff323a" stopOpacity="0" /></linearGradient></defs><path className="chart-area" d="M0 210 C90 190 110 130 205 155 S330 80 405 105 S515 35 590 72 S680 38 760 52 L760 250 L0 250 Z" /><path className="chart-energy" d="M0 210 C90 190 110 130 205 155 S330 80 405 105 S515 35 590 72 S680 38 760 52" /><path className="chart-sessions" d="M0 220 C80 205 145 178 210 190 S330 145 410 164 S535 110 600 126 S690 92 760 110" /></svg><div className="chart-axis"><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span><span>Dom</span></div></div></article>
-        {hasChargeGrid ? <article className="sems-dashboard-card chargegrid-operation-card"><header><div><span className="chargegrid-kicker">Camada ChargeGrid</span><h2>Operação dos carregadores</h2></div><a href="#/mvp/operations">Abrir central operacional ›</a></header><div className="chargegrid-operation-metrics"><p data-testid="mvp-kpi-available"><span>Disponíveis</span><strong>{available}</strong></p><p data-testid="mvp-kpi-inuse"><span>Em recarga</span><strong>{inUse}</strong></p><p data-testid="mvp-kpi-active-sessions"><span>Sessões ativas</span><strong>{activeSessions}</strong></p><p data-testid="mvp-kpi-demand-state"><span>Demanda</span><strong>{energy?.demandState ?? "Favorável"}</strong><small>{energy?.powerMarginPercent ?? 100}% de margem</small></p><p><span>Fila atual</span><strong>{queue.length}</strong></p></div></article> : null}
+        <article className="sems-dashboard-card sems-economy-card"><header><div><h2>Economia</h2><span>Produção e benefícios energéticos acumulados</span></div><select aria-label="Período da economia"><option>Desde sempre</option></select></header><div className="sems-economy-metrics"><p><img src={assets.dashboard.generationIncome} alt="" /><span>Benefício estimado</span><strong>{technicalValue === null ? "—" : money(technicalValue)}</strong></p><p><img src={assets.dashboard.chargingEnergy} alt="" /><span>Energia gerada</span><strong>{generatedEnergy === null ? "—" : <>{number(generatedEnergy)} <small>kWh</small></>}</strong></p><p><img src={assets.dashboard.generatedEnergy} alt="" /><span>Energia armazenada</span><strong>{chargedEnergy === null ? "—" : <>{number(chargedEnergy)} <small>kWh</small></>}</strong></p><p><img src={assets.dashboard.gridIncome} alt="" /><span>Energia da rede</span><strong>{gridEnergy === null ? "—" : <>{number(gridEnergy)} <small>kWh</small></>}</strong></p><p><img src={assets.dashboard.co2} alt="" /><span>CO₂ evitado</span><strong>{generatedEnergy === null ? "—" : <>{number(generatedEnergy * 0.081)} <small>t</small></>}</strong></p><p><img src={assets.dashboard.tree} alt="" /><span>Usinas monitoradas</span><strong>{locations.length}</strong></p></div>{canReadCommercial ? <aside className="sems-chargegrid-summary" data-testid="dashboard-chargegrid-summary"><div><span>Camada ChargeGrid</span><strong>{commercialPlants.length} usina(s) comercial(is)</strong></div><dl><div><dt>{canReadFinance ? "Receita do período" : "Qualidade comercial"}</dt><dd>{canReadFinance ? money(revenue) : `${operatingPercent}%`}</dd></div><div><dt>Sessões</dt><dd>{sessions.length}</dd></div><div><dt>Disponibilidade</dt><dd>{operatingPercent}%</dd></div><div><dt>Carregadores publicados</dt><dd>{commercialChargers.length}</dd></div></dl></aside> : null}</article>
+        <article className="sems-dashboard-card sems-monitor-card"><header><div className="sems-card-heading"><img src={assets.dashboard.curve} alt="" /><div><h2>Monitoramento</h2><span>{chartMode === "energy" ? "Energia das usinas no escopo técnico" : "Indicador agregado da camada ChargeGrid"}</span></div></div><div>{(["day", "week", "month"] as DashboardPeriod[]).map((period) => <button className={chartPeriod === period ? "is-active" : ""} type="button" key={period} onClick={() => setChartPeriod(period)}>{period === "day" ? "Dia" : period === "week" ? "Semana" : "Mês"}</button>)}</div></header>{showCommercialChart ? <nav className="sems-chart-mode-tabs" aria-label="Indicador do monitoramento">{(["energy", "revenue", "demand", "utilization"] as DashboardChartMode[]).map((mode) => <button className={chartMode === mode ? "is-active" : ""} key={mode} type="button" onClick={() => { setChartMode(mode); setHoveredPoint(null); }}>{mode === "energy" ? "Monitoramento de energia" : mode === "revenue" ? "Receita ChargeGrid" : mode === "demand" ? "Demanda ChargeGrid" : "Utilização ChargeGrid"}</button>)}</nav> : null}<div className="sems-monitor-legend">{chartSeries.map((series) => <span key={series.label}><i style={{ background: series.color }} />{series.label}</span>)}</div><div className="sems-monitor-chart" aria-label="Gráfico de monitoramento agregado"><span className="chart-grid" /><svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label={`Gráfico ${chartMode}`}><defs><linearGradient id="energy-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ff323a" stopOpacity=".3" /><stop offset="1" stopColor="#ff323a" stopOpacity="0" /></linearGradient></defs>{chartSeries.map((series, index) => { const path = chartPath(series.values, chartMax); return path ? <path className={index === 0 ? "chart-energy" : "chart-sessions"} key={series.label} style={{ stroke: series.color }} d={path} /> : null; })}</svg>{activePoint >= 0 && chartSeries.some((series) => series.values[activePoint] !== null) ? <aside className="sems-monitor-tooltip" style={{ "--tooltip-position": `${(activePoint / Math.max(dashboardPeriodLabels[chartPeriod].length - 1, 1)) * 100}%` } as CSSProperties}><strong>{activeChartLabel}</strong>{chartSeries.map((series) => <span key={series.label}><i style={{ background: series.color }} />{series.label}<b>{formatChartValue(series.values[activePoint], series)}</b></span>)}</aside> : <p className="sems-monitor-empty">Sem telemetria disponível para este indicador.</p>}<div className="sems-chart-hover-targets">{dashboardPeriodLabels[chartPeriod].map((label, index) => <button key={label} type="button" data-testid={`dashboard-chart-point-${index}`} aria-label={`Exibir dados de ${label}`} onFocus={() => setHoveredPoint(index)} onMouseEnter={() => setHoveredPoint(index)} onClick={() => setHoveredPoint(index)} />)}</div><div className="chart-axis">{dashboardPeriodLabels[chartPeriod].map((label) => <span key={label}>{label}</span>)}</div></div></article>
       </div>
     </section>
   </>;
@@ -215,7 +289,7 @@ export function AdminDashboardPage() {
 
   const content = (() => {
     switch (tab) {
-      case "overview": return <Overview establishmentId={establishmentId || undefined} />;
+      case "overview": return <Overview />;
       case "clients": return <ClientsPage />;
       case "new-client": return <Navigate to="/mvp/clients" replace />;
       case "client": return <ClientDetail client={state.clients.find((item) => item.id === query.get("client"))} />;

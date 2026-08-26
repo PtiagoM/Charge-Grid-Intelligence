@@ -557,20 +557,33 @@
 .sems-environment-card p span { color: rgba(255,255,255,.52); font-size: 10px; }
 .sems-environment-card p strong { font-size: 14px; }
 
-.sems-economy-card { min-height: 240px; }
+.sems-economy-card { min-height: 330px; }
 .sems-economy-card select { height: 30px; padding: 0 26px 0 10px; border: 1px solid rgba(255,255,255,.08); border-radius: 6px; background: #343538; color: rgba(255,255,255,.7); font-size: 10px; }
-.sems-economy-metrics { min-height: 150px; padding: 16px 20px 24px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; align-items: center; }
+.sems-economy-metrics { min-height: 150px; padding: 16px 20px 14px; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; align-items: center; }
 .sems-economy-metrics p { min-width: 0; margin: 0; text-align: center; }
 .sems-economy-metrics img { width: 48px; height: 46px; margin: 0 auto 8px; object-fit: contain; }
 .sems-economy-metrics span { display: block; min-height: 30px; color: rgba(255,255,255,.48); font-size: 10px; }
 .sems-economy-metrics strong { display: block; overflow: hidden; color: #ff4049; font-size: clamp(18px, 2vw, 28px); text-overflow: ellipsis; white-space: nowrap; }
 .sems-economy-metrics small { margin-left: 3px; color: rgba(255,255,255,.55); font-size: 9px; }
 
-.sems-monitor-card { min-height: 410px; }
+.sems-chargegrid-summary { margin: 2px 20px 18px; padding: 11px 14px; display: flex; align-items: center; gap: 18px; border: 1px solid rgba(255, 80, 88, .24); border-radius: 8px; background: linear-gradient(90deg, rgba(112,29,34,.19), rgba(255,255,255,.02)); }
+.sems-chargegrid-summary > div { min-width: 144px; display: grid; gap: 3px; }
+.sems-chargegrid-summary > div span { color: #ff7278; font-size: 9px; text-transform: uppercase; letter-spacing: .05em; }
+.sems-chargegrid-summary > div strong { font-size: 11px; }
+.sems-chargegrid-summary dl { flex: 1; margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.sems-chargegrid-summary dl div { min-width: 0; display: grid; gap: 4px; }
+.sems-chargegrid-summary dt { overflow: hidden; color: rgba(255,255,255,.5); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.sems-chargegrid-summary dd { margin: 0; color: #fff; font-size: 15px; font-weight: 700; }
+
+.sems-monitor-card { min-height: 440px; }
 .sems-monitor-card > header > div:last-child { display: flex; gap: 4px; }
 .sems-monitor-card > header button { min-width: 42px; min-height: 26px; padding: 0 9px; border: 0; border-radius: 5px; background: #3a3b3d; color: rgba(255,255,255,.52); font-size: 9px; }
 .sems-monitor-card > header button.is-active { background: #ff323a; color: #fff; }
-.sems-monitor-legend { padding: 4px 20px 0; display: flex; justify-content: flex-end; gap: 16px; color: rgba(255,255,255,.48); font-size: 9px; }
+.sems-chart-mode-tabs { min-height: 38px; padding: 0 20px; display: flex; align-items: flex-end; gap: 18px; overflow-x: auto; border-bottom: 1px solid rgba(255,255,255,.06); }
+.sems-chart-mode-tabs button { position: relative; min-height: 34px; padding: 0 0 10px; border: 0; background: transparent; color: rgba(255,255,255,.52); font-size: 10px; white-space: nowrap; cursor: pointer; }
+.sems-chart-mode-tabs button.is-active { color: #fff; }
+.sems-chart-mode-tabs button.is-active::after { content: ""; position: absolute; right: 0; bottom: 0; left: 0; height: 2px; background: #ff323a; }
+.sems-monitor-legend { padding: 10px 20px 0; display: flex; justify-content: flex-end; gap: 16px; color: rgba(255,255,255,.48); font-size: 9px; }
 .sems-monitor-legend span:last-child i { background: #75808a; }
 .sems-monitor-chart { position: relative; height: 300px; margin: 8px 20px 18px; }
 .sems-monitor-chart .chart-grid { position: absolute; inset: 0 0 28px; background: linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px); background-size: 100% 25%; }
@@ -579,6 +592,16 @@
 .sems-monitor-chart .chart-area { fill: url(#energy-area); }
 .sems-monitor-chart .chart-energy { stroke: #ff323a; stroke-width: 2; }
 .sems-monitor-chart .chart-sessions { stroke: #7b858e; stroke-width: 1.5; stroke-dasharray: 5 5; }
+.sems-chart-hover-targets { position: absolute; inset: 0 0 28px; display: grid; grid-template-columns: repeat(7, 1fr); }
+.sems-chart-hover-targets button { border: 0; background: transparent; cursor: crosshair; }
+.sems-chart-hover-targets button:focus-visible { outline: 1px solid rgba(255,255,255,.6); outline-offset: -2px; }
+.sems-monitor-tooltip { position: absolute; z-index: 2; top: 20px; left: clamp(8px, var(--tooltip-position), calc(100% - 190px)); width: 180px; padding: 10px 11px; display: grid; gap: 7px; border: 1px solid rgba(255,255,255,.12); border-radius: 7px; background: rgba(28,29,31,.94); box-shadow: 0 12px 26px rgba(0,0,0,.3); transform: translateX(-8%); pointer-events: none; }
+.sems-monitor-tooltip::before { content: ""; position: absolute; top: 0; bottom: 0; left: 8%; width: 1px; background: rgba(255,255,255,.22); transform: translateX(calc(var(--tooltip-position) - 8%)); }
+.sems-monitor-tooltip strong { font-size: 11px; }
+.sems-monitor-tooltip span { display: grid; grid-template-columns: 8px 1fr auto; gap: 6px; align-items: center; color: rgba(255,255,255,.58); font-size: 9px; }
+.sems-monitor-tooltip i { width: 6px; height: 6px; border-radius: 50%; }
+.sems-monitor-tooltip b { color: #fff; font-size: 10px; }
+.sems-monitor-empty { position: absolute; inset: 0 0 28px; margin: 0; display: grid; place-content: center; color: rgba(255,255,255,.46); font-size: 11px; }
 .chart-axis { position: absolute; inset: auto 0 0; display: flex; justify-content: space-between; color: rgba(255,255,255,.34); font-size: 9px; }
 
 .chargegrid-operation-card { min-height: 190px; border-color: rgba(255, 50, 58, .18); }
@@ -1027,7 +1050,9 @@
   .sems-charger-panels { grid-template-rows: auto; }
   .sems-operator-dashboard { grid-template-columns: 1fr; }
   .sems-operator-column { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .sems-economy-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sems-economy-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .sems-chargegrid-summary { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .sems-chargegrid-summary dl { width: 100%; }
   .sems-service-grid { grid-template-columns: 1fr 1fr; }
   .sems-service-links { grid-column: 1 / -1; grid-template-columns: repeat(4, 1fr); }
   .sems-comparison-grid { grid-template-columns: 280px 1fr; }
@@ -1094,5 +1119,6 @@
   .desktop-shell .sems-station-summary { left: 14px; right: 14px; width: auto; }
   .sems-economy-metrics,
   .chargegrid-operation-metrics { grid-template-columns: 1fr 1fr; }
+  .sems-chargegrid-summary dl { grid-template-columns: 1fr 1fr; }
   .sems-monitor-card > header { flex-direction: column; }
 }
