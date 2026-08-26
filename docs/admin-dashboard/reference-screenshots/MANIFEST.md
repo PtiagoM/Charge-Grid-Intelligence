@@ -14,6 +14,11 @@ As capturas deste manifesto ficam somente no ambiente local, dentro de `inbox/`,
 | `catalogued/SEMS-DASHBOARD-PANEL_OPERATOR_1867x923_TOP.png` | Operador | Painel - topo | Shell, mapa, resumo das usinas e inicio dos indicadores |
 | `catalogued/SEMS-DASHBOARD-PANEL_OPERATOR_1862x922_SCROLLED.png` | Operador | Painel - continuacao | Potencia, alarmes, contribuicao ambiental, economia e monitoramento |
 | `catalogued/SEMS-DASHBOARD-ENERGY-MONITOR_OPERATOR_1119x497_TOOLTIP.png` | Operador | Painel - grafico | Escalas, legenda e tooltip do monitoramento de energia |
+| `catalogued/SEMS-DASHBOARD-MAP_OPERATOR_1634x754_COMMERCIAL-PLANT-PREVIEW.png` | Operador | Painel - mapa com planta comercial | Previa tecnica por marcador; planta comercial recebe resumo ChargeGrid aditivo e contextual |
+| `catalogued/SEMS-DASHBOARD-MAP_OPERATOR_1520x784_STATION-SUMMARY-EXPANDED.png` | Operador | Painel - resumo de usinas expandido | Distribuicao compacta de usinas por estado tecnico sobre o mapa |
+| `catalogued/SEMS-DASHBOARD-ECONOMY_OPERATOR_784x197_CHARGEGRID-SUMMARY.png` | Operador | Painel - economia com ChargeGrid | Faixa comercial agregada abaixo das metricas energeticas; carregadores substituem fila como indicador |
+| `catalogued/SEMS-DASHBOARD-ENERGY-MONITOR_OPERATOR_1097x804_TOOLTIP.png` | Operador | Painel - monitoramento com tooltip | Linha-guia, data e valores exatos de todas as series ativas |
+| `catalogued/SEMS-DASHBOARD-ENERGY-MONITOR_OPERATOR_1052x788_MODE-SWITCH.png` | Operador | Painel - modos de grafico | Alternancia no mesmo espaco entre curva de potencia, monitoramento e comparacao de producao |
 | `catalogued/SEMS-PLANTS-LIST_OPERATOR_1863x1045_POPULATED.png` | Operador | Lista de usinas | Filtros, status, tabela, paginacao e acao de cadastro |
 | `catalogued/SEMS-PLANTS-CREATE_OPERATOR_1865x1046_STEP-ADDRESS.png` | Operador | Nova usina - endereco | Composicao do assistente em tres etapas e mapa lateral |
 | `catalogued/SEMS-DEVICES-LIST_OPERATOR_1872x1043_INVERTERS.png` | Operador | Lista de dispositivos | Abas por tipo, filtros, status e tabela agrupada |
