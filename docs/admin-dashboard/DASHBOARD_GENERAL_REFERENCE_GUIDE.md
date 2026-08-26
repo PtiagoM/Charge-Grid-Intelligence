@@ -38,11 +38,13 @@ Referência: `SEMS-DASHBOARD-ECONOMY_OPERATOR_784x197_CHARGEGRID-SUMMARY.png`.
 
 Referências: `SEMS-DASHBOARD-ENERGY-MONITOR_OPERATOR_1097x804_TOOLTIP.png` e `SEMS-DASHBOARD-ENERGY-MONITOR_OPERATOR_1052x788_MODE-SWITCH.png`.
 
-1. O espaço de gráfico é único e troca de modo sem deslocar a página: `Curva de potência`, `Monitoramento de energia` e `Comparação de produção`.
-2. O período e a granularidade ficam no cabeçalho do gráfico; os indicadores-resumo ficam imediatamente acima da área plotada, no modo que os utiliza.
-3. A legenda acompanha o modo ativo e pode ter paginação horizontal quando houver mais séries do que a largura comporta.
-4. Hover/foco em um ponto deve mostrar linha-guia, data/hora e valores numéricos exatos de todas as séries ativas. Sem telemetria, o tooltip declara ausência em vez de inventar zero.
-5. O gráfico sempre consolida as plantas do escopo. Selecionar uma planta no mapa não troca silenciosamente o escopo do painel; essa ação abre a jornada da planta.
+1. A captura orienta somente a composição visual, a alternância no mesmo espaço, a densidade, a legenda e o tooltip. Ela não redefine as informações técnicas já existentes no monitoramento SEMS+.
+2. O modo padrão permanece `Monitoramento de energia`, com as mesmas séries técnicas agregadas das plantas no escopo (geração, carga/consumo, energia carregada, descarregada, importada ou exportada quando houver evidência).
+3. As alternâncias ChargeGrid usam esse mesmo palco e não criam uma nova seção de cards: `Receita ChargeGrid`, `Demanda ChargeGrid` e `Utilização ChargeGrid`. Utilização é o único modo adicional recomendado além de receita e demanda, pois relaciona sessões, carregadores ativos e disponibilidade sem virar operação local.
+4. O período e a granularidade ficam no cabeçalho do gráfico; os indicadores-resumo ficam imediatamente acima da área plotada, no modo que os utiliza.
+5. A legenda acompanha o modo ativo e pode ter paginação horizontal quando houver mais séries do que a largura comporta.
+6. Hover/foco em um ponto deve mostrar linha-guia, data/hora e valores numéricos exatos de todas as séries ativas. Sem telemetria, o tooltip declara ausência em vez de inventar zero.
+7. O gráfico sempre consolida as plantas do escopo. Selecionar uma planta no mapa não troca silenciosamente o escopo do painel; essa ação abre a jornada da planta.
 
 ## Limites desta rodada
 
