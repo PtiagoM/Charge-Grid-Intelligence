@@ -13,6 +13,7 @@ As capturas deste manifesto ficam somente no ambiente local, dentro de `inbox/`,
 | `catalogued/SEMS-ACCOUNT-TARIFF-EXPIRATION_OPERATOR_1874x925_FORM.png` | Operador/Instalador | Lembrete de expiracao da tarifa | Antecedencia do aviso e canais pessoais de notificacao |
 | `catalogued/SEMS-DASHBOARD-PANEL_OPERATOR_1867x923_TOP.png` | Operador | Painel - topo | Shell, mapa, resumo das usinas e inicio dos indicadores |
 | `catalogued/SEMS-DASHBOARD-PANEL_OPERATOR_1862x922_SCROLLED.png` | Operador | Painel - continuacao | Potencia, alarmes, contribuicao ambiental, economia e monitoramento |
+| `catalogued/SEMS-DASHBOARD-ECONOMY_OPERATOR_1103x405_ICON-LAYOUT.png` | Operador | Painel - Economia | Grade 3x2, hierarquia icone/valor/rotulo, controles de semana e continuidade com Monitoramento |
 | `catalogued/SEMS-DASHBOARD-ENERGY-MONITOR_OPERATOR_1119x497_TOOLTIP.png` | Operador | Painel - grafico | Escalas, legenda e tooltip do monitoramento de energia |
 | `catalogued/SEMS-PLANTS-LIST_OPERATOR_1863x1045_POPULATED.png` | Operador | Lista de usinas | Filtros, status, tabela, paginacao e acao de cadastro |
 | `catalogued/SEMS-PLANTS-CREATE_OPERATOR_1865x1046_STEP-ADDRESS.png` | Operador | Nova usina - endereco | Composicao do assistente em tres etapas e mapa lateral |
