@@ -27,7 +27,7 @@ const semsNavigation: readonly NavigationItem[] = [
 const chargeGridNavigation: NavigationItem = {
   label: "ChargeGrid",
   route: "operations",
-  icon: assets.icons.solarInfo,
+  icon: assets.icons.chargeGrid,
   capability: "operations:monitor",
   activeRoutes: ["operations", "sessions", "session", "queue", "finance", "invoices", "financial-session"]
 };

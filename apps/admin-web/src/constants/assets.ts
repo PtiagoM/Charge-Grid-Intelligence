@@ -26,7 +26,8 @@ export const assets = {
     gridIncome: `${base}/dashboard/SEMS-ASSET-DASHBOARD-GRID-INCOME_54x54.png`
   },
   icons: {
-    dashboard: `${base}/icons/icon_backstage_over.6f515874.png`,
+    dashboard: `${base}/icons/icon_dashboard_over.d9e61c29.png`,
+    chargeGrid: `${base}/icons/icon_setting.6ecae33c.png`,
     solarInfo: `${base}/icons/entrance_light.8edf1291.png`,
     plants: `${base}/icons/icon_station_over.fd7f2df2.png`,
     devices: `${base}/icons/icon_device.ad71c9b2.png`,
@@ -37,6 +38,6 @@ export const assets = {
     search: `${base}/icons/icon_search.34450bf1.png`,
     language: `${base}/icons/icon_language.1c16961c.png`,
     message: `${base}/icons/icon_message.113c036c.png`,
-    setting: `${base}/icons/icon_setting.6ecae33c.png`
+    setting: `${base}/icons/icon_backstage_over.6f515874.png`
   }
 } as const;
