@@ -732,6 +732,19 @@
   background: #393a3d;
   color: #fff;
 }
+.sems-device-toolbar select {
+  width: 100%;
+  height: 38px;
+  padding: 0 34px 0 14px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  outline: 0;
+  background: #393a3d;
+  color: #fff;
+  appearance: auto;
+}
+.sems-device-toolbar select:focus { border-color: rgba(255,55,65,.7); }
+.sems-device-toolbar select:disabled { opacity: .62; cursor: not-allowed; }
 .sems-device-toolbar input:focus { border-color: rgba(255,55,65,.7); }
 .sems-device-toolbar input::placeholder { color: rgba(255,255,255,.28); }
 .sems-device-toolbar .sems-filter-button { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
