@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-async function login(page, email = 'estabelecimento@teste.com') {
+async function login(page, email = 'goodwe@teste.com') {
   await page.goto('/#/logout');
   await page.goto('/#/login');
   await page.getByTestId('login-email').fill(email);
@@ -13,7 +13,17 @@ test('inventario preserva abas tecnicas e integra a camada ChargeGrid nos carreg
   await page.goto('/#/mvp/chargers');
   const inventory = page.getByTestId('mvp-chargers-panel');
 
-  await expect(inventory.getByRole('button', { name: 'Filtro', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('tab', { name: 'Inversor', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await expect(inventory).toContainText('ES LD');
+  await page.getByLabel('Filtrar por usina').selectOption('est-fiap');
+  await expect(inventory).toContainText('ES LD');
+  await page.getByLabel('Limpar filtros').click();
+  await expect(inventory.getByRole('button', { name: 'Filtro', exact: true })).toBeVisible();
+  await inventory.getByRole('button', { name: 'Filtro', exact: true }).click();
+  await expect(page.getByLabel('Filtros avançados de dispositivos')).toBeVisible();
+  await page.getByRole('button', { name: 'Confirmar' }).click();
+
+  await page.getByRole('tab', { name: 'Carregador veicular' }).click();
   await page.getByLabel('Buscar dispositivo').fill('CG-FIAP-03');
   await expect(inventory).toContainText('CG-FIAP-03');
   await expect(inventory).not.toContainText('CG-FIAP-01');
@@ -22,7 +32,7 @@ test('inventario preserva abas tecnicas e integra a camada ChargeGrid nos carreg
 
   await expect(page.getByRole('tab', { name: 'Carregador veicular' })).toHaveAttribute('aria-selected', 'true');
   await expect(inventory).toContainText('ChargeGrid publicado');
-  await expect(inventory.getByRole('button', { name: /Carregamento/ })).toContainText('(1)');
+  await expect(inventory.getByRole('button', { name: /Carregamento/ })).toContainText('(2)');
 
   await page.getByRole('tab', { name: 'Dongle' }).click();
   await expect(inventory).toContainText('Dongle 16');
@@ -36,7 +46,7 @@ test('inventario preserva abas tecnicas e integra a camada ChargeGrid nos carreg
 });
 
 test('detalhe do carregador combina telemetria SEMS e contexto ChargeGrid', async ({ page }) => {
-  await login(page);
+  await login(page, 'estabelecimento@teste.com');
   await page.goto('/#/mvp/charger?charger=CG-FIAP-01');
 
   const detail = page.getByTestId('mvp-charger-detail');
