@@ -495,7 +495,7 @@ export function SessionDetailPage({ sessionId, establishmentId }: { sessionId: s
         <header><div><span>Financeiro</span><h2>Pagamento e liquidação</h2></div><Badge value={transaction?.settlementStatus ?? session.payment.status} /></header>
         <div className="cg-payment-total"><span>Valor da sessão</span><strong>{money(amount)}</strong><small>{session.payment.method} · limite autorizado {money(session.payment.limitAmount)}</small></div>
         <dl><div><dt>Autorizado</dt><dd>{money(transaction ? transaction.authorizedCents / 100 : session.payment.limitAmount)}</dd></div><div><dt>Capturado</dt><dd>{money(transaction ? transaction.capturedCents / 100 : amount)}</dd></div><div><dt>Taxa do provedor</dt><dd>{money(transaction ? transaction.providerFeeCents / 100 : 0)}</dd></div><div><dt>Líquido estimado</dt><dd>{money(netAmount)}</dd></div></dl>
-        <footer><span>{transaction?.provider ?? "Pagamento local"}</span><strong>{transaction?.providerReference ?? session.payment.status}</strong><a href={`#/mvp/financial-session?est=${session.establishmentId}&session=${session.id}`}>Abrir conciliação ›</a></footer>
+        <footer><span>{transaction?.provider ?? "Pagamento local"}</span><strong>{transaction?.providerReference ?? session.payment.status}</strong>{transaction ? <a href={`#/mvp/financial-session?est=${session.establishmentId}&transaction=${transaction.id}`}>Abrir pagamento ›</a> : <span>Aguardando transação</span>}</footer>
       </section>
 
       <section className="cg-session-card cg-session-timeline" id="session-timeline">

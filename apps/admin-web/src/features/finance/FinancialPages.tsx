@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Navigate } from "react-router-dom";
 import { useAdminState } from "../../app/AdminState";
-import { Badge, DataTable, SectionHeader, money } from "../../components/AdminUi";
+import { Badge, DataTable, SectionHeader, money, statusLabel } from "../../components/AdminUi";
 import { accessibleEstablishmentIds } from "../../domain/accessOperations";
 import { hasAdminCapability } from "../../domain/adminCapabilities";
 import { activeTariffFor, calculateFinancialBreakdown, calculateSessionCharge } from "../../domain/financialOperations";
@@ -64,7 +64,7 @@ export function FinanceDashboardPage({ establishmentId }: { establishmentId?: st
 }
 
 export function FinancialSessionPage({ transactionId, establishmentId }: { transactionId: string; establishmentId?: string }) {
-  const { state, account, refundPayment } = useAdminState();
+  const { state, account, refundPayment, settlePayment } = useAdminState();
   const [feedback, setFeedback] = useState("");
   const canManageFinance = Boolean(account && hasAdminCapability(account, "finance:manage"));
   const transaction = state.paymentTransactions.find((item) => item.id === transactionId);
@@ -72,9 +72,126 @@ export function FinancialSessionPage({ transactionId, establishmentId }: { trans
   const selectedTransactionId = transaction.id;
   const session = state.sessions.find((item) => item.id === transaction.sessionId);
   const tariff = state.tariffPolicies.find((item) => item.id === transaction.tariffPolicyId);
+  const establishment = state.establishments.find((item) => item.id === transaction.establishmentId);
+  const charger = session ? state.chargers.find((item) => item.id === session.chargerId) : undefined;
+  const location = charger ? state.locations.find((item) => item.id === charger.locationId) : undefined;
   const calculation = session && tariff ? calculateSessionCharge(session, tariff) : undefined;
   const breakdown = calculateFinancialBreakdown(transaction);
   const events = state.financialEvents.filter((item) => item.transactionId === transaction.id).sort((a, b) => a.at.localeCompare(b.at));
-  function refund(event: FormEvent<HTMLFormElement>) { event.preventDefault(); const data = new FormData(event.currentTarget); const result = refundPayment(selectedTransactionId, Math.round(Number(data.get("amount")) * 100), String(data.get("reason")), `refund-${selectedTransactionId}-${Date.now()}`); setFeedback(result.ok ? "Reembolso registrado no sandbox." : result.issues.join(" ")); }
-  return <div className="operations-detail" data-testid="financial-session-detail"><nav className="enterprise-breadcrumb"><span><a href={`#/mvp/finance?est=${transaction.establishmentId}`}>Financeiro</a><i>/</i></span><span><strong>{transaction.id}</strong></span></nav><section className="operations-hero surface"><div><span className="eyebrow">Sessao financeira</span><h2>{session?.id}</h2><p>{transaction.provider} · {transaction.providerReference}</p></div><div className="operations-hero-status"><Badge value={transaction.status} /><strong>{cents(transaction.capturedCents)}</strong><span>Liquidacao {transaction.settlementStatus}</span></div></section><nav className="entity-tabs operations-anchor-nav"><a className="is-active" href="#financial-breakdown">Composicao</a><a href="#financial-timeline">Timeline</a>{canManageFinance ? <a href="#financial-refund">Reembolso</a> : null}</nav><section id="financial-breakdown" className="surface panel"><SectionHeader title="Composicao do valor" subtitle={`Politica ${tariff?.id ?? "nao encontrada"}; calculo em centavos inteiros.`} /><div className="financial-breakdown"><article><span>Energia calculada</span><strong>{cents(calculation?.energyCents ?? 0)}</strong><small>{session?.energyKwh ?? 0} kWh</small></article><article><span>Ociosidade</span><strong>{cents(calculation?.idleCents ?? 0)}</strong><small>{calculation?.billableIdleMinutes ?? 0} min faturaveis</small></article><article><span>Taxa provider</span><strong>- {cents(breakdown.providerFeeCents)}</strong></article><article><span>Participacao</span><strong>- {cents(breakdown.platformShareCents)}</strong><small>{transaction.platformShareBps / 100}% registrado</small></article><article className="financial-net"><span>Liquido estabelecimento</span><strong>{cents(breakdown.establishmentNetCents)}</strong><small>apos {cents(breakdown.refundedCents)} reembolsados</small></article></div></section><section id="financial-timeline" className="surface panel"><SectionHeader title="Timeline financeira" subtitle="Autorizacao, captura, reembolso e liquidacao nao sao colapsados em um unico status." /><ol className="session-timeline">{events.map((item) => <li key={item.id}><i /><div><span>{item.actor} · {localDate(item.at)}</span><h3>{item.type}</h3>{item.amountCents !== undefined ? <p>{cents(item.amountCents)}</p> : null}{item.reason ? <small>{item.reason}</small> : null}</div></li>)}</ol></section>{canManageFinance ? <section id="financial-refund" className="surface panel"><SectionHeader title="Reembolso" subtitle="Acao auditada e idempotente no adapter sandbox." />{["CAPTURED", "PARTIALLY_REFUNDED"].includes(transaction.status) ? <form className="financial-editor" onSubmit={refund} data-testid="refund-form"><label>Valor (R$)<input name="amount" type="number" min="0.01" step="0.01" max={(transaction.capturedCents - transaction.refundedCents) / 100} required /></label><label className="financial-reason">Motivo<textarea name="reason" minLength={8} required /></label><button type="submit">Registrar reembolso</button></form> : <p className="operations-empty">Transacao sem saldo elegivel para reembolso.</p>}{feedback ? <p role="status" className="command-feedback">{feedback}</p> : null}</section> : null}</div>;
+  const refundableCents = Math.max(0, transaction.capturedCents - transaction.refundedCents);
+  const authorizationEvent = events.find((item) => item.type === "AUTHORIZED");
+  const captureEvent = events.find((item) => item.type === "CAPTURED");
+  const settlementEvent = events.find((item) => item.type === "SETTLED");
+  const paymentSteps = [
+    { label: "Autorização", detail: authorizationEvent ? localDate(authorizationEvent.at) : "Aguardando confirmação", done: Boolean(authorizationEvent || transaction.authorizedCents) },
+    { label: "Captura", detail: captureEvent ? localDate(captureEvent.at) : "Aguardando encerramento", done: Boolean(captureEvent || transaction.capturedCents) },
+    { label: "Liquidação", detail: settlementEvent ? localDate(settlementEvent.at) : statusLabel(transaction.settlementStatus), done: transaction.settlementStatus === "PAID" }
+  ];
+  const currentStep = paymentSteps.findIndex((item) => !item.done);
+
+  function refund(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const result = refundPayment(selectedTransactionId, Math.round(Number(data.get("amount")) * 100), String(data.get("reason")), `refund-${selectedTransactionId}-${Date.now()}`);
+    setFeedback(result.ok ? "Reembolso registrado no sandbox." : result.issues.join(" "));
+    if (result.ok) form.reset();
+  }
+
+  function settle() {
+    const result = settlePayment(selectedTransactionId);
+    setFeedback(result.ok ? "Liquidação conciliada." : result.issues.join(" "));
+  }
+
+  return <div className="cg-payment-detail" data-testid="financial-session-detail">
+    <nav className="enterprise-breadcrumb" aria-label="Navegação estrutural">
+      <span><a href={`#/mvp/finance?est=${transaction.establishmentId}`}>Resumo financeiro</a><i>/</i></span>
+      <span><strong>Detalhe do pagamento</strong></span>
+    </nav>
+
+    <section className="cg-payment-hero">
+      <a className="cg-payment-back" href={`#/mvp/finance?est=${transaction.establishmentId}`} aria-label="Voltar ao resumo financeiro">‹</a>
+      <div className="cg-payment-identity">
+        <span>Detalhe do pagamento</span>
+        <h1>{session?.id ?? transaction.id}</h1>
+        <p>{establishment?.name ?? transaction.establishmentId} · {location?.name ?? "Operação ChargeGrid"}</p>
+      </div>
+      <div className="cg-payment-live-state">
+        <Badge value={transaction.status} />
+        <strong>{cents(transaction.capturedCents || transaction.authorizedCents)}</strong>
+        <span>{transaction.capturedCents ? "valor capturado" : "valor autorizado"}</span>
+      </div>
+      <div className="cg-payment-hero-actions">
+        {session ? <a href={`#/mvp/session?est=${transaction.establishmentId}&session=${session.id}`}>Abrir sessão</a> : null}
+        <a href={`#/mvp/finance?est=${transaction.establishmentId}`}>Voltar ao financeiro</a>
+      </div>
+    </section>
+
+    <ol className="cg-payment-progress" aria-label="Progresso do pagamento">
+      {paymentSteps.map((step, index) => <li className={step.done ? "is-complete" : index === currentStep ? "is-current" : ""} key={step.label}>
+        <i>{step.done ? "✓" : index + 1}</i>
+        <div><strong>{step.label}</strong><span>{step.detail}</span></div>
+      </li>)}
+    </ol>
+
+    <section className="cg-payment-kpis" aria-label="Resumo do pagamento">
+      <article><span>Autorizado</span><strong>{cents(transaction.authorizedCents)}</strong><small>limite confirmado</small></article>
+      <article><span>Capturado</span><strong>{cents(transaction.capturedCents)}</strong><small>{statusLabel(transaction.status)}</small></article>
+      <article><span>Reembolsado</span><strong>{cents(transaction.refundedCents)}</strong><small>{cents(refundableCents)} disponível</small></article>
+      <article className="is-net"><span>Líquido da operação</span><strong>{cents(breakdown.establishmentNetCents)}</strong><small>após taxas e participação</small></article>
+    </section>
+
+    <div className="cg-payment-layout">
+      <section className="cg-payment-card cg-payment-composition" id="financial-breakdown">
+        <header><div><span>Composição financeira</span><h2>Do consumo ao valor líquido</h2></div><small>Política {tariff?.id ?? "não encontrada"}</small></header>
+        <div className="cg-payment-breakdown">
+          <div><span>Energia da sessão<small>{session?.energyKwh.toLocaleString("pt-BR", { minimumFractionDigits: 2 }) ?? "0,00"} kWh</small></span><strong>{cents(calculation?.energyCents ?? transaction.capturedCents)}</strong></div>
+          <div><span>Ociosidade faturável<small>{calculation?.billableIdleMinutes ?? 0} min após carência</small></span><strong>{cents(calculation?.idleCents ?? 0)}</strong></div>
+          <div className="is-deduction"><span>Taxa do provedor<small>{transaction.provider}</small></span><strong>− {cents(breakdown.providerFeeCents)}</strong></div>
+          <div className="is-deduction"><span>Participação ChargeGrid<small>{transaction.platformShareBps / 100}% nesta versão</small></span><strong>− {cents(breakdown.platformShareCents)}</strong></div>
+          {transaction.refundedCents ? <div className="is-deduction"><span>Reembolsos<small>abatidos do valor capturado</small></span><strong>− {cents(transaction.refundedCents)}</strong></div> : null}
+          <div className="is-total"><span>Líquido do estabelecimento<small>valor disponível após deduções</small></span><strong>{cents(breakdown.establishmentNetCents)}</strong></div>
+        </div>
+      </section>
+
+      <aside className="cg-payment-card cg-payment-context">
+        <header><div><span>Transação</span><h2>Referências e liquidação</h2></div><Badge value={transaction.settlementStatus} /></header>
+        <dl>
+          <div><dt>Provedor</dt><dd>{transaction.provider}</dd></div>
+          <div><dt>Referência</dt><dd>{transaction.providerReference}</dd></div>
+          <div><dt>Transação ChargeGrid</dt><dd>{transaction.id}</dd></div>
+          <div><dt>Política aplicada</dt><dd>{tariff?.id ?? "Não encontrada"}</dd></div>
+          <div><dt>Criada em</dt><dd>{localDate(transaction.createdAt)}</dd></div>
+          <div><dt>Capturada em</dt><dd>{localDate(transaction.capturedAt)}</dd></div>
+        </dl>
+        <footer>
+          <div><span>Liquidação</span><strong>{statusLabel(transaction.settlementStatus)}</strong></div>
+          {canManageFinance && transaction.settlementStatus === "AVAILABLE" && transaction.status !== "DISPUTED" ? <button type="button" onClick={settle}>Conciliar pagamento</button> : <small>{transaction.settlementStatus === "PAID" ? `Concluída em ${localDate(transaction.settledAt)}` : "Aguardando disponibilidade do provedor"}</small>}
+        </footer>
+      </aside>
+
+      <section className="cg-payment-card cg-payment-timeline" id="financial-timeline">
+        <header><div><span>Auditoria financeira</span><h2>Histórico do pagamento</h2></div><small>{events.length} registros</small></header>
+        <ol>{events.map((item) => <li key={item.id}>
+          <time>{new Date(item.at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</time>
+          <i />
+          <div><span>{item.actor}</span><strong>{statusLabel(item.type)}</strong>{item.amountCents !== undefined ? <p>{cents(item.amountCents)}</p> : null}{item.reason ? <small>{item.reason}</small> : null}</div>
+        </li>)}</ol>
+        {!events.length ? <p className="operations-empty">Nenhum evento financeiro registrado.</p> : null}
+      </section>
+
+      {canManageFinance ? <section className="cg-payment-card cg-payment-refund" id="financial-refund">
+        <header><div><span>Ação administrativa</span><h2>Registrar reembolso</h2></div><small>Saldo {cents(refundableCents)}</small></header>
+        {["CAPTURED", "PARTIALLY_REFUNDED"].includes(transaction.status) && refundableCents > 0 ? <>
+          <p>Use somente após a confirmação comercial. A ação é registrada no histórico e não pode ser desfeita por esta tela.</p>
+          <form onSubmit={refund} data-testid="refund-form">
+            <label>Valor (R$)<input name="amount" type="number" min="0.01" step="0.01" max={refundableCents / 100} placeholder="0,00" required /></label>
+            <label>Motivo<textarea name="reason" minLength={8} placeholder="Informe a justificativa aprovada" required /></label>
+            <button type="submit">Registrar reembolso</button>
+          </form>
+        </> : <p className="operations-empty">Transação sem saldo elegível para reembolso.</p>}
+        {feedback ? <p role="status" className="command-feedback">{feedback}</p> : null}
+      </section> : null}
+    </div>
+  </div>;
 }
