@@ -144,6 +144,20 @@ Validação da implementação: `npm run build --workspace=apps/admin-web`, `npm
 
 **Gate F1:** contrato → ativação → configuração → publicação → sessão/fila → leitura financeira funciona visual e estruturalmente para o proprietário, sem afetar plantas SEMS+ comuns.
 
+### Registro de execução — navegação e tabelas ChargeGrid (27/08/2026)
+
+**Estado:** `IMPLEMENTADO E VALIDADO NO FRONTEND`.
+
+- `Operação`, `Sessões`, `Fila` e `Resumo financeiro` agora usam a mesma linguagem de abas planas da Lista de dispositivos, com estado ativo por texto e sublinhado vermelho;
+- Sessões e Fila foram consolidadas no padrão tabular SEMS+, com filtros, recortes por estado e pesquisa;
+- a Fila preserva FIFO e estimativa informativa, mas opera de forma automática e somente leitura: não existem ações manuais de chamar, confirmar chegada, registrar no-show ou admitir veículo;
+- o Resumo financeiro preserva transações, conciliação e detalhamento, mas apresenta os totais em uma faixa compacta em vez de quatro KPIs genéricos;
+- as quatro rotas foram inspecionadas em navegador real a `1440 × 1000`; navegação ativa, overflow, filtros e transição de chamada foram verificados com Playwright CLI;
+- o painel operacional abaixo do carrossel prioriza alarmes, amplia indicadores e gráfico na mesma escala do Painel e remove blocos redundantes de sessões recentes e fila atual;
+- o detalhe da sessão foi refeito com progresso, indicadores, energia, pagamento e linha do tempo auditável; controles do carregador ficaram restritos às contingências `Liberar recarga` e `Parar recarga`;
+
+Permanece fora desta rodada a correção do teste legado que usa a conta proprietária administradora e, contraditoriamente, espera ausência de controles de tarifa/financeiro no último cenário de `financial-operations.spec.js`. A regra vigente continua sendo proprietário = administrador.
+
 ## Fase 2 — Consultor GoodWe
 
 - usar as mesmas sete superfícies SEMS+ e a mesma composição visual;

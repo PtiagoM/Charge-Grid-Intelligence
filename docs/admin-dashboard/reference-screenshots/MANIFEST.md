@@ -55,6 +55,20 @@ As capturas deste manifesto ficam somente no ambiente local, dentro de `inbox/`,
 | `catalogued/SEMS-MESSAGES-REPORTS_OPERATOR_1868x924_POPULATED.png` | Operador | Central de mensagens - relatorio | Historico rolavel de geracao e download de relatorios |
 | `catalogued/SEMS-ORGANIZATION-USERS_OPERATOR_1873x925_ADD-USER.png` | Operador/Instalador | Usuarios da organizacao | Lista com funcoes Administrador e Tecnico e drawer de inclusao de usuario |
 
+## Conceitos visuais ChargeGrid
+
+Estas imagens sao conceitos aprovados ou em avaliacao para as superficies novas do ChargeGrid. Elas nao constituem evidencia do SEMS+ e devem ser confrontadas com as regras de dominio antes da implementacao.
+
+| Referencia local | Perfil | Tela | Uso na reconstrucao |
+| --- | --- | --- | --- |
+| `catalogued/CHARGEGRID-OPERATIONS_ESTABLISHMENT-ADMIN_1672x941_SPOT-CAROUSEL-CONCEPT.png` | Proprietario comercial | ChargeGrid - Operacao | Conceito do carrossel de vagas, composicao espacial por carregador, selecao de slot e painel operacional contextual |
+| `catalogued/CHARGEGRID-OPERATIONS_ESTABLISHMENT-ADMIN_1223x396_SPOT-CAROUSEL-CLOSEUP.png` | Proprietario comercial | ChargeGrid - Operacao | Recorte aproximado para aferir perspectiva das cinco vagas, contornos de estado, veiculos e cabos graficos conectados |
+| `catalogued/CHARGEGRID-OPERATIONS_ESTABLISHMENT-ADMIN_1122x1402_VEHICLE-A01-FAR-LEFT.png` | Proprietario comercial | ChargeGrid - Operacao | Asset transparente do veiculo na perspectiva da vaga A01; publicar apenas quando a conexao do veiculo estiver confirmada |
+| `catalogued/CHARGEGRID-OPERATIONS_ESTABLISHMENT-ADMIN_1122x1402_VEHICLE-A02-LEFT.png` | Proprietario comercial | ChargeGrid - Operacao | Asset transparente do veiculo na perspectiva da vaga A02; publicar apenas quando a conexao do veiculo estiver confirmada |
+| `catalogued/CHARGEGRID-OPERATIONS_ESTABLISHMENT-ADMIN_1122x1402_VEHICLE-A03-CENTER.png` | Proprietario comercial | ChargeGrid - Operacao | Asset transparente do veiculo na perspectiva da vaga A03; publicar apenas quando a conexao do veiculo estiver confirmada |
+| `catalogued/CHARGEGRID-OPERATIONS_ESTABLISHMENT-ADMIN_1122x1402_VEHICLE-A04-RIGHT.png` | Proprietario comercial | ChargeGrid - Operacao | Asset transparente do veiculo na perspectiva da vaga A04; publicar apenas quando a conexao do veiculo estiver confirmada |
+| `catalogued/CHARGEGRID-OPERATIONS_ESTABLISHMENT-ADMIN_1122x1402_VEHICLE-A05-FAR-RIGHT.png` | Proprietario comercial | ChargeGrid - Operacao | Asset transparente do veiculo na perspectiva da vaga A05; publicar apenas quando a conexao do veiculo estiver confirmada |
+
 ## Assets identificados
 
 Os assets do Painel foram normalizados como `SEMS-ASSET-DASHBOARD-<FUNCAO>_<DIMENSAO>.png`. As copias utilizadas pela aplicacao ficam versionadas em `apps/admin-web/public/assets/sems/dashboard/`; os downloads originais permanecem apenas no `inbox/catalogued/`.
