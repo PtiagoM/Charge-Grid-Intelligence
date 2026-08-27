@@ -1,6 +1,6 @@
 # ChargeGrid Intelligence — fonte única de verdade
 
-**Atualizado em:** 25 de agosto de 2026  
+**Atualizado em:** 27 de agosto de 2026  
 **Escopo:** GoodWe, produto, negócio, operação, arquitetura, implementação, histórico e decisões vigentes  
 **Status:** documento canônico para continuidade do projeto
 
@@ -89,6 +89,8 @@ O registro completo e canônico destas decisões está em `docs/admin-dashboard/
 
 O plano aprovado para a próxima construção está em `docs/admin-dashboard/NEXT_EXECUTION_PLAN.md`.
 
+O recorte entre trabalho concluído, gates abertos e ordem recomendada de continuidade está em `docs/admin-dashboard/REMAINING_WORK.md`.
+
 ### Implementação local da decisão — 23/08/2026
 
 - inventário SEMS+ preservado com abas de inversores, dongles, carregadores veiculares e inversores de terceiros;
@@ -114,13 +116,16 @@ O plano aprovado para a próxima construção está em `docs/admin-dashboard/NEX
 - a validação local proporcional registrou 20 arquivos/72 testes unitários e 20 cenários E2E focais aprovados; o navegador integrado não estava disponível para uma nova inspeção manual;
 - o modelo de permissões apresentado no frontend é demonstrativo: reproduz a estrutura e as restrições ChargeGrid confirmadas, mas não afirma equivalência integral à matriz proprietária de autorização GoodWe.
 
-### Estado atual do Admin — 25/08/2026
+### Estado atual do Admin — 27/08/2026
 
-- Fase 0 consolidada no PR #9, branch `feature/admin-persona-foundation`, commit funcional `dd81549` e consolidação documental `d8df92a`.
-- A branch parte de `origin/develop/admin-web` no merge do PR #8 (`31401e6`).
-- Foram aprovados 76 testes unitários Admin, lint, build e E2E focais de personas, navegação, filtros e painel.
-- O CI integral do PR permanece responsável pela validação remota; nenhum snapshot ou baseline visual foi criado.
-- Registros anteriores de M0–M9, PR #5 e branch `feature/admin-responsibility-flows` são históricos e não descrevem a base vigente.
+- Fase 0 consolidada e integrada em `origin/develop/admin-web` pelo PR #10 (`cde7ee9`).
+- A evolução visual e funcional está organizada em uma cadeia de PRs: #11 Painel agregado, #12 Lista de usinas, #13 Lista de dispositivos e #14 Operação ChargeGrid.
+- O PR #14 contém a visão operacional local, fila automática, detalhes de carregador e sessão, resumo financeiro e detalhe de pagamento; comandos locais ficaram restritos às contingências `Liberar recarga` e `Parar recarga`.
+- Operação, Fila, carregador, sessão e pagamento foram inspecionados em navegador real a `1440 × 1000` e seguem a escala visual do Painel.
+- Foram aprovados lint, build do Admin, 20 arquivos/76 testes unitários, 13 E2E focais da operação e 5 E2E focais adicionais de sessão/financeiro. O CI de lint, testes e build também foi aprovado na cadeia publicada.
+- A regressão E2E integral e qualquer baseline visual continuam reservados ao gate de integração, depois da aprovação das superfícies restantes.
+- O trabalho restante está consolidado em `docs/admin-dashboard/REMAINING_WORK.md`; F1 está avançada, mas ainda depende de detalhe de planta, fechamento de governança do proprietário, alarmes/recomendações, relatórios/serviço e jornada consolidada.
+- Registros de M0–M9, PR #5 e branches anteriores permanecem históricos e não descrevem isoladamente a base vigente.
 
 ## Registro da entrega atual — 21 de agosto de 2026
 
@@ -631,7 +636,7 @@ produto/contexto → arquitetura → contratos → demo
 → design system → spec → código/testes
 ```
 
-## 18. Estado implementado em 22/08/2026
+## 18. Estado implementado consolidado em 27/08/2026
 
 | Área | Estado | Fonte |
 | --- | --- | --- |
@@ -648,7 +653,7 @@ produto/contexto → arquitetura → contratos → demo
 | Progresso | **LOCAL**: teto, barra verde, saldo e estimativa | `SessionPage.tsx` |
 | Notificações | **LOCAL**: navegador/service worker | `browserNotifications.ts` |
 | PWA | **IMPLEMENTADO**: manifest, SW, ícone, instalação/safe areas | `public/` |
-| Dashboard Admin | **BASE LOCAL M0–M9 CONCLUÍDA**: onboarding, operação, fila, energia, financeiro, incidentes, recomendações sem autoexecução, acesso por papel/escopo e relatórios exportáveis funcionam no sandbox; M9 removeu implementações paralelas e validou build, lint, unitários, E2E crítico e 390/1280/1440 px. Providers, autorização backend/RLS, tema claro, entrega agendada e a nova regressão visual após o próximo redesenho permanecem pendentes | `apps/admin-web/`, `docs/admin-dashboard/VALIDATION_REPORT.md` |
+| Dashboard Admin | **F0 INTEGRADA; F1 AVANÇADA EM PRs**: personas e escopos estão em `develop/admin-web`; a cadeia #11–#14 implementa Painel, Usinas, Dispositivos e Operação ChargeGrid, incluindo fila automática e detalhes de carregador, sessão e pagamento. O Gate F1 ainda depende das lacunas registradas em `REMAINING_WORK.md`. Providers, autorização backend/RLS, acabamento visual integral e regressão completa antes de `main` permanecem pendentes | `apps/admin-web/`, `docs/admin-dashboard/VALIDATION_REPORT.md`, `docs/admin-dashboard/REMAINING_WORK.md` |
 | GoodWe | **SIMULADO** | `apps/api/src/goodwe/` |
 | Persistência comercial | **NÃO IMPLEMENTADO**: migrations/repositories/RLS | `supabase/` |
 | IA | **NÃO IMPLEMENTADO** | `apps/api/src/ai/README.md` |
