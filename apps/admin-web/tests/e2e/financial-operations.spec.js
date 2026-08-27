@@ -33,23 +33,32 @@ test('financeiro separa captura, participacao, liquido e conciliacao', async ({ 
   await expect(dashboard).toContainText('Participação');
   await expect(dashboard).toContainText('Líquido estabelecimentos');
   const capturedRow = page.getByRole('row').filter({ hasText: 'CG-2026-0998' });
-  await capturedRow.getByRole('button', { name: 'Conciliar' }).click();
-  await expect(page.getByRole('status')).toContainText('Liquidacao conciliada');
+  await capturedRow.getByRole('link', { name: 'Abrir detalhe' }).click();
+  const detail = page.getByTestId('financial-session-detail');
+  await detail.getByRole('button', { name: 'Conciliar pagamento' }).click();
+  await expect(page.getByRole('status')).toContainText('Liquidação conciliada');
+  await expect(detail).toContainText('Liquidado');
+  await detail.getByRole('link', { name: 'Voltar ao financeiro' }).click();
   await expect(capturedRow).toContainText('Liquidado');
 });
 
-test('reembolso fica ligado a transacao e timeline financeira', async ({ page }) => {
+test('detalhe do pagamento preserva sessao, navegacao e auditoria financeira', async ({ page }) => {
   await login(page);
-  await page.goto('/#/mvp/financial-session?transaction=pay-CG-2026-0998');
+  await page.goto('/#/mvp/session?est=est-fiap&session=CG-2026-0998');
+  await page.getByRole('link', { name: 'Abrir pagamento' }).click();
+  await expect(page).toHaveURL(/financial-session\?est=est-fiap&transaction=pay-CG-2026-0998/);
+  await expect(page.getByRole('tab', { name: 'Resumo financeiro' })).toHaveAttribute('aria-selected', 'true');
   const detail = page.getByTestId('financial-session-detail');
-  await expect(detail).toContainText('Politica tariff-est-fiap-v1');
+  await expect(detail).toContainText('Política tariff-est-fiap-v1');
+  await expect(detail.getByRole('heading', { name: 'Do consumo ao valor líquido' })).toBeVisible();
+  await expect(detail.getByRole('heading', { name: 'Histórico do pagamento' })).toBeVisible();
   const form = page.getByTestId('refund-form');
   await form.getByLabel('Valor (R$)').fill('10.00');
   await form.getByLabel('Motivo').fill('Compensacao comercial aprovada');
   await form.getByRole('button', { name: 'Registrar reembolso' }).click();
   await expect(page.getByRole('status')).toContainText('Reembolso registrado');
   await expect(detail).toContainText('Reembolso parcial');
-  await expect(detail).toContainText('REFUNDED');
+  await expect(detail).toContainText('Reembolsado');
 });
 
 test('proprietario administrador consulta e gerencia tarifa e financeiro', async ({ page }) => {
