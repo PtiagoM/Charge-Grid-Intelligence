@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState, type FormEvent } from "react";
+import { Fragment, useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import { Navigate } from "react-router-dom";
 import { useAdminState } from "../../app/AdminState";
 import { Badge, DataTable, SectionHeader, money, number, statusLabel } from "../../components/AdminUi";
@@ -17,7 +17,7 @@ function localDateOnly(value?: string) {
 }
 
 function commandLabel(type: ChargerCommandType) {
-  return type === "START_CHARGE" ? "Iniciar recarga" : "Encerrar recarga";
+  return type === "START_CHARGE" ? "Liberar recarga" : "Parar recarga";
 }
 
 interface InventoryRow {
@@ -72,10 +72,10 @@ const STATUS_TABS: Record<SemsDeviceKind, ReadonlyArray<{ value: "all" | SemsDev
 };
 
 const DEVICE_COLUMNS: Record<SemsDeviceKind, string[]> = {
-  inverter: ["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Potência ativa (kW)", "Carga", "Operação"],
-  dongle: ["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Número do SIM", "Observação", "Operação"],
-  charger: ["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Potência de carregamento (kW)", "Carga diária (kWh)", "Operação"],
-  "third-party-inverter": ["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Potência ativa (kW)", "Geração diária (kWh)", "Operação"]
+  inverter: ["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Potência ativa (kW)", "Carga", "Operação", "⚙"],
+  dongle: ["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Número do SIM", "Observação", "Operação", "⚙"],
+  charger: ["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Potência de carregamento (kW)", "Carga diária (kWh)", "Operação", "⚙"],
+  "third-party-inverter": ["Nome do dispositivo", "SN do dispositivo", "Status do dispositivo", "Tipo de dispositivo", "Potência ativa (kW)", "Geração diária (kWh)", "Operação", "⚙"]
 };
 
 function chargerInventoryStatus(value: string): SemsDeviceStatus {
@@ -177,9 +177,13 @@ export function ChargersInventoryPage({ establishmentId }: { establishmentId?: s
   const accessibleScopeSet = new Set(accessibleEstablishmentIds(state, account));
   const telemetryByChargerId = new Map(state.chargerTelemetry.map((item) => [item.chargerId, item]));
   const locationById = new Map(state.locations.map((item) => [item.id, item]));
-  const [kind, setKind] = useState<SemsDeviceKind>("charger");
+  const establishmentById = new Map(state.establishments.map((item) => [item.id, item]));
+  const canViewCommercial = Boolean(account && hasAdminCapability(account, "commercial:read"));
+  const [kind, setKind] = useState<SemsDeviceKind>("inverter");
   const [status, setStatus] = useState<"all" | SemsDeviceStatus>("all");
+  const [filterOpen, setFilterOpen] = useState(false);
   const [scopeFilter, setScopeFilter] = useState(establishmentId ?? "all");
+  const [plantSearch, setPlantSearch] = useState("");
   const [search, setSearch] = useState("");
   const [email, setEmail] = useState("");
   const [page, setPage] = useState(1);
@@ -208,11 +212,14 @@ export function ChargersInventoryPage({ establishmentId }: { establishmentId?: s
   const rows = kind === "charger" ? chargerRows : technicalRows.filter((item) => item.kind === kind);
   const scopeOptions = state.establishments.filter((item) => accessibleScopeSet.has(item.id));
   const items = rows.filter((item) => {
+    const plantTerm = plantSearch.trim().toLowerCase();
     const term = search.trim().toLowerCase();
     const emailTerm = email.trim().toLowerCase();
+    const plantIdentity = `${locationById.get(item.locationId)?.name ?? ""} ${establishmentById.get(item.establishmentId)?.name ?? ""}`.toLowerCase();
+    const matchesPlant = !plantTerm || plantIdentity.includes(plantTerm);
     const matchesSearch = !term || [item.id, item.name, item.serial, item.typeLabel].some((value) => value.toLowerCase().includes(term));
     const matchesEmail = !emailTerm || item.email?.toLowerCase().includes(emailTerm);
-    return matchesSearch && matchesEmail && (status === "all" || item.status === status);
+    return matchesPlant && matchesSearch && matchesEmail && (status === "all" || item.status === status);
   });
   const pageCount = Math.max(1, Math.ceil(items.length / pageSize));
   const currentPage = Math.min(page, pageCount);
@@ -236,6 +243,7 @@ export function ChargersInventoryPage({ establishmentId }: { establishmentId?: s
   function resetFilters() {
     setStatus("all");
     setScopeFilter(establishmentId ?? "all");
+    setPlantSearch("");
     setSearch("");
     setEmail("");
     setPage(1);
@@ -244,13 +252,15 @@ export function ChargersInventoryPage({ establishmentId }: { establishmentId?: s
   return <>
     <nav className="sems-device-type-tabs" aria-label="Tipos de dispositivos" role="tablist">{DEVICE_TABS.map((tab) => <button key={tab.value} className={kind === tab.value ? "is-active" : ""} type="button" role="tab" aria-selected={kind === tab.value} onClick={() => selectKind(tab.value)}>{tab.label}</button>)}</nav>
     <section className="surface panel operations-page sems-reference-list sems-device-inventory" data-testid="mvp-chargers-panel">
-      <form className="operations-filter sems-reference-filter" onSubmit={(event) => event.preventDefault()}>
-        <label><span className="sr-only">Usina</span><select aria-label="Filtrar por usina" value={scopeFilter} onChange={(event) => { setScopeFilter(event.target.value); setPage(1); }} disabled={Boolean(establishmentId)}><option value="all">Todas as usinas autorizadas</option>{scopeOptions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-        <label><span className="sr-only">Buscar equipamento</span><input aria-label="Buscar dispositivo" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Nome do dispositivo, SN" /></label>
-        {kind !== "charger" ? <label><span className="sr-only">E-mail</span><input type="email" value={email} onChange={(event) => { setEmail(event.target.value); setPage(1); }} placeholder="Email" /></label> : null}
+      <form className="sems-device-toolbar" onSubmit={(event) => event.preventDefault()}>
+        <button className={filterOpen ? "sems-filter-button is-active" : "sems-filter-button"} type="button" onClick={() => setFilterOpen((open) => !open)}><span aria-hidden="true">▽</span> Filtro</button>
+        <label className="sems-device-plant-select"><span className="sr-only">Nome da planta</span><select aria-label="Filtrar por usina" value={scopeFilter} onChange={(event) => { setScopeFilter(event.target.value); setPlantSearch(""); setPage(1); }} disabled={Boolean(establishmentId)}><option value="all">▣  Nome da planta</option>{scopeOptions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+        <label><span className="sr-only">Nome ou série do dispositivo</span><input aria-label="Buscar dispositivo" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="▣  Nome do dispositivo, SN" /></label>
+        <label><span className="sr-only">E-mail</span><input type="email" aria-label="Buscar email" value={email} onChange={(event) => { setEmail(event.target.value); setPage(1); }} placeholder="✉  Email" /></label>
         <button className="sems-icon-action" type="submit" aria-label="Pesquisar">⌕</button>
         <button className="sems-icon-action" type="button" aria-label="Limpar filtros" onClick={resetFilters}>↻</button>
       </form>
+      {filterOpen ? <aside className="sems-plants-filter-panel sems-device-filter-panel" aria-label="Filtros avançados de dispositivos"><header><strong>Filtro</strong><div><button type="button" onClick={resetFilters}>Redefinir</button><button type="button" onClick={() => setFilterOpen(false)}>Confirmar</button></div></header><div className="sems-plants-filter-body"><p>Use os campos da barra para restringir a usina, dispositivo ou e-mail.</p></div></aside> : null}
       <nav className="sems-reference-status-tabs" aria-label="Status dos dispositivos">{statusTabs.map((tab) => <button key={tab.value} className={status === tab.value ? "is-active" : ""} type="button" onClick={() => { setStatus(tab.value); setPage(1); }}>{tab.label} <b>({tab.value === "all" ? rows.length : rows.filter((item) => item.status === tab.value).length})</b></button>)}</nav>
       <DataTable columns={columns}>
         {groupedItems.map(([groupLocationId, group]) => <Fragment key={groupLocationId}>
@@ -258,11 +268,12 @@ export function ChargersInventoryPage({ establishmentId }: { establishmentId?: s
           {group.map((item) => <tr key={item.id}>
             <td><strong>{item.name}</strong></td>
             <td>{item.serial}</td>
-            <td><span className={`sems-device-status tone-${deviceStatusTone(item.status)}`}><i />{deviceStatusLabel(item.status)}</span></td>
-            <td>{item.typeLabel}{item.kind === "charger" && account?.role ? <span className="chargegrid-device-tag">{item.publicationStatus === "PUBLISHED" ? "ChargeGrid publicado" : item.publicationStatus === "SUSPENDED" ? "ChargeGrid suspenso" : item.publicationStatus === "CONFIGURED" ? "ChargeGrid configurado" : "Elegível ao ChargeGrid"}</span> : null}</td>
+            <td><span className={`sems-device-status tone-${deviceStatusTone(item.status)}`}><i>{item.status === "operating" ? "ϟ" : ""}</i>{deviceStatusLabel(item.status)}</span></td>
+            <td>{item.typeLabel}{item.kind === "charger" && canViewCommercial ? <span className="chargegrid-device-tag">{item.publicationStatus === "PUBLISHED" ? "ChargeGrid publicado" : item.publicationStatus === "SUSPENDED" ? "ChargeGrid suspenso" : item.publicationStatus === "CONFIGURED" ? "ChargeGrid configurado" : "Elegível ao ChargeGrid"}</span> : null}</td>
             <td>{item.primaryMetric}</td>
             <td>{item.secondaryMetric}</td>
             <td>{item.actionHref ? <a className="sems-device-menu" href={item.actionHref} aria-label={`Abrir ${item.name}`}>•••</a> : <button className="sems-device-menu" type="button" aria-label={`Mais opções para ${item.name}`}>•••</button>}</td>
+            <td />
           </tr>)}
         </Fragment>)}
       </DataTable>
@@ -281,7 +292,8 @@ export function ChargerDetailPage({ chargerId, establishmentId }: { chargerId: s
   const [drawer, setDrawer] = useState<"details" | "charges" | "controls" | null>(null);
   const [monitorMode, setMonitorMode] = useState<"operations" | "charge">("operations");
   const charger = state.chargers.find((item) => item.id === chargerId);
-  if (!charger || (establishmentId && charger.establishmentId !== establishmentId)) return <Navigate to="/mvp/chargers" replace />;
+  const accessibleIds = new Set(accessibleEstablishmentIds(state, account));
+  if (!charger || !accessibleIds.has(charger.establishmentId) || (establishmentId && charger.establishmentId !== establishmentId)) return <Navigate to="/mvp/chargers" replace />;
   const resolvedChargerId = charger.id;
   const selectedChargerId = charger.id;
   const canViewCommercial = Boolean(account && (hasAdminCapability(account, "operations:monitor") || hasAdminCapability(account, "commercial:read") || hasAdminCapability(account, "commercial:manage")));
@@ -371,8 +383,8 @@ export function ChargerDetailPage({ chargerId, establishmentId }: { chargerId: s
 
     {canViewCommercial ? <section className="surface panel sems-chargegrid-device-context" id="charger-commercial"><SectionHeader eyebrow="Camada ChargeGrid" title="Publicação comercial" subtitle="O estado técnico do equipamento permanece separado da disponibilidade comercial." /><div className="charger-commercial-lifecycle"><div><span>Estado atual</span><Badge value={charger.publicationStatus} /><small>Elegível → configurado → publicado → suspenso</small></div>{canManagePublication && nextCommercialStatus ? <button type="button" className="ghost-button" onClick={changeCommercialStatus}>{nextCommercialStatus === "CONFIGURED" ? "Confirmar configuração" : nextCommercialStatus === "PUBLISHED" ? "Publicar no ChargeGrid" : "Suspender publicação"}</button> : <span>Somente o administrador comercial altera este estado.</span>}</div>{canViewSessions ? currentSession ? <div className="operations-session-summary"><div><Badge value={currentSession.status} /><h3>{currentSession.id}</h3><p>{currentSession.driverName} · {currentSession.vehicle}</p></div><div><strong>{number(currentSession.energyKwh)} kWh</strong><span>{currentSession.durationMinutes} min · {money(currentSession.consumedAmount)}</span></div><a className="ghost-button" href={`#/mvp/session?est=${charger.establishmentId}&session=${currentSession.id}`}>Abrir linha do tempo</a></div> : <p className="operations-empty">Nenhuma sessão ChargeGrid autorizada ou ativa neste conector.</p> : null}</section> : null}
 
-    {canViewSessions ? <section id="charger-control" className="surface panel command-panel"><div className="sems-command-heading"><SectionHeader eyebrow="Ação sensível" title="Controle do carregador" subtitle="Todo comando registra autor, motivo, protocolo e resultado observado." /><button type="button" className="ghost-button" onClick={() => setDrawer("controls")}>Abrir registro de controle</button></div>
-      {commandType ? <form onSubmit={submit} className="command-form" data-testid="charger-command-form"><div className="command-intent"><span>{commandLabel(commandType)}</span><strong>{currentSession?.id}</strong><p>{commandType === "START_CHARGE" ? "A recarga só será exibida como ativa após a telemetria indicar fluxo de energia." : "O encerramento só será concluído após a telemetria indicar fim do fluxo."}</p></div><label><span>Motivo da ação</span><textarea value={reason} onChange={(event) => setReason(event.target.value)} minLength={8} required placeholder="Descreva por que este comando esta sendo enviado" /></label><label className="command-confirm"><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} /> Confirmo que validei o carregador, o veículo e a sessão.</label><button type="submit" disabled={!confirmed || reason.trim().length < 8 || submitting || Boolean(pending)}>{submitting ? "Aguardando telemetria..." : pending ? "Comando em processamento" : commandLabel(commandType)}</button></form> : <div className="operations-empty"><strong>Somente monitoramento neste momento.</strong><span>{charger.status === "offline" ? "O equipamento está offline." : "Não há sessão elegível para iniciar ou encerrar."}</span></div>}
+    {canViewSessions ? <section id="charger-control" className="surface panel command-panel sems-emergency-control-panel"><div className="sems-command-heading"><SectionHeader eyebrow="Contingência" title="Controle do carregador" subtitle="O fluxo normal é automático. Use estes comandos apenas quando a operação exigir intervenção." /><button type="button" className="ghost-button" onClick={() => setDrawer("controls")}>Abrir registro de controle</button></div>
+      {commandType ? <form onSubmit={submit} className="sems-emergency-control" data-testid="charger-command-form"><header><span>Intervenção disponível</span><strong>{commandLabel(commandType)}</strong><small>{currentSession?.id} · confirmação obrigatória por telemetria</small></header><label className="sems-emergency-reason"><span>Motivo da intervenção</span><textarea value={reason} onChange={(event) => setReason(event.target.value)} minLength={8} required placeholder="Descreva por que este comando esta sendo enviado" /></label><footer><label className="command-confirm"><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} /> Confirmo que validei o carregador, o veículo e a sessão.</label><button type="submit" disabled={!confirmed || reason.trim().length < 8 || submitting || Boolean(pending)}>{submitting ? "Aguardando telemetria..." : pending ? "Comando em processamento" : commandLabel(commandType)}</button></footer></form> : <div className="operations-empty"><strong>Somente monitoramento neste momento.</strong><span>{charger.status === "offline" ? "O equipamento está offline." : "Não há sessão elegível para liberar ou parar."}</span></div>}
       {commands[0] ? <div className="sems-recent-control"><span>Último controle</span><strong>{commandLabel(commands[0].type)}</strong><Badge value={commands[0].status} /><small>{localDate(commands[0].completedAt ?? commands[0].requestedAt)} · {commands[0].requestedBy}</small></div> : null}
       {feedback ? <p className={`command-feedback tone-${feedback.tone}`} role="status">{feedback.message}</p> : null}
       <p className="command-policy">Operador atual: {account?.displayName} · Escopo {account?.profile === "GOODWE" ? "GoodWe autorizado" : location?.name}</p>
@@ -387,18 +399,29 @@ export function ChargerDetailPage({ chargerId, establishmentId }: { chargerId: s
 export function SessionsPage({ establishmentId }: { establishmentId?: string }) {
   const { state, account } = useAdminState();
   const [view, setView] = useState<"live" | "authorized" | "history">("live");
+  const [scopeFilter, setScopeFilter] = useState(establishmentId ?? "all");
+  const [search, setSearch] = useState("");
   const scopeSet = new Set(accessibleEstablishmentIds(state, account));
-  const scoped = state.sessions.filter((item) => scopeSet.has(item.establishmentId) && (!establishmentId || item.establishmentId === establishmentId));
-  const items = useMemo(() => scoped.filter((item) => view === "live" ? ["starting", "active"].includes(item.status) : view === "authorized" ? ["authorized", "start_failed"].includes(item.status) : item.status === "finished"), [scoped, view]);
-  return <>
-    <nav className="enterprise-breadcrumb" aria-label="Navegacao estrutural"><span><a href="#/mvp/overview">Operacao</a><i>/</i></span><span><strong>Sessoes</strong></span></nav>
-    <section className="surface panel operations-page" data-testid="mvp-sessions-active"><SectionHeader eyebrow="Operacao em tempo real" title="Sessoes de recarga" subtitle="Separe autorizacao de pagamento, inicio tecnico, energia ativa e encerramento." />
-      <div className="operations-view-tabs" role="tablist"><button type="button" className={view === "live" ? "is-active" : ""} onClick={() => setView("live")}>Ao vivo <b>{scoped.filter((item) => ["starting", "active"].includes(item.status)).length}</b></button><button type="button" className={view === "authorized" ? "is-active" : ""} onClick={() => setView("authorized")}>Aguardando inicio <b>{scoped.filter((item) => ["authorized", "start_failed"].includes(item.status)).length}</b></button><button type="button" className={view === "history" ? "is-active" : ""} onClick={() => setView("history")}>Historico <b>{scoped.filter((item) => item.status === "finished").length}</b></button></div>
-      <DataTable columns={["Sessao", "Motorista", "Carregador", "Estado", "Energia e tempo", "Pagamento", "Acao"]}>{items.map((session) => <tr key={session.id}><td><strong>{session.id}</strong><span>{state.locations.find((item) => item.id === session.locationId)?.name}</span></td><td><strong>{session.driverName}</strong><span>{session.vehicle}</span></td><td><a href={`#/mvp/charger?est=${session.establishmentId}&charger=${session.chargerId}`}>{session.chargerId}</a></td><td><Badge value={session.status} /></td><td>{number(session.energyKwh)} kWh<span>{session.durationMinutes} min · {money(session.consumedAmount)}</span></td><td><Badge value={session.payment.status} /><span>{session.payment.method}</span></td><td><a className="ghost-button" href={`#/mvp/session?est=${session.establishmentId}&session=${session.id}`}>Abrir sessao</a></td></tr>)}</DataTable>
-      {!items.length ? <p className="operations-empty">Nenhuma sessao neste estado.</p> : null}
-    </section>
-    <section className="surface panel" data-testid="mvp-sessions-finished"><SectionHeader title="Como ler os estados" subtitle="Pagamento aprovado nao significa que o carregador iniciou a entrega de energia." /><div className="operations-state-guide"><article><Badge value="authorized" /><p>Pagamento e motorista validados; aguarda comando.</p></article><article><Badge value="starting" /><p>Comando enviado; ainda sem energia confirmada.</p></article><article><Badge value="active" /><p>Telemetria confirmou fluxo de energia.</p></article><article><Badge value="finished" /><p>Energia encerrada e valor final calculado.</p></article></div></section>
-  </>;
+  const scopeOptions = state.establishments.filter((item) => scopeSet.has(item.id));
+  const scoped = state.sessions.filter((item) => scopeSet.has(item.establishmentId) && (!establishmentId || item.establishmentId === establishmentId) && (scopeFilter === "all" || item.establishmentId === scopeFilter));
+  const normalizedSearch = search.trim().toLowerCase();
+  const items = useMemo(() => scoped.filter((item) => {
+    const matchesView = view === "live" ? ["starting", "active"].includes(item.status) : view === "authorized" ? ["authorized", "start_failed"].includes(item.status) : item.status === "finished";
+    return matchesView && (!normalizedSearch || `${item.id} ${item.driverName} ${item.vehicle} ${item.chargerId}`.toLowerCase().includes(normalizedSearch));
+  }), [normalizedSearch, scoped, view]);
+  return <section className="surface panel operations-page sems-reference-list sems-chargegrid-table-page" data-testid="mvp-sessions-active">
+    <header className="sems-chargegrid-table-heading"><div><h2>Sessões de recarga</h2><p>Autorização, início técnico, energia ativa e encerramento permanecem estados distintos.</p></div><div className="sems-chargegrid-compact-summary"><span><b>{scoped.filter((item) => ["starting", "active"].includes(item.status)).length}</b> ao vivo</span><span><b>{scoped.filter((item) => item.status === "finished").length}</b> concluídas</span></div></header>
+    <form className="sems-device-toolbar sems-chargegrid-table-toolbar" onSubmit={(event) => event.preventDefault()}>
+      <label><span className="sr-only">Filtrar sessões por usina</span><select aria-label="Filtrar sessões por usina" value={scopeFilter} onChange={(event) => setScopeFilter(event.target.value)} disabled={Boolean(establishmentId)}><option value="all">▣  Todas as usinas comerciais</option>{scopeOptions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+      <label className="sems-chargegrid-search"><span className="sr-only">Buscar sessão</span><input aria-label="Buscar sessão" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="⌕  Sessão, motorista, veículo ou carregador" /></label>
+      <button className="sems-icon-action" type="submit" aria-label="Pesquisar">⌕</button>
+      <button className="sems-icon-action" type="button" aria-label="Limpar filtros" onClick={() => { setScopeFilter(establishmentId ?? "all"); setSearch(""); }}>↻</button>
+    </form>
+    <nav className="sems-reference-status-tabs" aria-label="Estado das sessões" role="tablist"><button type="button" role="tab" aria-selected={view === "live"} className={view === "live" ? "is-active" : ""} onClick={() => setView("live")}>Ao vivo <b>({scoped.filter((item) => ["starting", "active"].includes(item.status)).length})</b></button><button type="button" role="tab" aria-selected={view === "authorized"} className={view === "authorized" ? "is-active" : ""} onClick={() => setView("authorized")}>Aguardando início <b>({scoped.filter((item) => ["authorized", "start_failed"].includes(item.status)).length})</b></button><button type="button" role="tab" aria-selected={view === "history"} className={view === "history" ? "is-active" : ""} onClick={() => setView("history")}>Histórico <b>({scoped.filter((item) => item.status === "finished").length})</b></button></nav>
+    <DataTable columns={["Sessão", "Motorista", "Carregador", "Estado", "Energia e tempo", "Pagamento", "Operação"]}>{items.map((session) => <tr key={session.id}><td><strong>{session.id}</strong><span>{state.locations.find((item) => item.id === session.locationId)?.name}</span></td><td><strong>{session.driverName}</strong><span>{session.vehicle}</span></td><td><a href={`#/mvp/charger?est=${session.establishmentId}&charger=${session.chargerId}`}>{session.chargerId}</a></td><td><Badge value={session.status} /></td><td>{number(session.energyKwh)} kWh<span>{session.durationMinutes} min · {money(session.consumedAmount)}</span></td><td><Badge value={session.payment.status} /><span>{session.payment.method}</span></td><td><a className="sems-row-action" href={`#/mvp/session?est=${session.establishmentId}&session=${session.id}`}>Abrir sessão ›</a></td></tr>)}</DataTable>
+    {!items.length ? <p className="operations-empty">Nenhuma sessão neste estado.</p> : null}
+    <footer className="sems-status-legend" data-testid="mvp-sessions-finished"><span><Badge value="authorized" /> pagamento validado</span><span><Badge value="starting" /> aguardando energia</span><span><Badge value="active" /> telemetria confirmou carga</span><span><Badge value="finished" /> encerrada e calculada</span></footer>
+  </section>;
 }
 
 export function SessionDetailPage({ sessionId, establishmentId }: { sessionId: string; establishmentId?: string }) {
@@ -406,14 +429,81 @@ export function SessionDetailPage({ sessionId, establishmentId }: { sessionId: s
   const session = state.sessions.find((item) => item.id === sessionId);
   if (!session || (establishmentId && session.establishmentId !== establishmentId)) return <Navigate to="/mvp/sessions" replace />;
   const charger = state.chargers.find((item) => item.id === session.chargerId);
+  const telemetry = state.chargerTelemetry.find((item) => item.chargerId === session.chargerId);
+  const location = state.locations.find((item) => item.id === session.locationId);
+  const establishment = state.establishments.find((item) => item.id === session.establishmentId);
   const events = state.sessionEvents.filter((item) => item.sessionId === session.id).sort((a, b) => a.at.localeCompare(b.at));
   const commands = state.chargerCommands.filter((item) => item.sessionId === session.id);
-  return <div className="operations-detail" data-testid="mvp-session-detail">
-    <nav className="enterprise-breadcrumb" aria-label="Navegacao estrutural"><span><a href={`#/mvp/sessions?est=${session.establishmentId}`}>Sessoes</a><i>/</i></span><span><strong>{session.id}</strong></span></nav>
-    <section className="operations-hero surface"><div><span className="eyebrow">Sessao de recarga</span><h2>{session.id}</h2><p>{session.driverName} · {session.vehicle}</p></div><div className="operations-hero-status"><Badge value={session.status} /><strong>{number(session.energyKwh)} kWh</strong><span>{money(session.finalAmount ?? session.consumedAmount)}</span></div></section>
-    <nav className="entity-tabs operations-anchor-nav"><a className="is-active" href="#session-summary">Resumo</a><a href="#session-timeline">Linha do tempo</a><a href="#session-payment">Pagamento</a></nav>
-    <section id="session-summary" className="surface panel"><SectionHeader title="Contexto da sessao" subtitle="Identidade, equipamento e metricas no mesmo fluxo." /><div className="detail-grid"><article><h3>Carregador</h3><p><a href={`#/mvp/charger?est=${session.establishmentId}&charger=${session.chargerId}`}>{charger?.identifier ?? session.chargerId}</a></p><small>{charger?.model}</small></article><article><h3>Inicio registrado</h3><p>{localDate(session.startedAt)}</p><small>{session.durationMinutes} minutos</small></article><article><h3>Energia</h3><p>{number(session.energyKwh)} kWh</p><small>{money(session.tariffPerKwh)}/kWh</small></article><article><h3>Valor</h3><p>{money(session.finalAmount ?? session.consumedAmount)}</p><small>{session.payment.status}</small></article></div></section>
-    <section id="session-timeline" className="surface panel"><SectionHeader title="Linha do tempo operacional" subtitle="Eventos de pagamento, ChargeGrid e GoodWe em ordem cronologica." /><ol className="session-timeline">{events.map((event) => <li key={event.id}><i /><div><span>{event.source} · {localDate(event.at)}</span><h3>{event.label}</h3>{event.detail ? <p>{event.detail}</p> : null}{event.commandId ? <small>Comando {event.commandId}</small> : null}</div></li>)}</ol>{!events.length ? <p className="operations-empty">Nenhum evento registrado para esta sessao.</p> : null}</section>
-    <section id="session-payment" className="surface panel"><SectionHeader title="Pagamento e comandos" subtitle="O financeiro autoriza a sessao; a telemetria confirma a energia." /><div className="detail-grid"><article><h3>Pagamento</h3><p>{session.payment.status}</p><small>{session.payment.method} · limite {money(session.payment.limitAmount)}</small></article><article><h3>Comandos vinculados</h3><p>{commands.length}</p><small>{commands.at(-1)?.status ? statusLabel(commands.at(-1)!.status) : "Nenhum comando"}</small></article></div></section>
+  const transaction = state.paymentTransactions.find((item) => item.sessionId === session.id);
+  const financialEvents = transaction ? state.financialEvents.filter((item) => item.transactionId === transaction.id).sort((a, b) => a.at.localeCompare(b.at)) : [];
+  const timelineItems = [
+    ...events.map((event) => ({ id: event.id, at: event.at, source: event.source, label: event.label, detail: event.detail, commandId: event.commandId })),
+    ...financialEvents.map((event) => ({ id: event.id, at: event.at, source: "PAYMENT", label: statusLabel(event.type), detail: event.reason ?? (event.amountCents !== undefined ? money(event.amountCents / 100) : undefined), commandId: undefined }))
+  ].sort((a, b) => a.at.localeCompare(b.at));
+  const progress = session.status === "finished" ? 4 : session.status === "active" ? 3 : session.status === "starting" ? 2 : session.status === "authorized" ? 1 : 0;
+  const amount = session.finalAmount ?? session.consumedAmount;
+  const platformShare = transaction ? transaction.capturedCents * transaction.platformShareBps / 10000 / 100 : 0;
+  const netAmount = transaction ? Math.max(0, transaction.capturedCents / 100 - transaction.providerFeeCents / 100 - platformShare) : amount;
+  const powerPercent = charger?.powerKw ? Math.min(100, ((telemetry?.currentPowerKw ?? 0) / charger.powerKw) * 100) : 0;
+  const progressSteps = [
+    { label: "Autorização", detail: session.payment.status, time: events.find((item) => item.type === "PAYMENT_AUTHORIZED")?.at },
+    { label: "Conexão", detail: "Carregador confirmou", time: events.find((item) => item.type === "START_ACCEPTED")?.at },
+    { label: "Recarga", detail: progress >= 3 ? "Energia confirmada" : "Aguardando energia", time: events.find((item) => item.type === "ENERGY_CONFIRMED" || item.type === "CHARGING")?.at },
+    { label: "Conclusão", detail: progress >= 4 ? "Energia encerrada" : "Em andamento", time: events.find((item) => item.type === "ENERGY_FINISHED")?.at }
+  ];
+
+  return <div className="operations-detail cg-session-detail" data-testid="mvp-session-detail">
+    <nav className="enterprise-breadcrumb" aria-label="Navegação estrutural"><span><a href={`#/mvp/sessions?est=${session.establishmentId}`}>Sessões</a><i>/</i></span><span><strong>Detalhe da sessão</strong></span></nav>
+
+    <section className="cg-session-hero">
+      <div className="cg-session-identity"><a href={`#/mvp/sessions?est=${session.establishmentId}`} aria-label="Voltar para sessões">‹</a><div><span>Sessão de recarga</span><h1>#{session.id.replace("CG-2026-", "")}</h1><p>{establishment?.name} · {location?.name}</p></div></div>
+      <div className="cg-session-live-state"><Badge value={session.status} />{session.status === "active" ? <span><i /> Atualização em tempo real</span> : <span>Última atualização {localDate(events.at(-1)?.at ?? session.startedAt)}</span>}</div>
+      <div className="cg-session-hero-actions"><a href={`#/mvp/charger?est=${session.establishmentId}&charger=${session.chargerId}`}>Abrir carregador</a><a className="is-primary" href={`#/mvp/operations?est=${session.establishmentId}`}>Voltar à operação</a></div>
+    </section>
+
+    <section className="cg-session-progress" aria-label="Progresso da sessão">{progressSteps.map((step, index) => <div className={index < progress ? "is-complete" : index === progress ? "is-current" : ""} key={step.label}><i>{index < progress ? "✓" : index + 1}</i><span><strong>{step.label}</strong><small>{step.time ? new Date(step.time).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : step.detail}</small></span></div>)}</section>
+
+    <section className="cg-session-kpis" aria-label="Resumo da sessão">
+      <article><span>Potência atual</span><strong>{number(telemetry?.currentPowerKw ?? 0)} <small>kW</small></strong><em>{charger?.powerKw ? `${Math.round(powerPercent)}% da capacidade` : "Sem capacidade nominal"}</em></article>
+      <article><span>Energia entregue</span><strong>{session.energyKwh.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <small>kWh</small></strong><em>Telemetria GoodWe</em></article>
+      <article><span>Duração</span><strong>{session.durationMinutes} <small>min</small></strong><em>Início {new Date(session.startedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</em></article>
+      <article><span>Valor acumulado</span><strong>{money(amount)}</strong><em>{money(session.tariffPerKwh)}/kWh</em></article>
+    </section>
+
+    <div className="cg-session-layout">
+      <section className="cg-session-card cg-session-overview" id="session-summary">
+        <header><div><span>Visão geral</span><h2>Contexto da recarga</h2></div><small>{session.id}</small></header>
+        <div className="cg-session-people">
+          <article><i aria-hidden="true">●</i><div><span>Motorista</span><strong>{session.driverName}</strong><small>{session.driverId}</small></div></article>
+          <article><i aria-hidden="true">◆</i><div><span>Veículo</span><strong>{session.vehicle}</strong><small>{session.servicePriority === "FLEET_CRITICAL" ? "Prioridade de frota" : session.servicePriority === "ACCESSIBILITY" ? "Atendimento prioritário" : "Atendimento padrão"}</small></div></article>
+        </div>
+        <dl className="cg-session-facts">
+          <div><dt>Carregador</dt><dd><a href={`#/mvp/charger?est=${session.establishmentId}&charger=${session.chargerId}`}>{charger?.identifier ?? session.chargerId}</a><small>{charger?.model ?? "Modelo não informado"} · {charger?.powerKw ?? "—"} kW</small></dd></div>
+          <div><dt>Local</dt><dd>{location?.name ?? "—"}<small>{location ? `${location.address}, ${location.number}` : establishment?.address}</small></dd></div>
+          <div><dt>Início registrado</dt><dd>{localDate(session.startedAt)}<small>{session.durationMinutes} minutos decorridos</small></dd></div>
+          <div><dt>Conector</dt><dd>{telemetry?.connectorState ?? "Sem telemetria"}<small>{telemetry?.vehicleConnected ? "Veículo conectado" : "Veículo não detectado"}</small></dd></div>
+        </dl>
+      </section>
+
+      <section className="cg-session-card cg-session-energy">
+        <header><div><span>Energia</span><h2>Entrega no conector</h2></div><small>{telemetry?.observedAt ? `Atualizado ${new Date(telemetry.observedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : "Sem leitura"}</small></header>
+        <div className="cg-session-gauge" style={{ "--session-progress": `${powerPercent * 3.6}deg` } as CSSProperties}><div><strong>{number(telemetry?.currentPowerKw ?? 0)}</strong><span>kW agora</span></div></div>
+        <dl><div><dt>Capacidade</dt><dd>{charger?.powerKw ?? "—"} kW</dd></div><div><dt>Entregue</dt><dd>{session.energyKwh.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kWh</dd></div><div><dt>Tarifa</dt><dd>{money(session.tariffPerKwh)}/kWh</dd></div></dl>
+      </section>
+
+      <section className="cg-session-card cg-session-payment" id="session-payment">
+        <header><div><span>Financeiro</span><h2>Pagamento e liquidação</h2></div><Badge value={transaction?.settlementStatus ?? session.payment.status} /></header>
+        <div className="cg-payment-total"><span>Valor da sessão</span><strong>{money(amount)}</strong><small>{session.payment.method} · limite autorizado {money(session.payment.limitAmount)}</small></div>
+        <dl><div><dt>Autorizado</dt><dd>{money(transaction ? transaction.authorizedCents / 100 : session.payment.limitAmount)}</dd></div><div><dt>Capturado</dt><dd>{money(transaction ? transaction.capturedCents / 100 : amount)}</dd></div><div><dt>Taxa do provedor</dt><dd>{money(transaction ? transaction.providerFeeCents / 100 : 0)}</dd></div><div><dt>Líquido estimado</dt><dd>{money(netAmount)}</dd></div></dl>
+        <footer><span>{transaction?.provider ?? "Pagamento local"}</span><strong>{transaction?.providerReference ?? session.payment.status}</strong>{transaction ? <a href={`#/mvp/financial-session?est=${session.establishmentId}&transaction=${transaction.id}`}>Abrir pagamento ›</a> : <span>Aguardando transação</span>}</footer>
+      </section>
+
+      <section className="cg-session-card cg-session-timeline" id="session-timeline">
+        <header><div><span>Auditoria operacional</span><h2>Linha do tempo da sessão</h2></div><small>{timelineItems.length} registros</small></header>
+        <ol>{timelineItems.map((event) => <li key={event.id}><time>{new Date(event.at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</time><i /><div><span>{event.source}</span><strong>{event.label}</strong>{event.detail ? <p>{event.detail}</p> : null}{event.commandId ? <small>Comando {event.commandId}</small> : null}</div></li>)}</ol>
+        {!timelineItems.length ? <p className="operations-empty">Nenhum evento registrado para esta sessão.</p> : null}
+        {commands.length ? <footer><span>Último comando</span><strong>{commandLabel(commands.at(-1)!.type)} · {statusLabel(commands.at(-1)!.status)}</strong></footer> : null}
+      </section>
+    </div>
   </div>;
 }

@@ -13,10 +13,10 @@ test('operador inicia sessao autorizada e ve confirmacao por telemetria', async 
   await page.goto('/#/mvp/charger?charger=CG-FIAP-03');
 
   const form = page.getByTestId('charger-command-form');
-  await expect(form).toContainText('Iniciar recarga');
+  await expect(form).toContainText('Liberar recarga');
   await form.getByPlaceholder('Descreva por que este comando esta sendo enviado').fill('Motorista confirmou conexao presencial');
   await form.getByRole('checkbox').check();
-  await form.getByRole('button', { name: 'Iniciar recarga' }).click();
+  await form.getByRole('button', { name: 'Liberar recarga' }).click();
 
   await expect(page.getByRole('status')).toContainText('confirmado pela telemetria');
   await expect(page.getByTestId('mvp-charger-detail')).toContainText('18,60 kW');
@@ -32,7 +32,7 @@ test('falha de partida permanece distinta de recarga ativa', async ({ page }) =>
   const form = page.getByTestId('charger-command-form');
   await form.getByPlaceholder('Descreva por que este comando esta sendo enviado').fill('Inicio assistido solicitado pelo motorista');
   await form.getByRole('checkbox').check();
-  await form.getByRole('button', { name: 'Iniciar recarga' }).click();
+  await form.getByRole('button', { name: 'Liberar recarga' }).click();
 
   await expect(page.getByRole('status')).toContainText('handshake');
   await expect(page.getByTestId('mvp-charger-detail')).toContainText('Falhou');

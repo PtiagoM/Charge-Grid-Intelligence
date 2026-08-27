@@ -16,8 +16,18 @@ As capturas deste manifesto ficam somente no ambiente local, dentro de `inbox/`,
 | `catalogued/SEMS-DASHBOARD-ECONOMY_OPERATOR_1103x405_ICON-LAYOUT.png` | Operador | Painel - Economia | Grade 3x2, hierarquia icone/valor/rotulo, controles de semana e continuidade com Monitoramento |
 | `catalogued/SEMS-DASHBOARD-ENERGY-MONITOR_OPERATOR_1119x497_TOOLTIP.png` | Operador | Painel - grafico | Escalas, legenda e tooltip do monitoramento de energia |
 | `catalogued/SEMS-PLANTS-LIST_OPERATOR_1863x1045_POPULATED.png` | Operador | Lista de usinas | Filtros, status, tabela, paginacao e acao de cadastro |
+| `catalogued/SEMS-PLANTS-LIST_OPERATOR_1625x952_POPULATED-ALT.png` | Operador | Lista de usinas - estado atualizado | Densidade da tabela, quatro buscas, contadores por status, favorito e operacoes por linha |
+| `catalogued/SEMS-PLANTS-LIST_OPERATOR_1626x953_FILTER-OPEN.png` | Operador | Lista de usinas - filtro aberto | Painel lateral sobreposto, tipos de usina, organizacao, potencia, origem e favorito |
 | `catalogued/SEMS-PLANTS-CREATE_OPERATOR_1865x1046_STEP-ADDRESS.png` | Operador | Nova usina - endereco | Composicao do assistente em tres etapas e mapa lateral |
+| `catalogued/SEMS-PLANT-DETAIL_OPERATOR_1875x1045_OVERVIEW-TOP.png` | Operador | Detalhe da usina - topo | Cabecalho, estados, navegacao interna, diagrama energetico e visao geral |
+| `catalogued/SEMS-PLANT-DETAIL_OPERATOR_1875x1045_FLOW-DIAGRAM.png` | Operador | Detalhe da usina - fluxo alternativo | Alternancia entre palco ilustrado e diagrama paralelo de fluxo energetico |
+| `catalogued/SEMS-PLANT-DETAIL_OPERATOR_1875x1045_SCROLLED-ENERGY.png` | Operador | Detalhe da usina - continuacao | Navegacao vertical, curva de potencia, monitoramento de consumo e fluxo de energia |
+| `catalogued/SEMS-PLANT-DETAIL-POWER-CURVE_OPERATOR_1071x781_POPULATED.png` | Operador | Detalhe da usina - curva de potencia | Indicadores, tarifas, SOC e series energeticas ao longo do dia |
+| `catalogued/SEMS-PLANT-DETAIL-ENERGY-FLOW_OPERATOR_547x820_POPULATED.png` | Operador | Detalhe da usina - fluxo de energia | Sankey entre solar, bateria, rede e consumo |
+| `catalogued/SEMS-PLANT-DETAIL-EV-MONITOR_OPERATOR_1069x808_POPULATED.png` | Operador | Detalhe da usina - carregador veicular | Monitoramento diario da energia carregada pelo EV charger |
+| `catalogued/SEMS-PLANT-DETAIL-PRODUCTION-COMPARISON_OPERATOR_1066x806_YEAR.png` | Operador | Detalhe da usina - comparacao de producao | Serie anual comparativa e controles de periodo |
 | `catalogued/SEMS-DEVICES-LIST_OPERATOR_1872x1043_INVERTERS.png` | Operador | Lista de dispositivos | Abas por tipo, filtros, status e tabela agrupada |
+| `catalogued/SEMS-DEVICES-LIST_OPERATOR_1619x909_INVERTERS-ALT.png` | Operador | Lista de dispositivos - inversores | Estado compacto atualizado com buscas separadas por usina e dispositivo, agrupamento, status e paginacao de cinco itens |
 | `catalogued/SEMS-DEVICES-LIST_OPERATOR_1870x919_DONGLES.png` | Operador | Lista de dispositivos - dongles | Estados online/offline, agrupamento por usina, SIM e operacoes |
 | `catalogued/SEMS-DEVICES-LIST_OPERATOR_1873x935_EV-CHARGERS.png` | Operador | Lista de dispositivos - carregadores | Estados de carregamento, inatividade, manutencao, falha e metricas de carga |
 | `catalogued/SEMS-DEVICES-LIST_OPERATOR_1877x926_THIRD-PARTY-INVERTERS.png` | Operador | Lista de dispositivos - inversores de terceiros | Estados online/offline, potencia ativa, geracao diaria e rolagem horizontal |
@@ -45,6 +55,20 @@ As capturas deste manifesto ficam somente no ambiente local, dentro de `inbox/`,
 | `catalogued/SEMS-MESSAGES-REPORTS_OPERATOR_1868x924_POPULATED.png` | Operador | Central de mensagens - relatorio | Historico rolavel de geracao e download de relatorios |
 | `catalogued/SEMS-ORGANIZATION-USERS_OPERATOR_1873x925_ADD-USER.png` | Operador/Instalador | Usuarios da organizacao | Lista com funcoes Administrador e Tecnico e drawer de inclusao de usuario |
 
+## Conceitos visuais ChargeGrid
+
+Estas imagens sao conceitos aprovados ou em avaliacao para as superficies novas do ChargeGrid. Elas nao constituem evidencia do SEMS+ e devem ser confrontadas com as regras de dominio antes da implementacao.
+
+| Referencia local | Perfil | Tela | Uso na reconstrucao |
+| --- | --- | --- | --- |
+| `catalogued/CHARGEGRID-OPERATIONS_ESTABLISHMENT-ADMIN_1672x941_SPOT-CAROUSEL-CONCEPT.png` | Proprietario comercial | ChargeGrid - Operacao | Conceito do carrossel de vagas, composicao espacial por carregador, selecao de slot e painel operacional contextual |
+| `catalogued/CHARGEGRID-OPERATIONS_ESTABLISHMENT-ADMIN_1223x396_SPOT-CAROUSEL-CLOSEUP.png` | Proprietario comercial | ChargeGrid - Operacao | Recorte aproximado para aferir perspectiva das cinco vagas, contornos de estado, veiculos e cabos graficos conectados |
+| `catalogued/CHARGEGRID-OPERATIONS_ESTABLISHMENT-ADMIN_1122x1402_VEHICLE-A01-FAR-LEFT.png` | Proprietario comercial | ChargeGrid - Operacao | Asset transparente do veiculo na perspectiva da vaga A01; publicar apenas quando a conexao do veiculo estiver confirmada |
+| `catalogued/CHARGEGRID-OPERATIONS_ESTABLISHMENT-ADMIN_1122x1402_VEHICLE-A02-LEFT.png` | Proprietario comercial | ChargeGrid - Operacao | Asset transparente do veiculo na perspectiva da vaga A02; publicar apenas quando a conexao do veiculo estiver confirmada |
+| `catalogued/CHARGEGRID-OPERATIONS_ESTABLISHMENT-ADMIN_1122x1402_VEHICLE-A03-CENTER.png` | Proprietario comercial | ChargeGrid - Operacao | Asset transparente do veiculo na perspectiva da vaga A03; publicar apenas quando a conexao do veiculo estiver confirmada |
+| `catalogued/CHARGEGRID-OPERATIONS_ESTABLISHMENT-ADMIN_1122x1402_VEHICLE-A04-RIGHT.png` | Proprietario comercial | ChargeGrid - Operacao | Asset transparente do veiculo na perspectiva da vaga A04; publicar apenas quando a conexao do veiculo estiver confirmada |
+| `catalogued/CHARGEGRID-OPERATIONS_ESTABLISHMENT-ADMIN_1122x1402_VEHICLE-A05-FAR-RIGHT.png` | Proprietario comercial | ChargeGrid - Operacao | Asset transparente do veiculo na perspectiva da vaga A05; publicar apenas quando a conexao do veiculo estiver confirmada |
+
 ## Assets identificados
 
 Os assets do Painel foram normalizados como `SEMS-ASSET-DASHBOARD-<FUNCAO>_<DIMENSAO>.png`. As copias utilizadas pela aplicacao ficam versionadas em `apps/admin-web/public/assets/sems/dashboard/`; os downloads originais permanecem apenas no `inbox/catalogued/`.
@@ -52,6 +76,8 @@ Os assets do Painel foram normalizados como `SEMS-ASSET-DASHBOARD-<FUNCAO>_<DIME
 Foram identificados os grupos de potencia, alarmes, curva e monitoramento de energia, CO2, arvore, energia de carga/geracao/descarga, autoconsumo e receita. `SEMS-ASSET-DASHBOARD-INCOME-DARK_UNKNOWN.png` ainda nao foi publicado porque seu encoding nao foi reconhecido como PNG valido.
 
 Os assets da area de configuracoes pessoais foram catalogados localmente como `SEMS-ASSET-ACCOUNT-CONFIGURATION_198x198.png` e `SEMS-ASSET-ACCOUNT-REPORT-SUBSCRIPTION_80x80.png`. Eles ainda nao foram copiados para a aplicacao porque esta rodada e apenas de coleta de referencias.
+
+O icone ativo do Painel foi catalogado como `SEMS-ASSET-SHELL-DASHBOARD-ACTIVE_48x48.png` e publicado em `apps/admin-web/public/assets/sems/icons/icon_dashboard_over.d9e61c29.png`. A rodada de navegacao usa esse asset no Painel e reaproveita os icones anteriores para Gestao da organizacao e ChargeGrid conforme a hierarquia aprovada pelo produto.
 
 Os assets do detalhe do carregador foram catalogados como `SEMS-ASSET-CHARGER-*`. O equipamento, o veiculo desconectado e os icones de estado usados pela reconstrucao foram publicados em `apps/admin-web/public/assets/sems/devices/`. O asset de backstage da organizacao permaneceu apenas no catalogo porque nao pertence ao detalhe do carregador.
 
