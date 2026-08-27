@@ -10,6 +10,14 @@ export const assets = {
   chargerStatusIdle: `${base}/devices/charger-status-idle.png`,
   chargerNoConnectedCar: `${base}/devices/charger-no-connected-car.png`,
   chargerDeviceInformation: `${base}/devices/charger-device-information.png`,
+  chargerOperationStage: `${base}/chargegrid/operation-stage-5-bays.png`,
+  chargerOperationVehicles: [
+    `${base}/chargegrid/vehicle-bay-a01.png`,
+    `${base}/chargegrid/vehicle-bay-a02.png`,
+    `${base}/chargegrid/vehicle-bay-a03.png`,
+    `${base}/chargegrid/vehicle-bay-a04.png`,
+    `${base}/chargegrid/vehicle-bay-a05.png`
+  ],
   plant: `${base}/plants/136287ad-ae2c-4034-bb53-015701b5fe9d.jpg`,
   dashboard: {
     power: `${base}/dashboard/SEMS-ASSET-DASHBOARD-POWER-DARK_40x34.png`,

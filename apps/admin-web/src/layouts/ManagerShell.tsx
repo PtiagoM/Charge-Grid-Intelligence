@@ -70,6 +70,7 @@ export function ManagerShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const [assistantOpen, setAssistantOpen] = useState(false);
   const activeRoute = location.pathname.split("/")[2] ?? "overview";
+  const activeContextRoute = activeRoute === "session" ? "sessions" : activeRoute === "financial-session" ? "finance" : activeRoute;
   const activeDomain = getAdminDomainForRoute(activeRoute);
   const selectedEstablishmentId = new URLSearchParams(location.search).get("est") ?? "";
   const contextSearch = selectedEstablishmentId ? `?est=${encodeURIComponent(selectedEstablishmentId)}` : "";
@@ -108,7 +109,7 @@ export function ManagerShell({ children }: { children: ReactNode }) {
       </div></header>
       <section className="page-content" data-testid="page-content">
         {activeRoute !== "charger" ? <header className="page-heading"><div><h1>{routeTitles[activeRoute] ?? visibleNavigation.find((item) => item.activeRoutes.includes(activeRoute))?.label ?? activeDomain?.label ?? "Configurações"}</h1>{activeRoute === "overview" ? <small>Atualizado em 22/08/2026, 06:39:38 <button type="button" aria-label="Atualizar painel">↻</button></small> : !isStandaloneRoute ? <p>{activeDomain?.description[profile] ?? "Preferências da conta e controles de acesso."}</p> : null}</div></header> : null}
-        {activeRoute !== "overview" && activeRoute !== "charger" && activeRoute !== "access" && activeDomain && account && contextLinks.length > 1 ? <nav className="context-navigation" aria-label={`Navegação de ${activeDomain.label}`}>{contextLinks.map((item) => <NavLink key={item.route} to={{ pathname: `/mvp/${item.route}`, search: contextSearch }} className={activeRoute === item.route ? "is-active" : ""}>{item.label}</NavLink>)}</nav> : null}
+        {activeRoute !== "overview" && activeRoute !== "charger" && activeRoute !== "access" && activeDomain && account && contextLinks.length > 1 ? <nav className={activeDomain.id === "chargegrid" ? "context-navigation sems-device-type-tabs chargegrid-context-navigation" : "context-navigation"} aria-label={`Navegação de ${activeDomain.label}`} role={activeDomain.id === "chargegrid" ? "tablist" : undefined}>{contextLinks.map((item) => <NavLink key={item.route} to={{ pathname: `/mvp/${item.route}`, search: contextSearch }} className={activeContextRoute === item.route ? "is-active" : ""} role={activeDomain.id === "chargegrid" ? "tab" : undefined} aria-selected={activeDomain.id === "chargegrid" ? activeContextRoute === item.route : undefined}>{item.label}</NavLink>)}</nav> : null}
         {children}
       </section>
     </main>
