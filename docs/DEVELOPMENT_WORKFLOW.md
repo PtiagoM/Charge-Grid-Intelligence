@@ -13,8 +13,8 @@ Manter o Dashboard Admin e o Driver PWA evoluindo em linhas independentes, com i
 | `origin/main` / `8befa41` | Governanca e PWA integrados; a linha Admin ainda não foi promovida para essa branch |
 | `codex/driver-pwa-mobile` / `15afdb9` | Referência histórica da entrega do PWA integrada pelo [PR #1](https://github.com/PtiagoM/Charge-Grid-Intelligence/pull/1) |
 | `codex/admin-web-sems-migration` / `c2aebd6` | Fotografia validada da primeira reconstrucao nativa do Admin |
-| `origin/develop/admin-web` / `cde7ee9` | Linha integrada do dashboard após a fundação de personas do PR #10 |
-| PRs #11–#15 | Cadeia ativa de Painel → Usinas → Dispositivos → Operação ChargeGrid → consolidação documental |
+| `origin/develop/admin-web` / `97cf69d` | Linha integrada do dashboard após o Painel agregado do PR #11 |
+| PR #16 | Rollup ativo de Usinas → Dispositivos → Operação ChargeGrid → consolidação documental para `develop/admin-web` |
 
 O merge `fe28427` tornou `c2aebd6` ancestral da `main`. O revert `92a2544` removeu seus arquivos sem remover essa ancestralidade. Por isso, `git merge codex/admin-web-sems-migration` pode responder que nao ha nada para integrar enquanto o dashboard continua ausente.
 
@@ -46,24 +46,25 @@ Branches curtas devem nascer da linha do produto correspondente e retornar a ela
 1. Governanca, CI e protecao da `main`: concluidos pelo PR #2.
 2. Validacao e integracao do PWA: concluidas pelo PR #1.
 3. Restauracao correta do Admin em `develop/admin-web`: concluida.
-4. Auditoria, decisões de produto e fundação de personas: integradas até o PR #10 (`cde7ee9`).
-5. Cadeia visual/funcional ativa do Admin: #11 Painel agregado → #12 Usinas → #13 Dispositivos → #14 Operação ChargeGrid.
-6. Cada PR empilhado deve ser revisado e integrado na ordem; depois de cada merge, retargetar o próximo PR para a nova base integrada quando necessário.
-7. Novas alterações independentes do dashboard devem partir do `origin/develop/admin-web` já atualizado; alterações que dependem da cadeia atual podem usar uma branch empilhada e declarar essa dependência.
-8. Integração futura do Admin em `main`: somente por PR, após fechamento dos gates do plano, regressão completa e decisão humana.
+4. Auditoria, decisões de produto e fundação de personas: integradas até o PR #10.
+5. Painel agregado: integrado diretamente em `develop/admin-web` pelo PR #11 (`97cf69d`).
+6. PRs #12–#15: integradas nas branches empilhadas e preservadas como histórico de revisão por escopo.
+7. PR #16: integração consolidada da ponta mais atual em `develop/admin-web`; é a única PR ainda necessária para concluir esta rodada.
+8. Novas alterações independentes do dashboard devem partir de `origin/develop/admin-web` depois da decisão sobre a PR #16.
+9. Integração futura do Admin em `main`: somente por PR, após fechamento dos gates do plano, regressão completa e decisão humana.
 
 ### Cadeia de integração ativa — 27/08/2026
 
 ```text
-origin/develop/admin-web (cde7ee9)
-└── PR #11 feature/admin-dashboard-aggregate
-    └── PR #12 feature/admin-plants-reference
-        └── PR #13 feature/admin-devices-reference
-            └── PR #14 feature/admin-chargegrid-operations
-                └── PR #15 docs/admin-current-state
+origin/develop/admin-web (97cf69d, PR #11 integrada)
+└── PR #16 feature/admin-current-state
+    ├── PR #12 Usinas
+    ├── PR #13 Dispositivos
+    ├── PR #14 Operação ChargeGrid
+    └── PR #15 Documentação consolidada
 ```
 
-Não fazer merge fora dessa ordem e não fechar branches intermediárias antes de o PR dependente ser retargetado. O estado funcional e o trabalho restante estão em `docs/admin-dashboard/REMAINING_WORK.md`.
+As PRs componentes permanecem como registro auditável; não precisam ser reabertas nem integradas individualmente em `develop/admin-web`. A decisão pendente é somente a revisão e integração manual da PR #16. O estado funcional e o trabalho restante estão em `docs/admin-dashboard/REMAINING_WORK.md`.
 
 Nao recrie a linha ativa do Admin a partir de `codex/admin-web-sems-migration`: isso conserva a ancestralidade problematica e faz o Git omitir a migracao em um merge futuro. Use `develop/admin-web`, onde a recuperacao ja foi registrada corretamente.
 

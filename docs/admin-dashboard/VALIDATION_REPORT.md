@@ -1,7 +1,7 @@
 # Relatório de validação do Dashboard Admin
 
 **Atualizado em:** 27 de agosto de 2026  
-**Cobertura:** histórico M9, fundação F0 e convergência visual/operacional até a PR #14.
+**Cobertura:** histórico M9, fundação F0 e convergência visual/operacional consolidada na PR #16.
 
 As primeiras seções preservam a evidência histórica da rodada M9. A evidência corrente está consolidada na seção “Convergência visual e Operação ChargeGrid — 25 a 27/08/2026”.
 
@@ -100,10 +100,12 @@ Esta rodada avançou da fundação de personas para as superfícies principais d
 
 | PR | Base | Escopo | Estado verificado em 27/08/2026 |
 | --- | --- | --- | --- |
-| #11 | `develop/admin-web` | Painel geral agregado | aberto, CI aprovado |
-| #12 | `feature/admin-dashboard-aggregate` | Lista de usinas | aberto, CI aprovado |
-| #13 | `feature/admin-plants-reference` | Lista de dispositivos | aberto, CI aprovado |
-| #14 | `feature/admin-devices-reference` | Operação ChargeGrid e detalhes | aberto, CI aprovado |
+| #11 | `develop/admin-web` | Painel geral agregado | integrada, CI aprovado |
+| #12 | `feature/admin-dashboard-aggregate` | Lista de usinas | integrada na cadeia, CI aprovado |
+| #13 | `feature/admin-plants-reference` | Lista de dispositivos | integrada na cadeia, CI aprovado |
+| #14 | `feature/admin-devices-reference` | Operação ChargeGrid e detalhes | integrada na cadeia, CI aprovado |
+| #15 | `feature/admin-chargegrid-operations` | Consolidação documental | integrada na cadeia, CI aprovado |
+| #16 | `develop/admin-web` | Rollup da ponta atual | aberta para integração final |
 
 ### Superfícies verificadas
 

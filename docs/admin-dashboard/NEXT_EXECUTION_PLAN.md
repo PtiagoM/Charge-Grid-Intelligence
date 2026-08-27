@@ -173,7 +173,7 @@ Validação da implementação: `npm run build --workspace=apps/admin-web`, `npm
 - o acesso direto a um carregador fora do escopo agora retorna à lista de dispositivos;
 - o teste legado que contradizia proprietário = administrador foi corrigido; a cobertura atual confirma acesso de gestão a tarifa e financeiro.
 
-Validação consolidada desta entrega: lint raiz, build do Admin, 20 arquivos/76 testes unitários, 13 E2E focais da operação e 5 E2E focais de sessão/financeiro aprovados. Operação, Fila, carregador, sessão e pagamento foram inspecionados com Playwright em `1440 × 1000`. O CI dos PRs #11–#14 aprovou lint, testes e build; a regressão E2E integral permanece reservada ao gate de integração.
+Validação consolidada desta entrega: lint raiz, build do Admin, 20 arquivos/76 testes unitários, 13 E2E focais da operação e 5 E2E focais de sessão/financeiro aprovados. Operação, Fila, carregador, sessão e pagamento foram inspecionados com Playwright em `1440 × 1000`. O CI dos PRs #11–#15 aprovou lint, testes e build; a PR #16 revalida a ponta consolidada antes da integração em `develop/admin-web`. A regressão E2E integral permanece reservada ao gate de integração em `main`.
 
 ## Fase 2 — Consultor GoodWe
 

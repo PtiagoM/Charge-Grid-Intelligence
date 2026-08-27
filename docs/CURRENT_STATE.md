@@ -118,8 +118,8 @@ O recorte entre trabalho concluído, gates abertos e ordem recomendada de contin
 
 ### Estado atual do Admin — 27/08/2026
 
-- Fase 0 consolidada e integrada em `origin/develop/admin-web` pelo PR #10 (`cde7ee9`).
-- A evolução está organizada em uma cadeia de PRs: #11 Painel agregado, #12 Lista de usinas, #13 Lista de dispositivos, #14 Operação ChargeGrid e #15 consolidação documental.
+- Fase 0 consolidada e integrada pelo PR #10; o Painel agregado do PR #11 também já está em `origin/develop/admin-web` (`97cf69d`).
+- As PRs #12–#15 foram integradas nas respectivas branches empilhadas. A PR #16, `feature/admin-current-state` → `develop/admin-web`, consolida Lista de usinas, Lista de dispositivos, Operação ChargeGrid e documentação em uma única integração final.
 - O PR #14 contém a visão operacional local, fila automática, detalhes de carregador e sessão, resumo financeiro e detalhe de pagamento; comandos locais ficaram restritos às contingências `Liberar recarga` e `Parar recarga`.
 - Operação, Fila, carregador, sessão e pagamento foram inspecionados em navegador real a `1440 × 1000` e seguem a escala visual do Painel.
 - Foram aprovados lint, build do Admin, 20 arquivos/76 testes unitários, 13 E2E focais da operação e 5 E2E focais adicionais de sessão/financeiro. O CI de lint, testes e build também foi aprovado na cadeia publicada.
@@ -653,7 +653,7 @@ produto/contexto → arquitetura → contratos → demo
 | Progresso | **LOCAL**: teto, barra verde, saldo e estimativa | `SessionPage.tsx` |
 | Notificações | **LOCAL**: navegador/service worker | `browserNotifications.ts` |
 | PWA | **IMPLEMENTADO**: manifest, SW, ícone, instalação/safe areas | `public/` |
-| Dashboard Admin | **F0 INTEGRADA; F1 AVANÇADA EM PRs**: personas e escopos estão em `develop/admin-web`; a cadeia #11–#14 implementa Painel, Usinas, Dispositivos e Operação ChargeGrid, incluindo fila automática e detalhes de carregador, sessão e pagamento. O Gate F1 ainda depende das lacunas registradas em `REMAINING_WORK.md`. Providers, autorização backend/RLS, acabamento visual integral e regressão completa antes de `main` permanecem pendentes | `apps/admin-web/`, `docs/admin-dashboard/VALIDATION_REPORT.md`, `docs/admin-dashboard/REMAINING_WORK.md` |
+| Dashboard Admin | **F0 INTEGRADA; F1 AVANÇADA NA PR #16**: personas, escopos e Painel agregado estão em `develop/admin-web`; a PR de integração consolida Usinas, Dispositivos e Operação ChargeGrid, incluindo fila automática e detalhes de carregador, sessão e pagamento. O Gate F1 ainda depende das lacunas registradas em `REMAINING_WORK.md`. Providers, autorização backend/RLS, acabamento visual integral e regressão completa antes de `main` permanecem pendentes | `apps/admin-web/`, `docs/admin-dashboard/VALIDATION_REPORT.md`, `docs/admin-dashboard/REMAINING_WORK.md` |
 | GoodWe | **SIMULADO** | `apps/api/src/goodwe/` |
 | Persistência comercial | **NÃO IMPLEMENTADO**: migrations/repositories/RLS | `supabase/` |
 | IA | **NÃO IMPLEMENTADO** | `apps/api/src/ai/README.md` |

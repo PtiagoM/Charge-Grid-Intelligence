@@ -2,7 +2,7 @@
 
 **Atualizado em:** 27 de agosto de 2026  
 **Documento de origem:** [`NEXT_EXECUTION_PLAN.md`](NEXT_EXECUTION_PLAN.md)  
-**Base avaliada:** cadeia de PRs #11 → #12 → #13 → #14  
+**Base avaliada:** conteúdo das PRs #11 → #15, consolidado para `develop/admin-web` pela PR #16  
 **Objetivo:** separar o que já está demonstrável no frontend, o que ainda precisa de validação e o que depende de backend ou integração produtiva.
 
 ## Resumo executivo
@@ -177,7 +177,7 @@ Aplicar remoção de capacidades sobre experiências já aprovadas:
 - obter as referências visuais ainda bloqueantes;
 - criar matriz visual e snapshots somente após aprovação explícita;
 - executar lint, unitários, build e E2E integral do Admin;
-- integrar a cadeia de PRs em `develop/admin-web` na ordem documentada;
+- revisar e integrar a PR consolidada #16 em `develop/admin-web`;
 - abrir PR de integração de `develop/admin-web` para `main` apenas após decisão humana.
 
 ## Fora do escopo imediato
@@ -207,4 +207,3 @@ Estes itens continuam pendentes para produção, mas não bloqueiam o fechamento
 10. `chore/admin-visual-finalization`
 
 Cada branch deve partir da linha integrada mais recente, preservar o Driver PWA e usar validação proporcional durante o desenvolvimento. A regressão completa é obrigatória antes da integração em `main`.
-
