@@ -336,6 +336,36 @@ ChargeGrid não deve ser representado por padrão como uma sequência de cards g
 
 Esta regra é uma decisão de produto e design, não uma autorização para criar snapshots ou baselines nesta fase.
 
+### Operação automática, contingência e auditoria — 27/08/2026
+
+A operação normal de recarga é coordenada pelo sistema. A interface administrativa não deve transformar a fila em uma mesa de despacho manual nem sugerir que o operador precisa decidir cada admissão.
+
+- a fila é ordenada e alocada automaticamente e aparece como superfície de acompanhamento somente leitura;
+- não existem ações operacionais de `chamar próximo`, confirmar chegada, registrar no-show ou admitir veículo;
+- ações de operador no carregador são contingências, não o fluxo padrão;
+- os únicos comandos comerciais expostos nesta etapa são `Liberar recarga` e `Parar recarga`, sujeitos a confirmação, motivo e telemetria;
+- publicação, suspensão e configuração comercial continuam no contexto individual do carregador e não se confundem com a fila;
+- o dashboard operacional prioriza alarmes/exceções, performance, monitoramento e condição energética; não repete tabelas de sessões recentes nem fila atual já disponíveis em suas abas próprias.
+
+O detalhe da sessão e o detalhe do pagamento permanecem separados porque respondem a perguntas diferentes:
+
+| Superfície | Responsabilidade |
+| --- | --- |
+| detalhe da sessão | progresso da recarga, telemetria, energia, motorista, veículo, carregador e linha do tempo operacional |
+| detalhe do pagamento | autorização, captura, liquidação, composição, referências do provedor, conciliação, reembolso e auditoria financeira |
+
+A navegação deve ser bidirecional entre essas superfícies e preservar estabelecimento, sessão/transação, breadcrumb e aba ChargeGrid ativa. A página financeira só existe quando há uma transação identificável; sem transação, a sessão informa o estado e não abre uma rota incompleta.
+
+### Escala visual da Operação ChargeGrid — 27/08/2026
+
+O Painel é a referência de escala para as superfícies ChargeGrid. Carrossel de veículos, indicadores, gráficos, detalhes e tipografia devem manter leitura equivalente, sem miniaturizar informação para reproduzir literalmente uma captura em viewport diferente.
+
+- alarmes aparecem antes da performance comercial;
+- gráficos ocupam largura e altura suficientes para leitura de série, eixos, tabs e período;
+- carros e vagas preservam orientação e proporção coerentes com o palco aprovado;
+- detalhes de carregador, sessão e pagamento usam cards alinhados, hierarquia clara e ações raras em destaque controlado;
+- a linha do tempo da sessão e o histórico do pagamento são evidências importantes e não devem ser removidos por conveniência de layout.
+
 ## Consequencias para o produto atual
 
 - `GOODWE_ADMIN` nao deve continuar como persona unica de produto; fixtures e codigo futuros devem evoluir para papel, escopo e capacidades explicitos;

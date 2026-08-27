@@ -1,6 +1,20 @@
 # Handoff histórico da sessão — Admin SEMS+ + ChargeGrid
 
-> Este registro descreve a rodada de 23/08/2026. Para o estado vigente, consulte `docs/CURRENT_STATE.md` e `docs/admin-dashboard/NEXT_EXECUTION_PLAN.md`.
+> Este arquivo preserva o handoff da rodada de 23/08/2026. Não use a branch abaixo como base de continuação. O estado vigente está em [`../CURRENT_STATE.md`](../CURRENT_STATE.md), [`NEXT_EXECUTION_PLAN.md`](NEXT_EXECUTION_PLAN.md) e [`REMAINING_WORK.md`](REMAINING_WORK.md).
+
+## Handoff vigente — 27/08/2026
+
+- **Linha integrada:** `origin/develop/admin-web` no commit `cde7ee9` (PR #10).
+- **Cadeia aberta:** PR #11 → PR #12 → PR #13 → PR #14.
+- **Última implementação:** `feature/admin-chargegrid-operations` no commit `dd3e224`.
+- **Documentação desta consolidação:** PR #15, branch `docs/admin-current-state`, empilhada sobre a PR #14.
+- **Estado funcional:** Painel agregado, listas de usinas e dispositivos, Operação ChargeGrid, fila automática, detalhes de carregador e sessão e fluxo financeiro/pagamento estão demonstráveis no frontend.
+- **Validação funcional mais recente:** lint, build, 20 arquivos/76 testes unitários, E2E focais e inspeção Playwright em `1440 × 1000` aprovados; E2E integral permanece reservado para integração em `main` ou execução manual.
+- **Próximo foco:** fechar o Gate F1 conforme [`REMAINING_WORK.md`](REMAINING_WORK.md), começando por detalhe de planta e governança do proprietário.
+
+A cadeia deve ser integrada em `develop/admin-web` na ordem #11, #12, #13, #14 e #15. Após cada merge, a PR seguinte deve ser retargetada para `develop/admin-web` e revalidada. Nenhuma integração em `main` foi autorizada.
+
+## Registro histórico — 23/08/2026
 
 **Data:** 23 de agosto de 2026  
 **Branch:** `feature/admin-responsibility-flows`  

@@ -1,7 +1,7 @@
 # Plano de execução — próxima rodada do Admin
 
-**Status:** `APROVADO PARA EXECUÇÃO`  
-**Data:** 25 de agosto de 2026  
+**Status:** `EM EXECUÇÃO — F0 CONCLUÍDA, F1 AVANÇADA`  
+**Data:** 27 de agosto de 2026  
 **Linha de integração:** `develop/admin-web`  
 **Escopo:** frontend Admin, fixtures, estados locais, navegação, UI/UX e testes proporcionais. Backend, RLS, emissão segura de código e integrações produtivas permanecem fora desta rodada.
 
@@ -21,6 +21,19 @@ proprietário comercial
 ```
 
 Consultor é construído antes da Central porque contrato, ativação e carteira formam a jornada de origem da operação comercial. A Central é derivada da mesma experiência, adicionando função organizacional de administrador e escopo completo.
+
+O estado consolidado, as lacunas de cada gate e a ordem recomendada de continuidade estão em [`REMAINING_WORK.md`](REMAINING_WORK.md). Este plano continua sendo a fonte da sequência de fases; o documento de pendências traduz essa sequência para o estado efetivamente implementado em 27/08/2026.
+
+| Fase | Situação atual |
+| --- | --- |
+| F0 — Fundação compartilhada | concluída e em regressão contínua |
+| F1 — Proprietário comercial | avançada; Operação ChargeGrid concluída no frontend, gate geral ainda aberto |
+| F2 — Consultor GoodWe | fundação pronta; jornada principal ainda incompleta |
+| F3 — Central GoodWe | fundação pronta; governança em volume e drill-down ainda incompletos |
+| F4 — Instalador sem ChargeGrid | persona pronta; validação integral pendente |
+| F5 — Proprietário comum | persona pronta; validação integral pendente |
+| F6 — Delegações | deliberadamente posterior a F0–F5 |
+| F7 — Finalização visual | pendente |
 
 ## Definição de perfil completamente pronto
 
@@ -155,8 +168,12 @@ Validação da implementação: `npm run build --workspace=apps/admin-web`, `npm
 - as quatro rotas foram inspecionadas em navegador real a `1440 × 1000`; navegação ativa, overflow, filtros e transição de chamada foram verificados com Playwright CLI;
 - o painel operacional abaixo do carrossel prioriza alarmes, amplia indicadores e gráfico na mesma escala do Painel e remove blocos redundantes de sessões recentes e fila atual;
 - o detalhe da sessão foi refeito com progresso, indicadores, energia, pagamento e linha do tempo auditável; controles do carregador ficaram restritos às contingências `Liberar recarga` e `Parar recarga`;
+- o detalhe do pagamento foi mantido por concentrar composição financeira, referências do provedor, conciliação, reembolso e histórico auditável; a navegação sessão ↔ pagamento ↔ resumo financeiro foi corrigida e a aba de contexto permanece ativa;
+- a página específica do carregador recebeu um controle de contingência compacto e explicita que a operação normal é automática;
+- o acesso direto a um carregador fora do escopo agora retorna à lista de dispositivos;
+- o teste legado que contradizia proprietário = administrador foi corrigido; a cobertura atual confirma acesso de gestão a tarifa e financeiro.
 
-Permanece fora desta rodada a correção do teste legado que usa a conta proprietária administradora e, contraditoriamente, espera ausência de controles de tarifa/financeiro no último cenário de `financial-operations.spec.js`. A regra vigente continua sendo proprietário = administrador.
+Validação consolidada desta entrega: lint raiz, build do Admin, 20 arquivos/76 testes unitários, 13 E2E focais da operação e 5 E2E focais de sessão/financeiro aprovados. Operação, Fila, carregador, sessão e pagamento foram inspecionados com Playwright em `1440 × 1000`. O CI dos PRs #11–#14 aprovou lint, testes e build; a regressão E2E integral permanece reservada ao gate de integração.
 
 ## Fase 2 — Consultor GoodWe
 

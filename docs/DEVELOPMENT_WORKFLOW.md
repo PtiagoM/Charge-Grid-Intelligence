@@ -10,14 +10,15 @@ Manter o Dashboard Admin e o Driver PWA evoluindo em linhas independentes, com i
 
 | Referencia | Papel atual |
 | --- | --- |
-| `main` / `15afdb9` | Governanca e PWA integrados; o Admin em reconstrução permanece fora dessa branch |
-| `codex/driver-pwa-mobile` / `15afdb9` | Referência da entrega do PWA integrada pelo [PR #1](https://github.com/PtiagoM/Charge-Grid-Intelligence/pull/1) e sincronizada com `main` |
+| `origin/main` / `8befa41` | Governanca e PWA integrados; a linha Admin ainda não foi promovida para essa branch |
+| `codex/driver-pwa-mobile` / `15afdb9` | Referência histórica da entrega do PWA integrada pelo [PR #1](https://github.com/PtiagoM/Charge-Grid-Intelligence/pull/1) |
 | `codex/admin-web-sems-migration` / `c2aebd6` | Fotografia validada da primeira reconstrucao nativa do Admin |
-| `origin/develop/admin-web` / `31401e6` | Linha ativa do dashboard, com a reconstrução nativa e a auditoria documental integrada pelo PR #8; novas entregas partem desta referência |
+| `origin/develop/admin-web` / `cde7ee9` | Linha integrada do dashboard após a fundação de personas do PR #10 |
+| PRs #11–#15 | Cadeia ativa de Painel → Usinas → Dispositivos → Operação ChargeGrid → consolidação documental |
 
 O merge `fe28427` tornou `c2aebd6` ancestral da `main`. O revert `92a2544` removeu seus arquivos sem remover essa ancestralidade. Por isso, `git merge codex/admin-web-sems-migration` pode responder que nao ha nada para integrar enquanto o dashboard continua ausente.
 
-O PR #5 e a branch `feature/admin-responsibility-flows` são referências históricas. O PR #8 integrou a documentação de auditoria em `develop/admin-web`, e o PR #9 registra a fundação de personas em `feature/admin-persona-foundation`. Antes de iniciar nova entrega do Admin, atualize a referência remota e crie uma branch curta a partir de `origin/develop/admin-web`; uma cópia local pode estar atrasada e não deve ser usada como evidência do estado integrado.
+O PR #5 e a branch `feature/admin-responsibility-flows` são referências históricas. O PR #8 integrou a auditoria documental, o PR #9 construiu a fundação de personas e o PR #10 integrou essa fundação em `develop/admin-web`. Antes de iniciar nova entrega do Admin, atualize a referência remota. Crie uma branch curta a partir de `origin/develop/admin-web` quando o trabalho for independente ou da ponta declarada da cadeia quando depender dos PRs ainda abertos; uma cópia local atrasada não serve como evidência do estado integrado.
 
 ## Modelo de branches
 
@@ -44,11 +45,25 @@ Branches curtas devem nascer da linha do produto correspondente e retornar a ela
 
 1. Governanca, CI e protecao da `main`: concluidos pelo PR #2.
 2. Validacao e integracao do PWA: concluidas pelo PR #1.
-3. Criacao de `develop/admin-web` sobre a `main` integrada: concluida.
-4. Restauracao da arvore do Admin com `git revert 92a2544`: concluida em `331f91b`.
-5. Comparacao com `c2aebd6` e validacao integrada: obrigatorias antes de publicar a nova linha.
-6. Proximas alteracoes do dashboard: em `develop/admin-web` ou em features derivadas dela.
-7. Integracao futura do Admin: somente por PR para `main`, depois da validacao completa.
+3. Restauracao correta do Admin em `develop/admin-web`: concluida.
+4. Auditoria, decisões de produto e fundação de personas: integradas até o PR #10 (`cde7ee9`).
+5. Cadeia visual/funcional ativa do Admin: #11 Painel agregado → #12 Usinas → #13 Dispositivos → #14 Operação ChargeGrid.
+6. Cada PR empilhado deve ser revisado e integrado na ordem; depois de cada merge, retargetar o próximo PR para a nova base integrada quando necessário.
+7. Novas alterações independentes do dashboard devem partir do `origin/develop/admin-web` já atualizado; alterações que dependem da cadeia atual podem usar uma branch empilhada e declarar essa dependência.
+8. Integração futura do Admin em `main`: somente por PR, após fechamento dos gates do plano, regressão completa e decisão humana.
+
+### Cadeia de integração ativa — 27/08/2026
+
+```text
+origin/develop/admin-web (cde7ee9)
+└── PR #11 feature/admin-dashboard-aggregate
+    └── PR #12 feature/admin-plants-reference
+        └── PR #13 feature/admin-devices-reference
+            └── PR #14 feature/admin-chargegrid-operations
+                └── PR #15 docs/admin-current-state
+```
+
+Não fazer merge fora dessa ordem e não fechar branches intermediárias antes de o PR dependente ser retargetado. O estado funcional e o trabalho restante estão em `docs/admin-dashboard/REMAINING_WORK.md`.
 
 Nao recrie a linha ativa do Admin a partir de `codex/admin-web-sems-migration`: isso conserva a ancestralidade problematica e faz o Git omitir a migracao em um merge futuro. Use `develop/admin-web`, onde a recuperacao ja foi registrada corretamente.
 
