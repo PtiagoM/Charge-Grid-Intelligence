@@ -19,8 +19,10 @@ export const assets = {
     co2: `${base}/dashboard/SEMS-ASSET-DASHBOARD-CO2_52x38.png`,
     tree: `${base}/dashboard/SEMS-ASSET-DASHBOARD-GREEN-TREE_50x46.png`,
     chargingEnergy: `${base}/dashboard/SEMS-ASSET-DASHBOARD-CHARGING-ENERGY_54x52.png`,
+    dischargedEnergy: `${base}/dashboard/SEMS-ASSET-DASHBOARD-DISCHARGED-ENERGY_54x54.png`,
     generatedEnergy: `${base}/dashboard/SEMS-ASSET-DASHBOARD-GENERATED-ENERGY_52x52.png`,
     generationIncome: `${base}/dashboard/SEMS-ASSET-DASHBOARD-GENERATION-INCOME_52x52.png`,
+    gridFeedIn: `${base}/dashboard/SEMS-ASSET-DASHBOARD-GRID-FEED-IN_54x54.png`,
     gridIncome: `${base}/dashboard/SEMS-ASSET-DASHBOARD-GRID-INCOME_54x54.png`
   },
   icons: {

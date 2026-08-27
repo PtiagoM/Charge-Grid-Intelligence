@@ -82,6 +82,20 @@ Não avançar ao perfil seguinte deixando defeitos conhecidos de estrutura, cont
 
 Validação automatizada registrada nesta rodada: build, lint, 76 testes unitários e E2E focal das personas, dos filtros e do painel. A revisão do produto confirmou a coerência dos fluxos e das superfícies principais; a criação de baseline, snapshots e matriz visual continua reservada para a finalização visual, conforme definido no workflow.
 
+### Registro de execução — Painel geral agregado (26/08/2026)
+
+**Estado:** `IMPLEMENTADO — aguarda revisão visual humana com novas referências`.
+
+- o Painel deixou de aceitar um estabelecimento individual pela URL: ele agrega as plantas técnicas do escopo da conta;
+- o mapa preserva o resumo de usinas e, ao selecionar uma usina comercial, abre uma prévia contextual com potência/energia/demanda técnicas e disponibilidade, carregadores publicados e energia entregue da operação ChargeGrid;
+- a prévia do mapa não mostra fila, sessão ativa, comando ou lucro local;
+- `Economia` voltou a concentrar seis leituras técnicas SEMS+ e recebe uma faixa compacta ChargeGrid somente para quem tem capacidade comercial: receita quando a capacidade financeira existe, ou qualidade comercial quando não existe; sessões, disponibilidade e carregadores publicados completam a leitura;
+- `Monitoramento de energia` é o modo padrão. Contas comerciais podem alternar para `Receita ChargeGrid`, `Demanda ChargeGrid` e `Utilização ChargeGrid`; período e ponto do gráfico são interativos e o tooltip expõe os valores numéricos. Dados sem telemetria são apresentados como indisponíveis, nunca como zero;
+- não foi criada uma central operacional no Painel. Sessões, fila, comandos e financeiro detalhado continuam na entrada local `ChargeGrid` do proprietário comercial;
+- a Central e o consultor enxergam agregados apenas da carteira/escopo concedido; a Central não ganha receitas sem capacidade financeira explícita.
+
+Validação da implementação: `npm run build --workspace=apps/admin-web`, `npm run lint` e `npm run test:e2e -- --workers=1 apps/admin-web/tests/e2e/chargegrid-dashboard.spec.js`.
+
 ## Fase 1 — Proprietário comercial
 
 ### Painel
