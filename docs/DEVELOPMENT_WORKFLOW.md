@@ -14,7 +14,7 @@ Manter o Dashboard Admin e o Driver PWA evoluindo em linhas independentes, com i
 | `codex/driver-pwa-mobile` / `15afdb9` | Referência histórica da entrega do PWA integrada pelo [PR #1](https://github.com/PtiagoM/Charge-Grid-Intelligence/pull/1) |
 | `codex/admin-web-sems-migration` / `c2aebd6` | Fotografia validada da primeira reconstrucao nativa do Admin |
 | `origin/develop/admin-web` / `cde7ee9` | Linha integrada do dashboard após a fundação de personas do PR #10 |
-| PRs #11–#14 | Cadeia ativa e validada de Painel → Usinas → Dispositivos → Operação ChargeGrid |
+| PRs #11–#15 | Cadeia ativa de Painel → Usinas → Dispositivos → Operação ChargeGrid → consolidação documental |
 
 O merge `fe28427` tornou `c2aebd6` ancestral da `main`. O revert `92a2544` removeu seus arquivos sem remover essa ancestralidade. Por isso, `git merge codex/admin-web-sems-migration` pode responder que nao ha nada para integrar enquanto o dashboard continua ausente.
 
@@ -60,7 +60,7 @@ origin/develop/admin-web (cde7ee9)
     └── PR #12 feature/admin-plants-reference
         └── PR #13 feature/admin-devices-reference
             └── PR #14 feature/admin-chargegrid-operations
-                └── documentação consolidada desta rodada
+                └── PR #15 docs/admin-current-state
 ```
 
 Não fazer merge fora dessa ordem e não fechar branches intermediárias antes de o PR dependente ser retargetado. O estado funcional e o trabalho restante estão em `docs/admin-dashboard/REMAINING_WORK.md`.

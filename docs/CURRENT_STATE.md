@@ -119,7 +119,7 @@ O recorte entre trabalho concluído, gates abertos e ordem recomendada de contin
 ### Estado atual do Admin — 27/08/2026
 
 - Fase 0 consolidada e integrada em `origin/develop/admin-web` pelo PR #10 (`cde7ee9`).
-- A evolução visual e funcional está organizada em uma cadeia de PRs: #11 Painel agregado, #12 Lista de usinas, #13 Lista de dispositivos e #14 Operação ChargeGrid.
+- A evolução está organizada em uma cadeia de PRs: #11 Painel agregado, #12 Lista de usinas, #13 Lista de dispositivos, #14 Operação ChargeGrid e #15 consolidação documental.
 - O PR #14 contém a visão operacional local, fila automática, detalhes de carregador e sessão, resumo financeiro e detalhe de pagamento; comandos locais ficaram restritos às contingências `Liberar recarga` e `Parar recarga`.
 - Operação, Fila, carregador, sessão e pagamento foram inspecionados em navegador real a `1440 × 1000` e seguem a escala visual do Painel.
 - Foram aprovados lint, build do Admin, 20 arquivos/76 testes unitários, 13 E2E focais da operação e 5 E2E focais adicionais de sessão/financeiro. O CI de lint, testes e build também foi aprovado na cadeia publicada.
