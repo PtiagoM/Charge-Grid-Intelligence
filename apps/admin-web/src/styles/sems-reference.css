@@ -747,6 +747,185 @@
 .sems-reference-list .data-table tbody tr { height: 84px; }
 .sems-reference-table td { vertical-align: middle; }
 
+/* SEMS+ plant inventory */
+.sems-plants-list {
+  position: relative;
+  display: block;
+  min-width: 0;
+  padding: 14px 20px 20px !important;
+  overflow: hidden;
+}
+.sems-plants-toolbar {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(260px, 1.1fr) minmax(220px, .95fr) minmax(210px, .95fr) 42px 42px auto;
+  gap: 10px;
+  align-items: center;
+}
+.sems-plants-toolbar label { min-width: 0; }
+.sems-plants-toolbar input {
+  width: 100%;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  outline: 0;
+  background: #393a3d;
+  color: #fff;
+}
+.sems-plants-toolbar input:focus { border-color: rgba(255,55,65,.7); }
+.sems-plants-toolbar input::placeholder { color: rgba(255,255,255,.28); }
+.sems-plants-toolbar .sems-filter-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255,255,255,.85);
+  background: transparent;
+  cursor: pointer;
+}
+.sems-plants-toolbar .sems-filter-button.is-active { border-color: #ff323a; color: #ff323a; }
+.sems-plants-search,
+.sems-plants-create {
+  height: 38px;
+  border: 0;
+  border-radius: 9px;
+  color: #fff;
+  cursor: pointer;
+}
+.sems-plants-search { background: #3c3d40; font-size: 22px; }
+.sems-plants-create {
+  margin-left: auto;
+  padding: 0 17px;
+  background: #ff3540;
+  white-space: nowrap;
+  font-weight: 700;
+}
+.sems-plants-create span { font-size: 18px; vertical-align: -1px; }
+.sems-plants-status-tabs { gap: 2px; min-height: 58px; }
+.sems-plants-status-tabs button { display: inline-flex; align-items: center; gap: 6px; padding-inline: 14px; cursor: pointer; }
+.sems-plants-status-tabs button b { color: inherit; }
+.sems-plants-status-tabs .status-icon {
+  width: 15px;
+  height: 15px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255,255,255,.2);
+  color: #111;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 900;
+}
+.sems-plants-status-tabs .status-operating { background: #4ed956; }
+.sems-plants-status-tabs .status-waiting { background: #e6b82f; }
+.sems-plants-status-tabs .status-offline { background: #b8bbc1; }
+.sems-plants-status-tabs .status-failure { background: #ff5961; }
+.sems-plants-status-tabs .status-construction { background: #5b9dff; color: #fff; letter-spacing: -1px; }
+.sems-plants-filter-panel {
+  position: absolute;
+  z-index: 20;
+  top: 61px;
+  left: 20px;
+  width: min(760px, calc(100% - 40px));
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.05);
+  border-radius: 12px;
+  background: #202123;
+  box-shadow: 0 18px 38px rgba(0,0,0,.44);
+}
+.sems-plants-filter-panel > header {
+  min-height: 80px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.sems-plants-filter-panel > header > div { display: flex; gap: 10px; }
+.sems-plants-filter-panel > header button,
+.sems-filter-chips button {
+  min-height: 38px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: #3d3d40;
+  color: #fff;
+  cursor: pointer;
+}
+.sems-plants-filter-panel > header button:last-child { background: #ff3540; }
+.sems-plants-filter-body { padding: 28px 24px 24px; display: grid; gap: 28px; }
+.sems-plants-filter-body fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.sems-plants-filter-body legend,
+.sems-plants-filter-body > label > span { display: block; margin-bottom: 13px; color: #fff; font-size: 13px; font-weight: 650; }
+.sems-filter-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+.sems-filter-chips button.is-active { border-color: #ff3540; color: #ff5961; }
+.sems-plants-filter-body select {
+  width: 500px;
+  max-width: 100%;
+  height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  background: #3d3d40;
+  color: #fff;
+}
+.sems-power-range { display: flex; align-items: center; gap: 10px; }
+.sems-power-range label {
+  width: 250px;
+  max-width: 42%;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #3d3d40;
+}
+.sems-power-range input { min-width: 0; height: 100%; flex: 1; padding: 0 13px; border: 0; outline: 0; background: transparent; color: #fff; }
+.sems-power-range b { padding: 0 12px; font-size: 12px; }
+.sems-power-range i { color: rgba(255,255,255,.65); font-style: normal; }
+.sems-plants-table-wrap { margin-inline: 0; overflow-x: auto; }
+.sems-plants-table { min-width: 1390px; table-layout: fixed; }
+.sems-plants-table th { height: 56px; padding: 10px 14px !important; color: #fff; font-size: 12px; line-height: 1.05; }
+.sems-plants-table th:first-child { width: 330px; }
+.sems-plants-table th:nth-child(2) { width: 165px; }
+.sems-plants-table th:nth-child(3),
+.sems-plants-table th:nth-child(4) { width: 155px; }
+.sems-plants-table th:nth-child(5) { width: 160px; }
+.sems-plants-table th:nth-child(6) { width: 145px; }
+.sems-plants-table th:nth-child(7) { width: 105px; }
+.sems-plants-table th:nth-child(8) { width: 105px; }
+.sems-plants-table th:last-child { width: 42px; text-align: center; }
+.sems-plants-table tbody tr { height: 100px !important; }
+.sems-plants-table td { padding: 12px 14px !important; border-bottom: 1px solid rgba(255,255,255,.08); font-size: 12px; font-weight: 650; }
+.sems-plant-cell { display: grid; grid-template-columns: 98px minmax(0, 1fr); gap: 12px; align-items: center; }
+.sems-plant-cell > img { width: 98px; height: 68px; border-radius: 6px; object-fit: cover; }
+.sems-plant-cell > div { min-width: 0; display: grid; gap: 5px; }
+.sems-plant-cell strong { min-width: 0; display: flex; align-items: center; gap: 6px; overflow: hidden; color: #fff; white-space: nowrap; text-overflow: ellipsis; }
+.sems-plant-cell strong em { padding: 2px 6px; border: 1px solid rgba(67,207,102,.32); border-radius: 4px; color: #48d666; font-size: 9px; font-style: normal; font-weight: 500; }
+.sems-plant-cell span { overflow: hidden; color: rgba(255,255,255,.46); white-space: nowrap; text-overflow: ellipsis; }
+.sems-plant-cell small { color: rgba(255,255,255,.76); }
+.sems-plant-operating-state { display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border-radius: 6px; background: rgba(255,255,255,.07); white-space: nowrap; font-weight: 500; }
+.sems-plant-operating-state i { width: 15px; height: 15px; display: grid; place-items: center; border-radius: 50%; color: #202123; font-size: 8px; font-style: normal; font-weight: 900; }
+.sems-plant-operating-state.tone-good { color: #42d64b; background: rgba(53,160,61,.18); }
+.sems-plant-operating-state.tone-info { color: #4c93ff; background: rgba(48,111,209,.18); }
+.sems-plant-operating-state.tone-warn { color: #e1b531; }
+.sems-plant-operating-state.tone-danger { color: #ff5961; }
+.sems-plant-operating-state.tone-muted { color: #b8bbc1; }
+.sems-plant-operating-state.tone-good i { background: #42d64b; }
+.sems-plant-operating-state.tone-info i { background: #4c93ff; }
+.sems-plant-operating-state.tone-warn i { background: #e1b531; }
+.sems-plant-operating-state.tone-danger i { background: #ff5961; }
+.sems-plant-operating-state.tone-muted i { background: #b8bbc1; }
+.sems-plant-favorite { padding: 3px 7px; border: 0; background: transparent; color: #fff; font-size: 19px; cursor: pointer; }
+.sems-plant-favorite.is-active { color: #ffb72f; }
+.sems-plants-table td:nth-child(8) { white-space: nowrap; }
+.sems-plants-list > .sems-device-pagination { padding-right: 0; }
+
+@media (max-width: 1180px) {
+  .sems-plants-toolbar { grid-template-columns: auto minmax(220px, 1fr) minmax(190px, .8fr) 42px 42px auto; }
+  .sems-plants-toolbar label:nth-of-type(3) { display: none; }
+}
+
 .sems-charger-detail { min-width: 0; display: grid; gap: 14px; color: #fff; }
 .sems-charger-detail .enterprise-breadcrumb { margin-bottom: -4px; }
 .sems-charger-detail-header { min-height: 58px; display: grid; grid-template-columns: minmax(260px, 1fr) auto auto; gap: 24px; align-items: center; }

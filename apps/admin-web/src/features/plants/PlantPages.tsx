@@ -45,48 +45,130 @@ function PlantBreadcrumbs({ current }: { current: string }) {
 export function PlantsPortfolioPage() {
   const { state, account } = useAdminState();
   const { plants, loading } = usePlantCatalog();
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState("ALL");
-  const [scopeFilter, setScopeFilter] = useState("ALL");
-  const canViewCommercial = Boolean(account?.role);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [searchDraft, setSearchDraft] = useState({ identity: "", address: "", email: "" });
+  const [search, setSearch] = useState(searchDraft);
+  const [plantType, setPlantType] = useState("ALL");
+  const [organization, setOrganization] = useState("ALL");
+  const [minimumPower, setMinimumPower] = useState("");
+  const [maximumPower, setMaximumPower] = useState("");
+  const [source, setSource] = useState("ALL");
+  const [commercialLayer, setCommercialLayer] = useState("ALL");
+  const [favoriteOnly, setFavoriteOnly] = useState(false);
+  const [favorites, setFavorites] = useState(() => new Set<string>());
+  const canViewCommercial = Boolean(account && hasAdminCapability(account, "commercial:read"));
   const linkedIds = useMemo(() => new Set(canViewCommercial ? state.commercialPlants.map((link) => link.goodwePlantId) : []), [canViewCommercial, state.commercialPlants]);
   const actorScopeSet = new Set(accessibleEstablishmentIds(state, account));
-  const scopeOptions = state.establishments.filter((item) => actorScopeSet.has(item.id));
+  const mustApplyCommercialScope = account?.role === "GOODWE_PORTFOLIO_MANAGER" || (account?.profile === "ESTABELECIMENTO" && Boolean(account.role));
   const scopedPlants = plants.filter((plant) => {
+    if (plant.authorization !== "AUTHORIZED") return false;
+    if (!mustApplyCommercialScope) return true;
     const linkedScope = state.commercialPlants.find((item) => item.goodwePlantId === plant.id)?.establishmentId;
     const contractScopes = COMMERCIAL_PLANT_CONTRACTS.filter((item) => item.goodwePlantId === plant.id).map((item) => item.establishmentId);
     const plantScopes = [...contractScopes, ...(linkedScope ? [linkedScope] : [])];
-    return plantScopes.some((scope) => actorScopeSet.has(scope) && (scopeFilter === "ALL" || scope === scopeFilter));
+    return plantScopes.some((scopeId) => actorScopeSet.has(scopeId));
   });
-  const visiblePlants = scopedPlants.filter((plant) => {
-    const status = technicalState(plant, linkedIds.has(plant.id)).label;
-    const matchesQuery = `${plant.name} ${plant.organization} ${plant.city}`.toLowerCase().includes(query.trim().toLowerCase());
-    const matchesFilter = filter === "ALL" || status === filter;
-    return matchesQuery && matchesFilter;
-  });
-  const available = scopedPlants.filter((plant) => technicalState(plant, linkedIds.has(plant.id)).label === "Disponível").length;
-  const linkedVisible = scopedPlants.filter((plant) => linkedIds.has(plant.id)).length;
-  const blocked = scopedPlants.length - linkedVisible - available;
 
-  return <>
-    <section className="surface panel plant-portfolio sems-reference-list" data-testid="plants-portfolio">
-      <div className="sems-reference-actions">
-        <div className="plant-toolbar">
-          <label><span className="sr-only">Buscar usina</span><input aria-label="Buscar planta" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nome da usina, organização ou cidade" /></label>
-          <label><span className="sr-only">Usina</span><select aria-label="Filtrar por usina" value={scopeFilter} onChange={(event) => setScopeFilter(event.target.value)}><option value="ALL">Todas as usinas autorizadas</option>{scopeOptions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-          <button className="sems-icon-action" type="button" aria-label="Limpar filtros" onClick={() => { setQuery(""); setFilter("ALL"); setScopeFilter("ALL"); }}>↻</button>
-        </div>
+  const plantStatus = (plant: GoodWePlant) => {
+    if (plant.catalogState === "OFFLINE") return { key: "OFFLINE", label: "Offline", tone: "muted", icon: "N" };
+    if (plant.catalogState === "EMPTY") return { key: "CONSTRUCTION", label: "Em construção", tone: "info", icon: "•••" };
+    if (!plant.lastSyncAt) return { key: "WAITING", label: "Aguardando", tone: "warn", icon: "◷" };
+    return { key: "OPERATING", label: "Em operação", tone: "good", icon: "✓" };
+  };
+
+  const organizations = [...new Set(scopedPlants.map((plant) => plant.organization))];
+  const visiblePlants = scopedPlants.filter((plant) => {
+    const status = plantStatus(plant).key;
+    const identity = `${plant.name} ${plant.id} ${plant.evChargers.map((charger) => charger.serial).join(" ")}`.toLowerCase();
+    const address = `${plant.address} ${plant.number} ${plant.city} ${plant.state}`.toLowerCase();
+    const type = plant.batteryCapacityKwh > 0 ? (plant.capacityKwp >= 100 ? "COMMERCIAL_BATTERY" : "RESIDENTIAL_BATTERY") : (plant.capacityKwp >= 100 ? "COMMERCIAL" : "RESIDENTIAL");
+    const electricalSource = plant.organization === "GoodWe Brasil" ? "MANAGED" : "SHARED";
+    const matchesStatus = statusFilter === "ALL" || statusFilter === status || (statusFilter === "CREATED_MONTH" && plant.catalogState === "EMPTY");
+    return matchesStatus
+      && identity.includes(search.identity.trim().toLowerCase())
+      && address.includes(search.address.trim().toLowerCase())
+      && plant.organization.toLowerCase().includes(search.email.trim().toLowerCase())
+      && (plantType === "ALL" || plantType === type)
+      && (organization === "ALL" || organization === plant.organization)
+      && (!minimumPower || plant.capacityKwp >= Number(minimumPower))
+      && (!maximumPower || plant.capacityKwp <= Number(maximumPower))
+      && (source === "ALL" || source === electricalSource)
+      && (commercialLayer === "ALL" || (commercialLayer === "CHARGEGRID") === linkedIds.has(plant.id))
+      && (!favoriteOnly || favorites.has(plant.id));
+  });
+  const statusCount = (key: string) => scopedPlants.filter((plant) => plantStatus(plant).key === key).length;
+
+  const resetAllFilters = () => {
+    const emptySearch = { identity: "", address: "", email: "" };
+    setSearchDraft(emptySearch);
+    setSearch(emptySearch);
+    setStatusFilter("ALL");
+    setPlantType("ALL");
+    setOrganization("ALL");
+    setMinimumPower("");
+    setMaximumPower("");
+    setSource("ALL");
+    setCommercialLayer("ALL");
+    setFavoriteOnly(false);
+  };
+
+  const toggleFavorite = (plantId: string) => {
+    setFavorites((current) => {
+      const next = new Set(current);
+      if (next.has(plantId)) next.delete(plantId);
+      else next.add(plantId);
+      return next;
+    });
+  };
+
+  return <section className="surface panel plant-portfolio sems-reference-list sems-plants-list" data-testid="plants-portfolio">
+    <form className="sems-plants-toolbar" onSubmit={(event) => { event.preventDefault(); setSearch(searchDraft); }}>
+      <button className={filterOpen ? "sems-filter-button is-active" : "sems-filter-button"} type="button" onClick={() => setFilterOpen((open) => !open)}><span aria-hidden="true">▽</span> Filtro</button>
+      <label><span className="sr-only">Nome da planta, dispositivo ou número de série</span><input aria-label="Buscar planta ou dispositivo" value={searchDraft.identity} onChange={(event) => setSearchDraft({ ...searchDraft, identity: event.target.value })} placeholder="Nome da planta, nome ou SN do dispositivo" /></label>
+      <label><span className="sr-only">Endereço da usina</span><input aria-label="Buscar endereço da usina" value={searchDraft.address} onChange={(event) => setSearchDraft({ ...searchDraft, address: event.target.value })} placeholder="⌖  Endereço da usina" /></label>
+      <label><span className="sr-only">Email</span><input aria-label="Buscar email" value={searchDraft.email} onChange={(event) => setSearchDraft({ ...searchDraft, email: event.target.value })} placeholder="✉  Email" /></label>
+      <button className="sems-plants-search" type="submit" aria-label="Pesquisar">⌕</button>
+      <button className="sems-icon-action" type="button" aria-label="Redefinir busca e filtros" onClick={resetAllFilters}>↻</button>
+      <button className="sems-plants-create" type="button"><span>＋</span> Nova usina</button>
+    </form>
+
+    {filterOpen ? <aside className="sems-plants-filter-panel" aria-label="Filtros avançados">
+      <header><strong>Filtro</strong><div><button type="button" onClick={resetAllFilters}>Redefinir</button><button type="button" onClick={() => setFilterOpen(false)}>Confirmar</button></div></header>
+      <div className="sems-plants-filter-body">
+        <fieldset><legend>Tipo de usina</legend><div className="sems-filter-chips">{([
+          ["RESIDENTIAL", "Usina residencial"], ["RESIDENTIAL_BATTERY", "Usina residencial com baterias"], ["COMMERCIAL", "Usina C&I"], ["COMMERCIAL_BATTERY", "Usina C&I com Baterias"]
+        ] as const).map(([value, label]) => <button key={value} className={plantType === value ? "is-active" : ""} type="button" onClick={() => setPlantType(plantType === value ? "ALL" : value)}>{label}</button>)}</div></fieldset>
+        <label><span>Organização</span><select value={organization} onChange={(event) => setOrganization(event.target.value)}><option value="ALL">Todas as organizações</option>{organizations.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+        <fieldset><legend>Potência nominal</legend><div className="sems-power-range"><label><span className="sr-only">Potência mínima</span><input inputMode="decimal" value={minimumPower} onChange={(event) => setMinimumPower(event.target.value)} placeholder="Min." /><b>kW</b></label><i>–</i><label><span className="sr-only">Potência máxima</span><input inputMode="decimal" value={maximumPower} onChange={(event) => setMaximumPower(event.target.value)} placeholder="Máx." /><b>kW</b></label></div></fieldset>
+        <fieldset><legend>Fonte da usina elétrica</legend><div className="sems-filter-chips"><button className={source === "MANAGED" ? "is-active" : ""} type="button" onClick={() => setSource(source === "MANAGED" ? "ALL" : "MANAGED")}>Gerenciar usina elétrica</button><button className={source === "SHARED" ? "is-active" : ""} type="button" onClick={() => setSource(source === "SHARED" ? "ALL" : "SHARED")}>Compartilhar usina</button></div></fieldset>
+        <fieldset><legend>Camada comercial</legend><div className="sems-filter-chips"><button className={commercialLayer === "CHARGEGRID" ? "is-active" : ""} type="button" onClick={() => setCommercialLayer(commercialLayer === "CHARGEGRID" ? "ALL" : "CHARGEGRID")}>Planta ChargeGrid</button><button className={commercialLayer === "SEMS" ? "is-active" : ""} type="button" onClick={() => setCommercialLayer(commercialLayer === "SEMS" ? "ALL" : "SEMS")}>Planta SEMS+</button></div></fieldset>
+        <fieldset><legend>Status de favorito</legend><div className="sems-filter-chips"><button className={favoriteOnly ? "is-active" : ""} type="button" onClick={() => setFavoriteOnly((active) => !active)}>Favoritado</button></div></fieldset>
       </div>
-      <nav className="sems-reference-status-tabs" aria-label="Status das usinas"><button className={filter === "ALL" ? "is-active" : ""} type="button" onClick={() => setFilter("ALL")}>Todos <b>({scopedPlants.length})</b></button><button className={filter === "Vinculada" ? "is-active" : ""} type="button" onClick={() => setFilter("Vinculada")}>Em operação <b>({linkedVisible})</b></button><button className={filter === "Disponível" ? "is-active" : ""} type="button" onClick={() => setFilter("Disponível")}>Aguardando <b>({available})</b></button><button className={filter === "Dados incompletos" ? "is-active" : ""} type="button" onClick={() => setFilter("Dados incompletos")}>Em construção <b>({blocked})</b></button></nav>
-      {loading ? <div className="plant-loading" role="status">Consultando catálogo GoodWe…</div> : null}
-      {!loading && !visiblePlants.length ? <div className="empty-state">Nenhuma planta corresponde aos filtros.</div> : null}
-      <div className="table-wrap sems-table-wrap"><table className="data-table sems-reference-table"><thead><tr><th>Informações da usina</th><th>Status da usina</th><th>Geração de hoje</th><th>Geração total</th><th>Potência FV</th><th>Carregadores EV</th><th>Operação</th></tr></thead><tbody>{visiblePlants.map((plant) => {
-        const link = canViewCommercial ? state.commercialPlants.find((candidate) => candidate.goodwePlantId === plant.id) : undefined;
-        const establishment = state.establishments.find((item) => item.id === link?.establishmentId);
-        return <tr key={plant.id} data-testid={`plant-card-${plant.id}`}><td><div className="sems-plant-cell"><img src={assets.plant} alt="" /><div><strong>{link?.commercialName ?? plant.name}</strong><span>{plant.organization}</span><small>{plant.city}/{plant.state} · {establishment?.name ?? plant.id}</small></div></div></td><td><PlantState plant={plant} linked={Boolean(link)} /></td><td>{number(plant.capacityKwp * 0.48)} kWh</td><td>{number(plant.capacityKwp * 483.5)} kWh</td><td>{number(plant.capacityKwp)} kW</td><td>{plant.evChargers.length}</td><td><a className="sems-row-action" href={`#/mvp/plant?plant=${plant.id}`}>Abrir ›</a></td></tr>;
-      })}</tbody></table></div>
-    </section>
-  </>;
+    </aside> : null}
+
+    <nav className="sems-reference-status-tabs sems-plants-status-tabs" aria-label="Status das usinas">{[
+      ["ALL", "Todos", scopedPlants.length, ""],
+      ["CREATED_MONTH", "Criados este mês", scopedPlants.filter((plant) => plant.catalogState === "EMPTY").length, ""],
+      ["OPERATING", "Em operação", statusCount("OPERATING"), "✓"],
+      ["WAITING", "Aguardando", statusCount("WAITING"), "◷"],
+      ["OFFLINE", "Offline", statusCount("OFFLINE"), "N"],
+      ["FAILURE", "Falha", statusCount("FAILURE"), "!"],
+      ["CONSTRUCTION", "Em construção", statusCount("CONSTRUCTION"), "•••"]
+    ].map(([value, label, count, icon]) => <button key={String(value)} className={statusFilter === value ? "is-active" : ""} type="button" onClick={() => setStatusFilter(String(value))}>{icon ? <i className={`status-icon status-${String(value).toLowerCase()}`}>{icon}</i> : null}{label} <b>({count})</b></button>)}</nav>
+
+    {loading ? <div className="plant-loading" role="status">Consultando catálogo GoodWe…</div> : null}
+    {!loading && !visiblePlants.length ? <div className="empty-state">Nenhuma planta corresponde aos filtros.</div> : null}
+    <div className="table-wrap sems-table-wrap sems-plants-table-wrap"><table className="data-table sems-reference-table sems-plants-table"><thead><tr><th>Informações da usina</th><th>Status da usina</th><th>Geração de hoje<br />(kWh)</th><th>Geração total<br />(kWh)</th><th>Rendimento Específico<br />(kWh/kWp)</th><th>Potência FV (kW)</th><th>Observação</th><th>Operação</th><th aria-label="Configuração">⬡</th></tr></thead><tbody>{visiblePlants.map((plant) => {
+      const link = canViewCommercial ? state.commercialPlants.find((candidate) => candidate.goodwePlantId === plant.id) : undefined;
+      const status = plantStatus(plant);
+      const todayGeneration = plant.catalogState === "READY" ? plant.capacityKwp * 0.02065 : 0;
+      const totalGeneration = plant.catalogState === "READY" ? plant.capacityKwp * 39.4945 : 0;
+      const specificYield = plant.capacityKwp ? todayGeneration / plant.capacityKwp * 15 : 0;
+      return <tr key={plant.id} data-testid={`plant-card-${plant.id}`}><td><div className="sems-plant-cell"><img src={assets.plant} alt="" /><div><strong>{plant.name}{link ? <em>ChargeGrid</em> : null}</strong><span>{plant.address}, {plant.number}</span><small>▣&nbsp; {number(plant.capacityKwp)} kW</small></div></div></td><td><span className={`sems-plant-operating-state tone-${status.tone}`}><i>{status.icon}</i>{status.label}</span></td><td>{number(todayGeneration)}</td><td>{number(totalGeneration)}</td><td>{number(specificYield)}</td><td>{plant.catalogState === "READY" ? number(plant.capacityKwp) : "--"}</td><td>{link ? "Planta comercial" : "--"}</td><td><button className={favorites.has(plant.id) ? "sems-plant-favorite is-active" : "sems-plant-favorite"} type="button" aria-label={favorites.has(plant.id) ? "Remover dos favoritos" : "Adicionar aos favoritos"} onClick={() => toggleFavorite(plant.id)}>☆</button><a className="sems-device-menu" href={`#/mvp/plant?plant=${plant.id}`} aria-label={`Abrir ${plant.name}`}>•••</a></td><td /></tr>;
+    })}</tbody></table></div>
+    <footer className="sems-device-pagination"><button type="button" disabled aria-label="Página anterior">‹</button><strong>1</strong><button type="button" disabled aria-label="Próxima página">›</button><select aria-label="Itens por página" defaultValue="15"><option value="15">15 / página</option><option value="30">30 / página</option></select></footer>
+  </section>;
 }
 
 export function PlantDetailPage({ plantId }: { plantId: string }) {
