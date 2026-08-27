@@ -38,7 +38,9 @@ const commercialPlants: CommercialPlantLink[] = [
 
 const fiapChargers: Charger[] = [
   ["CG-FIAP-01", "FIAP-ACL-01", "charging", 22, 18.4, 54.28],
+  ["CG-FIAP-02", "FIAP-ACL-02", "available", 22, 0, 0],
   ["CG-FIAP-03", "FIAP-ACL-03", "available", 60, 9.8, 28.91],
+  ["CG-FIAP-04", "FIAP-ACL-04", "limited", 22, 4.1, 12.1],
   ["CG-FIAP-05", "FIAP-ACL-05", "available", 22, 12.6, 37.17]
 ].map(([id, internalId, status, powerKw, todayEnergyKwh, revenueToday], index) => ({
   id: String(id), establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", identifier: String(id), internalId: String(internalId), serial: `GWFIAP000${index + 1}`, model: "GoodWe AC 22", powerKw: Number(powerKw), installationDate: "2026-01-15", status: status as Charger["status"], publicationStatus: "PUBLISHED", todayEnergyKwh: Number(todayEnergyKwh), revenueToday: Number(revenueToday)
@@ -106,8 +108,10 @@ export function createInitialState(): AdminState {
     ],
     chargerTelemetry: [
       { chargerId: "CG-FIAP-01", connectorState: "CHARGING", currentPowerKw: 18.4, observedAt: "2026-08-18T18:00:00-03:00", vehicleConnected: true },
+      { chargerId: "CG-FIAP-02", connectorState: "AVAILABLE", currentPowerKw: 0, observedAt: "2026-08-18T18:00:00-03:00", vehicleConnected: false },
       { chargerId: "CG-FIAP-03", connectorState: "CONNECTED", currentPowerKw: 0, observedAt: "2026-08-18T18:00:00-03:00", vehicleConnected: true },
-      { chargerId: "CG-FIAP-05", connectorState: "CONNECTED", currentPowerKw: 0, observedAt: "2026-08-18T18:00:00-03:00", vehicleConnected: true },
+      { chargerId: "CG-FIAP-04", connectorState: "FAULT", currentPowerKw: 0, observedAt: "2026-08-18T17:52:00-03:00", vehicleConnected: false, faultCode: "EV_COMMUNICATION" },
+      { chargerId: "CG-FIAP-05", connectorState: "AVAILABLE", currentPowerKw: 0, observedAt: "2026-08-18T18:00:00-03:00", vehicleConnected: false },
       { chargerId: "CG-MX-01", connectorState: "OFFLINE", currentPowerKw: 0, observedAt: "2026-08-18T16:30:00-03:00", vehicleConnected: false, faultCode: "COMMUNICATION_LOST" },
       { chargerId: "CG-US-01", connectorState: "AVAILABLE", currentPowerKw: 0, observedAt: "2026-08-18T18:00:00-03:00", vehicleConnected: false },
       { chargerId: "CG-DE-01", connectorState: "CHARGING", currentPowerKw: 20.1, observedAt: "2026-08-18T18:00:00-03:00", vehicleConnected: true },
@@ -157,6 +161,7 @@ export function createInitialState(): AdminState {
       { id: "financial-captured-0998", transactionId: "pay-CG-2026-0998", type: "CAPTURED", at: "2026-08-18T15:13:00-03:00", actor: "STRIPE_SANDBOX", amountCents: 5517 }
     ],
     incidents: [
+      { id: "incident-goodwe-CG-FIAP-04-fault", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", chargerId: "CG-FIAP-04", source: "GOODWE", sourceEventId: "CG-FIAP-04-2026-08-18T17:52:00-03:00", correlationKey: "charger-CG-FIAP-04-ev-communication", category: "CHARGER_FAULT", severity: "HIGH", status: "OPEN", title: "CG-FIAP-04 indisponivel", summary: "Falha de comunicacao com o veiculo.", occurrences: 1, createdAt: "2026-08-18T17:52:00-03:00", updatedAt: "2026-08-18T17:52:00-03:00" },
       { id: "incident-goodwe-CG-MX-01-offline", establishmentId: "est-mercadox", locationId: "loc-mercadox-pinheiros", chargerId: "CG-MX-01", source: "GOODWE", sourceEventId: "CG-MX-01-2026-08-18T16:30:00-03:00", correlationKey: "charger-CG-MX-01-availability", category: "COMMUNICATION", severity: "HIGH", status: "OPEN", title: "CG-MX-01 offline", summary: "GoodWe reportou COMMUNICATION_LOST.", occurrences: 1, createdAt: "2026-08-18T16:30:00-03:00", updatedAt: "2026-08-18T16:30:00-03:00" }
     ],
     incidentEvents: [

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useAdminState } from "../../app/AdminState";
-import { Badge, DataTable, KpiCard, SectionHeader } from "../../components/AdminUi";
-import { queuePosition } from "../../domain/queueOperations";
+import { Badge, DataTable, SectionHeader } from "../../components/AdminUi";
 import { accessibleEstablishmentIds } from "../../domain/accessOperations";
+import { queuePosition } from "../../domain/queueOperations";
+import { ChargeGridOperationStage } from "./ChargeGridOperationStage";
 
 function localTime(value?: string) {
   return value ? new Date(value).toLocaleString("pt-BR") : "—";
@@ -11,47 +12,81 @@ function localTime(value?: string) {
 export function OperationsCenterPage({ establishmentId }: { establishmentId?: string }) {
   const { state, account } = useAdminState();
   const scope = establishmentId ? state.establishments.find((item) => item.id === establishmentId) : undefined;
-  const scopedIds = new Set(scope ? [scope.id] : accessibleEstablishmentIds(state, account));
-  const visibleEstablishments = state.establishments.filter((item) => scopedIds.has(item.id));
-  const sessions = state.sessions.filter((item) => scopedIds.has(item.establishmentId));
-  const queue = state.queue.filter((item) => scopedIds.has(item.establishmentId));
-  const chargers = state.chargers.filter((item) => scopedIds.has(item.establishmentId) && item.publicationStatus === "PUBLISHED");
-  return <>
-    <section className="surface panel operations-page"><SectionHeader eyebrow="Operacao cotidiana" title={scope ? `Central · ${scope.name}` : "Central operacional"} subtitle="Um ponto de entrada para sessoes, fila e disponibilidade; os detalhes avancam verticalmente." /><div className="kpi-grid four-cols"><KpiCard label="Sessoes ao vivo" value={sessions.filter((item) => ["starting", "active"].includes(item.status)).length} help="energia e inicio" accent="danger" /><KpiCard label="Aguardando" value={queue.filter((item) => item.status === "waiting").length} help="fila atual" accent="warn" /><KpiCard label="Em chamada" value={queue.filter((item) => item.status === "called").length} help="janela ativa" /><KpiCard label="Disponiveis" value={chargers.filter((item) => item.status === "available").length} help="publicados e sem reserva" accent="good" /></div><div className="operations-launch-grid"><a href={scope ? `#/mvp/sessions?est=${scope.id}` : "#/mvp/sessions"}><span>Ao vivo</span><h3>Acompanhar sessoes</h3><p>Energia, comandos, pagamentos e timeline.</p></a><a href={scope ? `#/mvp/queue?est=${scope.id}` : "#/mvp/queue"}><span>Admissao</span><h3>Gerenciar fila</h3><p>FIFO, compatibilidade, chamada e no-show.</p></a><a href={scope ? `#/mvp/support?est=${scope.id}` : "#/mvp/support"}><span>Ocorrencias</span><h3>Abrir chamados</h3><p>Contexto tecnico ligado a equipamento e sessao.</p></a></div></section>
-    {!scope && account?.profile === "GOODWE" ? <section className="surface panel"><SectionHeader title="Fila por estabelecimento" subtitle="Selecione a unidade antes de executar uma acao operacional." /><div className="operations-state-guide">{visibleEstablishments.map((item) => <article key={item.id}><h3>{item.name}</h3><p>{state.queue.filter((entry) => entry.establishmentId === item.id && entry.status === "waiting").length} aguardando</p><a className="ghost-button" href={`#/mvp/operations?est=${item.id}`}>Abrir unidade</a></article>)}</div></section> : null}
-  </>;
+  if (!scope) {
+    return <section className="surface panel operations-page"><SectionHeader
+      title="Selecione uma planta ChargeGrid"
+      subtitle={account?.profile === "GOODWE"
+        ? "A operação local pertence ao estabelecimento e não está disponível para responsabilidades de carteira."
+        : "A visualização individual exige uma planta comercial selecionada."}
+    /></section>;
+  }
+  return <ChargeGridOperationStage establishmentId={scope.id} />;
 }
 
 export function QueueOperationsPage({ establishmentId }: { establishmentId?: string }) {
-  const { state, account, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry } = useAdminState();
-  const [feedback, setFeedback] = useState("");
+  const { state, account } = useAdminState();
+  const [view, setView] = useState<"all" | "active" | "history">("all");
+  const [search, setSearch] = useState("");
   const establishment = establishmentId ? state.establishments.find((item) => item.id === establishmentId) : undefined;
   const authorizedIds = new Set(accessibleEstablishmentIds(state, account));
   const visibleEstablishments = state.establishments.filter((item) => authorizedIds.has(item.id));
 
   if (!establishment && account?.profile === "GOODWE") {
-    return <section className="surface panel operations-page" data-testid="queue-portfolio"><SectionHeader eyebrow="Admissao" title="Filas da rede" subtitle="Abra um estabelecimento para chamar motoristas sem misturar unidades." /><div className="operations-state-guide">{visibleEstablishments.map((item) => { const waiting = state.queue.filter((entry) => entry.establishmentId === item.id && entry.status === "waiting"); return <article key={item.id}><Badge value={waiting.length ? "waiting" : "available"} /><h3>{item.name}</h3><p>{waiting.length} aguardando</p><a className="ghost-button" href={`#/mvp/queue?est=${item.id}`}>Gerenciar fila</a></article>; })}</div></section>;
+    return <section className="surface panel operations-page" data-testid="queue-portfolio">
+      <SectionHeader eyebrow="Admissão" title="Filas da rede" subtitle="Abra um estabelecimento para chamar motoristas sem misturar unidades." />
+      <div className="operations-state-guide">{visibleEstablishments.map((item) => {
+        const waiting = state.queue.filter((entry) => entry.establishmentId === item.id && entry.status === "waiting");
+        return <article key={item.id}>
+          <Badge value={waiting.length ? "waiting" : "available"} />
+          <h3>{item.name}</h3>
+          <p>{waiting.length} aguardando</p>
+          <a className="ghost-button" href={`#/mvp/queue?est=${item.id}`}>Gerenciar fila</a>
+        </article>;
+      })}</div>
+    </section>;
   }
 
   const scopeId = establishment?.id ?? account?.establishmentId ?? "";
+  const resolvedEstablishment = establishment ?? state.establishments.find((item) => item.id === scopeId);
   const entries = state.queue.filter((item) => item.establishmentId === scopeId);
   const waiting = entries.filter((item) => item.status === "waiting").sort((a, b) => a.joinedAt.localeCompare(b.joinedAt));
   const called = entries.find((item) => item.status === "called");
-  const assigned = entries.filter((item) => item.status === "assigned");
-  const history = entries.filter((item) => ["no_show", "expired", "released"].includes(item.status));
+  const activeStatuses = new Set(["waiting", "called", "assigned"]);
+  const historyStatuses = new Set(["no_show", "expired", "released"]);
+  const normalizedSearch = search.trim().toLowerCase();
+  const visibleEntries = entries
+    .filter((item) => view === "all" || (view === "active" ? activeStatuses.has(item.status) : historyStatuses.has(item.status)))
+    .filter((item) => !normalizedSearch || `${item.driverName} ${item.vehicle} ${item.requiredConnector} ${item.suggestedChargerId ?? ""}`.toLowerCase().includes(normalizedSearch))
+    .sort((a, b) => a.joinedAt.localeCompare(b.joinedAt));
 
-  function run(action: () => { ok: boolean; issues: string[] }, success: string) {
-    const result = action();
-    setFeedback(result.ok ? success : result.issues.join(" "));
-  }
-
-  return <div className="operations-detail" data-testid="queue-operations-page">
-    <nav className="enterprise-breadcrumb" aria-label="Navegacao estrutural"><span><a href="#/mvp/operations">Operacao</a><i>/</i></span><span><strong>Fila · {establishment?.name}</strong></span></nav>
-    <section className="operations-hero surface"><div><span className="eyebrow">Admissao por estabelecimento</span><h2>Fila de recarga</h2><p>{establishment?.name} · chamada comercial sem reserva de conector</p></div><div className="operations-hero-status"><Badge value={called ? "called" : "available"} /><strong>{waiting.length}</strong><span>motoristas aguardando</span></div></section>
-    <nav className="entity-tabs operations-anchor-nav"><a className="is-active" href="#queue-call">Chamada</a><a href="#queue-waiting">Aguardando</a><a href="#queue-assigned">Admitidos</a><a href="#queue-history">Historico</a></nav>
-    <section id="queue-call" className="surface panel queue-call-panel"><SectionHeader eyebrow="Proxima acao" title={called ? `${called.driverName} foi chamado` : "Chamar proximo motorista"} subtitle={called ? `Janela ate ${localTime(called.callExpiresAt)}; carregador sugerido nao esta reservado.` : "A ordem FIFO e a compatibilidade sao calculadas antes da chamada."} action={!called ? <button type="button" className="sems-primary-action" disabled={!waiting.length} onClick={() => run(() => callNextQueueDriver(scopeId), "Proximo motorista chamado com sucesso.")}>Chamar proximo</button> : undefined} />{called ? <div className="queue-call-card"><div><Badge value={called.status} /><h3>{called.driverName}</h3><p>{called.vehicle} · {called.requiredConnector}</p></div><div><span>Carregador sugerido</span><strong>{called.suggestedChargerId}</strong><small>Indicacao operacional, sem reserva tecnica</small></div><div className="queue-call-actions"><button type="button" onClick={() => run(() => confirmQueueArrival(called.id), "Comparecimento confirmado.")}>Confirmar chegada</button><button type="button" className="ghost-button" onClick={() => run(() => markQueueNoShow(called.id), "No-show registrado.")}>Registrar no-show</button></div></div> : <p className="operations-empty">Nenhuma janela de chamada ativa. O primeiro motorista compativel sera selecionado pela ordem de entrada.</p>}{feedback ? <p className="command-feedback" role="status">{feedback}</p> : null}</section>
-    <section id="queue-waiting" className="surface panel"><SectionHeader title="Aguardando" subtitle="Posicao e estimativa sao informativas e nao representam reserva." /><DataTable columns={["Posicao", "Motorista", "Veiculo", "Compatibilidade", "Entrada", "Estimativa"]}>{waiting.map((entry) => { const position = queuePosition(state, entry.id); return <tr key={entry.id}><td><strong>#{position?.position}</strong></td><td>{entry.driverName}</td><td>{entry.vehicle}</td><td><Badge value={entry.requiredConnector} /></td><td>{localTime(entry.joinedAt)}</td><td>{position?.estimatedWaitMinutes} min<span>estimativa operacional</span></td></tr>; })}</DataTable>{!waiting.length ? <p className="operations-empty">Fila sem motoristas aguardando.</p> : null}</section>
-    <section id="queue-assigned" className="surface panel"><SectionHeader title="Comparecimento confirmado" subtitle="O operador conclui a fila quando o motorista segue para o fluxo de sessao." />{assigned.map((entry) => <div className="queue-assigned-card" key={entry.id}><div><Badge value={entry.status} /><h3>{entry.driverName}</h3><p>{entry.vehicle} · {entry.suggestedChargerId}</p></div><button type="button" onClick={() => run(() => releaseQueueEntry(entry.id), "Entrada concluida e removida da fila ativa.")}>Concluir admissao</button></div>)}{!assigned.length ? <p className="operations-empty">Nenhum motorista admitido aguardando conclusao.</p> : null}</section>
-    <section id="queue-history" className="surface panel"><SectionHeader title="Historico e eventos" subtitle="Chamadas e resultados permanecem auditaveis por motorista." />{history.length ? <DataTable columns={["Motorista", "Resultado", "Carregador sugerido", "Conclusao"]}>{history.map((entry) => <tr key={entry.id}><td><strong>{entry.driverName}</strong><span>{entry.vehicle}</span></td><td><Badge value={entry.status} /></td><td>{entry.suggestedChargerId ?? "—"}</td><td>{localTime(entry.completedAt)}</td></tr>)}</DataTable> : <p className="operations-empty">Nenhuma chamada concluida neste recorte.</p>}</section>
-  </div>;
+  return <section className="surface panel operations-page sems-reference-list sems-chargegrid-table-page" data-testid="queue-operations-page">
+    <header className="sems-chargegrid-table-heading">
+      <div><h2>Fila automática de recarga</h2><p>{resolvedEstablishment?.name} · ordenação, chamada e admissão são coordenadas automaticamente pela plataforma.</p></div>
+      <div className="sems-chargegrid-compact-summary"><span><b>{waiting.length}</b> aguardando</span><span><b>{called ? 1 : 0}</b> em chamada</span></div>
+    </header>
+    <form className="sems-device-toolbar sems-chargegrid-table-toolbar sems-queue-readonly-toolbar" onSubmit={(event) => event.preventDefault()}>
+      <label className="sems-chargegrid-search"><span className="sr-only">Buscar na fila</span><input aria-label="Buscar na fila" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="⌕  Motorista, veículo ou conector" /></label>
+      <span className="sems-queue-call-state"><i />{called ? `${called.driverName} em admissão automática até ${localTime(called.callExpiresAt)}` : "Automação ativa · aguardando o próximo conector elegível"}</span>
+      <button className="sems-icon-action" type="button" aria-label="Limpar busca" onClick={() => setSearch("")}>↻</button>
+    </form>
+    <nav className="sems-reference-status-tabs" aria-label="Estado da fila">
+      <button className={view === "all" ? "is-active" : ""} type="button" onClick={() => setView("all")}>Todos <b>({entries.length})</b></button>
+      <button className={view === "active" ? "is-active" : ""} type="button" onClick={() => setView("active")}>Fila ativa <b>({entries.filter((item) => activeStatuses.has(item.status)).length})</b></button>
+      <button className={view === "history" ? "is-active" : ""} type="button" onClick={() => setView("history")}>Histórico <b>({entries.filter((item) => historyStatuses.has(item.status)).length})</b></button>
+    </nav>
+    <DataTable columns={["Posição", "Motorista", "Veículo", "Estado", "Entrada / conclusão", "Carregador sugerido"]}>
+      {visibleEntries.map((entry) => {
+        const position = entry.status === "waiting" ? queuePosition(state, entry.id) : undefined;
+        return <tr key={entry.id}>
+          <td><strong>{position ? `#${position.position}` : "—"}</strong>{position ? <span>{position.estimatedWaitMinutes} min estimados</span> : null}</td>
+          <td><strong>{entry.driverName}</strong><span>{entry.requiredConnector}</span></td>
+          <td>{entry.vehicle}</td>
+          <td><Badge value={entry.status} /></td>
+          <td>{localTime(entry.completedAt ?? entry.joinedAt)}</td>
+          <td>{entry.suggestedChargerId ?? "Aguardando alocação"}{entry.status === "called" ? <span>Alocação automática em andamento</span> : null}</td>
+        </tr>;
+      })}
+    </DataTable>
+    {!visibleEntries.length ? <p className="operations-empty">Nenhuma entrada corresponde a este recorte.</p> : null}
+  </section>;
 }

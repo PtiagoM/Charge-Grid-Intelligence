@@ -301,6 +301,7 @@ export function AdminDashboardPage() {
   const requestedClientId = query.get("client");
   const requestedClientScopes = requestedClientId ? state.establishments.filter((item) => item.clientId === requestedClientId).map((item) => item.id) : [];
   const requestedResourceScope = requestedCharger?.establishmentId ?? requestedSession?.establishmentId ?? requestedIncident?.establishmentId ?? requestedTransaction?.establishmentId ?? requestedTicket?.establishmentId;
+  if (requestedCharger && !accessibleScopeSet.has(requestedCharger.establishmentId)) return <Navigate to="/mvp/chargers" replace />;
   if (requestedResourceScope && !accessibleScopeSet.has(requestedResourceScope)) return <AccessDeniedPage />;
   if (requestedClientId && !requestedClientScopes.some((scope) => accessibleScopeSet.has(scope))) return <AccessDeniedPage />;
 
