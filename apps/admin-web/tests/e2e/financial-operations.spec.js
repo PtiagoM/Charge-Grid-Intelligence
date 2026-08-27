@@ -30,8 +30,8 @@ test('financeiro separa captura, participacao, liquido e conciliacao', async ({ 
   await page.goto('/#/mvp/finance?est=est-fiap');
   const dashboard = page.getByTestId('finance-dashboard');
   await expect(dashboard).toContainText('Capturado');
-  await expect(dashboard).toContainText('Participacao');
-  await expect(dashboard).toContainText('Liquido estabelecimentos');
+  await expect(dashboard).toContainText('Participação');
+  await expect(dashboard).toContainText('Líquido estabelecimentos');
   const capturedRow = page.getByRole('row').filter({ hasText: 'CG-2026-0998' });
   await capturedRow.getByRole('button', { name: 'Conciliar' }).click();
   await expect(page.getByRole('status')).toContainText('Liquidacao conciliada');
@@ -52,12 +52,12 @@ test('reembolso fica ligado a transacao e timeline financeira', async ({ page })
   await expect(detail).toContainText('REFUNDED');
 });
 
-test('estabelecimento consulta tarifa e financeiro sem controles de gestao', async ({ page }) => {
+test('proprietario administrador consulta e gerencia tarifa e financeiro', async ({ page }) => {
   await login(page, 'estabelecimento@teste.com');
   await page.goto('/#/mvp/pricing');
   await expect(page.getByTestId('mvp-pricing-panel')).toContainText('R$ 2,95/kWh');
-  await expect(page.getByRole('button', { name: 'Nova versao' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Nova versao' })).toBeVisible();
   await page.goto('/#/mvp/finance');
   await expect(page.getByTestId('finance-dashboard')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Conciliar' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Conciliar' })).toBeVisible();
 });
