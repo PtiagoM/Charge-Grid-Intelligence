@@ -1,10 +1,18 @@
 # ChargeGrid Intelligence — fonte única de verdade
 
-**Atualizado em:** 27 de agosto de 2026  
+**Atualizado em:** 16 de setembro de 2026  
 **Escopo:** GoodWe, produto, negócio, operação, arquitetura, implementação, histórico e decisões vigentes  
 **Status:** documento canônico para continuidade do projeto
 
 Este é o primeiro documento que uma pessoa ou IA sem contexto deve ler. Ele consolida os documentos oficiais, o código atual e cinco sínteses de conversas históricas. Seu objetivo é preservar o máximo de contexto útil sem permitir que hipóteses antigas pareçam decisões atuais.
+
+## Estado verificado para a Sprint 3 — 16/09/2026
+
+A base desta execução é `c8cc21c`, em `develop/admin-web`, com a PR #16 já integrada e sem alterações locais preexistentes. As referências abaixo a PR #16 pendente, reconstrução administrativa futura e ordem exclusivamente visual são históricas. A prioridade vigente, definida pelo usuário, é integração funcional demonstrável entre API, Admin e PWA, preservando a experiência existente.
+
+A auditoria inicial confirmou Admin nativo funcional com domínio e persistência no navegador, PWA com estado operacional local e API financeira Stripe sandbox. Não existia uma sessão operacional compartilhada pelo servidor entre os dois frontends. A validação inicial passou: lint, 88 testes (76 Admin, 7 API e 5 shared) e todos os builds. Não havia testes automatizados próprios da PWA.
+
+O registro de implementação, evidências e limitações da Sprint fica em [`SPRINT3.md`](SPRINT3.md). Código verificado e decisões posteriores prevalecem sobre descrições antigas de implementação. A transparência sobre simulação é obrigatória: o modo técnico de demonstração deve identificá-la explicitamente, conforme a instrução atual do usuário, superando restrições antigas a esse rótulo. O escopo transversal desta entrega autoriza mudanças coordenadas nos dois produtos e nos contratos; não autoriza publicação ou merge.
 
 ## 0. Governança
 

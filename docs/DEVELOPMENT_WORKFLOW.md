@@ -8,6 +8,8 @@ Manter o Dashboard Admin e o Driver PWA evoluindo em linhas independentes, com i
 
 ## Estado historico relevante
 
+**Atualização verificada em 16/09/2026:** `develop/admin-web` e sua referência remota apontam para `c8cc21c`, merge da PR #16. A cadeia e os estados datados de 27/08 abaixo são históricos. Para a Sprint 3, o usuário autorizou trabalho transversal de integração em `feature/admin-sprint3-integration`, derivada desse estado; commits locais são autorizados, publicação/merge continuam sujeitos à regra explícita existente. Essa exceção de escopo não muda o fluxo das futuras tarefas exclusivas de cada produto.
+
 | Referencia | Papel atual |
 | --- | --- |
 | `origin/main` / `8befa41` | Governanca e PWA integrados; a linha Admin ainda não foi promovida para essa branch |
