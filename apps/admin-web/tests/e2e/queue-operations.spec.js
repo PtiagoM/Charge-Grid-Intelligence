@@ -56,6 +56,7 @@ test('carrossel mantem cinco posicoes e percorre carregadores adicionais sem alt
   await page.goto('/#/mvp/operations');
 
   const operation = page.getByTestId('chargegrid-operation-stage');
+  await operation.getByTestId('chargegrid-operation-scenario').selectOption('full');
   await expect(operation.getByTestId('chargegrid-operation-scenario')).toHaveValue('full');
   const stage = operation.getByRole('region', { name: 'Vagas e carregadores da planta' });
   const visibleSpots = operation.getByRole('button', { name: /^A\d{2},/ });

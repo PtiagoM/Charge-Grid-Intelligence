@@ -8,6 +8,7 @@ const central = { id: 'central', profile: 'GOODWE', semsAccountType: 'DISTRIBUTO
 const consultant = { ...central, id: 'consultant', role: 'GOODWE_PORTFOLIO_MANAGER', semsOrganizationFunction: 'NAVIGATOR' };
 const technician = { ...central, id: 'technician', role: 'GOODWE_TECH_SUPPORT', semsOrganizationFunction: 'TECHNICIAN' };
 const installer = { id: 'installer', profile: 'GOODWE', semsAccountType: 'DISTRIBUTOR_INSTALLER', semsOrganizationFunction: 'ADMINISTRATOR' };
+const reportViewer = { ...semsOwner, id: 'report-viewer', role: 'REPORT_VIEWER' };
 
 function domain(id) {
   return ADMIN_DOMAINS.find((item) => item.id === id);
@@ -66,5 +67,11 @@ describe('admin navigation', () => {
     expect(hasAdminCapability(installer, 'commercial:read')).toBe(false);
     expect(hasAdminCapability(semsOwner, 'commercial:read')).toBe(false);
     expect(hasAdminCapability(technician, 'organization:view')).toBe(false);
+  });
+
+  it('separa leitura financeira de conciliação', () => {
+    expect(hasAdminCapability(reportViewer, 'finance:read')).toBe(true);
+    expect(hasAdminCapability(reportViewer, 'finance:manage')).toBe(false);
+    expect(getAdminContextLinks(domain('chargegrid'), reportViewer).map((item) => item.route)).toEqual(['finance']);
   });
 });

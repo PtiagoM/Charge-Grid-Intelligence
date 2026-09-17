@@ -69,7 +69,7 @@ test('proprietário comercial recebe ChargeGrid abaixo de dispositivos', async (
   ]);
 
   await page.getByTitle('ChargeGrid').click();
-  const context = page.getByRole('navigation', { name: 'Navegação de ChargeGrid' });
+  const context = page.getByRole('tablist', { name: 'Navegação de ChargeGrid' });
   await expect(context).toContainText('Operação');
   await expect(context).toContainText('Sessões');
   await expect(context).toContainText('Fila');

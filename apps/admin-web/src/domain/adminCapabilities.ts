@@ -18,6 +18,7 @@ export type AdminCapability =
   | "commercial:activate"
   | "commercial:self-service"
   | "commercial:manage"
+  | "finance:read"
   | "finance:manage"
   | "intelligence:read"
   | "intelligence:portfolio"
@@ -92,6 +93,7 @@ const CAPABILITIES_BY_ROLE = {
     "commercial:read",
     "commercial:activate",
     "commercial:manage",
+    "finance:read",
     "finance:manage",
     "intelligence:read",
     "intelligence:portfolio",
@@ -110,6 +112,7 @@ const CAPABILITIES_BY_ROLE = {
     "commercial:activate",
     "commercial:self-service",
     "commercial:manage",
+    "finance:read",
     "finance:manage",
     "intelligence:read",
     "access:manage",
@@ -124,7 +127,7 @@ const CAPABILITIES_BY_ROLE = {
     "energy:monitor",
     "incidents:manage"
   ],
-  REPORT_VIEWER: ["commercial:read", "reports:generate", "reports:subscribe"]
+  REPORT_VIEWER: ["commercial:read", "finance:read", "reports:generate", "reports:subscribe"]
 } as const satisfies Record<AdminRole, readonly AdminCapability[]>;
 
 type CapabilitySubject = Profile | Account;

@@ -78,7 +78,7 @@ function Overview() {
   const technicalScope = new Set(technicalAccessibleEstablishmentIds(account));
   const commercialScope = new Set(commercialAccessibleEstablishmentIds(state, account).filter((id) => technicalScope.has(id)));
   const canReadCommercial = Boolean(account && hasAdminCapability(account, "commercial:read") && commercialScope.size);
-  const canReadFinance = Boolean(account && hasAdminCapability(account, "finance:manage"));
+  const canReadFinance = Boolean(account && hasAdminCapability(account, "finance:read"));
   const chargers = state.chargers.filter((item) => technicalScope.has(item.establishmentId));
   const commercialChargers = chargers.filter((item) => commercialScope.has(item.establishmentId) && item.publicationStatus === "PUBLISHED");
   const sessions = state.sessions.filter((item) => commercialScope.has(item.establishmentId));

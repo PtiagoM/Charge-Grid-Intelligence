@@ -21,10 +21,9 @@ test('MVP exibe relatórios e tarifação detalhada', async ({ page }) => {
   await expect(page.getByTestId('mvp-payments-table')).toBeVisible();
 });
 
-test('MVP exibe sessões e histórico consolidado', async ({ page }) => {
+test('Central GoodWe não recebe sessões da operação local', async ({ page }) => {
   await login(page, 'goodwe@teste.com', 'teste');
   await page.goto('/#/mvp/sessions');
 
-  await expect(page.getByTestId('mvp-sessions-active')).toBeVisible();
-  await expect(page.getByTestId('mvp-sessions-finished')).toBeVisible();
+  await expect(page.getByTestId('access-denied')).toBeVisible();
 });

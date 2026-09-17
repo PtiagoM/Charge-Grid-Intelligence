@@ -63,7 +63,7 @@ export const ADMIN_DOMAINS: readonly AdminDomain[] = [
       { route: "operations", label: "Operação", capability: "operations:monitor" },
       { route: "sessions", label: "Sessões", capability: "operations:monitor" },
       { route: "queue", label: "Fila", capability: "queue:manage" },
-      { route: "finance", label: "Resumo financeiro", capability: "finance:manage" }
+      { route: "finance", label: "Resumo financeiro", capability: "finance:read" }
     ],
     relatedRoutes: ["session", "financial-session", "invoices"]
   },
@@ -156,8 +156,8 @@ export function getAdminRouteCapability(route: string): AdminCapability | undefi
     plant: "network:assets", client: "network:portfolio", establishments: "network:portfolio",
     establishment: "network:portfolio", locations: "network:assets", location: "network:assets",
     charger: "network:assets", session: "operations:monitor", incident: "alarms:view", ticket: "service:view",
-    "financial-session": "finance:manage", finance: "finance:manage", pricing: "finance:manage",
-    invoices: "finance:manage", contract: "commercial:read", settings: "organization:view"
+    "financial-session": "finance:read", finance: "finance:read", pricing: "finance:manage",
+    invoices: "finance:read", contract: "commercial:read", settings: "organization:view"
   };
   return related[route];
 }

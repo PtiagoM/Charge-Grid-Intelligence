@@ -27,20 +27,22 @@ As listas visuais F0–F7 anteriores continuam referências de evolução do pro
 - O início respeita disponibilidade, capacidade energética e autorização simulada. A medição calcula energia por potência e duração, atribui excedente solar, congela a tarifa da sessão e encerra exatamente no limite financeiro ou quando o provider fica offline.
 - `npm run dev:demo` inicia Admin, PWA e API somente em localhost, limpa credenciais externas nos processos filhos e grava o estado em `.local/demo/state.json`. O modo não é montado pela API em produção.
 - O fluxo PWA existente recebeu correções independentes para recuperar o ponto associado ao PaymentIntent, impedir sessões concorrentes, liquidar valor zero, respeitar expiração da fila e limitar ociosidade à garantia financeira.
+- O Admin separa leitura e gestão financeira: o papel `REPORT_VIEWER` consulta transações apenas no próprio escopo, enquanto conciliação, reembolso e política tarifária continuam restritos a `finance:manage`.
 
 ## Validação
 
 Executado no commit `2d3291c` com a correção E2E local subsequente:
 
 - `npm run lint` — aprovado;
-- `npm test` — 97 testes aprovados: 5 shared, 16 API e 76 Admin;
+- `npm test` — 98 testes aprovados: 5 shared, 16 API e 77 Admin;
 - `npm run typecheck` — aprovado;
 - `npm run build` — aprovado; permanece o aviso conhecido do chunk Admin acima de 500 kB;
 - `npm run test:e2e:demo` — 3 cenários aprovados no Chromium: sessão compartilhada e recuperação após reload, bloqueios/limite financeiro e offline/recuperação da API.
+- `npm run test:e2e` — 58 cenários Admin aprovados no Chromium, incluindo personas, escopos, navegação, operação, financeiro, relatórios e estados de bloqueio.
 
 ## Limites preservados
 
 - O runtime é uma demonstração local de processo único; o JSON não substitui banco, concorrência transacional, autenticação, RLS ou auditoria produtiva.
 - Nenhum pagamento Stripe, comando GoodWe ou leitura de hardware é executado por `/demo`.
 - As demais telas operacionais do Admin e o fluxo comercial normal da PWA continuam usando seus adapters e estados anteriores; esta entrega não os converte silenciosamente para o runtime demonstrativo.
-- Não foram executadas nesta unidade a regressão E2E integral do Admin/PWA, homologação de hardware, publicação ou integração em `develop/admin-web`/`main`.
+- Não foram executadas nesta unidade homologação de hardware, publicação ou integração em `develop/admin-web`/`main`; a PWA ainda não possui uma suíte ampla própria fora das jornadas integradas da Sprint 3.

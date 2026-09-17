@@ -44,6 +44,7 @@ test('proprietário comercial acessa carregadores, sessões e tarifação', asyn
 
   await page.goto('/#/mvp/chargers');
   await expect(page.getByTestId('mvp-chargers-panel')).toBeVisible();
+  await page.getByRole('tab', { name: 'Carregador veicular' }).click();
   await page.getByRole('link', { name: /Abrir CG-FIAP/ }).first().click();
   await expect(page.getByTestId('mvp-charger-detail')).toBeVisible();
 

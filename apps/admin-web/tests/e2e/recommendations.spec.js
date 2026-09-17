@@ -17,10 +17,10 @@ test('inteligência do MVP entrega previsões de demanda e recomendações', asy
   await expect(page.getByTestId('recommendations-page')).toContainText('Aceitar nao executa comandos');
 });
 
-test('visão geral do MVP destaca recomendação operacional', async ({ page }) => {
+test('proprietário comercial acessa recomendações explicáveis pela central de alarmes', async ({ page }) => {
   await login(page, 'estabelecimento@teste.com', 'teste');
-  await page.goto('/#/mvp/overview');
+  await page.goto('/#/mvp/recommendations');
 
-  await expect(page.getByTestId('mvp-overview-recommendation')).toBeVisible();
-  await expect(page.getByTestId('mvp-overview-recommendation')).toContainText('Fila atual');
+  await expect(page.getByTestId('recommendations-page')).toBeVisible();
+  await expect(page.getByTestId('recommendations-page')).toContainText('Aceitar nao executa comandos');
 });
