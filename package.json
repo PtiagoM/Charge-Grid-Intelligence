@@ -11,6 +11,7 @@
   "scripts": {
     "build:shared": "npm run build --workspace @chargegrid/shared",
     "dev": "npm run build:shared && concurrently -n admin,pwa,api -c magenta,cyan,green \"npm run dev --workspace @chargegrid/admin-web\" \"npm run dev --workspace @chargegrid/driver-pwa\" \"npm run dev --workspace @chargegrid/api\"",
+    "dev:demo": "node scripts/dev-demo.mjs",
     "dev:admin": "npm run build:shared && npm run dev --workspace @chargegrid/admin-web",
     "dev:pwa": "npm run build:shared && npm run dev --workspace @chargegrid/driver-pwa",
     "dev:api": "npm run build:shared && npm run dev --workspace @chargegrid/api",
@@ -18,6 +19,8 @@
     "pretest": "npm run build:shared",
     "test": "npm run test --workspaces --if-present",
     "test:e2e": "playwright test",
+    "test:e2e:demo": "playwright test --config playwright.demo.config.ts",
+    "typecheck": "npm run build:shared && tsc -b apps/admin-web apps/driver-pwa && tsc -p apps/api/tsconfig.json --noEmit",
     "lint": "eslint ."
   },
   "engines": {

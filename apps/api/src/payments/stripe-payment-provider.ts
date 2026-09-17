@@ -89,6 +89,10 @@ export class StripePaymentProvider {
   async capture(input: { paymentIntentId: string; sessionId: string; amount: number; idempotencyKey: string }) {
     const existing = await this.stripe.paymentIntents.retrieve(input.paymentIntentId);
     if (existing.metadata.chargegrid_session_id !== input.sessionId) throw new Error("Pagamento não pertence à sessão informada.");
+    if (input.amount === 0) {
+      if (existing.status !== "canceled") await this.stripe.paymentIntents.cancel(input.paymentIntentId, {}, { idempotencyKey: input.idempotencyKey });
+      return { paymentIntentId: existing.id, status: PaymentStatus.FAILED, amount: 0, currency: "BRL" as const, providerStatus: "canceled" as const };
+    }
     const intent = await this.stripe.paymentIntents.capture(input.paymentIntentId, {
       amount_to_capture: Math.min(toMinorUnits(input.amount), existing.amount_capturable),
       metadata: { settlement_type: "chargegrid_final_capture" }

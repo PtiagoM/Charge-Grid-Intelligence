@@ -93,7 +93,7 @@ function FloorStateIcon({ state }: { state: SpotState }) {
 
 export function ChargeGridOperationStage({ establishmentId }: { establishmentId: string }) {
   const { state, account, requestChargerCommand } = useAdminState();
-  const [scenario, setScenario] = useState<"full" | "live">("full");
+  const [scenario, setScenario] = useState<"full" | "live">("live");
   const [selectedChargerId, setSelectedChargerId] = useState("");
   const [windowStart, setWindowStart] = useState(0);
   const [commandBusy, setCommandBusy] = useState(false);

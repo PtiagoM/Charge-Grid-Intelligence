@@ -22,6 +22,7 @@ output/playwright/
 npm-debug.log*
 .cache/
 .tmp/
+.local/
 tmp/
 temp/
 

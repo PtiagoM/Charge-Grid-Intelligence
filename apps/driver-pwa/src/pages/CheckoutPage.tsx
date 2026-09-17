@@ -1,7 +1,8 @@
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js/pure";
+import { ChargerCommercialStatus, CommercialSessionStatus, QueueStatus } from "@chargegrid/shared";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useDriverApp, type DriverMode, type PaymentMethod } from "../app/DriverAppContext";
 import { AppIcon } from "../components/AppIcon";
 import { InfoNotice, PageIntro, PrimaryButton } from "../components/Ui";
@@ -20,6 +21,8 @@ interface PendingPayment {
   method: PaymentMethod;
   mode: DriverMode;
   limit: number;
+  establishmentId: string;
+  chargerId: string;
 }
 
 function readPendingPayment(): PendingPayment | null {
@@ -46,17 +49,19 @@ function StripeConfirmationForm({
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!waiting) return;
     const timer = window.setInterval(() => {
       void getPaymentStatus(pending.paymentIntentId).then((payment) => {
         if (payment.status === "PAID" || payment.status === "AUTHORIZED") {
           window.clearInterval(timer);
           onAuthorized();
+        } else if (payment.status === "FAILED") {
+          setWaiting(false);
+          setError("Pagamento não confirmado. Revise o meio de pagamento antes de tentar novamente.");
         }
-      }).catch(() => undefined);
+      }).catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Não foi possível consultar o pagamento."));
     }, 2500);
     return () => window.clearInterval(timer);
-  }, [onAuthorized, pending.paymentIntentId, waiting]);
+  }, [onAuthorized, pending.paymentIntentId]);
 
   async function confirm(event: FormEvent) {
     event.preventDefault();
@@ -99,6 +104,7 @@ export function CheckoutPage() {
     isOnline,
     profile,
     queue,
+    session,
     selectedChargerId,
     selectedEstablishmentId,
     theme
@@ -120,26 +126,38 @@ export function CheckoutPage() {
       paymentSessionId: payment.sessionId,
       financialLimit: payment.limit,
       paymentMethod: payment.method,
-      paymentIntentId: payment.paymentIntentId
+      paymentIntentId: payment.paymentIntentId,
+      establishmentId: payment.establishmentId,
+      chargerId: payment.chargerId
     });
     sessionStorage.removeItem(PENDING_PAYMENT_KEY);
     navigate("/session", { replace: true });
   }, [authorizeSession, navigate]);
 
   useEffect(() => {
+    if (session && session.status !== CommercialSessionStatus.COMPLETED) return;
     const returnedIntentId = searchParams.get("payment_intent");
     const stored = readPendingPayment();
-    if (!returnedIntentId || !stored || stored.paymentIntentId !== returnedIntentId) return;
+    if (!stored || (returnedIntentId && stored.paymentIntentId !== returnedIntentId)) return;
+    if (!stored.establishmentId || !stored.chargerId) {
+      setError("Pagamento anterior sem identificação do ponto. Consulte seu pagamento antes de criar outro.");
+      return;
+    }
     setPending(stored);
-    void getPaymentStatus(returnedIntentId).then((payment) => {
+    void getPaymentStatus(stored.paymentIntentId).then((payment) => {
       if (payment.status === "PAID" || payment.status === "AUTHORIZED") completeAuthorization(stored);
     }).catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Não foi possível consultar o pagamento."));
-  }, [completeAuthorization, searchParams]);
+  }, [completeAuthorization, searchParams, session]);
 
   async function preparePayment(event: FormEvent) {
     event.preventDefault();
     if (!isOnline) return setError("Conecte-se à internet para autorizar o pagamento.");
     if (!accepted) return setError("Confirme a tarifa, o limite e a regra de ociosidade para continuar.");
+    const previousPayment = readPendingPayment();
+    if (previousPayment && (!previousPayment.establishmentId || !previousPayment.chargerId)) return setError("Existe um pagamento antigo sem identificação do ponto. Consulte e cancele esse pagamento no Stripe antes de limpar os dados da aba.");
+    if (session && session.status !== CommercialSessionStatus.COMPLETED) return setError("Conclua a sessão atual antes de autorizar outra recarga.");
+    if (charger?.commercialStatus !== ChargerCommercialStatus.AVAILABLE_TO_START) return setError("Este carregador não está disponível para iniciar.");
+    if (queue?.status === QueueStatus.CALLED && queue.expiresAt && Date.parse(queue.expiresAt) <= Date.now()) return setError("A chamada da fila expirou. Volte à fila antes de continuar.");
     if (!stripePromise || !plant || !charger) return setError("O Stripe sandbox ainda não está configurado. Adicione as chaves de teste no ambiente da aplicação.");
 
     setPreparing(true);
@@ -154,7 +172,7 @@ export function CheckoutPage() {
         establishmentId: plant.id,
         chargerId: charger.id
       });
-      const nextPending: PendingPayment = { sessionId, paymentIntentId: result.paymentIntentId, clientSecret: result.clientSecret, method: paymentMethod, mode, limit };
+      const nextPending: PendingPayment = { sessionId, paymentIntentId: result.paymentIntentId, clientSecret: result.clientSecret, method: paymentMethod, mode, limit, establishmentId: plant.id, chargerId: charger.id };
       sessionStorage.setItem(PENDING_PAYMENT_KEY, JSON.stringify(nextPending));
       setPending(nextPending);
     } catch (caught) {
@@ -175,8 +193,11 @@ export function CheckoutPage() {
 
   if (!plant || !charger) return <section className="empty-state"><AppIcon name="plug" size={36} /><h1>Selecione um carregador</h1><p>Volte ao mapa e escolha um ponto disponível.</p><PrimaryButton onClick={() => navigate(isAuthenticated ? "/explore" : "/scan")}>Escolher carregador</PrimaryButton></section>;
 
+  if (session && session.status !== CommercialSessionStatus.COMPLETED) return <section className="empty-state"><h1>Você já tem uma sessão em andamento</h1><p>Conclua a sessão atual antes de iniciar outra recarga.</p><Link className="primary-link" to="/session">Acompanhar sessão atual</Link></section>;
+
   if (pending && elementsOptions) return <>
-    <PageIntro eyebrow={`${plant.name} · ${charger.commercialName}`} title="Confirme o pagamento"><p>Os dados financeiros são processados diretamente pela Stripe.</p></PageIntro>
+    <PageIntro eyebrow={`${getPlantById(pending.establishmentId)?.name ?? pending.establishmentId} · ${pending.chargerId}`} title="Confirme o pagamento"><p>Os dados financeiros são processados diretamente pela Stripe.</p></PageIntro>
+    {error ? <p className="form-error" role="alert">{error}</p> : null}
     <Elements stripe={stripePromise} options={elementsOptions} key={pending.clientSecret}>
       <StripeConfirmationForm
         pending={pending}

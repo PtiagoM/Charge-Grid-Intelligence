@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { useDriverApp } from "../app/DriverAppContext";
 import { AppIcon, type AppIconName } from "../components/AppIcon";
 import { SessionPlantCatalog } from "../components/SessionPlantCatalog";
-import { PageIntro, PrimaryButton, SecondaryButton } from "../components/Ui";
+import { InfoNotice, PageIntro, PrimaryButton, SecondaryButton } from "../components/Ui";
 import { settlePayment } from "../services/paymentApi";
 
 interface SessionPresentation {
@@ -94,7 +94,7 @@ export function SessionPage() {
         paymentIntentId: session.paymentIntentId,
         sessionId: session.paymentSessionId,
         method: session.paymentMethod,
-        totalAmount: Number(Math.max(0.5, total).toFixed(2)),
+        totalAmount: Number(Math.min(session.financialLimit, Math.max(0, total)).toFixed(2)),
         financialLimit: session.financialLimit
       });
       setSessionStatus(CommercialSessionStatus.SETTLING);
@@ -107,6 +107,7 @@ export function SessionPage() {
 
   return <>
     <PageIntro eyebrow={`${session.chargerName} · vaga ${session.parkingSpot}`} title={graceNeedsUrgency ? "Retire seu veículo agora" : presentation.title}><p>{graceNeedsUrgency ? "A tolerância terminou e a cobrança de ociosidade pode começar." : presentation.detail}</p></PageIntro>
+    <InfoNotice>Operação local simulada: cada 3 segundos representa 5 minutos de energia à potência exibida. A tolerância de retirada usa tempo real. Pagamento usa Stripe em teste. Esta sessão não é sincronizada com o Admin; use a demonstração integrada para essa jornada.</InfoNotice>
     <section className={`session-hero state-${heroTone}`} aria-live="polite">
       <div className="session-state-visual"><span><AppIcon name={graceNeedsUrgency ? "warning" : presentation.icon} size={36} /></span><div><small>Estado da recarga</small><strong>{graceNeedsUrgency ? "Tolerância encerrada" : presentation.label}</strong></div></div>
       {isPendingStart ? <div className="starting-visual"><span className="spinner" /><strong>{session.status === CommercialSessionStatus.STARTING ? "Confirmando energia" : "Preparando carregador"}</strong></div> : charging ? <div className="charging-limit-progress" aria-label={`${creditProgress}% do limite de crédito utilizado`}><div className="charging-progress-heading"><span>Limite utilizado</span><strong>{creditProgress}%</strong></div><div className="charging-progress-track"><span style={{ width: `${creditProgress}%` }} /></div><div className="charging-progress-summary"><span>{currency.format(session.energyAmount)} de {currency.format(session.financialLimit)}</span><strong>Restam {currency.format(remainingCredit)}</strong></div><p>Estimativa até o limite: <strong>{formatRemainingTime(estimatedMinutesRemaining)}</strong></p></div> : session.status === CommercialSessionStatus.IDLE_GRACE_PERIOD ? <div className={`idle-countdown${graceExpired ? " is-expired" : ""}`}><div className="idle-countdown-ring" style={{ background: `conic-gradient(var(--cg-warning) ${graceProgress}deg, var(--cg-surface-4) 0deg)` }}><span>{formatCountdown(graceRemainingSeconds)}<small>{graceExpired ? "encerrada" : "restantes"}</small></span></div><p>{graceExpired ? "A cobrança de ociosidade pode começar. Retire o veículo agora." : "Desconecte o veículo antes do fim da tolerância."}</p></div> : <div className="session-main-metric"><span>Energia confirmada</span><strong>{session.energyKwh.toFixed(2).replace(".", ",")} <small>kWh</small></strong></div>}
@@ -117,7 +118,7 @@ export function SessionPage() {
     <section className="mobile-card timeline-card"><h2>Linha do tempo da sessão</h2><ol className="session-timeline"><li className="is-complete"><span><AppIcon name="check" size={15} /></span><div><strong>Pagamento garantido</strong><small>{session.paymentMethod === "PIX" ? "Pix confirmado pela Stripe" : "Limite reservado no cartão"}</small></div></li><li className={session.status === CommercialSessionStatus.AUTHORIZED || session.status === CommercialSessionStatus.WAITING_START ? "is-current" : "is-complete"}><span /><div><strong>Início assíncrono</strong><small>Energia só aparece após confirmação</small></div></li><li className={session.status === CommercialSessionStatus.CHARGING ? "is-current" : session.energyKwh > 0 ? "is-complete" : ""}><span /><div><strong>Energia</strong><small>Somente medições confirmadas</small></div></li><li className={[CommercialSessionStatus.ENERGY_FINISHED, CommercialSessionStatus.IDLE_GRACE_PERIOD, CommercialSessionStatus.IDLE_FEE].includes(session.status) ? "is-current" : session.status === CommercialSessionStatus.COMPLETED ? "is-complete" : ""}><span /><div><strong>Retirada do veículo</strong><small>Tolerância e ociosidade</small></div></li><li className={session.status === CommercialSessionStatus.SETTLING ? "is-current" : session.status === CommercialSessionStatus.COMPLETED ? "is-complete" : ""}><span /><div><strong>Liquidação</strong><small>Captura ou devolução pela Stripe</small></div></li></ol></section>
 
     {session.status === CommercialSessionStatus.CHARGING ? <PrimaryButton onClick={finishEnergy}>Encerrar recarga</PrimaryButton> : null}
-    {session.status === CommercialSessionStatus.IDLE_GRACE_PERIOD ? <><PrimaryButton onClick={beginSettlement} disabled={settling}>{settling ? "Liquidando com a Stripe…" : "Veículo desconectado"}</PrimaryButton><SecondaryButton onClick={applyIdleFee}>Registrar permanência após tolerância</SecondaryButton></> : null}
+    {session.status === CommercialSessionStatus.IDLE_GRACE_PERIOD ? <><PrimaryButton onClick={beginSettlement} disabled={settling}>{settling ? "Liquidando com a Stripe…" : "Veículo desconectado"}</PrimaryButton><SecondaryButton disabled={!graceExpired} onClick={applyIdleFee}>Registrar permanência após tolerância</SecondaryButton></> : null}
     {session.status === CommercialSessionStatus.IDLE_FEE ? <PrimaryButton onClick={beginSettlement} disabled={settling}>{settling ? "Liquidando com a Stripe…" : "Veículo desconectado"}</PrimaryButton> : null}
     {settlementError ? <p className="form-error" role="alert">{settlementError}</p> : null}
     {session.status === CommercialSessionStatus.COMPLETED && completedReceipt ? <><Link className="primary-link" to={`/receipt/${completedReceipt.id}`}><AppIcon name="receipt" size={20} /> Ver comprovante</Link><Link className="text-link" to={session.owner === "driver" ? "/history" : "/"}>{session.owner === "driver" ? "Ir para o histórico" : "Voltar ao início"}</Link></> : null}

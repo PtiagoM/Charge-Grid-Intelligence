@@ -15,6 +15,8 @@ import { QueuePage } from "../pages/QueuePage";
 import { ReceiptPage } from "../pages/ReceiptPage";
 import { SessionPage } from "../pages/SessionPage";
 import { SignupPage } from "../pages/SignupPage";
+import { DemoPage } from "../pages/DemoPage";
+import { demoEnabled } from "../services/demoApi";
 
 const CheckoutPage = lazy(() => import("../pages/CheckoutPage").then((module) => ({ default: module.CheckoutPage })));
 
@@ -23,6 +25,7 @@ export function AppRouter() {
     <Routes>
       <Route element={<MobileShell />}>
         <Route index element={<HomePage />} />
+        {demoEnabled ? <Route path="demo" element={<DemoPage />} /> : null}
         <Route path="explore" element={<ExplorePage />} />
         <Route path="map" element={<MapPage />} />
         <Route path="place/:establishmentId" element={<EstablishmentPage />} />

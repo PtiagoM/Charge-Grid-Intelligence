@@ -2,7 +2,7 @@ import type { PaymentMethod } from "../app/DriverAppContext";
 
 const configuredApiBaseUrl = (import.meta.env.VITE_CHARGEGRID_API_URL || "/api").replace(/\/$/, "");
 
-function apiBaseUrl() {
+export function apiBaseUrl() {
   if (typeof window === "undefined" || !configuredApiBaseUrl.startsWith("http")) return configuredApiBaseUrl;
   const configuredUrl = new URL(configuredApiBaseUrl);
   const isLocalApi = configuredUrl.hostname === "localhost" || configuredUrl.hostname === "127.0.0.1";
@@ -78,7 +78,7 @@ export async function settlePayment(input: {
     });
   }
   const refundAmount = Number(Math.max(0, input.financialLimit - input.totalAmount).toFixed(2));
-  if (refundAmount < 0.5) return { status: "PAID", amount: input.totalAmount };
+  if (refundAmount <= 0) return { status: "PAID", amount: input.totalAmount };
   return apiRequest(`/payments/${encodeURIComponent(input.paymentIntentId)}/refund`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "Idempotency-Key": `refund-${input.sessionId}-${Math.round(refundAmount * 100)}` },

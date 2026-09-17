@@ -113,6 +113,8 @@ interface PersistedState {
 }
 
 export interface CheckoutInput {
+  establishmentId: string;
+  chargerId: string;
   paymentSessionId: string;
   owner: DriverMode;
   financialLimit: number;
@@ -289,7 +291,7 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     void signOutDriver();
-    setState((current) => ({ ...current, isAuthenticated: false, session: current.session?.owner === "driver" ? null : current.session, queue: null }));
+    setState((current) => ({ ...current, isAuthenticated: false, queue: null }));
   }, []);
 
   const clearLocalData = useCallback(() => setState((current) => ({ ...initialState, theme: current.theme })), []);
@@ -303,8 +305,10 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
 
   const authorizeSession = useCallback((input: CheckoutInput) => {
     setState((current) => {
-      const plant = getPlantById(current.selectedEstablishmentId) ?? defaultPlant;
-      const charger = plant.chargers.find((item) => item.id === current.selectedChargerId) ?? plant.chargers[0] ?? defaultCharger;
+      if (current.session && current.session.status !== CommercialSessionStatus.COMPLETED) return current;
+      const plant = getPlantById(input.establishmentId);
+      const charger = plant?.chargers.find((item) => item.id === input.chargerId);
+      if (!plant || !charger) return current;
       return {
         ...current,
         session: {
@@ -352,7 +356,8 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
     if (!current.session || current.session.status !== CommercialSessionStatus.CHARGING) return current;
     const session = current.session;
     const maxEnergyKwh = session.tariffPerKwh > 0 ? session.financialLimit / session.tariffPerKwh : session.energyKwh + 0.5;
-    const energyKwh = Number(Math.min(session.energyKwh + 0.5, maxEnergyKwh).toFixed(2));
+    // Local simulator: each 3-second tick represents five charging minutes.
+    const energyKwh = Number(Math.min(session.energyKwh + session.currentPowerKw * (5 / 60), maxEnergyKwh).toFixed(4));
     const energyAmount = Number(Math.min(session.financialLimit, energyKwh * session.tariffPerKwh).toFixed(2));
     const reachedLimit = energyAmount >= session.financialLimit;
     return {
@@ -377,11 +382,17 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
     notifications: [notification("Energia finalizada", "Retire o veículo em até 15 minutos para evitar cobrança de ociosidade.", "/session"), ...current.notifications]
   } : current), []);
 
-  const applyIdleFee = useCallback(() => setState((current) => current.session ? {
-    ...current,
-    session: { ...current.session, status: CommercialSessionStatus.IDLE_FEE, idleMinutes: 4, idleAmount: 2, idleGraceEndsAt: undefined },
-    notifications: [notification("Ociosidade em cobrança", "A tolerância terminou. A taxa atual é de R$ 0,50 por minuto.", "/session"), ...current.notifications]
-  } : current), []);
+  const applyIdleFee = useCallback(() => setState((current) => {
+    const session = current.session;
+    if (!session || session.status !== CommercialSessionStatus.IDLE_GRACE_PERIOD || !session.idleGraceEndsAt || Date.parse(session.idleGraceEndsAt) > Date.now()) return current;
+    const idleMinutes = Math.min(60, Math.ceil((Date.now() - Date.parse(session.idleGraceEndsAt)) / 60_000));
+    const idleAmount = Number(Math.min(idleMinutes * 0.5, Math.max(0, session.financialLimit - session.energyAmount)).toFixed(2));
+    return {
+      ...current,
+      session: { ...session, status: CommercialSessionStatus.IDLE_FEE, idleMinutes, idleAmount },
+      notifications: [notification("Ociosidade registrada", "R$ 0,50 por minuto, limitada ao saldo da garantia e a 60 minutos.", "/session"), ...current.notifications]
+    };
+  }), []);
 
   const settleSession = useCallback(() => setState((current) => {
     if (!current.session) return current;
@@ -440,7 +451,8 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
   const callQueue = useCallback(() => setState((current) => {
     if (!current.queue) return current;
     const plant = getPlantById(current.queue.establishmentId) ?? defaultPlant;
-    const charger = plant.chargers.find((item) => item.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START) ?? plant.chargers[0] ?? defaultCharger;
+    const charger = plant.chargers.find((item) => item.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START);
+    if (!charger) return { ...current, notifications: [notification("Sem vaga disponível", "Todos os carregadores continuam ocupados. Sua posição foi mantida.", "/queue"), ...current.notifications] };
     return {
       ...current,
       selectedEstablishmentId: plant.id,

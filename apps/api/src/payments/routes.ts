@@ -23,7 +23,7 @@ export function createPaymentRouter() {
   });
 
   router.post("/intents", async (request, response) => {
-    const body = request.body as Record<string, unknown>;
+    const body = (request.body ?? {}) as Record<string, unknown>;
     const method = body.method as StripePaymentMethod;
     if (!validAmount(body.amount) || !["CARD", "PIX"].includes(method) || typeof body.sessionId !== "string" || typeof body.establishmentId !== "string" || typeof body.chargerId !== "string") {
       return response.status(400).json({ code: "INVALID_PAYMENT_INPUT", message: "Revise o limite, o meio de pagamento e o ponto de recarga." });
@@ -54,8 +54,8 @@ export function createPaymentRouter() {
   });
 
   router.post("/:paymentIntentId/capture", async (request, response) => {
-    const body = request.body as Record<string, unknown>;
-    if (!validAmount(body.amount) || typeof body.sessionId !== "string") return response.status(400).json({ code: "INVALID_CAPTURE_INPUT", message: "Valor ou sessão inválidos." });
+    const body = (request.body ?? {}) as Record<string, unknown>;
+    if ((body.amount !== 0 && !validAmount(body.amount)) || typeof body.sessionId !== "string") return response.status(400).json({ code: "INVALID_CAPTURE_INPUT", message: "Valor ou sessão inválidos." });
     try {
       return response.json(await provider().capture({
         paymentIntentId: request.params.paymentIntentId,
@@ -69,8 +69,8 @@ export function createPaymentRouter() {
   });
 
   router.post("/:paymentIntentId/refund", async (request, response) => {
-    const body = request.body as Record<string, unknown>;
-    if (!validAmount(body.amount) || typeof body.sessionId !== "string") return response.status(400).json({ code: "INVALID_REFUND_INPUT", message: "Valor ou sessão inválidos." });
+    const body = (request.body ?? {}) as Record<string, unknown>;
+    if (typeof body.amount !== "number" || !Number.isFinite(body.amount) || body.amount < 0.01 || body.amount > 1000 || typeof body.sessionId !== "string") return response.status(400).json({ code: "INVALID_REFUND_INPUT", message: "Valor ou sessão inválidos." });
     try {
       return response.json(await provider().refund({
         paymentIntentId: request.params.paymentIntentId,

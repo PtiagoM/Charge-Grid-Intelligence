@@ -2,6 +2,7 @@ import { Navigate, Link } from "react-router-dom";
 import { useDriverApp } from "../app/DriverAppContext";
 import { AppIcon } from "../components/AppIcon";
 import { assets } from "../constants/assets";
+import { demoEnabled } from "../services/demoApi";
 
 export function HomePage() {
   const { isAuthenticated } = useDriverApp();
@@ -33,6 +34,7 @@ export function HomePage() {
       </Link>
     </section>
 
+    {demoEnabled ? <Link className="secondary-link" to="/demo">Abrir demonstração integrada · simulada</Link> : null}
     <section className="guest-benefits">
       <div><AppIcon name="map" /><span>Mapa com disponibilidade</span></div>
       <div><AppIcon name="card" /><span>Pagamento protegido</span></div>

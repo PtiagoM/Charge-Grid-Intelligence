@@ -5,6 +5,7 @@ import { useAdminState } from "../app/AdminState";
 import { getAdminContextLinks, getAdminDomainForRoute } from "../app/adminNavigation";
 import { hasAdminCapability, type AdminCapability } from "../domain/adminCapabilities";
 import { hasOwnChargeGridOperation } from "../domain/accessOperations";
+import { canUseDemoRuntime, demoRuntimeEnabled } from "../services/demoRuntimeRepository";
 
 interface NavigationItem {
   label: string;
@@ -100,6 +101,7 @@ export function ManagerShell({ children }: { children: ReactNode }) {
     </aside>
     <main className="main-area">
       <header className="topbar" data-testid="topbar"><div className="topbar-spacer" /><div className="topbar-actions">
+        {demoRuntimeEnabled && canUseDemoRuntime(state, account) ? <NavLink className="ghost-button" to="/admin">Demonstração integrada</NavLink> : null}
         <span className="topbar-promo"><img src={assets.icons.solarInfo} alt="" />Hub Solar Insight</span>
         <button className="topbar-icon-button" type="button" aria-label="Pesquisar"><img src={assets.icons.search} alt="" /></button>
         <a className="topbar-icon-button" href="#/mvp/incidents" aria-label="Alarmes"><img src={assets.icons.alarms} alt="" /></a>

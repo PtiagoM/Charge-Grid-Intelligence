@@ -12,6 +12,18 @@ describe("GET /health", () => {
 });
 
 describe("Stripe sandbox routes", () => {
+  it("rejects empty bodies without throwing and permits zero settlement", async () => {
+    const app = createApp();
+    for (const path of ["/payments/intents", "/payments/pi_test/capture", "/payments/pi_test/refund"]) {
+      expect((await request(app).post(path)).status).toBe(400);
+    }
+  });
+  it("permits the desktop and development private networks", async () => {
+    for (const origin of ["http://localhost:5173", "http://10.0.0.8:5174", "http://192.168.1.8:5174", "http://172.16.1.8:5174"]) {
+      const response = await request(createApp()).get("/health").set("Origin", origin);
+      expect(response.headers["access-control-allow-origin"]).toBe(origin);
+    }
+  });
   it("reports whether test credentials are configured without exposing secrets", async () => {
     const response = await request(createApp()).get("/payments/config");
 
