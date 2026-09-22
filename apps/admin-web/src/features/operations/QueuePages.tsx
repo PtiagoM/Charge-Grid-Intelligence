@@ -25,7 +25,7 @@ export function OperationsCenterPage({ establishmentId }: { establishmentId?: st
 
 export function QueueOperationsPage({ establishmentId }: { establishmentId?: string }) {
   const { state, account } = useAdminState();
-  const [view, setView] = useState<"all" | "active" | "history">("all");
+  const [view, setView] = useState<"all" | "active" | "history">("active");
   const [search, setSearch] = useState("");
   const establishment = establishmentId ? state.establishments.find((item) => item.id === establishmentId) : undefined;
   const authorizedIds = new Set(accessibleEstablishmentIds(state, account));

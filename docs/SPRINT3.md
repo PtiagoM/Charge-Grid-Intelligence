@@ -85,4 +85,78 @@ Evidência da retirada: `/demo/state` responde 404, navegar para `/demo` na PWA 
 
 - GoodWe/HCA G2 continuam simulados; não há homologação ou hardware real.
 - Não foram executados push, publicação ou integração em `develop/admin-web`/`main`.
-- A PWA ainda não possui suíte unitária própria; suas jornadas críticas foram verificadas em navegador real e serão consolidadas no E2E final.
+- A PWA ainda não possui suíte unitária própria; suas jornadas críticas estão protegidas pelo E2E integrado da Sprint 3.
+
+## Arquitetura final executável
+
+```mermaid
+flowchart LR
+    Maps[Google Maps real] --> PWA[Driver PWA normal]
+    Auth[Supabase Auth] --> PWA
+    PWA --> Stripe[Stripe sandbox real]
+    PWA --> API[ChargeGrid API]
+    Stripe --> API
+    Admin[Admin ChargeGrid normal] --> API
+    Lab[Laboratório MockGoodWe] --> API
+    API --> DB[(PostgreSQL local / PGlite)]
+    DB --> API
+    API --> PWA
+    API --> Admin
+```
+
+O banco contém estabelecimentos, carregadores, sessões, pagamentos e fila. PWA e Admin não mantêm motores comerciais próprios. O laboratório substitui apenas eventos físicos e usa as mesmas entidades. O catálogo compartilhado resolve mapa, QR e código operacional no mesmo `chargerId`.
+
+## Matriz possível versus ideal
+
+| Parte | Estado final da Sprint 3 |
+| --- | --- |
+| Frontends, API e contratos | Implementados no repositório |
+| Stripe | Real em modo de teste; cartão autorizado e capturado |
+| Google Maps | Implementado com SDK real; gravação depende de chave válida |
+| Supabase Auth | Real quando as variáveis estão configuradas |
+| Persistência comercial | PostgreSQL compatível e persistente via PGlite local |
+| Supabase PostgreSQL remoto | Migrations prontas; aplicação bloqueada pela autenticação da CLI |
+| GoodWe/HCA G2 | Simulado exclusivamente na fronteira física |
+| GoodWe OpenAPI, hardware físico e Stripe live | Não implementados e não alegados |
+
+## Roteiro de gravação — até 5 minutos
+
+Preparação: configure uma chave Google Maps válida, inicie `npm run dev`, deixe `AURORA-01` disponível no laboratório, autentique a PWA e abra o Admin com `aurora@teste.com` / `teste`.
+
+1. **0:00–0:35 — problema e arquitetura.** Explique que o ChargeGrid adiciona operação comercial à infraestrutura energética GoodWe. Mostre rapidamente o diagrama acima e diferencie Stripe/Maps reais, banco local persistente e hardware simulado.
+2. **0:35–1:15 — descoberta normal.** Na PWA, abra o mapa, selecione Hub Solar Aurora e `AURORA-01`. Mostre código, vaga, potência, preço e condições. Como alternativa técnica, digite `AURORA-01` no scanner e mostre que chega ao mesmo carregador.
+3. **1:15–2:05 — pagamento e sessão única.** Escolha cartão, limite de R$ 40,00 e use `4242 4242 4242 4242`. Após autorizar, mostre a sessão na PWA e, sem reload, AURORA-01 em espera em Operação e o mesmo ID em Sessões.
+4. **2:05–3:05 — hardware e energia.** Abra o Laboratório de hardware, conecte AURORA-01 e inicie a 7 kW. Volte a Operação/Sessões e à PWA para mostrar `CHARGING`, potência, energia e custo avançando pelo relógio da API.
+5. **3:05–3:45 — encerramento e financeiro.** Encerre na PWA. Mostre `COMPLETED`, carregador disponível e o mesmo PaymentIntent/valor capturado no Resumo financeiro.
+6. **3:45–4:35 — fila compartilhada.** No laboratório, conecte todos os carregadores. Na PWA, entre na fila; no Admin, mostre o motorista. Desconecte um carregador, aguarde o polling e mostre a atribuição temporária nas duas interfaces.
+7. **4:35–5:00 — fechamento técnico.** Reforce que polling apenas observa, regras ficam na API, Stripe é sandbox real e GoodWe é o único trecho simulado. Cite as limitações sem alegar produção.
+
+## Checklist explícito da Sprint 3
+
+| Requisito | Estado | Evidência |
+| --- | --- | --- |
+| PWA normal integrada à API | Atendido | mapa/detalhe, QR, checkout, sessão e fila usam serviços comerciais |
+| Admin Operação e Sessões compartilham a sessão | Atendido | snapshot comercial e polling de 2 s |
+| Fila PWA ↔ Admin | Atendido | migration 003, endpoints e E2E Sprint 3 |
+| Resumo financeiro deriva do pagamento | Atendido | sessão `CG-868A92DC` e PaymentIntent Stripe capturado |
+| Persistência após reload/reinício | Atendido localmente | PGlite em `.local/commercial-db` e testes de reload |
+| Catálogo/código/QR únicos | Atendido | `AURORA-01` a `AURORA-06` em banco, PWA, Admin e laboratório |
+| Stripe real em teste | Atendido | Payment Element, autorização e captura reais |
+| Google Maps real | Parcial no ambiente | integração implementada; falta chave válida local para a gravação |
+| Supabase/PostgreSQL remoto | Parcial | migrations prontas; fallback PostgreSQL local ativo |
+| Hardware GoodWe | Atendido como simulação declarada | laboratório `/admin` e MockGoodWeProvider |
+| Estados normais e falhas | Atendido | conexão, carga, stop, offline, falha e recuperação |
+| Runtime comercial `/demo` retirado | Atendido | rota/UI/API/JSON/scripts removidos; `/demo/state` retorna 404 |
+| Testes, lint, typecheck e builds | Atendido | comandos e resultados registrados abaixo |
+
+## Validação final
+
+- `npm run lint` — aprovado;
+- `npm run typecheck` — aprovado;
+- API — 14/14 testes aprovados;
+- Shared — 5/5 testes aprovados;
+- Admin — 78/78 testes aprovados;
+- `npm run build` — aprovado; aviso conhecido de chunk do Admin acima de 500 kB;
+- `npm run test:e2e:sprint3` — 2/2 cenários aprovados no Chromium (QR/falha/recuperação e fila PWA ↔ Admin com reload);
+- Stripe test — jornada manual real aprovada com autorização e captura;
+- `npm run test:e2e` — 57/57 cenários da regressão ampla do Admin aprovados no Chromium.

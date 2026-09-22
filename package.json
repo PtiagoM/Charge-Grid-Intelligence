@@ -18,6 +18,7 @@
     "pretest": "npm run build:shared",
     "test": "npm run test --workspaces --if-present",
     "test:e2e": "playwright test",
+    "test:e2e:sprint3": "playwright test --config playwright.sprint3.config.ts",
     "typecheck": "npm run build:shared && tsc -b apps/admin-web apps/driver-pwa && tsc -p apps/api/tsconfig.json --noEmit",
     "lint": "eslint ."
   },
