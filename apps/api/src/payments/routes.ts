@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { PaymentConfigurationError, StripePaymentProvider, stripeIsConfigured, type StripePaymentMethod } from "./stripe-payment-provider.js";
 import { CommercialConflictError, CommercialNotFoundError, getCommercialRepository } from "../commercial/repository.js";
+import { CommercialSessionStatus } from "@chargegrid/shared";
 
 function provider() {
   return new StripePaymentProvider();
@@ -81,12 +82,17 @@ export function createPaymentRouter() {
     const body = (request.body ?? {}) as Record<string, unknown>;
     if ((body.amount !== 0 && !validAmount(body.amount)) || typeof body.sessionId !== "string") return response.status(400).json({ code: "INVALID_CAPTURE_INPUT", message: "Valor ou sessão inválidos." });
     try {
-      return response.json(await provider().capture({
+      const commercialRepository = getCommercialRepository();
+      const currentSession = await commercialRepository.session(body.sessionId);
+      if (currentSession.status !== CommercialSessionStatus.ENERGY_FINISHED) throw new CommercialConflictError("Finalize a entrega de energia antes de capturar o pagamento.");
+      const capture = await provider().capture({
         paymentIntentId: request.params.paymentIntentId,
         sessionId: body.sessionId,
         amount: body.amount,
         idempotencyKey: request.header("Idempotency-Key") ?? `capture-${body.sessionId}-${Math.round(body.amount * 100)}`
-      }));
+      });
+      const session = await commercialRepository.completeCapture({ sessionId: body.sessionId, status: capture.status, providerStatus: capture.providerStatus, capturedCents: Math.round(capture.amount * 100) });
+      return response.json({ ...capture, session });
     } catch (error) {
       return errorResponse(response, error);
     }

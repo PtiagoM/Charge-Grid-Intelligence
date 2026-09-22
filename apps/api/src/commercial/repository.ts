@@ -11,6 +11,7 @@ interface ChargerRow {
   name: string;
   parking_spot: string | null;
   nominal_power_kw: number;
+  current_power_kw: number;
   physical_status: string;
   commercial_status: string;
   published: boolean;
@@ -44,6 +45,8 @@ interface SessionRow {
   authorized_cents: number;
   energy_wh: number;
   cost_cents: number;
+  current_power_kw: number;
+  last_energy_at: Date | string | null;
   started_at: Date | string | null;
   ended_at: Date | string | null;
   created_at: Date | string;
@@ -59,6 +62,7 @@ export class CommercialConflictError extends Error {}
 export class CommercialNotFoundError extends Error {}
 
 const migrationUrl = new URL("../../../../supabase/migrations/202609220001_commercial_core.sql", import.meta.url);
+const hardwareMigrationUrl = new URL("../../../../supabase/migrations/202609220002_hardware_lifecycle.sql", import.meta.url);
 const defaultDataDir = process.env.CHARGEGRID_DATABASE_PATH ?? (process.env.NODE_ENV === "test" ? "memory://" : fileURLToPath(new URL("../../../../.local/commercial-db", import.meta.url)));
 
 function iso(value: Date | string | null) {
@@ -73,6 +77,7 @@ function chargerRecord(row: ChargerRow): CommercialChargerRecord {
     name: row.name,
     parkingSpot: row.parking_spot ?? undefined,
     nominalPowerKw: Number(row.nominal_power_kw),
+    currentPowerKw: Number(row.current_power_kw),
     physicalStatus: row.physical_status,
     commercialStatus: row.commercial_status as CommercialChargerRecord["commercialStatus"],
     published: row.published,
@@ -99,6 +104,7 @@ function sessionRecord(row: SessionRow): CommercialSessionRecord {
     authorizedCents: row.authorized_cents,
     energyWh: Number(row.energy_wh),
     costCents: row.cost_cents,
+    currentPowerKw: Number(row.current_power_kw),
     startedAt: iso(row.started_at),
     endedAt: iso(row.ended_at),
     createdAt: iso(row.created_at)!,
@@ -116,7 +122,7 @@ function sessionRecord(row: SessionRow): CommercialSessionRecord {
 
 const sessionSelect = `
   select s.*, e.name as establishment_name, c.code as charger_code, c.name as charger_name,
-    c.parking_spot, p.payment_intent_id, p.method as payment_method, p.status as payment_status,
+    c.parking_spot, c.current_power_kw, p.payment_intent_id, p.method as payment_method, p.status as payment_status,
     p.provider_status, p.captured_cents
   from commercial_sessions s
   join commercial_establishments e on e.id = s.establishment_id
@@ -129,7 +135,9 @@ export class CommercialRepository {
 
   constructor(dataDir = defaultDataDir) {
     this.db = new PGlite(dataDir);
-    this.ready = readFile(migrationUrl, "utf8").then(async (sql) => { await this.db.exec(sql); });
+    this.ready = Promise.all([migrationUrl, hardwareMigrationUrl].map((url) => readFile(url, "utf8"))).then(async (migrations) => {
+      for (const sql of migrations) await this.db.exec(sql);
+    });
   }
 
   async close() {
@@ -217,6 +225,80 @@ export class CommercialRepository {
     return this.session(sessionId);
   }
 
+  async advanceEnergy(now = new Date()) {
+    await this.ready;
+    const charging = await this.db.query<SessionRow & { charger_id: string }>(`${sessionSelect}
+      where s.status = 'CHARGING' and c.current_power_kw > 0`);
+    for (const row of charging.rows) {
+      const since = row.last_energy_at ? new Date(row.last_energy_at).getTime() : now.getTime();
+      const measuredEnergyWh = Number(row.energy_wh) + Number(row.current_power_kw) * Math.max(0, now.getTime() - since) / 3600;
+      const energyWh = row.tariff_cents > 0 ? Math.min(measuredEnergyWh, row.authorized_cents * 1000 / row.tariff_cents) : measuredEnergyWh;
+      const costCents = Math.min(row.authorized_cents, Math.round(energyWh * row.tariff_cents / 1000));
+      const finished = measuredEnergyWh > energyWh || costCents >= row.authorized_cents;
+      await this.db.transaction(async (tx) => {
+        await tx.query(`update commercial_sessions set energy_wh = $2, cost_cents = $3,
+          last_energy_at = $4, status = case when $5 then 'ENERGY_FINISHED' else status end, updated_at = now()
+          where id = $1 and status = 'CHARGING'`, [row.id, energyWh, costCents, now.toISOString(), finished]);
+        if (finished) await tx.query("update commercial_chargers set physical_status = 'CONNECTED', current_power_kw = 0, updated_at = now() where id = $1", [row.charger_id]);
+      });
+    }
+  }
+
+  async hardwareEvent(chargerCode: string, action: "CONNECT" | "DISCONNECT" | "START" | "STOP" | "OFFLINE" | "FAULT" | "RECOVER", powerKw?: number) {
+    await this.ready;
+    if (["STOP", "DISCONNECT", "OFFLINE", "FAULT"].includes(action)) await this.advanceEnergy();
+    await this.db.transaction(async (tx) => {
+      const chargerResult = await tx.query<ChargerRow>("select * from commercial_chargers where code = $1 and published = true", [chargerCode]);
+      const charger = chargerResult.rows[0];
+      if (!charger) throw new CommercialNotFoundError("Carregador comercial não encontrado.");
+      const sessionResult = await tx.query<{ id: string; status: CommercialSessionStatus }>(`select id, status from commercial_sessions
+        where charger_id = $1 and status not in ('COMPLETED', 'PAYMENT_FAILED', 'START_FAILED', 'FAULTED', 'CANCELLED')
+        order by created_at desc limit 1`, [charger.id]);
+      const session = sessionResult.rows[0];
+      if (action === "CONNECT") {
+        if (!["AVAILABLE", "CONNECTED"].includes(charger.physical_status)) throw new CommercialConflictError("O equipamento não pode ser conectado neste estado.");
+        await tx.query("update commercial_chargers set physical_status = 'CONNECTED', current_power_kw = 0, updated_at = now() where id = $1", [charger.id]);
+      } else if (action === "START") {
+        if (!session || session.status !== CommercialSessionStatus.WAITING_START || charger.physical_status !== "CONNECTED") throw new CommercialConflictError("Conecte o veículo de uma sessão autorizada antes de iniciar a energia.");
+        const selectedPower = Math.min(Number(charger.nominal_power_kw), powerKw ?? Number(charger.nominal_power_kw));
+        if (!Number.isFinite(selectedPower) || selectedPower <= 0) throw new CommercialConflictError("Informe uma potência simulada válida.");
+        await tx.query("update commercial_chargers set physical_status = 'CHARGING', current_power_kw = $2, updated_at = now() where id = $1", [charger.id, selectedPower]);
+        await tx.query("update commercial_sessions set status = 'CHARGING', started_at = coalesce(started_at, now()), last_energy_at = now(), updated_at = now() where id = $1", [session.id]);
+      } else if (action === "STOP") {
+        if (!session || session.status !== CommercialSessionStatus.CHARGING) throw new CommercialConflictError("Não existe recarga ativa neste equipamento.");
+        await tx.query("update commercial_sessions set status = 'ENERGY_FINISHED', last_energy_at = null, updated_at = now() where id = $1", [session.id]);
+        await tx.query("update commercial_chargers set physical_status = 'CONNECTED', current_power_kw = 0, updated_at = now() where id = $1", [charger.id]);
+      } else if (action === "DISCONNECT") {
+        if (session?.status === CommercialSessionStatus.CHARGING) throw new CommercialConflictError("Interrompa a energia antes de desconectar o veículo.");
+        await tx.query("update commercial_chargers set physical_status = 'AVAILABLE', current_power_kw = 0, updated_at = now() where id = $1", [charger.id]);
+      } else if (["OFFLINE", "FAULT"].includes(action)) {
+        await tx.query("update commercial_chargers set physical_status = $2, commercial_status = 'FAULTED', current_power_kw = 0, updated_at = now() where id = $1", [charger.id, action]);
+        if (session) await tx.query("update commercial_sessions set status = 'FAULTED', last_energy_at = null, updated_at = now() where id = $1", [session.id]);
+      } else {
+        await tx.query("update commercial_chargers set physical_status = 'AVAILABLE', commercial_status = 'AVAILABLE_TO_START', current_power_kw = 0, updated_at = now() where id = $1", [charger.id]);
+      }
+    });
+    return this.snapshot();
+  }
+
+  async stopSession(id: string) {
+    await this.advanceEnergy();
+    const current = await this.session(id);
+    if (current.status !== CommercialSessionStatus.CHARGING) throw new CommercialConflictError("A sessão não está carregando.");
+    await this.hardwareEvent(current.chargerCode, "STOP");
+    return this.session(id);
+  }
+
+  async completeCapture(input: { sessionId: string; status: PaymentStatus; providerStatus: string; capturedCents: number }) {
+    await this.ready;
+    await this.db.transaction(async (tx) => {
+      await tx.query("update commercial_payments set status = $2, provider_status = $3, captured_cents = $4, updated_at = now() where session_id = $1", [input.sessionId, input.status, input.providerStatus, input.capturedCents]);
+      await tx.query("update commercial_sessions set status = $2, ended_at = now(), last_energy_at = null, updated_at = now() where id = $1", [input.sessionId, input.status === PaymentStatus.PAID ? CommercialSessionStatus.COMPLETED : CommercialSessionStatus.CANCELLED]);
+      await tx.query("update commercial_chargers set physical_status = 'AVAILABLE', commercial_status = 'AVAILABLE_TO_START', current_power_kw = 0, updated_at = now() where id = (select charger_id from commercial_sessions where id = $1)", [input.sessionId]);
+    });
+    return this.session(input.sessionId);
+  }
+
   async session(id: string) {
     await this.ready;
     const result = await this.db.query<SessionRow>(`${sessionSelect} where s.id = $1`, [id]);
@@ -248,4 +330,10 @@ let repository: CommercialRepository | undefined;
 
 export function getCommercialRepository() {
   return repository ??= new CommercialRepository();
+}
+
+export function startCommercialClock() {
+  const timer = setInterval(() => void getCommercialRepository().advanceEnergy().catch((error) => console.error(JSON.stringify({ level: "error", service: "chargegrid-api", message: "Commercial energy clock failed", error: error instanceof Error ? error.message : String(error) }))), 1000);
+  timer.unref();
+  return timer;
 }

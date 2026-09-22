@@ -99,7 +99,7 @@ export class StripePaymentProvider {
       amount_to_capture: Math.min(toMinorUnits(input.amount), existing.amount_capturable),
       metadata: { settlement_type: "chargegrid_final_capture" }
     }, { idempotencyKey: input.idempotencyKey });
-    return { paymentIntentId: intent.id, status: paymentStatus(intent.status), amount: fromMinorUnits(intent.amount_received), currency: "BRL" as const };
+    return { paymentIntentId: intent.id, status: paymentStatus(intent.status), providerStatus: intent.status, amount: fromMinorUnits(intent.amount_received), currency: "BRL" as const };
   }
 
   async refund(input: { paymentIntentId: string; sessionId: string; amount: number; idempotencyKey: string }) {

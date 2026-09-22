@@ -70,6 +70,10 @@ export function getCommercialSession(sessionId: string) {
   return apiRequest<CommercialSessionRecord>(`/commercial/sessions/${encodeURIComponent(sessionId)}`);
 }
 
+export function stopCommercialSession(sessionId: string) {
+  return apiRequest<CommercialSessionRecord>(`/commercial/sessions/${encodeURIComponent(sessionId)}/stop`, { method: "POST" });
+}
+
 export function getCommercialSnapshot(establishmentId?: string) {
   const query = establishmentId ? `?establishmentId=${encodeURIComponent(establishmentId)}` : "";
   return apiRequest<CommercialSnapshot>(`/commercial/snapshot${query}`);

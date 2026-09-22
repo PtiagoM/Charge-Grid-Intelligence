@@ -98,6 +98,7 @@ export interface CommercialChargerRecord {
   name: string;
   parkingSpot?: string;
   nominalPowerKw: number;
+  currentPowerKw: number;
   physicalStatus: string;
   commercialStatus: ChargerCommercialStatus;
   published: boolean;
@@ -142,6 +143,7 @@ export interface CommercialSessionRecord {
   authorizedCents: number;
   energyWh: number;
   costCents: number;
+  currentPowerKw: number;
   startedAt?: string;
   endedAt?: string;
   createdAt: string;

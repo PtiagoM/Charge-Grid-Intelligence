@@ -3,7 +3,6 @@ import { useAdminState } from "../../app/AdminState";
 import { assets } from "../../constants/assets";
 import type { Charger, ChargerCommand, ChargerTelemetry, Session } from "../../domain/admin";
 import { hasAdminCapability } from "../../domain/adminCapabilities";
-import { buildFullOccupancyScenario } from "../../fixtures/chargeGridOperationDemo";
 import { ChargeGridOperationsDashboard } from "./ChargeGridOperationsDashboard";
 
 type SpotState = "available" | "starting" | "charging" | "waiting" | "energy-finished" | "stopping" | "fault" | "offline" | "maintenance";
@@ -95,7 +94,6 @@ function FloorStateIcon({ state }: { state: SpotState }) {
 
 export function ChargeGridOperationStage({ establishmentId }: { establishmentId: string }) {
   const { state, account, requestChargerCommand } = useAdminState();
-  const [scenario, setScenario] = useState<"full" | "live">("live");
   const [selectedChargerId, setSelectedChargerId] = useState("");
   const [windowStart, setWindowStart] = useState(0);
   const [commandBusy, setCommandBusy] = useState(false);
@@ -112,8 +110,8 @@ export function ChargeGridOperationStage({ establishmentId }: { establishmentId:
       telemetry: state.chargerTelemetry.filter((item) => publishedIds.has(item.chargerId)),
       sessions: state.sessions.filter((item) => publishedIds.has(item.chargerId))
     };
-    return scenario === "full" ? buildFullOccupancyScenario(source, establishmentId) : source;
-  }, [establishmentId, scenario, state.chargerTelemetry, state.chargers, state.sessions]);
+    return source;
+  }, [establishmentId, state.chargerTelemetry, state.chargers, state.sessions]);
   const chargers = useMemo(() => {
     if (establishmentId !== "est-fiap") return operationData.chargers.slice().sort((a, b) => a.id.localeCompare(b.id));
     return operationData.chargers.slice().sort((a, b) => {
@@ -156,11 +154,6 @@ export function ChargeGridOperationStage({ establishmentId }: { establishmentId:
     setFeedback("");
   }, [selectedChargerId]);
 
-  useEffect(() => {
-    setWindowStart(0);
-    setSelectedChargerId("");
-  }, [scenario]);
-
   const selected = spots.find((item) => item.charger.id === selectedChargerId) ?? spots[0];
   const selectedSessions = selected ? operationData.sessions.filter((item) => item.chargerId === selected.charger.id) : [];
   const authorizedSession = selectedSessions.find((item) => item.status === "authorized");
@@ -170,7 +163,7 @@ export function ChargeGridOperationStage({ establishmentId }: { establishmentId:
     : undefined;
   const currentSession = activeSession ?? contextualSession;
   const incident = selected ? state.incidents.find((item) => item.chargerId === selected.charger.id && item.status !== "RESOLVED") : undefined;
-  const canCommand = scenario === "live" && Boolean(account && hasAdminCapability(account, "chargers:command"));
+  const canCommand = Boolean(account && hasAdminCapability(account, "chargers:command") && !selected?.charger.id.startsWith("AURORA-"));
 
   async function runCommand(type: "START_CHARGE" | "STOP_CHARGE") {
     if (!selected) return;
@@ -203,7 +196,6 @@ export function ChargeGridOperationStage({ establishmentId }: { establishmentId:
   return <div className="cg-operation" data-testid="chargegrid-operation-stage">
     <section className="cg-operation-context" aria-label="Resumo da planta selecionada">
       <div><span>Planta ChargeGrid</span><strong>{commercialPlant?.commercialName ?? location?.name ?? establishment.name}</strong><small>{location ? `${location.address}, ${location.number} · ${location.city}/${location.state}` : establishment.address}</small></div>
-      <label className="cg-operation-scenario"><span>Cenário</span><select value={scenario} data-testid="chargegrid-operation-scenario" onChange={(event) => setScenario(event.target.value as "full" | "live")}><option value="full">Ocupação completa</option><option value="live">Telemetria normal</option></select></label>
       <dl><div><dt>Carregadores</dt><dd>{chargers.length}</dd></div><div className="is-available"><dt>Disponíveis</dt><dd>{counts.available}</dd></div><div className="is-charging"><dt>Carregando</dt><dd>{counts.charging}</dd></div><div className="is-waiting"><dt>Aguardando</dt><dd>{counts.waiting}</dd></div><div className="is-fault"><dt>Falhas</dt><dd>{counts.fault}</dd></div></dl>
     </section>
 
@@ -263,19 +255,16 @@ export function ChargeGridOperationStage({ establishmentId }: { establishmentId:
         {confirmStop ? <aside className="cg-stop-confirmation" role="alertdialog" aria-label="Confirmar parada da recarga"><p><strong>Parar esta recarga?</strong><span>O comando de contingência será enviado ao carregador e aguardará confirmação por telemetria.</span></p><div><button type="button" className="ghost-button" onClick={() => setConfirmStop(false)}>Cancelar</button><button type="button" className="cg-danger-action" disabled={commandBusy} onClick={() => void runCommand("STOP_CHARGE")}>Confirmar parada</button></div></aside> : null}
       </div>
       <div className="cg-selected-actions">
-        {scenario === "full" ? <span className="cg-demo-readonly">Cenário demonstrativo<br /><small>Comandos desativados</small></span> : <>
-          {currentSession ? <a className="ghost-button" href={`#/mvp/session?est=${establishmentId}&session=${currentSession.id}`}>Ver sessão</a> : null}
-          {selected.state === "fault" && incident ? <a className="ghost-button" href={`#/mvp/incident?est=${establishmentId}&incident=${incident.id}`}>Ver ocorrência</a> : null}
-          {["available", "waiting"].includes(selected.state) && canCommand && authorizedSession ? <button type="button" className="cg-primary-action" disabled={commandBusy} onClick={() => void runCommand("START_CHARGE")}>Liberar recarga</button> : null}
-          {selected.state === "charging" && canCommand && activeSession ? <button type="button" className="cg-danger-action" disabled={commandBusy} onClick={() => setConfirmStop(true)}>Parar recarga</button> : null}
-          {["available", "fault", "offline", "maintenance"].includes(selected.state) ? <a className="ghost-button" href={`#/mvp/charger?est=${establishmentId}&charger=${selected.charger.id}`}>Ver dispositivo</a> : null}
-        </>}
+        {currentSession ? <a className="ghost-button" href={`#/mvp/session?est=${establishmentId}&session=${currentSession.id}`}>Ver sessão</a> : null}
+        {selected.state === "fault" && incident ? <a className="ghost-button" href={`#/mvp/incident?est=${establishmentId}&incident=${incident.id}`}>Ver ocorrência</a> : null}
+        {["available", "waiting"].includes(selected.state) && canCommand && authorizedSession ? <button type="button" className="cg-primary-action" disabled={commandBusy} onClick={() => void runCommand("START_CHARGE")}>Liberar recarga</button> : null}
+        {selected.state === "charging" && canCommand && activeSession ? <button type="button" className="cg-danger-action" disabled={commandBusy} onClick={() => setConfirmStop(true)}>Parar recarga</button> : null}
+        {["available", "fault", "offline", "maintenance"].includes(selected.state) ? <a className="ghost-button" href={`#/mvp/charger?est=${establishmentId}&charger=${selected.charger.id}`}>Ver dispositivo</a> : null}
       </div>
     </section> : null}
 
     <ChargeGridOperationsDashboard
       establishmentId={establishmentId}
-      scenario={scenario}
       chargers={chargers}
       telemetry={operationData.telemetry}
       sessions={operationData.sessions}

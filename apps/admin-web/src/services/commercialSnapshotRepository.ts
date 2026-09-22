@@ -1,5 +1,5 @@
 import { CommercialSessionStatus, PaymentStatus, type CommercialSnapshot } from "@chargegrid/shared";
-import type { AdminState, Charger, ChargerTelemetry, CommercialPlantLink, Establishment, Location, Session } from "../domain/admin";
+import type { AdminState, Charger, ChargerTelemetry, CommercialPlantLink, Establishment, Location, PaymentTransaction, Session } from "../domain/admin";
 
 const apiUrl = (import.meta.env.VITE_CHARGEGRID_API_URL || "http://localhost:3333").replace(/\/$/, "");
 
@@ -7,6 +7,19 @@ export async function fetchCommercialSnapshot() {
   const response = await fetch(`${apiUrl}/commercial/snapshot`);
   if (!response.ok) throw new Error("A API ChargeGrid não respondeu ao monitoramento comercial.");
   return response.json() as Promise<CommercialSnapshot>;
+}
+
+export type HardwareAction = "CONNECT" | "DISCONNECT" | "START" | "STOP" | "OFFLINE" | "FAULT" | "RECOVER";
+
+export async function sendHardwareEvent(chargerCode: string, action: HardwareAction, powerKw?: number) {
+  const response = await fetch(`${apiUrl}/commercial/chargers/${encodeURIComponent(chargerCode)}/hardware`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action, powerKw })
+  });
+  const payload = await response.json().catch(() => ({})) as CommercialSnapshot & { message?: string };
+  if (!response.ok) throw new Error(payload.message || "A API não confirmou o evento físico.");
+  return payload;
 }
 
 function sessionStatus(status: CommercialSessionStatus): Session["status"] {
@@ -41,7 +54,7 @@ export function mergeCommercialSnapshot(state: AdminState, snapshot: CommercialS
   const telemetry: ChargerTelemetry[] = snapshot.establishments.flatMap((establishment) => establishment.chargers.map((charger) => ({
     chargerId: charger.code,
     connectorState: (["AVAILABLE", "CONNECTED", "CHARGING", "FAULT", "OFFLINE"].includes(charger.physicalStatus) ? charger.physicalStatus : "AVAILABLE") as ChargerTelemetry["connectorState"],
-    currentPowerKw: charger.physicalStatus === "CHARGING" ? charger.nominalPowerKw : 0,
+    currentPowerKw: charger.currentPowerKw,
     observedAt: charger.updatedAt,
     vehicleConnected: ["CONNECTED", "CHARGING"].includes(charger.physicalStatus)
   })));
@@ -63,6 +76,24 @@ export function mergeCommercialSnapshot(state: AdminState, snapshot: CommercialS
     payment: { status: [PaymentStatus.AUTHORIZED, PaymentStatus.PAID].includes(session.payment.status) ? "Aprovado" : session.payment.status === PaymentStatus.FAILED ? "Recusado" : "Pendente", method: session.payment.method === "PIX" ? "Pix" : "Cartao", limitAmount: session.authorizedCents / 100 },
     idleMinutes: 0
   }));
+  const paymentTransactions: PaymentTransaction[] = snapshot.sessions.filter((session) => session.payment.paymentIntentId).map((session) => ({
+    id: `pay-${session.id}`,
+    sessionId: session.publicCode,
+    establishmentId: session.establishmentId,
+    tariffPolicyId: `commercial-${session.establishmentId}`,
+    provider: "STRIPE_SANDBOX",
+    providerReference: session.payment.paymentIntentId!,
+    currency: "BRL",
+    status: session.payment.status === PaymentStatus.PAID ? "CAPTURED" : session.payment.status === PaymentStatus.FAILED ? "FAILED" : "AUTHORIZED",
+    settlementStatus: session.payment.status === PaymentStatus.PAID ? "AVAILABLE" : session.payment.status === PaymentStatus.FAILED ? "FAILED" : "PENDING",
+    authorizedCents: session.authorizedCents,
+    capturedCents: session.payment.capturedCents,
+    refundedCents: 0,
+    providerFeeCents: 0,
+    platformShareBps: 0,
+    createdAt: session.createdAt,
+    capturedAt: session.payment.status === PaymentStatus.PAID ? session.endedAt : undefined
+  }));
   const scopeIds = [...ids];
   return {
     ...state,
@@ -73,6 +104,7 @@ export function mergeCommercialSnapshot(state: AdminState, snapshot: CommercialS
     commercialPlants: [...state.commercialPlants.filter((item) => !ids.has(item.establishmentId)), ...commercialPlants],
     chargers: [...state.chargers.filter((item) => !ids.has(item.establishmentId)), ...chargers],
     chargerTelemetry: [...state.chargerTelemetry.filter((item) => !chargers.some((charger) => charger.id === item.chargerId)), ...telemetry],
-    sessions: [...state.sessions.filter((item) => !ids.has(item.establishmentId)), ...sessions]
+    sessions: [...state.sessions.filter((item) => !ids.has(item.establishmentId)), ...sessions],
+    paymentTransactions: [...state.paymentTransactions.filter((item) => !ids.has(item.establishmentId)), ...paymentTransactions]
   };
 }

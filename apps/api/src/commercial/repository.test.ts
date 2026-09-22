@@ -42,4 +42,41 @@ describe("CommercialRepository", () => {
       authorizedCents: 2500
     })).rejects.toBeInstanceOf(CommercialConflictError);
   }, 20_000);
+
+  it("applies simulated hardware events and advances energy only from the backend clock", async () => {
+    const repository = new CommercialRepository("memory://");
+    repositories.push(repository);
+    const id = "30000000-0000-4000-8000-000000000003";
+    await repository.reserveSession({ id, establishmentId: "est_aurora_001", chargerCode: "AURORA-01", driverName: "Motorista Teste", method: "CARD", authorizedCents: 2500 });
+    await repository.attachPayment(id, "pi_test_hardware", "requires_capture");
+    await repository.recordPayment({ sessionId: id, paymentIntentId: "pi_test_hardware", status: PaymentStatus.AUTHORIZED, providerStatus: "requires_capture", receivedAmount: 0 });
+
+    await repository.hardwareEvent("AURORA-01", "CONNECT");
+    await repository.hardwareEvent("AURORA-01", "START", 7);
+    const started = await repository.session(id);
+    await repository.advanceEnergy(new Date(Date.parse(started.startedAt!) + 3_600_000));
+    const charging = await repository.session(id);
+
+    expect(charging).toMatchObject({ status: CommercialSessionStatus.CHARGING, currentPowerKw: 7, costCents: 1330 });
+    expect(charging.energyWh).toBeCloseTo(7000, 0);
+    await repository.stopSession(id);
+    expect(await repository.session(id)).toMatchObject({ status: CommercialSessionStatus.ENERGY_FINISHED, currentPowerKw: 0 });
+    await repository.completeCapture({ sessionId: id, status: PaymentStatus.PAID, providerStatus: "succeeded", capturedCents: 1330 });
+    expect(await repository.session(id)).toMatchObject({ status: CommercialSessionStatus.COMPLETED, payment: { status: PaymentStatus.PAID, capturedCents: 1330 } });
+    expect((await repository.snapshot("est_aurora_001")).establishments[0]?.chargers[0]).toMatchObject({ physicalStatus: "AVAILABLE", commercialStatus: "AVAILABLE_TO_START" });
+  }, 20_000);
+
+  it("caps measured energy at the authorized financial limit", async () => {
+    const repository = new CommercialRepository("memory://");
+    repositories.push(repository);
+    const id = "40000000-0000-4000-8000-000000000004";
+    await repository.reserveSession({ id, establishmentId: "est_aurora_001", chargerCode: "AURORA-01", driverName: "Motorista Limite", method: "CARD", authorizedCents: 1000 });
+    await repository.attachPayment(id, "pi_test_limit", "requires_capture");
+    await repository.recordPayment({ sessionId: id, paymentIntentId: "pi_test_limit", status: PaymentStatus.AUTHORIZED, providerStatus: "requires_capture", receivedAmount: 0 });
+    await repository.hardwareEvent("AURORA-01", "CONNECT");
+    await repository.hardwareEvent("AURORA-01", "START", 7);
+    const started = await repository.session(id);
+    await repository.advanceEnergy(new Date(Date.parse(started.startedAt!) + 3_600_000));
+    expect(await repository.session(id)).toMatchObject({ status: CommercialSessionStatus.ENERGY_FINISHED, energyWh: 5263.158, costCents: 1000, currentPowerKw: 0 });
+  }, 20_000);
 });

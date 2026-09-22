@@ -18,10 +18,12 @@ O registro de implementação, evidências e limitações da Sprint fica em [`SP
 
 - A jornada normal da PWA cria um PaymentIntent Stripe real em modo de teste e persiste a mesma sessão comercial observada pelo Admin.
 - `Hub Solar Aurora` e os carregadores `AURORA-01` a `AURORA-06` usam IDs operacionais comuns no catálogo mobile, API, banco e Admin.
-- A autoridade executável local é PostgreSQL persistente via PGlite, inicializado pela migration `202609220001_commercial_core.sql`; o schema é compatível com a futura aplicação no Supabase hospedado.
+- A autoridade executável local é PostgreSQL persistente via PGlite, inicializado pelas migrations `202609220001_commercial_core.sql` e `202609220002_hardware_lifecycle.sql`; o schema é compatível com a futura aplicação no Supabase hospedado.
 - Admin `Operação` e `Sessões` recebem o snapshot comercial por polling de dois segundos. PWA e Admin apenas observam o estado persistido; polling não avança sessão nem energia.
-- O gate validado no navegador é: Aurora → AURORA-01 → Payment Element → autorização Stripe → `WAITING_START` → Operação aguardando conexão → uma sessão no Admin, preservada após reload e reinício da API.
-- Bloqueios atuais: a chave `VITE_GOOGLE_MAPS_API_KEY` está vazia neste ambiente, e não há autenticação da Supabase CLI para aplicar a migration ao projeto remoto. Até isso ser fornecido, o mapa exibe o fallback normal e o banco executável é local.
+- O ciclo validado no navegador é: Aurora → AURORA-01 → Payment Element → autorização Stripe → `WAITING_START` → laboratório GoodWe conecta/inicia energia → `CHARGING` compartilhado → energia/custo calculados pelo relógio da API → encerramento na PWA → captura Stripe → `COMPLETED`, Financeiro capturado e carregador disponível.
+- O laboratório técnico existente em `/admin` não cria sessão ou pagamento: ele emite apenas eventos físicos (`CONNECT`, `START`, `STOP`, `DISCONNECT`, `OFFLINE`, `FAULT`, `RECOVER`) sobre os mesmos carregadores persistidos. A tela normal de Operação não possui mais seletor de cenário artificial.
+- Admin `Operação`, `Sessões` e `Resumo financeiro` projetam a mesma sessão e o mesmo PaymentIntent. O limite financeiro também limita a energia persistida correspondente, inclusive após reinício da API.
+- Bloqueios atuais: a chave `VITE_GOOGLE_MAPS_API_KEY` está vazia neste ambiente, e não há autenticação da Supabase CLI para aplicar as migrations ao projeto remoto. Até isso ser fornecido, o mapa exibe o fallback normal e o banco executável é local. O encerramento com cartão foi validado; o fluxo Pix ainda não promove o encerramento persistido após o reembolso.
 - A arquitetura `/demo` permanece somente como legado temporário; não é a jornada aprovada e será retirada após a conclusão das verticais normais.
 
 ## 0. Governança

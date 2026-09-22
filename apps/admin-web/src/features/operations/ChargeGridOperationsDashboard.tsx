@@ -7,7 +7,6 @@ type MonitorRange = "day" | "week" | "month";
 
 interface ChargeGridOperationsDashboardProps {
   establishmentId: string;
-  scenario: "full" | "live";
   chargers: Charger[];
   telemetry: ChargerTelemetry[];
   sessions: Session[];
@@ -36,13 +35,6 @@ const chartProfiles: Record<MonitorMetric, number[]> = {
 
 const comparisonProfile = [3, 2, 2, 2, 3, 4, 6, 9, 13, 18, 23, 29, 31, 39, 34, 38, 43, 48, 52, 53, 54, 56, 58, 53, 58, 55, 53, 50, 48, 51, 47, 43, 41, 38, 31, 30, 29, 22, 18, 15, 10, 8, 6, 4, 2];
 const hourLabels = ["00:00", "02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00", "22:00", "24:00"];
-
-const demoAttention: AttentionRow[] = [
-  { id: "settlement", tone: "danger", message: "Sessão #0993 com liquidação pendente", age: "8 min atrás", subject: "CG-02 (A02)", href: "#/mvp/finance" },
-  { id: "charger", tone: "warn", message: "Carregador CG-04 (A04) indisponível", age: "15 min atrás", subject: "CG-04 (A04)", href: "#/mvp/chargers" },
-  { id: "energy", tone: "notice", message: "Margem energética baixa (18%). Novos inícios podem ser temporariamente bloqueados", age: "22 min atrás", subject: "Hub FIAP Aclimação", href: "#/mvp/energy" },
-  { id: "vehicle", tone: "warn", message: "Veículo ainda conectado após carga finalizada", age: "25 min atrás", subject: "CG-05 (A05)", href: "#/mvp/sessions" }
-];
 
 function money(value: number) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -74,7 +66,7 @@ function areaPath(values: number[], max = 100) {
   return `${chartPath(values, max)} L1200 154 L0 154 Z`;
 }
 
-export function ChargeGridOperationsDashboard({ establishmentId, scenario, chargers, telemetry, sessions }: ChargeGridOperationsDashboardProps) {
+export function ChargeGridOperationsDashboard({ establishmentId, chargers, telemetry, sessions }: ChargeGridOperationsDashboardProps) {
   const { state } = useAdminState();
   const [metric, setMetric] = useState<MonitorMetric>("sessions");
   const [range, setRange] = useState<MonitorRange>("day");
@@ -98,12 +90,9 @@ export function ChargeGridOperationsDashboard({ establishmentId, scenario, charg
     };
   }, [chargers.length, sessions, telemetry]);
 
-  const performance = scenario === "full"
-    ? { revenue: 12458.9, energy: 1248.6, completed: 42, utilization: 78, averageTicket: 296.64, averageDuration: 37 }
-    : livePerformance;
+  const performance = livePerformance;
 
   const attentionRows = useMemo<AttentionRow[]>(() => {
-    if (scenario === "full") return demoAttention;
     const rows: AttentionRow[] = [];
     const pending = transactions.find((item) => item.settlementStatus === "PENDING");
     if (pending) rows.push({ id: pending.id, tone: "danger", message: `Sessão #${shortSessionId(pending.sessionId)} com liquidação pendente`, age: "agora", subject: chargerName(sessions.find((item) => item.id === pending.sessionId)?.chargerId ?? "—", chargers), href: "#/mvp/finance" });
@@ -112,11 +101,9 @@ export function ChargeGridOperationsDashboard({ establishmentId, scenario, charg
     const connectedFinished = sessions.find((item) => item.status === "finished" && telemetry.some((telemetryItem) => telemetryItem.chargerId === item.chargerId && telemetryItem.vehicleConnected));
     if (connectedFinished) rows.push({ id: "connected-finished", tone: "warn", message: "Veículo ainda conectado após carga finalizada", age: "agora", subject: chargerName(connectedFinished.chargerId, chargers), href: `#/mvp/session?est=${establishmentId}&session=${connectedFinished.id}` });
     return rows.slice(0, 4);
-  }, [chargers, energy, establishment?.name, establishmentId, incidents, scenario, sessions, telemetry, transactions]);
+  }, [chargers, energy, establishment?.name, establishmentId, incidents, sessions, telemetry, transactions]);
 
-  const demand = scenario === "full"
-    ? { current: 62.4, limit: 150, margin: 87.6, marginPercent: 58, state: "Normal", canStart: true }
-    : { current: energy?.demandKw ?? 0, limit: energy?.contractedLimitKw ?? 0, margin: Math.max(0, (energy?.contractedLimitKw ?? 0) - (energy?.demandKw ?? 0)), marginPercent: energy?.powerMarginPercent ?? 0, state: energy?.demandState ?? "Sem leitura", canStart: energy?.demandState !== "Crítico" };
+  const demand = { current: energy?.demandKw ?? 0, limit: energy?.contractedLimitKw ?? 0, margin: Math.max(0, (energy?.contractedLimitKw ?? 0) - (energy?.demandKw ?? 0)), marginPercent: energy?.powerMarginPercent ?? 0, state: energy?.demandState ?? "Sem leitura", canStart: energy?.demandState !== "Crítico" };
 
   const primaryValues = chartProfiles[metric].map((value) => range === "day" ? value : range === "week" ? Math.min(100, value * .9 + 5) : Math.min(100, value * .82 + 9));
   const primaryLabel = metricLabels[metric];

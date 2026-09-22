@@ -18,6 +18,18 @@ Marco 1 validado:
 
 Evidência focal: 18 testes da API, teste de projeção do snapshot no Admin e builds de API, Admin e PWA aprovados. A jornada também foi executada em navegador real com cartão Stripe de teste.
 
+Marco 2 validado:
+
+- o laboratório `/admin` foi convertido em fronteira de hardware/GoodWe simulada e usa os mesmos carregadores da operação comercial;
+- conexão, início, potência configurável, parada, desconexão, offline, falha e recuperação passam pela API e pelo banco normal;
+- um relógio da API acumula `energia = potência × tempo`; polling de PWA/Admin somente observa;
+- o teto autorizado limita simultaneamente custo e energia, inclusive ao recuperar uma sessão após reinício;
+- a PWA normal encerra a entrega, captura o PaymentIntent real em teste e recebe `COMPLETED` com comprovante;
+- Admin `Operação`, `Sessões` e `Resumo financeiro` exibem o mesmo carregador, sessão e PaymentIntent, com atualização a cada dois segundos;
+- os controles de cenário demonstrativo foram removidos de `ChargeGrid > Operação`.
+
+Evidência visual: a sessão `CG-868A92DC` no carregador `AURORA-01` avançou até `CHARGING`, encerrou com 21,05 kWh/R$ 40,00, capturou `pi_3UIO8b1zxDyq7sgU0SsaCvFU` no Stripe test e apareceu como finalizada/capturada no Admin. O carregador voltou a `AVAILABLE_TO_START`.
+
 Limitações do ambiente: Google Maps não carrega porque `VITE_GOOGLE_MAPS_API_KEY` está vazia; a migration não pôde ser aplicada ao Supabase remoto sem login/token da CLI. O fallback executável é PostgreSQL local persistente via PGlite, não JSON.
 
 ## Auditoria de partida
@@ -37,7 +49,7 @@ A prioridade vigente é demonstrar uma sessão compartilhada por API, desktop e 
 
 As listas visuais F0–F7 anteriores continuam referências de evolução do produto, não a definição de pronto da Sprint 3.
 
-## Implementação concluída
+## Prova de conceito anterior (legado `/demo`)
 
 - `@chargegrid/shared` define o contrato tipado do cenário executável, sempre identificado como `mode: "simulated"`.
 - A API expõe `/demo/state`, `/demo/reset`, `/demo/scenario`, `/demo/advance` e o ciclo de sessões. O runtime usa relógio determinístico, valida o estado carregado e persiste cada mutação por troca atômica do arquivo JSON.
