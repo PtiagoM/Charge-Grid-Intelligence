@@ -3,7 +3,7 @@ import { Navigate } from "react-router-dom";
 import type { CommercialSnapshot } from "@chargegrid/shared";
 import { useAdminState } from "../../app/AdminState";
 import { DataTable, SectionHeader, number } from "../../components/AdminUi";
-import { canUseDemoRuntime } from "../../services/demoRuntimeRepository";
+import { canUseHardwareLab } from "../../services/hardwareLabAccess";
 import { fetchCommercialSnapshot, sendHardwareEvent, type HardwareAction } from "../../services/commercialSnapshotRepository";
 
 const statusLabels: Record<string, string> = { AVAILABLE: "Disponível", CONNECTED: "Veículo conectado", CHARGING: "Entregando energia", OFFLINE: "Offline", FAULT: "Falha" };
@@ -61,8 +61,8 @@ function HardwareLab() {
 }
 
 export function AdminSimulatorPage() {
-  const { account, state } = useAdminState();
+  const { account } = useAdminState();
   if (!account) return <Navigate to="/login" replace />;
-  if (!canUseDemoRuntime(state, account)) return <section className="surface panel"><h2>Acesso restrito ao laboratório</h2><p>Use uma conta GoodWe ou administradora do estabelecimento.</p></section>;
+  if (!canUseHardwareLab(account)) return <section className="surface panel"><h2>Acesso restrito ao laboratório</h2><p>Use uma conta GoodWe ou administradora do estabelecimento.</p></section>;
   return <HardwareLab />;
 }

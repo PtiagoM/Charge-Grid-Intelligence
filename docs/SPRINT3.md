@@ -68,30 +68,21 @@ A prioridade vigente é demonstrar uma sessão compartilhada por API, desktop e 
 
 As listas visuais F0–F7 anteriores continuam referências de evolução do produto, não a definição de pronto da Sprint 3.
 
-## Prova de conceito anterior (legado `/demo`)
+## Prova de conceito anterior — retirada
 
-- `@chargegrid/shared` define o contrato tipado do cenário executável, sempre identificado como `mode: "simulated"`.
-- A API expõe `/demo/state`, `/demo/reset`, `/demo/scenario`, `/demo/advance` e o ciclo de sessões. O runtime usa relógio determinístico, valida o estado carregado e persiste cada mutação por troca atômica do arquivo JSON.
-- A PWA possui a rota opt-in `/demo` para iniciar, acompanhar e encerrar a recarga compartilhada. O Admin possui o console `/admin` para controlar cenário e tempo, observar energia, financeiro e eventos da mesma sessão.
-- O início respeita disponibilidade, capacidade energética e autorização simulada. A medição calcula energia por potência e duração, atribui excedente solar, congela a tarifa da sessão e encerra exatamente no limite financeiro ou quando o provider fica offline.
-- `npm run dev:demo` inicia Admin, PWA e API somente em localhost, limpa credenciais externas nos processos filhos e grava o estado em `.local/demo/state.json`. O modo não é montado pela API em produção.
-- O fluxo PWA existente recebeu correções independentes para recuperar o ponto associado ao PaymentIntent, impedir sessões concorrentes, liquidar valor zero, respeitar expiração da fila e limitar ociosidade à garantia financeira.
-- O Admin separa leitura e gestão financeira: o papel `REPORT_VIEWER` consulta transações apenas no próprio escopo, enquanto conciliação, reembolso e política tarifária continuam restritos a `finance:manage`.
+O antigo `/demo` comprovou cálculos e integração em processo único, mas criava uma segunda operação comercial. Após as verticais normais ficarem verdes, foram removidos:
 
-## Validação
+- rota PWA `/demo` e seus CTAs;
+- endpoints API `/demo/*`, runtime e persistência `.local/demo/state.json`;
+- scripts, variáveis de ambiente e E2E exclusivos do runtime paralelo;
+- contratos `DemoRuntime*` sem consumidores.
 
-Executado no commit `2d3291c` com a correção E2E local subsequente:
+Permanecem apenas fixtures estáticas úteis ao `MockGoodWeProvider`; elas não criam sessão, pagamento ou estado comercial. O `/admin` foi preservado e renomeado para **Laboratório de hardware**: seus controles emitem somente eventos físicos pela API comercial normal.
 
-- `npm run lint` — aprovado;
-- `npm test` — 98 testes aprovados: 5 shared, 16 API e 77 Admin;
-- `npm run typecheck` — aprovado;
-- `npm run build` — aprovado; permanece o aviso conhecido do chunk Admin acima de 500 kB;
-- `npm run test:e2e:demo` — 3 cenários aprovados no Chromium: sessão compartilhada e recuperação após reload, bloqueios/limite financeiro e offline/recuperação da API.
-- `npm run test:e2e` — 58 cenários Admin aprovados no Chromium, incluindo personas, escopos, navegação, operação, financeiro, relatórios e estados de bloqueio.
+Evidência da retirada: `/demo/state` responde 404, navegar para `/demo` na PWA retorna à home e o laboratório `/admin` lê `AURORA-01` do snapshot comercial inclusive após reload.
 
 ## Limites preservados
 
-- O runtime é uma demonstração local de processo único; o JSON não substitui banco, concorrência transacional, autenticação, RLS ou auditoria produtiva.
-- Nenhum pagamento Stripe, comando GoodWe ou leitura de hardware é executado por `/demo`.
-- As demais telas operacionais do Admin e o fluxo comercial normal da PWA continuam usando seus adapters e estados anteriores; esta entrega não os converte silenciosamente para o runtime demonstrativo.
-- Não foram executadas nesta unidade homologação de hardware, publicação ou integração em `develop/admin-web`/`main`; a PWA ainda não possui uma suíte ampla própria fora das jornadas integradas da Sprint 3.
+- GoodWe/HCA G2 continuam simulados; não há homologação ou hardware real.
+- Não foram executados push, publicação ou integração em `develop/admin-web`/`main`.
+- A PWA ainda não possui suíte unitária própria; suas jornadas críticas foram verificadas em navegador real e serão consolidadas no E2E final.

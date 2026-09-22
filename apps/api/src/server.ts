@@ -11,7 +11,7 @@ export default app;
 
 if (!process.env.VERCEL) {
   startCommercialClock();
-  app.listen(port, process.env.CHARGEGRID_DEMO_ENABLED === "true" ? "127.0.0.1" : "0.0.0.0", () => {
+  app.listen(port, "0.0.0.0", () => {
     console.log(JSON.stringify({ level: "info", service: "chargegrid-api", port, message: "API listening" }));
   });
 }

@@ -26,7 +26,7 @@ O registro de implementação, evidências e limitações da Sprint fica em [`SP
 - A fila autenticada também é compartilhada: existe no máximo uma entrada ativa por motorista, o Admin observa a mesma posição e a liberação física de um carregador cria uma atribuição temporária de dez minutos que chega à PWA por polling. Sair da chamada libera o equipamento quando não há sessão ativa.
 - QR e código manual resolvem o mesmo código operacional do catálogo (`AURORA-01` a `AURORA-06`); a landing consulta o estado persistido do carregador a cada dois segundos e mostra indisponibilidade/falha sem usar a fixture como autoridade. O service worker não armazena respostas da API.
 - Bloqueios atuais: a chave `VITE_GOOGLE_MAPS_API_KEY` está vazia neste ambiente, e não há autenticação da Supabase CLI para aplicar as migrations ao projeto remoto. Até isso ser fornecido, o mapa exibe o fallback normal e o banco executável é local. O encerramento com cartão foi validado; o fluxo Pix ainda não promove o encerramento persistido após o reembolso.
-- A arquitetura `/demo` permanece somente como legado temporário; não é a jornada aprovada e será retirada após a conclusão das verticais normais.
+- A rota PWA `/demo`, os endpoints API `/demo`, o runtime JSON, seus comandos e E2E paralelos foram retirados. `/admin` permanece exclusivamente como laboratório de hardware GoodWe simulado sobre a API e o banco comerciais normais.
 
 ## 0. Governança
 

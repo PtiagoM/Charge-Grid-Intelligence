@@ -5,7 +5,7 @@ import { useAdminState } from "../app/AdminState";
 import { getAdminContextLinks, getAdminDomainForRoute } from "../app/adminNavigation";
 import { hasAdminCapability, type AdminCapability } from "../domain/adminCapabilities";
 import { hasOwnChargeGridOperation } from "../domain/accessOperations";
-import { canUseDemoRuntime, demoRuntimeEnabled } from "../services/demoRuntimeRepository";
+import { canUseHardwareLab, hardwareLabEnabled } from "../services/hardwareLabAccess";
 
 interface NavigationItem {
   label: string;
@@ -35,7 +35,7 @@ const chargeGridNavigation: NavigationItem = {
 
 const organizationRoutes = new Set(["access", "settings", "audit", "contracts", "contract", "plant-onboarding", "pricing"]);
 const routeTitles: Record<string, string> = {
-  admin: "Demonstração integrada",
+  admin: "Laboratório de hardware",
   "analysis-iv": "Diagnóstico IV",
   "analysis-comparison": "Comparação de dados",
   "analysis-battery": "Consistência da bateria",
@@ -102,7 +102,7 @@ export function ManagerShell({ children }: { children: ReactNode }) {
     </aside>
     <main className="main-area">
       <header className="topbar" data-testid="topbar"><div className="topbar-spacer" /><div className="topbar-actions">
-        {demoRuntimeEnabled && canUseDemoRuntime(state, account) ? <NavLink className="ghost-button" to="/admin">Demonstração integrada</NavLink> : null}
+        {hardwareLabEnabled && canUseHardwareLab(account) ? <NavLink className="ghost-button" to="/admin">Laboratório de hardware</NavLink> : null}
         <span className="topbar-promo"><img src={assets.icons.solarInfo} alt="" />Hub Solar Insight</span>
         <a className="topbar-icon-button" href="#/mvp/incidents" aria-label="Alarmes"><img src={assets.icons.alarms} alt="" /></a>
         {account ? <details className="topbar-account-menu"><summary><span className="profile-name">{account.displayName}</span><img className="avatar" src={assets.avatar} alt="" /></summary><div><strong>{account.displayName}</strong><span>{account.semsAccountType === "DISTRIBUTOR_INSTALLER" ? "Distribuidor / Instalador" : "Proprietário"}</span><span>{account.role ? roleLabels[account.role] : "Somente SEMS+"}</span>{hasAdminCapability(account, "organization:view") ? <a href="#/mvp/access">Configurações da organização</a> : null}<a href="#/logout">Sair do sistema</a></div></details> : null}

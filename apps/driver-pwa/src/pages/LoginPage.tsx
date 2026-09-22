@@ -3,7 +3,6 @@ import { Navigate, Link, useNavigate } from "react-router-dom";
 import { useDriverApp } from "../app/DriverAppContext";
 import { PageIntro, PrimaryButton } from "../components/Ui";
 import { assets } from "../constants/assets";
-import { demoEnabled } from "../services/demoApi";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -46,6 +45,5 @@ export function LoginPage() {
     </form>
     <Link className="secondary-link" to="/signup">Criar conta de motorista</Link>
     <Link className="text-link" to="/scan">Continuar como visitante pelo QR Code</Link>
-    {demoEnabled ? <Link className="text-link" to="/demo">Abrir demonstração integrada · simulada</Link> : null}
   </>;
 }
