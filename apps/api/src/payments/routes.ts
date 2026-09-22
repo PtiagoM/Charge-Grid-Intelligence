@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { PaymentConfigurationError, StripePaymentProvider, stripeIsConfigured, type StripePaymentMethod } from "./stripe-payment-provider.js";
+import { CommercialConflictError, CommercialNotFoundError, getCommercialRepository } from "../commercial/repository.js";
 
 function provider() {
   return new StripePaymentProvider();
@@ -9,7 +10,13 @@ function validAmount(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value >= 0.5 && value <= 1000;
 }
 
+function validUuid(value: unknown): value is string {
+  return typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 function errorResponse(response: Response, error: unknown) {
+  if (error instanceof CommercialNotFoundError) return response.status(404).json({ code: "COMMERCIAL_RESOURCE_NOT_FOUND", message: error.message });
+  if (error instanceof CommercialConflictError) return response.status(409).json({ code: "CHARGER_NOT_AVAILABLE", message: error.message });
   if (error instanceof PaymentConfigurationError) return response.status(503).json({ code: "PAYMENTS_NOT_CONFIGURED", message: error.message });
   const message = error instanceof Error ? error.message : "Falha inesperada no provedor de pagamento.";
   return response.status(502).json({ code: "PAYMENT_PROVIDER_ERROR", message });
@@ -25,11 +32,24 @@ export function createPaymentRouter() {
   router.post("/intents", async (request, response) => {
     const body = (request.body ?? {}) as Record<string, unknown>;
     const method = body.method as StripePaymentMethod;
-    if (!validAmount(body.amount) || !["CARD", "PIX"].includes(method) || typeof body.sessionId !== "string" || typeof body.establishmentId !== "string" || typeof body.chargerId !== "string") {
+    if (!validAmount(body.amount) || !["CARD", "PIX"].includes(method) || !validUuid(body.sessionId) || typeof body.establishmentId !== "string" || typeof body.chargerId !== "string") {
       return response.status(400).json({ code: "INVALID_PAYMENT_INPUT", message: "Revise o limite, o meio de pagamento e o ponto de recarga." });
     }
     const idempotencyKey = request.header("Idempotency-Key") ?? `intent-${body.sessionId}-${method}-${Math.round(body.amount * 100)}`;
+    const commercialRepository = getCommercialRepository();
+    let reserved = false;
     try {
+      await commercialRepository.reserveSession({
+        id: body.sessionId,
+        establishmentId: body.establishmentId,
+        chargerCode: body.chargerId,
+        driverId: typeof body.driverId === "string" ? body.driverId : undefined,
+        driverName: typeof body.driverName === "string" ? body.driverName : undefined,
+        driverEmail: typeof body.email === "string" ? body.email : undefined,
+        method,
+        authorizedCents: Math.round(body.amount * 100)
+      });
+      reserved = true;
       const result = await provider().createIntent({
         sessionId: body.sessionId,
         method,
@@ -39,15 +59,19 @@ export function createPaymentRouter() {
         chargerId: body.chargerId,
         idempotencyKey
       });
+      await commercialRepository.attachPayment(body.sessionId, result.paymentIntentId, result.providerStatus);
       return response.status(201).json(result);
     } catch (error) {
+      if (reserved) await commercialRepository.failSession(body.sessionId, "intent_creation_failed");
       return errorResponse(response, error);
     }
   });
 
   router.get("/:paymentIntentId", async (request, response) => {
     try {
-      return response.json(await provider().retrieve(request.params.paymentIntentId));
+      const payment = await provider().retrieve(request.params.paymentIntentId);
+      const session = await getCommercialRepository().recordPayment(payment);
+      return response.json({ ...payment, session });
     } catch (error) {
       return errorResponse(response, error);
     }

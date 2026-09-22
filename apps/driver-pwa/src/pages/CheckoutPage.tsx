@@ -120,7 +120,9 @@ export function CheckoutPage() {
   const [preparing, setPreparing] = useState(false);
   const [pending, setPending] = useState<PendingPayment | null>(null);
 
-  const completeAuthorization = useCallback((payment: PendingPayment) => {
+  const completeAuthorization = useCallback(async (payment: PendingPayment) => {
+    const confirmed = await getPaymentStatus(payment.paymentIntentId);
+    if (confirmed.status !== "PAID" && confirmed.status !== "AUTHORIZED") throw new Error("A Stripe ainda não confirmou este pagamento.");
     authorizeSession({
       owner: payment.mode,
       paymentSessionId: payment.sessionId,
@@ -145,7 +147,7 @@ export function CheckoutPage() {
     }
     setPending(stored);
     void getPaymentStatus(stored.paymentIntentId).then((payment) => {
-      if (payment.status === "PAID" || payment.status === "AUTHORIZED") completeAuthorization(stored);
+      if (payment.status === "PAID" || payment.status === "AUTHORIZED") void completeAuthorization(stored).catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Não foi possível vincular a sessão."));
     }).catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Não foi possível consultar o pagamento."));
   }, [completeAuthorization, searchParams, session]);
 
@@ -169,6 +171,8 @@ export function CheckoutPage() {
         method: paymentMethod,
         amount: limit,
         email: profile?.email,
+        driverId: profile?.id,
+        driverName: profile?.fullName,
         establishmentId: plant.id,
         chargerId: charger.id
       });
@@ -202,7 +206,7 @@ export function CheckoutPage() {
       <StripeConfirmationForm
         pending={pending}
         initialWaiting={searchParams.has("payment_return")}
-        onAuthorized={() => completeAuthorization(pending)}
+        onAuthorized={() => { void completeAuthorization(pending).catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Não foi possível vincular a sessão.")); }}
       />
     </Elements>
     <button type="button" className="text-link button-link" onClick={() => { sessionStorage.removeItem(PENDING_PAYMENT_KEY); setPending(null); }}>Alterar limite ou meio de pagamento</button>

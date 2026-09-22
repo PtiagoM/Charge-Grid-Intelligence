@@ -1,4 +1,5 @@
 import type { PaymentMethod } from "../app/DriverAppContext";
+import type { CommercialSessionRecord, CommercialSnapshot } from "@chargegrid/shared";
 
 const configuredApiBaseUrl = (import.meta.env.VITE_CHARGEGRID_API_URL || "/api").replace(/\/$/, "");
 
@@ -49,6 +50,8 @@ export function createPaymentIntent(input: {
   method: PaymentMethod;
   amount: number;
   email?: string;
+  driverId?: string;
+  driverName?: string;
   establishmentId: string;
   chargerId: string;
 }) {
@@ -60,7 +63,16 @@ export function createPaymentIntent(input: {
 }
 
 export function getPaymentStatus(paymentIntentId: string) {
-  return apiRequest<{ paymentIntentId: string; status: string; providerStatus: string; amount: number; capturableAmount: number; receivedAmount: number }>(`/payments/${encodeURIComponent(paymentIntentId)}`);
+  return apiRequest<{ paymentIntentId: string; status: string; providerStatus: string; amount: number; capturableAmount: number; receivedAmount: number; session: CommercialSessionRecord }>(`/payments/${encodeURIComponent(paymentIntentId)}`);
+}
+
+export function getCommercialSession(sessionId: string) {
+  return apiRequest<CommercialSessionRecord>(`/commercial/sessions/${encodeURIComponent(sessionId)}`);
+}
+
+export function getCommercialSnapshot(establishmentId?: string) {
+  const query = establishmentId ? `?establishmentId=${encodeURIComponent(establishmentId)}` : "";
+  return apiRequest<CommercialSnapshot>(`/commercial/snapshot${query}`);
 }
 
 export async function settlePayment(input: {

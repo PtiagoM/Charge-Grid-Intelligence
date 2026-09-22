@@ -12,6 +12,7 @@ import { acknowledgeIncident as acknowledgeOperationalIncident, correlateOperati
 import { grantAccess as grantAccountAccess, revokeAccess as revokeAccountAccess, type GrantAccessInput } from "../domain/accessOperations";
 import { completeReport, failReport, markReportProcessing, requestReport as requestOperationalReport, saveReportSubscription as saveOperationalReportSubscription, type RequestReportInput } from "../domain/reportOperations";
 import { demoAdminReportRepository } from "../services/adminReportRepository";
+import { fetchCommercialSnapshot, mergeCommercialSnapshot } from "../services/commercialSnapshotRepository";
 
 function readState(): AdminState {
   return browserAdminStateRepository.load(createInitialState());
@@ -53,6 +54,19 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   useEffect(() => browserAdminStateRepository.save(state), [state]);
 
   const account = state.accounts.find((item) => item.id === state.currentAccountId) ?? null;
+  const accountId = account?.id;
+
+  useEffect(() => {
+    if (!accountId) return;
+    let active = true;
+    const refresh = async () => {
+      const snapshot = await fetchCommercialSnapshot();
+      if (active) setState((current) => mergeCommercialSnapshot(current, snapshot));
+    };
+    void refresh().catch(() => undefined);
+    const timer = window.setInterval(() => void refresh().catch(() => undefined), 2000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [accountId]);
 
   const login = useCallback((email: string, password: string) => {
     const matched = state.accounts.find((item) => item.email === email.trim().toLowerCase() && item.password === password) ?? null;

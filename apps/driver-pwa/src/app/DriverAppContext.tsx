@@ -12,6 +12,7 @@ import {
 import { commercialPlants, getPlantById } from "../data/commercialPlants";
 import { showBrowserNotification } from "../services/browserNotifications";
 import { remoteAuthConfigured, signInDriver, signOutDriver, signUpDriver, subscribeToRemoteSession } from "../services/driverAuth";
+import { getCommercialSession } from "../services/paymentApi";
 
 export type DriverMode = "guest" | "driver";
 export type PaymentMethod = "CARD" | "PIX";
@@ -59,6 +60,7 @@ export interface DriverNotification {
 }
 
 export interface DriverSessionState {
+  backendManaged?: boolean;
   paymentSessionId: string;
   owner: DriverMode;
   status: CommercialSessionStatus;
@@ -312,9 +314,10 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
       return {
         ...current,
         session: {
+          backendManaged: true,
           paymentSessionId: input.paymentSessionId,
           owner: input.owner,
-          status: CommercialSessionStatus.AUTHORIZED,
+          status: CommercialSessionStatus.WAITING_START,
           paymentStatus: input.paymentMethod === "PIX" ? PaymentStatus.PAID : PaymentStatus.AUTHORIZED,
           paymentIntentId: input.paymentIntentId,
           establishmentId: plant.id,
@@ -353,7 +356,7 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const tickSession = useCallback(() => setState((current) => {
-    if (!current.session || current.session.status !== CommercialSessionStatus.CHARGING) return current;
+    if (!current.session || current.session.backendManaged || current.session.status !== CommercialSessionStatus.CHARGING) return current;
     const session = current.session;
     const maxEnergyKwh = session.tariffPerKwh > 0 ? session.financialLimit / session.tariffPerKwh : session.energyKwh + 0.5;
     // Local simulator: each 3-second tick represents five charging minutes.
@@ -477,7 +480,7 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const status = state.session?.status;
-    if (!status) return;
+    if (!status || state.session?.backendManaged) return;
     const nextStatus: Partial<Record<CommercialSessionStatus, CommercialSessionStatus>> = {
       [CommercialSessionStatus.AUTHORIZED]: CommercialSessionStatus.WAITING_START,
       [CommercialSessionStatus.WAITING_START]: CommercialSessionStatus.STARTING,
@@ -499,13 +502,44 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
     if (!next) return;
     const timer = window.setTimeout(() => setSessionStatus(next), delay[status]);
     return () => window.clearTimeout(timer);
-  }, [setSessionStatus, settleSession, state.session?.status]);
+  }, [setSessionStatus, settleSession, state.session?.backendManaged, state.session?.status]);
 
   useEffect(() => {
-    if (state.session?.status !== CommercialSessionStatus.CHARGING) return;
+    if (state.session?.backendManaged || state.session?.status !== CommercialSessionStatus.CHARGING) return;
     const timer = window.setInterval(tickSession, 3000);
     return () => window.clearInterval(timer);
-  }, [state.session?.status, tickSession]);
+  }, [state.session?.backendManaged, state.session?.status, tickSession]);
+
+  useEffect(() => {
+    const sessionId = state.session?.backendManaged ? state.session.paymentSessionId : undefined;
+    if (!sessionId) return;
+    let active = true;
+    const refresh = async () => {
+      const remote = await getCommercialSession(sessionId);
+      if (!active) return;
+      setState((current) => !current.session || current.session.paymentSessionId !== remote.id ? current : {
+        ...current,
+        session: {
+          ...current.session,
+          status: remote.status,
+          paymentStatus: remote.payment.status,
+          paymentIntentId: remote.payment.paymentIntentId,
+          establishmentName: remote.establishmentName,
+          chargerId: remote.chargerCode,
+          chargerName: remote.chargerName,
+          parkingSpot: remote.parkingSpot ?? current.session.parkingSpot,
+          tariffPerKwh: remote.tariffCents / 100,
+          financialLimit: remote.authorizedCents / 100,
+          paymentMethod: remote.payment.method,
+          energyKwh: remote.energyWh / 1000,
+          energyAmount: remote.costCents / 100
+        }
+      });
+    };
+    void refresh().catch(() => undefined);
+    const timer = window.setInterval(() => void refresh().catch(() => undefined), 2000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [state.session?.backendManaged, state.session?.paymentSessionId]);
 
   const value = useMemo<DriverAppContextValue>(() => ({
     ...state,

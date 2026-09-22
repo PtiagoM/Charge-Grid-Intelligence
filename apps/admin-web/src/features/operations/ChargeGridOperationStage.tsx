@@ -45,6 +45,7 @@ const stateColors: Record<SpotState, string> = {
 const preferredFiapOrder = ["CG-FIAP-02", "CG-FIAP-01", "CG-FIAP-03", "CG-FIAP-04", "CG-FIAP-05"];
 
 function compactChargerName(charger: Charger) {
+  if (!charger.id.startsWith("CG-")) return charger.identifier;
   const match = charger.id.match(/(\d+)$/);
   const suffix = match?.[1];
   return suffix ? `CG-${suffix.padStart(2, "0")}` : charger.id;
@@ -65,6 +66,7 @@ function spotState(charger: Charger, telemetry: ChargerTelemetry | undefined, se
   if (telemetry?.connectorState === "OFFLINE" || charger.status === "offline") return "offline";
   if (command?.status === "FAILED" || charger.status === "limited") return "fault";
   if (telemetry?.connectorState === "CHARGING" || charger.status === "charging" || sessions.some((item) => item.status === "active")) return "charging";
+  if (sessions.some((item) => item.status === "authorized")) return "waiting";
   if (telemetry?.vehicleConnected || telemetry?.connectorState === "CONNECTED") {
     return sessions.some((item) => item.status === "finished") ? "energy-finished" : "waiting";
   }
@@ -75,7 +77,7 @@ function stateSummary(state: SpotState, telemetry: ChargerTelemetry | undefined,
   if (state === "charging") return `${formatNumber(telemetry?.currentPowerKw ?? 0)} kW · ${session?.durationMinutes ?? 0} min`;
   if (state === "starting") return "Aguardando confirmação";
   if (state === "stopping") return "Confirmando encerramento";
-  if (state === "waiting") return "Veículo conectado";
+  if (state === "waiting") return telemetry?.vehicleConnected ? "Veículo conectado" : session ? "Aguardando conexão" : "Aguardando início";
   if (state === "energy-finished") return "Aguardando retirada";
   if (state === "fault") {
     const minutes = telemetry ? Math.max(1, Math.round((referenceTime - new Date(telemetry.observedAt).getTime()) / 60000)) : 1;

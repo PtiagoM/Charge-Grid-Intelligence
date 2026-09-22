@@ -1,6 +1,6 @@
 # ChargeGrid Intelligence — fonte única de verdade
 
-**Atualizado em:** 16 de setembro de 2026  
+**Atualizado em:** 22 de setembro de 2026  
 **Escopo:** GoodWe, produto, negócio, operação, arquitetura, implementação, histórico e decisões vigentes  
 **Status:** documento canônico para continuidade do projeto
 
@@ -13,6 +13,16 @@ A base desta execução é `c8cc21c`, em `develop/admin-web`, com a PR #16 já i
 A auditoria inicial confirmou Admin nativo funcional com domínio e persistência no navegador, PWA com estado operacional local e API financeira Stripe sandbox. Não existia uma sessão operacional compartilhada pelo servidor entre os dois frontends. A validação inicial passou: lint, 88 testes (76 Admin, 7 API e 5 shared) e todos os builds. Não havia testes automatizados próprios da PWA.
 
 O registro de implementação, evidências e limitações da Sprint fica em [`SPRINT3.md`](SPRINT3.md). Código verificado e decisões posteriores prevalecem sobre descrições antigas de implementação. A transparência sobre simulação é obrigatória: o modo técnico de demonstração deve identificá-la explicitamente, conforme a instrução atual do usuário, superando restrições antigas a esse rótulo. O escopo transversal desta entrega autoriza mudanças coordenadas nos dois produtos e nos contratos; não autoriza publicação ou merge.
+
+### Vertical real vigente — 22/09/2026
+
+- A jornada normal da PWA cria um PaymentIntent Stripe real em modo de teste e persiste a mesma sessão comercial observada pelo Admin.
+- `Hub Solar Aurora` e os carregadores `AURORA-01` a `AURORA-06` usam IDs operacionais comuns no catálogo mobile, API, banco e Admin.
+- A autoridade executável local é PostgreSQL persistente via PGlite, inicializado pela migration `202609220001_commercial_core.sql`; o schema é compatível com a futura aplicação no Supabase hospedado.
+- Admin `Operação` e `Sessões` recebem o snapshot comercial por polling de dois segundos. PWA e Admin apenas observam o estado persistido; polling não avança sessão nem energia.
+- O gate validado no navegador é: Aurora → AURORA-01 → Payment Element → autorização Stripe → `WAITING_START` → Operação aguardando conexão → uma sessão no Admin, preservada após reload e reinício da API.
+- Bloqueios atuais: a chave `VITE_GOOGLE_MAPS_API_KEY` está vazia neste ambiente, e não há autenticação da Supabase CLI para aplicar a migration ao projeto remoto. Até isso ser fornecido, o mapa exibe o fallback normal e o banco executável é local.
+- A arquitetura `/demo` permanece somente como legado temporário; não é a jornada aprovada e será retirada após a conclusão das verticais normais.
 
 ## 0. Governança
 

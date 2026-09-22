@@ -2,6 +2,7 @@ import cors from "cors";
 import express from "express";
 import { createPaymentRouter, stripeWebhook } from "./payments/routes.js";
 import { createDemoRouter } from "./demo/routes.js";
+import { createCommercialRouter } from "./commercial/routes.js";
 
 export function createApp() {
   const app = express();
@@ -17,7 +18,8 @@ export function createApp() {
     response.status(200).json({ status: "ok", service: "chargegrid-api" });
   });
 
-  app.use("/payments", createPaymentRouter());
+app.use("/payments", createPaymentRouter());
+app.use("/commercial", createCommercialRouter());
   if (process.env.CHARGEGRID_DEMO_ENABLED === "true" && process.env.NODE_ENV !== "production") app.use("/demo", createDemoRouter());
   app.use((error: unknown, request: express.Request, response: express.Response, next: express.NextFunction) => {
     if (error instanceof SyntaxError && "body" in error) {

@@ -67,6 +67,7 @@ export class StripePaymentProvider {
       paymentIntentId: intent.id,
       clientSecret: intent.client_secret,
       status: paymentStatus(intent.status),
+      providerStatus: intent.status,
       amount: fromMinorUnits(intent.amount),
       currency: "BRL" as const,
       mode: this.mode
@@ -82,7 +83,8 @@ export class StripePaymentProvider {
       amount: fromMinorUnits(intent.amount),
       capturableAmount: fromMinorUnits(intent.amount_capturable),
       receivedAmount: fromMinorUnits(intent.amount_received),
-      method: intent.metadata.payment_method
+      method: intent.metadata.payment_method,
+      sessionId: intent.metadata.chargegrid_session_id
     };
   }
 

@@ -39,6 +39,13 @@ describe("Stripe sandbox routes", () => {
     expect(response.body.code).toBe("INVALID_PAYMENT_INPUT");
   });
 
+  it("rejects a non-UUID commercial session before touching persistence", async () => {
+    const response = await request(createApp()).post("/payments/intents").send({ amount: 25, method: "CARD", sessionId: "session-local", establishmentId: "est_aurora_001", chargerId: "AURORA-01" });
+
+    expect(response.status).toBe(400);
+    expect(response.body.code).toBe("INVALID_PAYMENT_INPUT");
+  });
+
   it("requires a signed Stripe webhook", async () => {
     const response = await request(createApp()).post("/payments/webhook").set("Content-Type", "application/json").send({ type: "payment_intent.succeeded" });
 

@@ -1,8 +1,7 @@
 import { config } from "dotenv";
-import { resolve } from "node:path";
 import { createApp } from "./app.js";
 
-config({ path: resolve(process.cwd(), "../../.env") });
+config({ path: new URL("../../../.env", import.meta.url) });
 
 const port = Number(process.env.PORT ?? 3333);
 const app = createApp();

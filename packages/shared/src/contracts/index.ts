@@ -90,3 +90,67 @@ export interface DashboardKpis {
   queueActiveCount?: number;
   incidentCount?: number;
 }
+
+export interface CommercialChargerRecord {
+  id: string;
+  code: string;
+  establishmentId: string;
+  name: string;
+  parkingSpot?: string;
+  nominalPowerKw: number;
+  physicalStatus: string;
+  commercialStatus: ChargerCommercialStatus;
+  published: boolean;
+  qrIdentifier: string;
+  updatedAt: string;
+}
+
+export interface CommercialEstablishmentRecord {
+  id: string;
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  tariffCents: number;
+  qrSlug: string;
+  chargers: CommercialChargerRecord[];
+}
+
+export interface CommercialPaymentRecord {
+  paymentIntentId?: string;
+  method: "CARD" | "PIX";
+  status: PaymentStatus;
+  providerStatus?: string;
+  authorizedCents: number;
+  capturedCents: number;
+}
+
+export interface CommercialSessionRecord {
+  id: string;
+  publicCode: string;
+  driverId?: string;
+  driverName: string;
+  driverEmail?: string;
+  establishmentId: string;
+  establishmentName: string;
+  chargerId: string;
+  chargerCode: string;
+  chargerName: string;
+  parkingSpot?: string;
+  status: CommercialSessionStatus;
+  tariffCents: number;
+  authorizedCents: number;
+  energyWh: number;
+  costCents: number;
+  startedAt?: string;
+  endedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  payment: CommercialPaymentRecord;
+}
+
+export interface CommercialSnapshot {
+  generatedAt: string;
+  establishments: CommercialEstablishmentRecord[];
+  sessions: CommercialSessionRecord[];
+}

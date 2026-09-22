@@ -1,6 +1,24 @@
 # Sprint 3 — Prototipagem Funcional e Integração
 
-Atualizado em 16/09/2026. Registro vigente da entrega; complementa `CURRENT_STATE.md`.
+Atualizado em 22/09/2026. Registro vigente da entrega; complementa `CURRENT_STATE.md`.
+
+## Correção de direção e Marco 1
+
+O fluxo `/demo` abaixo registra a prova de conceito anterior, mas não representa mais a arquitetura-alvo. A demonstração final usa as telas normais e uma única operação comercial persistida.
+
+Marco 1 validado:
+
+- migration PostgreSQL mínima para estabelecimentos, carregadores, sessões e pagamentos;
+- catálogo compartilhado do Hub Solar Aurora, incluindo o código operacional `AURORA-01`;
+- checkout normal da PWA com Payment Element e PaymentIntent Stripe test real;
+- sessão e pagamento vinculados no banco e promovidos para `WAITING_START` após confirmação do Stripe;
+- PWA e Admin atualizados por polling de dois segundos sobre a mesma API;
+- Admin `Operação` exibe AURORA-01 aguardando conexão e `Sessões` exibe o mesmo ID, motorista, carregador e pagamento;
+- reload da PWA/Admin e reinício da API preservam o estado.
+
+Evidência focal: 18 testes da API, teste de projeção do snapshot no Admin e builds de API, Admin e PWA aprovados. A jornada também foi executada em navegador real com cartão Stripe de teste.
+
+Limitações do ambiente: Google Maps não carrega porque `VITE_GOOGLE_MAPS_API_KEY` está vazia; a migration não pôde ser aplicada ao Supabase remoto sem login/token da CLI. O fallback executável é PostgreSQL local persistente via PGlite, não JSON.
 
 ## Auditoria de partida
 

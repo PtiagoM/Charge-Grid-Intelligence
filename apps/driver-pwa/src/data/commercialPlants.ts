@@ -53,8 +53,8 @@ function createPlant(seed: PlantSeed): CommercialPlant {
         ? ChargerCommercialStatus.MAINTENANCE
         : ChargerCommercialStatus.OCCUPIED;
     return {
-      id: `${seed.id}_charger_${String(index + 1).padStart(2, "0")}`,
-      commercialName: `${prefix} ${String(index + 1).padStart(2, "0")}`,
+      id: seed.id === "est_aurora_001" ? `AURORA-${String(index + 1).padStart(2, "0")}` : `${seed.id}_charger_${String(index + 1).padStart(2, "0")}`,
+      commercialName: seed.id === "est_aurora_001" ? `AURORA-${String(index + 1).padStart(2, "0")}` : `${prefix} ${String(index + 1).padStart(2, "0")}`,
       technicalStatus: commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START
         ? ChargerTechnicalStatus.AVAILABLE
         : commercialStatus === ChargerCommercialStatus.MAINTENANCE
