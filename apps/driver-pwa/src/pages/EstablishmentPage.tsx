@@ -32,7 +32,7 @@ export function EstablishmentPage() {
   const liveEstablishment = liveSnapshot?.establishments.find((item) => item.id === plant?.id);
   const displayChargers = useMemo(() => plant?.chargers.map((charger) => {
     const live = liveEstablishment?.chargers.find((item) => item.code === charger.id);
-    return live ? { ...charger, commercialName: live.name, commercialStatus: live.commercialStatus, nominalPowerKw: live.nominalPowerKw, parkingSpot: live.parkingSpot } : charger;
+    return live ? { ...charger, commercialStatus: live.commercialStatus, nominalPowerKw: live.nominalPowerKw, parkingSpot: live.parkingSpot } : charger;
   }) ?? [], [liveEstablishment, plant]);
   const availableChargers = displayChargers.filter((charger) => charger.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START);
   const defaultCharger = availableChargers[0] ?? displayChargers[0];

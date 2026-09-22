@@ -194,11 +194,17 @@ export function getPlantById(id?: string | null) {
 }
 
 export function getChargingPointBySlug(slug?: string | null) {
-  const plant = commercialPlants.find((item) => item.qrSlug === slug);
-  if (!plant) return null;
-  const chargerNumber = Number(slug?.match(/-(\d+)$/)?.[1] ?? 1);
-  const charger = plant.chargers[chargerNumber - 1] ?? plant.chargers[0];
-  return charger ? { plant, charger } : null;
+  const normalized = slug?.trim().toLocaleLowerCase("pt-BR");
+  if (!normalized) return null;
+  for (const plant of commercialPlants) {
+    const chargerByCode = plant.chargers.find((charger) => charger.id.toLocaleLowerCase("pt-BR") === normalized);
+    if (chargerByCode) return { plant, charger: chargerByCode };
+    if (plant.qrSlug.toLocaleLowerCase("pt-BR") !== normalized) continue;
+    const chargerNumber = Number(normalized.match(/-(\d+)$/)?.[1] ?? 1);
+    const charger = plant.chargers[chargerNumber - 1] ?? plant.chargers[0];
+    return charger ? { plant, charger } : null;
+  }
+  return null;
 }
 
 export function distanceBetweenKm(from: { lat: number; lng: number }, to: { lat: number; lng: number }) {

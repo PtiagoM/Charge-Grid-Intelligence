@@ -40,6 +40,15 @@ Marco 3 validado:
 
 Evidência visual: com os seis carregadores Aurora conectados, `Motorista Fila Browser` entrou como `WAITING`, apareceu no Admin, recebeu `AURORA-03` após o evento físico `DISCONNECT`, apareceu como chamado nas duas interfaces e preservou o estado após reload. A saída removeu a fila ativa e devolveu AURORA-03 a `AVAILABLE_TO_START`.
 
+Marco 4 validado no recorte necessário à gravação:
+
+- QR, URL e entrada manual aceitam o código operacional e resolvem o mesmo `chargerId` usado pela API, banco e Admin;
+- a landing QR observa disponibilidade, offline/falha e recuperação pelo snapshot comercial, inclusive após reload;
+- o cache do service worker exclui `/api/*`, evitando reexibir snapshot comercial obsoleto quando API e PWA compartilham a origem;
+- recuperação de pagamento, sessão, fila e atribuição após reload permanece coberta pelos fluxos normais já validados.
+
+Evidência visual: `AURORA-01` digitado no scanner abriu `/qr/AURORA-01`; um evento `OFFLINE` apareceu como falha na PWA, permaneceu após reload e voltou a disponível depois de `RECOVER`, sem atualização manual.
+
 Limitações do ambiente: Google Maps não carrega porque `VITE_GOOGLE_MAPS_API_KEY` está vazia; a migration não pôde ser aplicada ao Supabase remoto sem login/token da CLI. O fallback executável é PostgreSQL local persistente via PGlite, não JSON.
 
 ## Auditoria de partida

@@ -2,15 +2,19 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "r
 import { useNavigate } from "react-router-dom";
 import { AppIcon } from "../components/AppIcon";
 import { PageIntro, PrimaryButton, SecondaryButton } from "../components/Ui";
-import { commercialPlants } from "../data/commercialPlants";
+import { getChargingPointBySlug } from "../data/commercialPlants";
 
 function chargerSlugFromValue(value: string) {
   const normalized = value.trim();
   const routeMatch = normalized.match(/\/qr\/([^/?#]+)/i);
   const candidate = routeMatch?.[1] ?? normalized.split(/[/:]/).filter(Boolean).at(-1);
   if (!candidate) return null;
-  const decoded = decodeURIComponent(candidate);
-  return commercialPlants.some((plant) => plant.qrSlug === decoded) ? decoded : null;
+  try {
+    const decoded = decodeURIComponent(candidate);
+    return getChargingPointBySlug(decoded) ? decoded : null;
+  } catch {
+    return null;
+  }
 }
 
 export function QrScannerPage() {
@@ -95,7 +99,7 @@ export function QrScannerPage() {
     <div className="divider"><span>ou</span></div>
     <form className="manual-code-form" onSubmit={submitManual}>
       <label htmlFor="manual-code">Código do carregador</label>
-      <div><input id="manual-code" placeholder="Ex.: aurora-04" value={manualCode} onChange={(event) => setManualCode(event.target.value)} /><button type="submit" aria-label="Confirmar código"><AppIcon name="chevron-right" /></button></div>
+      <div><input id="manual-code" placeholder="Ex.: AURORA-01" value={manualCode} onChange={(event) => setManualCode(event.target.value)} /><button type="submit" aria-label="Confirmar código"><AppIcon name="chevron-right" /></button></div>
     </form>
   </>;
 }
