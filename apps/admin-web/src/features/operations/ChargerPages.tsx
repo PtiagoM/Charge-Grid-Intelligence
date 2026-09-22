@@ -272,7 +272,7 @@ export function ChargersInventoryPage({ establishmentId }: { establishmentId?: s
             <td>{item.typeLabel}{item.kind === "charger" && canViewCommercial ? <span className="chargegrid-device-tag">{item.publicationStatus === "PUBLISHED" ? "ChargeGrid publicado" : item.publicationStatus === "SUSPENDED" ? "ChargeGrid suspenso" : item.publicationStatus === "CONFIGURED" ? "ChargeGrid configurado" : "Elegível ao ChargeGrid"}</span> : null}</td>
             <td>{item.primaryMetric}</td>
             <td>{item.secondaryMetric}</td>
-            <td>{item.actionHref ? <a className="sems-device-menu" href={item.actionHref} aria-label={`Abrir ${item.name}`}>•••</a> : <button className="sems-device-menu" type="button" aria-label={`Mais opções para ${item.name}`}>•••</button>}</td>
+            <td>{item.actionHref ? <a className="sems-device-menu" href={item.actionHref} aria-label={`Abrir ${item.name}`}>•••</a> : "—"}</td>
             <td />
           </tr>)}
         </Fragment>)}

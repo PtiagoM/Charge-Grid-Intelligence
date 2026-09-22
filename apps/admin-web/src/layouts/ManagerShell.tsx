@@ -35,13 +35,14 @@ const chargeGridNavigation: NavigationItem = {
 
 const organizationRoutes = new Set(["access", "settings", "audit", "contracts", "contract", "plant-onboarding", "pricing"]);
 const routeTitles: Record<string, string> = {
+  admin: "Demonstração integrada",
   "analysis-iv": "Diagnóstico IV",
   "analysis-comparison": "Comparação de dados",
   "analysis-battery": "Consistência da bateria",
   access: "Gestão da organização",
   settings: "Gestão da organização"
 };
-const semsStandaloneRoutes = new Set(["plants", "locations", "chargers", "charger", "incidents", "reports", "support", "analysis-iv", "analysis-comparison", "analysis-battery", "access", "settings"]);
+const semsStandaloneRoutes = new Set(["admin", "plants", "locations", "chargers", "charger", "incidents", "reports", "support", "analysis-iv", "analysis-comparison", "analysis-battery", "access", "settings"]);
 
 const roleLabels = {
   GOODWE_CENTRAL: "Central GoodWe",
@@ -61,7 +62,7 @@ function AssistantDrawer({ onClose }: { onClose: () => void }) {
       <header className="goodwe-ai-header"><h2>Assistente ChargeGrid</h2><div className="goodwe-ai-window-actions"><button type="button" onClick={onClose} aria-label="Fechar agente">×</button></div></header>
       <div className="goodwe-ai-intro"><img src={assets.assistant} alt="" /><h3>Como posso apoiar a operação?</h3><p>Analiso os dados comerciais e energéticos disponíveis para as plantas comerciais desta conta.</p></div>
       <div className="goodwe-ai-body"><div className="goodwe-ai-topic-list">{topics.map((item) => <button key={item} type="button" className={topic === item ? "is-active" : ""} onClick={() => setTopic(item)}><strong>{item}</strong><span>Leitura explicável do cenário atual</span></button>)}</div><article className="goodwe-ai-answer"><small>Análise atual</small><h3>{topic}</h3><p>A operação possui margem controlada. Revise as evidências antes de qualquer ação.</p><ul><li>Monitorar o pico entre 18h e 21h.</li><li>Preservar a reserva mínima da bateria.</li></ul></article></div>
-      <form className="goodwe-ai-compose" onSubmit={(event) => event.preventDefault()}><button type="button">Nova conversa</button><input aria-label="Mensagem para o agente" placeholder="Pergunte sobre a operação" /><button type="submit" aria-label="Enviar">↑</button></form>
+      <p className="goodwe-ai-compose">Consulta conversacional não habilitada nesta demonstração.</p>
     </aside>
   </div>;
 }
@@ -70,7 +71,7 @@ export function ManagerShell({ children }: { children: ReactNode }) {
   const { account, state } = useAdminState();
   const location = useLocation();
   const [assistantOpen, setAssistantOpen] = useState(false);
-  const activeRoute = location.pathname.split("/")[2] ?? "overview";
+  const activeRoute = location.pathname === "/admin" ? "admin" : location.pathname.split("/")[2] ?? "overview";
   const activeContextRoute = activeRoute === "session" ? "sessions" : activeRoute === "financial-session" ? "finance" : activeRoute;
   const activeDomain = getAdminDomainForRoute(activeRoute);
   const selectedEstablishmentId = new URLSearchParams(location.search).get("est") ?? "";
@@ -103,14 +104,11 @@ export function ManagerShell({ children }: { children: ReactNode }) {
       <header className="topbar" data-testid="topbar"><div className="topbar-spacer" /><div className="topbar-actions">
         {demoRuntimeEnabled && canUseDemoRuntime(state, account) ? <NavLink className="ghost-button" to="/admin">Demonstração integrada</NavLink> : null}
         <span className="topbar-promo"><img src={assets.icons.solarInfo} alt="" />Hub Solar Insight</span>
-        <button className="topbar-icon-button" type="button" aria-label="Pesquisar"><img src={assets.icons.search} alt="" /></button>
         <a className="topbar-icon-button" href="#/mvp/incidents" aria-label="Alarmes"><img src={assets.icons.alarms} alt="" /></a>
-        <button className="topbar-icon-button" type="button" aria-label="Mensagens"><img src={assets.icons.message} alt="" /></button>
-        <button className="topbar-icon-button" type="button" aria-label="Idioma"><img src={assets.icons.language} alt="" /></button>
         {account ? <details className="topbar-account-menu"><summary><span className="profile-name">{account.displayName}</span><img className="avatar" src={assets.avatar} alt="" /></summary><div><strong>{account.displayName}</strong><span>{account.semsAccountType === "DISTRIBUTOR_INSTALLER" ? "Distribuidor / Instalador" : "Proprietário"}</span><span>{account.role ? roleLabels[account.role] : "Somente SEMS+"}</span>{hasAdminCapability(account, "organization:view") ? <a href="#/mvp/access">Configurações da organização</a> : null}<a href="#/logout">Sair do sistema</a></div></details> : null}
       </div></header>
       <section className="page-content" data-testid="page-content">
-        {activeRoute !== "charger" ? <header className="page-heading"><div><h1>{routeTitles[activeRoute] ?? visibleNavigation.find((item) => item.activeRoutes.includes(activeRoute))?.label ?? activeDomain?.label ?? "Configurações"}</h1>{activeRoute === "overview" ? <small>Atualizado em 22/08/2026, 06:39:38 <button type="button" aria-label="Atualizar painel">↻</button></small> : !isStandaloneRoute ? <p>{activeDomain?.description[profile] ?? "Preferências da conta e controles de acesso."}</p> : null}</div></header> : null}
+        {activeRoute !== "charger" ? <header className="page-heading"><div><h1>{routeTitles[activeRoute] ?? visibleNavigation.find((item) => item.activeRoutes.includes(activeRoute))?.label ?? activeDomain?.label ?? "Configurações"}</h1>{activeRoute === "overview" ? <small>Dados demonstrativos persistidos neste navegador.</small> : !isStandaloneRoute ? <p>{activeDomain?.description[profile] ?? "Preferências da conta e controles de acesso."}</p> : null}</div></header> : null}
         {activeRoute !== "overview" && activeRoute !== "charger" && activeRoute !== "access" && activeDomain && account && contextLinks.length > 1 ? <nav className={activeDomain.id === "chargegrid" ? "context-navigation sems-device-type-tabs chargegrid-context-navigation" : "context-navigation"} aria-label={`Navegação de ${activeDomain.label}`} role={activeDomain.id === "chargegrid" ? "tablist" : undefined}>{contextLinks.map((item) => <NavLink key={item.route} to={{ pathname: `/mvp/${item.route}`, search: contextSearch }} className={activeContextRoute === item.route ? "is-active" : ""} role={activeDomain.id === "chargegrid" ? "tab" : undefined} aria-selected={activeDomain.id === "chargegrid" ? activeContextRoute === item.route : undefined}>{item.label}</NavLink>)}</nav> : null}
         {children}
       </section>

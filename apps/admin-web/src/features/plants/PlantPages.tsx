@@ -130,7 +130,6 @@ export function PlantsPortfolioPage() {
       <label><span className="sr-only">Email</span><input aria-label="Buscar email" value={searchDraft.email} onChange={(event) => setSearchDraft({ ...searchDraft, email: event.target.value })} placeholder="✉  Email" /></label>
       <button className="sems-plants-search" type="submit" aria-label="Pesquisar">⌕</button>
       <button className="sems-icon-action" type="button" aria-label="Redefinir busca e filtros" onClick={resetAllFilters}>↻</button>
-      <button className="sems-plants-create" type="button"><span>＋</span> Nova usina</button>
     </form>
 
     {filterOpen ? <aside className="sems-plants-filter-panel" aria-label="Filtros avançados">

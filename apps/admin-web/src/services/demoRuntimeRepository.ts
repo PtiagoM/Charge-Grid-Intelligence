@@ -17,7 +17,12 @@ export async function requestDemoRuntime(path = "/state", body?: object): Promis
     body: body ? JSON.stringify(body) : undefined,
     signal: AbortSignal.timeout(10_000)
   });
-  const result = await response.json() as DemoRuntimeState | DemoRuntimeError;
+  let result: DemoRuntimeState | DemoRuntimeError;
+  try {
+    result = await response.json() as DemoRuntimeState | DemoRuntimeError;
+  } catch {
+    throw new Error(`API indisponível (${response.status}).`);
+  }
   if (!response.ok || "error" in result) {
     throw new Error("error" in result ? `${result.error.code}: ${result.error.message}` : `API indisponível (${response.status}).`);
   }

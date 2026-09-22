@@ -105,8 +105,25 @@ test("offline encerra a sessão e indisponibilidade da API é recuperável", asy
     await mobile.unroute("**/demo/state");
     await mobile.getByRole("button", { name: "Tentar novamente" }).click();
     await expect(mobile.getByRole("alert")).toHaveCount(0);
+    await page.route("**/demo/state", (route) => route.fulfill({ status: 502, contentType: "text/html", body: "upstream unavailable" }));
+    await page.reload();
+    await expect(page.getByRole("alert")).toContainText("API indisponível (502)");
+    await page.unroute("**/demo/state");
+    await page.getByRole("button", { name: "Tentar novamente" }).click();
+    await expect(page.getByRole("alert")).toHaveCount(0);
     expect((await (await request.get(`${api}/demo/state`)).json()).revision).toBe(stateBeforeFailure.revision);
   } finally {
     await mobile.close();
   }
+});
+
+test("operador sem administração comercial não acessa o console integrado", async ({ page }) => {
+  await page.goto("/#/login");
+  await page.getByTestId("login-email").fill("operador@teste.com");
+  await page.getByTestId("login-password").fill("teste");
+  await page.getByTestId("login-submit").click();
+  await page.goto("/#/admin");
+  await expect(page.getByRole("heading", { name: "Demonstração integrada" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Acesso restrito à demonstração" })).toBeVisible();
+  await expect(page.getByTestId("demo-console")).toHaveCount(0);
 });
