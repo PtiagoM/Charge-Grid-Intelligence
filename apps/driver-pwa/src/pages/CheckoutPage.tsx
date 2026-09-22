@@ -6,7 +6,8 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useDriverApp, type DriverMode, type PaymentMethod } from "../app/DriverAppContext";
 import { AppIcon } from "../components/AppIcon";
 import { InfoNotice, PageIntro, PrimaryButton } from "../components/Ui";
-import { commercialPlants, getPlantById } from "../data/commercialPlants";
+import { getPlantById } from "../data/commercialPlants";
+import { useCommercialPlants } from "../data/useCommercialPlants";
 import { createPaymentIntent, getPaymentStatus, type PaymentIntentResult } from "../services/paymentApi";
 
 const limits = [25, 40, 60] as const;
@@ -109,9 +110,10 @@ export function CheckoutPage() {
     selectedEstablishmentId,
     theme
   } = useDriverApp();
+  const { plants, loading: plantsLoading, error: plantsError } = useCommercialPlants();
   const requestedMode = searchParams.get("mode") === "driver" ? "driver" : "guest";
   const mode: DriverMode = requestedMode === "driver" && isAuthenticated ? "driver" : "guest";
-  const plant = getPlantById(selectedEstablishmentId) ?? commercialPlants[0];
+  const plant = plants.find((item) => item.id === selectedEstablishmentId);
   const charger = plant?.chargers.find((item) => item.id === selectedChargerId) ?? plant?.chargers[0];
   const [limit, setLimit] = useState<number>(mode === "guest" ? 25 : 40);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(mode === "guest" ? "PIX" : "CARD");
@@ -195,7 +197,7 @@ export function CheckoutPage() {
     locale: "pt-BR" as const
   } : null, [pending, theme]);
 
-  if (!plant || !charger) return <section className="empty-state"><AppIcon name="plug" size={36} /><h1>Selecione um carregador</h1><p>Volte ao mapa e escolha um ponto disponível.</p><PrimaryButton onClick={() => navigate(isAuthenticated ? "/explore" : "/scan")}>Escolher carregador</PrimaryButton></section>;
+  if (!plant || !charger) return <section className="empty-state"><AppIcon name="plug" size={36} /><h1>{plantsLoading ? "Validando carregador" : "Selecione um carregador"}</h1><p>{plantsLoading ? "Consultando disponibilidade, potência e tarifa na API ChargeGrid." : plantsError || "Volte ao mapa e escolha um ponto disponível."}</p>{!plantsLoading ? <PrimaryButton onClick={() => navigate(isAuthenticated ? "/explore" : "/scan")}>Escolher carregador</PrimaryButton> : null}</section>;
 
   if (session && session.status !== CommercialSessionStatus.COMPLETED) return <section className="empty-state"><h1>Você já tem uma sessão em andamento</h1><p>Conclua a sessão atual antes de iniciar outra recarga.</p><Link className="primary-link" to="/session">Acompanhar sessão atual</Link></section>;
 

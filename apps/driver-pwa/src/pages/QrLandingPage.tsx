@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ChargerCommercialStatus, type CommercialChargerRecord } from "@chargegrid/shared";
+import { ChargerCommercialStatus, QueueStatus, type CommercialSnapshot } from "@chargegrid/shared";
 import { useDriverApp } from "../app/DriverAppContext";
 import { AppIcon } from "../components/AppIcon";
 import { QueueJoinConfirmation } from "../components/QueueJoinConfirmation";
@@ -18,10 +18,13 @@ export function QrLandingPage() {
   const { getQueueJoinPreview, isAuthenticated, joinQueue, queue, selectChargingPoint } = useDriverApp();
   const [showQueueConfirmation, setShowQueueConfirmation] = useState(false);
   const [queueError, setQueueError] = useState("");
-  const [liveCharger, setLiveCharger] = useState<CommercialChargerRecord | null>(null);
+  const [liveSnapshot, setLiveSnapshot] = useState<CommercialSnapshot | null>(null);
+  const [loadError, setLoadError] = useState("");
   const plantId = point?.plant.id;
   const chargerId = point?.charger.id;
-  const charger = liveCharger && point ? { ...point.charger, commercialStatus: liveCharger.commercialStatus, nominalPowerKw: liveCharger.nominalPowerKw, parkingSpot: liveCharger.parkingSpot } : point?.charger;
+  const liveCharger = liveSnapshot?.establishments[0]?.chargers.find((item) => item.code === chargerId);
+  const requiresBackend = plantId === "est_aurora_001";
+  const charger = liveCharger && point ? { ...point.charger, commercialStatus: liveCharger.commercialStatus, nominalPowerKw: liveCharger.nominalPowerKw, currentPowerKw: liveCharger.currentPowerKw, parkingSpot: liveCharger.parkingSpot } : requiresBackend ? undefined : point?.charger;
   const isAvailable = charger?.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START;
 
   useEffect(() => {
@@ -32,16 +35,20 @@ export function QrLandingPage() {
     if (!plantId || !chargerId) return;
     let active = true;
     const refresh = async () => {
-      const snapshot = await getCommercialSnapshot(plantId);
-      const current = snapshot.establishments[0]?.chargers.find((item) => item.code === chargerId);
-      if (active && current) setLiveCharger(current);
+      try {
+        const snapshot = await getCommercialSnapshot(plantId);
+        if (active) { setLiveSnapshot(snapshot); setLoadError(""); }
+      } catch (error) {
+        if (active) setLoadError(error instanceof Error ? error.message : "A operação comercial está indisponível.");
+      }
     };
-    void refresh().catch(() => undefined);
-    const timer = window.setInterval(() => void refresh().catch(() => undefined), 2000);
+    void refresh();
+    const timer = window.setInterval(() => void refresh(), 2000);
     return () => { active = false; window.clearInterval(timer); };
   }, [chargerId, plantId]);
 
-  if (!point || !charger) return <section className="empty-state"><AppIcon name="qr" size={38} /><h1>QR Code não reconhecido</h1><p>Confira se o código pertence a uma vaga ChargeGrid ou faça uma nova leitura.</p><Link className="primary-link" to="/scan">Escanear novamente</Link></section>;
+  if (!point) return <section className="empty-state"><AppIcon name="qr" size={38} /><h1>QR Code não reconhecido</h1><p>Confira se o código pertence a uma vaga ChargeGrid ou faça uma nova leitura.</p><Link className="primary-link" to="/scan">Escanear novamente</Link></section>;
+  if (!charger) return <section className="empty-state"><AppIcon name="plug" size={38} /><h1>{loadError ? "Operação indisponível" : "Validando carregador"}</h1><p>{loadError || "Consultando disponibilidade e telemetria na API ChargeGrid."}</p></section>;
 
   const { plant } = point;
   const hasFault = charger.commercialStatus === ChargerCommercialStatus.FAULTED;
@@ -52,7 +59,7 @@ export function QrLandingPage() {
       <div><StatusChip label={isAvailable ? "Disponível para iniciar" : hasFault ? "Falha no equipamento" : "Em uso no momento"} tone={isAvailable ? "success" : hasFault ? "danger" : "warning"} /><h2>{isAvailable ? "Conecte o veículo" : hasFault ? "Carregador temporariamente indisponível" : "Carregador indisponível"}</h2><p>{isAvailable ? `Confirme que o cabo está conectado ao carregador ${charger.commercialName}.` : hasFault ? "Escolha outro carregador disponível ou acompanhe a recuperação do equipamento." : "Você será incluído na fila única desta planta e receberá uma vaga quando houver disponibilidade."}</p></div>
     </section>
     <section className="quick-info-grid single-column">
-      <InfoRow icon="plug" label="Carregador" value={`${charger.commercialName} · vaga ${charger.parkingSpot}`} detail={`até ${charger.nominalPowerKw} kW nominais`} />
+      <InfoRow icon="plug" label="Carregador" value={`${charger.commercialName} · vaga ${charger.parkingSpot}`} detail={charger.currentPowerKw ? `${charger.currentPowerKw} kW agora` : `até ${charger.nominalPowerKw} kW nominais`} />
       <InfoRow icon="card" label="Tarifa" value={`${currency.format(plant.tariffFrom?.amount ?? 0)}/kWh`} detail="o valor será confirmado antes do pagamento" />
       <InfoRow icon="clock" label="Ociosidade" value="15 min gratuitos" detail="depois R$ 0,50/min, máximo 60 min" />
     </section>
@@ -61,6 +68,6 @@ export function QrLandingPage() {
     {!isAuthenticated ? <><Link className="secondary-link" to="/login">Entrar na minha conta</Link><Link className="text-link" to="/signup">Criar conta de motorista</Link></> : null}
     {queueError ? <p className="form-error" role="alert">{queueError}</p> : null}
     <p className="privacy-note centered">Visitantes têm acesso somente à sessão atual e ao comprovante correspondente.</p>
-    {showQueueConfirmation ? <QueueJoinConfirmation {...getQueueJoinPreview(plant.id)} onCancel={() => setShowQueueConfirmation(false)} onConfirm={() => { void joinQueue(plant.id).then(() => { setShowQueueConfirmation(false); navigate("/queue"); }).catch((error: unknown) => setQueueError(error instanceof Error ? error.message : "Não foi possível entrar na fila.")); }} /> : null}
+    {showQueueConfirmation ? <QueueJoinConfirmation {...getQueueJoinPreview(plant.id)} position={(liveSnapshot?.queue.filter((entry) => entry.establishmentId === plant.id && [QueueStatus.WAITING, QueueStatus.CALLED, QueueStatus.ASSIGNED].includes(entry.status)).length ?? 0) + 1} estimatedWaitMinutes={((liveSnapshot?.queue.filter((entry) => entry.establishmentId === plant.id && [QueueStatus.WAITING, QueueStatus.CALLED, QueueStatus.ASSIGNED].includes(entry.status)).length ?? 0) + 1) * 8} onCancel={() => setShowQueueConfirmation(false)} onConfirm={() => { void joinQueue(plant.id).then(() => { setShowQueueConfirmation(false); navigate("/queue"); }).catch((error: unknown) => setQueueError(error instanceof Error ? error.message : "Não foi possível entrar na fila.")); }} /> : null}
   </>;
 }

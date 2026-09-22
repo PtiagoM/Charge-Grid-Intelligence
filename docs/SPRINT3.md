@@ -21,10 +21,11 @@ Evidência focal: 18 testes da API, teste de projeção do snapshot no Admin e b
 Marco 2 validado:
 
 - o laboratório `/admin` foi convertido em fronteira de hardware/GoodWe simulada e usa os mesmos carregadores da operação comercial;
-- conexão, início, potência configurável, parada, desconexão, offline, falha e recuperação passam pela API e pelo banco normal;
+- conexão, StartCharge automático, potência configurável, parada, desconexão, offline, falha e recuperação passam pela API e pelo banco normal;
 - um relógio da API acumula `energia = potência × tempo`; polling de PWA/Admin somente observa;
 - o teto autorizado limita simultaneamente custo e energia, inclusive ao recuperar uma sessão após reinício;
 - a PWA normal encerra a entrega, captura o PaymentIntent real em teste e recebe `COMPLETED` com comprovante;
+- o término preserva a sequência física e financeira: `CHARGING → ENERGY_FINISHED → DISCONNECT → COMPLETED`; o Admin exibe `ENERGY_FINISHED` como **Recarga finalizada**, nunca como aguardando início;
 - Admin `Operação`, `Sessões` e `Resumo financeiro` exibem o mesmo carregador, sessão e PaymentIntent, com atualização a cada dois segundos;
 - os controles de cenário demonstrativo foram removidos de `ChargeGrid > Operação`.
 
@@ -49,7 +50,7 @@ Marco 4 validado no recorte necessário à gravação:
 
 Evidência visual: `AURORA-01` digitado no scanner abriu `/qr/AURORA-01`; um evento `OFFLINE` apareceu como falha na PWA, permaneceu após reload e voltou a disponível depois de `RECOVER`, sem atualização manual.
 
-Limitações do ambiente: Google Maps não carrega porque `VITE_GOOGLE_MAPS_API_KEY` está vazia; a migration não pôde ser aplicada ao Supabase remoto sem login/token da CLI. O fallback executável é PostgreSQL local persistente via PGlite, não JSON.
+Limitação do ambiente: o projeto Supabase remoto responde, mas ainda não possui as tabelas comerciais (`PGRST205`). A migration não pôde ser aplicada sem login/token de plataforma da CLI nem URL SQL; o fallback executável é PostgreSQL local persistente via PGlite, não JSON. A chave Maps existe apenas no `.env` local e ainda depende de cota/restrições válidas para a gravação.
 
 ## Auditoria de partida
 
@@ -98,7 +99,7 @@ flowchart LR
     Stripe --> API
     Admin[Admin ChargeGrid normal] --> API
     Lab[Laboratório MockGoodWe] --> API
-    API --> DB[(PostgreSQL local / PGlite)]
+    API --> DB[(PostgreSQL Supabase ou PGlite)]
     DB --> API
     API --> PWA
     API --> Admin
@@ -114,19 +115,19 @@ O banco contém estabelecimentos, carregadores, sessões, pagamentos e fila. PWA
 | Stripe | Real em modo de teste; cartão autorizado e capturado |
 | Google Maps | Implementado com SDK real; gravação depende de chave válida |
 | Supabase Auth | Real quando as variáveis estão configuradas |
-| Persistência comercial | PostgreSQL compatível e persistente via PGlite local |
-| Supabase PostgreSQL remoto | Migrations prontas; aplicação bloqueada pela autenticação da CLI |
+| Persistência comercial | PostgreSQL remoto quando `CHARGEGRID_DATABASE_URL` existe; PGlite persistente como fallback |
+| Supabase PostgreSQL remoto | Projeto validado; tabelas ausentes e aplicação bloqueada pela autenticação da CLI |
 | GoodWe/HCA G2 | Simulado exclusivamente na fronteira física |
 | GoodWe OpenAPI, hardware físico e Stripe live | Não implementados e não alegados |
 
 ## Roteiro de gravação — até 5 minutos
 
-Preparação: configure uma chave Google Maps válida, inicie `npm run dev`, deixe `AURORA-01` disponível no laboratório, autentique a PWA e abra o Admin com `aurora@teste.com` / `teste`.
+Preparação: configure Google Maps/Stripe, inicie `npm run dev`, clique **Reiniciar dados de teste** no laboratório, autentique a PWA e abra o Admin com `aurora@teste.com` / `teste`.
 
 1. **0:00–0:35 — problema e arquitetura.** Explique que o ChargeGrid adiciona operação comercial à infraestrutura energética GoodWe. Mostre rapidamente o diagrama acima e diferencie Stripe/Maps reais, banco local persistente e hardware simulado.
 2. **0:35–1:15 — descoberta normal.** Na PWA, abra o mapa, selecione Hub Solar Aurora e `AURORA-01`. Mostre código, vaga, potência, preço e condições. Como alternativa técnica, digite `AURORA-01` no scanner e mostre que chega ao mesmo carregador.
 3. **1:15–2:05 — pagamento e sessão única.** Escolha cartão, limite de R$ 40,00 e use `4242 4242 4242 4242`. Após autorizar, mostre a sessão na PWA e, sem reload, AURORA-01 em espera em Operação e o mesmo ID em Sessões.
-4. **2:05–3:05 — hardware e energia.** Abra o Laboratório de hardware, conecte AURORA-01 e inicie a 7 kW. Volte a Operação/Sessões e à PWA para mostrar `CHARGING`, potência, energia e custo avançando pelo relógio da API.
+4. **2:05–3:05 — hardware e energia.** Abra o Laboratório de hardware, selecione 7 kW e conecte AURORA-01. Mostre o `StartCharge` automático e volte a Operação/Sessões e à PWA para mostrar `CHARGING`, potência, energia e custo avançando pelo relógio da API.
 5. **3:05–3:45 — encerramento e financeiro.** Encerre na PWA. Mostre `COMPLETED`, carregador disponível e o mesmo PaymentIntent/valor capturado no Resumo financeiro.
 6. **3:45–4:35 — fila compartilhada.** No laboratório, conecte todos os carregadores. Na PWA, entre na fila; no Admin, mostre o motorista. Desconecte um carregador, aguarde o polling e mostre a atribuição temporária nas duas interfaces.
 7. **4:35–5:00 — fechamento técnico.** Reforce que polling apenas observa, regras ficam na API, Stripe é sandbox real e GoodWe é o único trecho simulado. Cite as limitações sem alegar produção.

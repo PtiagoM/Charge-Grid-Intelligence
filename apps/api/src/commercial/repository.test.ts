@@ -51,16 +51,19 @@ describe("CommercialRepository", () => {
     await repository.attachPayment(id, "pi_test_hardware", "requires_capture");
     await repository.recordPayment({ sessionId: id, paymentIntentId: "pi_test_hardware", status: PaymentStatus.AUTHORIZED, providerStatus: "requires_capture", receivedAmount: 0 });
 
-    await repository.hardwareEvent("AURORA-01", "CONNECT");
-    await repository.hardwareEvent("AURORA-01", "START", 7);
+    await repository.hardwareEvent("AURORA-01", "CONNECT", 5.5);
     const started = await repository.session(id);
     await repository.advanceEnergy(new Date(Date.parse(started.startedAt!) + 3_600_000));
     const charging = await repository.session(id);
 
-    expect(charging).toMatchObject({ status: CommercialSessionStatus.CHARGING, currentPowerKw: 7, costCents: 1330 });
-    expect(charging.energyWh).toBeCloseTo(7000, 0);
+    expect(charging).toMatchObject({ status: CommercialSessionStatus.CHARGING, currentPowerKw: 5.5, costCents: 1045 });
+    expect(charging.energyWh).toBeCloseTo(5500, 0);
     await repository.stopSession(id);
     expect(await repository.session(id)).toMatchObject({ status: CommercialSessionStatus.ENERGY_FINISHED, currentPowerKw: 0 });
+    await expect(repository.assertReadyForCapture(id)).rejects.toBeInstanceOf(CommercialConflictError);
+    await expect(repository.completeCapture({ sessionId: id, status: PaymentStatus.PAID, providerStatus: "succeeded", capturedCents: 1330 })).rejects.toBeInstanceOf(CommercialConflictError);
+    await repository.hardwareEvent("AURORA-01", "DISCONNECT");
+    await expect(repository.assertReadyForCapture(id)).resolves.toBeUndefined();
     await repository.completeCapture({ sessionId: id, status: PaymentStatus.PAID, providerStatus: "succeeded", capturedCents: 1330 });
     expect(await repository.session(id)).toMatchObject({ status: CommercialSessionStatus.COMPLETED, payment: { status: PaymentStatus.PAID, capturedCents: 1330 } });
     expect((await repository.snapshot("est_aurora_001")).establishments[0]?.chargers[0]).toMatchObject({ physicalStatus: "AVAILABLE", commercialStatus: "AVAILABLE_TO_START" });
@@ -74,7 +77,6 @@ describe("CommercialRepository", () => {
     await repository.attachPayment(id, "pi_test_limit", "requires_capture");
     await repository.recordPayment({ sessionId: id, paymentIntentId: "pi_test_limit", status: PaymentStatus.AUTHORIZED, providerStatus: "requires_capture", receivedAmount: 0 });
     await repository.hardwareEvent("AURORA-01", "CONNECT");
-    await repository.hardwareEvent("AURORA-01", "START", 7);
     const started = await repository.session(id);
     await repository.advanceEnergy(new Date(Date.parse(started.startedAt!) + 3_600_000));
     expect(await repository.session(id)).toMatchObject({ status: CommercialSessionStatus.ENERGY_FINISHED, energyWh: 5263.158, costCents: 1000, currentPowerKw: 0 });
@@ -100,5 +102,23 @@ describe("CommercialRepository", () => {
     await repository.hardwareEvent("AURORA-03", "DISCONNECT");
     await expect(repository.reserveSession({ id: "50000000-0000-4000-8000-000000000005", driverId: "driver-queue", driverName: "Motorista Fila", establishmentId: "est_aurora_001", chargerCode: "AURORA-03", method: "CARD", authorizedCents: 2500 })).resolves.toMatchObject({ chargerCode: "AURORA-03" });
     expect(await repository.queueForDriver("driver-queue")).toMatchObject({ status: QueueStatus.ASSIGNED });
+  }, 20_000);
+
+  it("resets Aurora test data without replacing its catalog", async () => {
+    const repository = new CommercialRepository("memory://");
+    repositories.push(repository);
+    const id = "60000000-0000-4000-8000-000000000006";
+    await repository.reserveSession({ id, establishmentId: "est_aurora_001", chargerCode: "AURORA-01", driverName: "Motorista Reset", method: "CARD", authorizedCents: 2500 });
+    await repository.attachPayment(id, "pi_test_reset", "requires_capture");
+    await repository.recordPayment({ sessionId: id, paymentIntentId: "pi_test_reset", status: PaymentStatus.AUTHORIZED, providerStatus: "requires_capture", receivedAmount: 0 });
+    await repository.hardwareEvent("AURORA-01", "CONNECT");
+
+    const snapshot = await repository.resetTestData();
+
+    expect(snapshot.sessions).toEqual([]);
+    expect(snapshot.queue).toEqual([]);
+    expect(snapshot.establishments[0]?.chargers).toHaveLength(6);
+    expect(snapshot.establishments[0]?.chargers.every((charger) => charger.physicalStatus === "AVAILABLE" && charger.commercialStatus === "AVAILABLE_TO_START" && charger.currentPowerKw === 0)).toBe(true);
+    expect(snapshot.establishments[0]?.chargers.map((charger) => charger.code)).toEqual(["AURORA-01", "AURORA-02", "AURORA-03", "AURORA-04", "AURORA-05", "AURORA-06"]);
   }, 20_000);
 });

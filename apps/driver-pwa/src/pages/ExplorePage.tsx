@@ -1,38 +1,30 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useDriverApp } from "../app/DriverAppContext";
 import { AppIcon } from "../components/AppIcon";
 import { DriverDiscoveryMap } from "../components/DriverDiscoveryMap";
 import { EstablishmentCard } from "../components/EstablishmentCard";
 import { PageIntro } from "../components/Ui";
-import { commercialPlants } from "../data/commercialPlants";
+import { useCommercialPlants } from "../data/useCommercialPlants";
 import { recommendedPlants } from "../data/plantRecommendations";
-
-const recommendations = recommendedPlants(commercialPlants);
-const mapPlaces = commercialPlants.map((plant) => ({
-  id: plant.id,
-  name: plant.name,
-  position: plant.position,
-  availableChargers: plant.availableChargerCount,
-  chargerCount: plant.chargerCount,
-  nominalPowerKw: plant.nominalPowerKw,
-  tariff: plant.tariffFrom?.amount ?? 0
-}));
 
 export function ExplorePage() {
   const navigate = useNavigate();
   const { isAuthenticated, profile, selectChargingPoint, theme } = useDriverApp();
+  const { plants, error: commercialError } = useCommercialPlants();
+  const recommendations = useMemo(() => recommendedPlants(plants), [plants]);
+  const mapPlaces = useMemo(() => plants.map((plant) => ({ id: plant.id, name: plant.name, position: plant.position, availableChargers: plant.availableChargerCount, chargerCount: plant.chargerCount, nominalPowerKw: plant.nominalPowerKw, tariff: plant.tariffFrom?.amount ?? 0 })), [plants]);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [userPosition, setUserPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [locationState, setLocationState] = useState<"idle" | "loading" | "denied">("idle");
 
   const selectPlace = useCallback((placeId: string) => {
-    const plant = commercialPlants.find((item) => item.id === placeId);
+    const plant = plants.find((item) => item.id === placeId);
     const charger = plant?.chargers[0];
     if (!plant || !charger) return;
     setSelectedPlaceId(placeId);
     selectChargingPoint(plant.id, charger.id);
-  }, [selectChargingPoint]);
+  }, [plants, selectChargingPoint]);
 
   if (!isAuthenticated) return <Navigate to="/" replace />;
 
@@ -71,6 +63,7 @@ export function ExplorePage() {
 
     {locationState === "denied" ? <p className="field-message warning-message" role="status">Não foi possível usar sua localização. Você ainda pode pesquisar no mapa.</p> : null}
     {locationState === "loading" ? <p className="field-message" role="status">Buscando sua localização…</p> : null}
+    {commercialError ? <p className="field-message warning-message" role="status">Não foi possível atualizar a disponibilidade do Hub Solar Aurora.</p> : null}
 
     <section className="results-heading recommendation-heading">
       <div><p className="eyebrow">Recomendações ChargeGrid</p><h2>Melhores locais</h2></div>

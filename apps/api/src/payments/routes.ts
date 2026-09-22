@@ -85,6 +85,7 @@ export function createPaymentRouter() {
       const commercialRepository = getCommercialRepository();
       const currentSession = await commercialRepository.session(body.sessionId);
       if (currentSession.status !== CommercialSessionStatus.ENERGY_FINISHED) throw new CommercialConflictError("Finalize a entrega de energia antes de capturar o pagamento.");
+      await commercialRepository.assertReadyForCapture(body.sessionId);
       const capture = await provider().capture({
         paymentIntentId: request.params.paymentIntentId,
         sessionId: body.sessionId,

@@ -69,5 +69,13 @@ export function createCommercialRouter() {
       return response.status(errorStatus(error)).json({ code: "HARDWARE_EVENT_FAILED", message: error instanceof Error ? error.message : "O evento físico não foi aplicado." });
     }
   });
+  router.post("/test-data/reset", async (_request, response) => {
+    if (process.env.NODE_ENV === "production" && process.env.CHARGEGRID_HARDWARE_LAB_ENABLED !== "true") return response.status(404).end();
+    try {
+      return response.json(await getCommercialRepository().resetTestData());
+    } catch (error) {
+      return response.status(errorStatus(error)).json({ code: "TEST_DATA_RESET_FAILED", message: error instanceof Error ? error.message : "Não foi possível reiniciar os dados de teste." });
+    }
+  });
   return router;
 }

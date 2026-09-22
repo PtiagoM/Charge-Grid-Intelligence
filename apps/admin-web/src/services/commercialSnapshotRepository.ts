@@ -22,9 +22,17 @@ export async function sendHardwareEvent(chargerCode: string, action: HardwareAct
   return payload;
 }
 
+export async function resetCommercialTestData() {
+  const response = await fetch(`${apiUrl}/commercial/test-data/reset`, { method: "POST" });
+  const payload = await response.json().catch(() => ({})) as CommercialSnapshot & { message?: string };
+  if (!response.ok) throw new Error(payload.message || "A API não reiniciou os dados de teste.");
+  return payload;
+}
+
 function sessionStatus(status: CommercialSessionStatus): Session["status"] {
   if (status === CommercialSessionStatus.CHARGING) return "active";
-  if ([CommercialSessionStatus.STARTING, CommercialSessionStatus.ENERGY_FINISHED, CommercialSessionStatus.SETTLING].includes(status)) return "starting";
+  if ([CommercialSessionStatus.STARTING, CommercialSessionStatus.SETTLING].includes(status)) return "starting";
+  if (status === CommercialSessionStatus.ENERGY_FINISHED) return "finished";
   if (status === CommercialSessionStatus.COMPLETED) return "finished";
   if ([CommercialSessionStatus.PAYMENT_FAILED, CommercialSessionStatus.START_FAILED, CommercialSessionStatus.FAULTED, CommercialSessionStatus.CANCELLED].includes(status)) return "start_failed";
   return "authorized";

@@ -3,6 +3,20 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
 import { CommercialSessionStatus, PaymentStatus, QueueStatus, type CommercialChargerRecord, type CommercialEstablishmentRecord, type CommercialQueueRecord, type CommercialSessionRecord, type CommercialSnapshot } from "@chargegrid/shared";
+import pg from "pg";
+import { MockGoodWeProvider, type GoodWeProvider } from "../goodwe/index.js";
+
+const { Pool } = pg;
+
+interface SqlClient {
+  query<T>(sql: string, params?: unknown[]): Promise<{ rows: T[] }>;
+}
+
+interface SqlDatabase extends SqlClient {
+  exec(sql: string): Promise<void>;
+  transaction<T>(callback: (client: SqlClient) => Promise<T>): Promise<T>;
+  close(): Promise<void>;
+}
 
 interface ChargerRow {
   id: string;
@@ -82,6 +96,43 @@ const migrationUrl = new URL("../../../../supabase/migrations/202609220001_comme
 const hardwareMigrationUrl = new URL("../../../../supabase/migrations/202609220002_hardware_lifecycle.sql", import.meta.url);
 const queueMigrationUrl = new URL("../../../../supabase/migrations/202609220003_commercial_queue.sql", import.meta.url);
 const defaultDataDir = process.env.CHARGEGRID_DATABASE_PATH ?? (process.env.NODE_ENV === "test" ? "memory://" : fileURLToPath(new URL("../../../../.local/commercial-db", import.meta.url)));
+
+function pgliteDatabase(dataDir: string): SqlDatabase {
+  const db = new PGlite(dataDir);
+  const client = (queryable: { query<T>(sql: string, params?: unknown[]): Promise<{ rows: T[] }> }): SqlClient => ({ query: (sql, params = []) => queryable.query(sql, params) });
+  return {
+    ...client(db),
+    exec: async (sql) => { await db.exec(sql); },
+    transaction: (callback) => db.transaction((tx) => callback(client(tx))),
+    close: () => db.close()
+  };
+}
+
+function postgresDatabase(connectionString: string): SqlDatabase {
+  const pool = new Pool({ connectionString, ssl: true });
+  const client = (queryable: { query(sql: string, params?: unknown[]): Promise<{ rows: unknown[] }> }): SqlClient => ({
+    query: async <T>(sql: string, params: unknown[] = []) => ({ rows: (await queryable.query(sql, params)).rows as T[] })
+  });
+  return {
+    ...client(pool),
+    exec: async (sql) => { await pool.query(sql); },
+    transaction: async (callback) => {
+      const connection = await pool.connect();
+      try {
+        await connection.query("begin");
+        const result = await callback(client(connection));
+        await connection.query("commit");
+        return result;
+      } catch (error) {
+        await connection.query("rollback");
+        throw error;
+      } finally {
+        connection.release();
+      }
+    },
+    close: () => pool.end()
+  };
+}
 
 function iso(value: Date | string | null) {
   return value ? new Date(value).toISOString() : undefined;
@@ -179,11 +230,12 @@ const queueSelect = `
   left join commercial_chargers c on c.id = q.charger_id`;
 
 export class CommercialRepository {
-  private readonly db: PGlite;
+  private readonly db: SqlDatabase;
   private readonly ready: Promise<void>;
 
-  constructor(dataDir = defaultDataDir) {
-    this.db = new PGlite(dataDir);
+  constructor(dataDir?: string, private readonly goodWeProvider: GoodWeProvider = new MockGoodWeProvider()) {
+    const remoteUrl = process.env.CHARGEGRID_DATABASE_URL?.trim();
+    this.db = !dataDir && remoteUrl ? postgresDatabase(remoteUrl) : pgliteDatabase(dataDir ?? defaultDataDir);
     this.ready = Promise.all([migrationUrl, hardwareMigrationUrl, queueMigrationUrl].map((url) => readFile(url, "utf8"))).then(async (migrations) => {
       for (const sql of migrations) await this.db.exec(sql);
     });
@@ -355,9 +407,10 @@ export class CommercialRepository {
     }
   }
 
-  async hardwareEvent(chargerCode: string, action: "CONNECT" | "DISCONNECT" | "START" | "STOP" | "OFFLINE" | "FAULT" | "RECOVER", powerKw?: number) {
+  async hardwareEvent(chargerCode: string, action: "CONNECT" | "DISCONNECT" | "START" | "STOP" | "OFFLINE" | "FAULT" | "RECOVER", powerKw?: number): Promise<CommercialSnapshot> {
     await this.ready;
     if (["STOP", "DISCONNECT", "OFFLINE", "FAULT"].includes(action)) await this.advanceEnergy();
+    let startAutomatically = false;
     await this.db.transaction(async (tx) => {
       const chargerResult = await tx.query<ChargerRow>("select * from commercial_chargers where code = $1 and published = true", [chargerCode]);
       const charger = chargerResult.rows[0];
@@ -369,6 +422,7 @@ export class CommercialRepository {
       if (action === "CONNECT") {
         if (!["AVAILABLE", "CONNECTED"].includes(charger.physical_status)) throw new CommercialConflictError("O equipamento não pode ser conectado neste estado.");
         await tx.query("update commercial_chargers set physical_status = 'CONNECTED', commercial_status = 'OCCUPIED', current_power_kw = 0, updated_at = now() where id = $1", [charger.id]);
+        startAutomatically = session?.status === CommercialSessionStatus.WAITING_START;
       } else if (action === "START") {
         if (!session || session.status !== CommercialSessionStatus.WAITING_START || charger.physical_status !== "CONNECTED") throw new CommercialConflictError("Conecte o veículo de uma sessão autorizada antes de iniciar a energia.");
         const selectedPower = Math.min(Number(charger.nominal_power_kw), powerKw ?? Number(charger.nominal_power_kw));
@@ -389,11 +443,27 @@ export class CommercialRepository {
         await tx.query("update commercial_chargers set physical_status = 'AVAILABLE', commercial_status = 'AVAILABLE_TO_START', current_power_kw = 0, updated_at = now() where id = $1", [charger.id]);
       }
     });
+    if (startAutomatically) {
+      const command = await this.goodWeProvider.startCharge(chargerCode);
+      if (command.status === "SUCCESS") return this.hardwareEvent(chargerCode, "START", powerKw);
+    }
     if (["DISCONNECT", "RECOVER"].includes(action)) {
       const charger = (await this.snapshot()).establishments.flatMap((item) => item.chargers).find((item) => item.code === chargerCode);
       if (charger) await this.processQueue(charger.establishmentId);
     }
     return this.snapshot();
+  }
+
+  async resetTestData(establishmentId = "est_aurora_001") {
+    await this.ready;
+    await this.db.transaction(async (tx) => {
+      await tx.query("delete from commercial_payments where session_id in (select id from commercial_sessions where establishment_id = $1)", [establishmentId]);
+      await tx.query("delete from commercial_queue_entries where establishment_id = $1", [establishmentId]);
+      await tx.query("delete from commercial_sessions where establishment_id = $1", [establishmentId]);
+      await tx.query(`update commercial_chargers set physical_status = 'AVAILABLE', commercial_status = 'AVAILABLE_TO_START',
+        current_power_kw = 0, updated_at = now() where establishment_id = $1`, [establishmentId]);
+    });
+    return this.snapshot(establishmentId);
   }
 
   async stopSession(id: string) {
@@ -404,12 +474,28 @@ export class CommercialRepository {
     return this.session(id);
   }
 
+  async assertReadyForCapture(sessionId: string) {
+    await this.ready;
+    const result = await this.db.query<{ physical_status: string; status: CommercialSessionStatus }>(`select c.physical_status, s.status
+      from commercial_sessions s join commercial_chargers c on c.id = s.charger_id where s.id = $1`, [sessionId]);
+    const current = result.rows[0];
+    if (!current) throw new CommercialNotFoundError("Sessão comercial não encontrada.");
+    if (current.status !== CommercialSessionStatus.ENERGY_FINISHED) throw new CommercialConflictError("Finalize a entrega de energia antes de liquidar o pagamento.");
+    if (current.physical_status !== "AVAILABLE") throw new CommercialConflictError("Desconecte o veículo no carregador antes de liquidar o pagamento.");
+  }
+
   async completeCapture(input: { sessionId: string; status: PaymentStatus; providerStatus: string; capturedCents: number }) {
     await this.ready;
     await this.db.transaction(async (tx) => {
+      const session = await tx.query<{ charger_id: string; physical_status: string; status: CommercialSessionStatus }>(`select s.charger_id, c.physical_status, s.status
+        from commercial_sessions s join commercial_chargers c on c.id = s.charger_id where s.id = $1`, [input.sessionId]);
+      const current = session.rows[0];
+      if (!current) throw new CommercialNotFoundError("Sessão comercial não encontrada.");
+      if (current.status !== CommercialSessionStatus.ENERGY_FINISHED) throw new CommercialConflictError("Finalize a entrega de energia antes de liquidar o pagamento.");
+      if (current.physical_status !== "AVAILABLE") throw new CommercialConflictError("Desconecte o veículo no carregador antes de liquidar o pagamento.");
       await tx.query("update commercial_payments set status = $2, provider_status = $3, captured_cents = $4, updated_at = now() where session_id = $1", [input.sessionId, input.status, input.providerStatus, input.capturedCents]);
       await tx.query("update commercial_sessions set status = $2, ended_at = now(), last_energy_at = null, updated_at = now() where id = $1", [input.sessionId, input.status === PaymentStatus.PAID ? CommercialSessionStatus.COMPLETED : CommercialSessionStatus.CANCELLED]);
-      await tx.query("update commercial_chargers set physical_status = 'AVAILABLE', commercial_status = 'AVAILABLE_TO_START', current_power_kw = 0, updated_at = now() where id = (select charger_id from commercial_sessions where id = $1)", [input.sessionId]);
+      await tx.query("update commercial_chargers set commercial_status = 'AVAILABLE_TO_START', current_power_kw = 0, updated_at = now() where id = $1", [current.charger_id]);
       await tx.query(`update commercial_queue_entries set status = 'COMPLETED', completed_at = now(), updated_at = now()
         where driver_id = (select driver_id from commercial_sessions where id = $1) and status = 'ASSIGNED'`, [input.sessionId]);
     });

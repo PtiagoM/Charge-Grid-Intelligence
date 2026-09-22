@@ -11,25 +11,32 @@ async function hardware(request: APIRequestContext, code: string, action: string
   expect(response.ok(), await response.text()).toBe(true);
 }
 
-async function restoreChargers(request: APIRequestContext) {
-  for (const code of codes) {
-    const snapshot = await (await request.get(`${api}/commercial/snapshot`)).json();
-    const charger = snapshot.establishments[0].chargers.find((item: { code: string }) => item.code === code);
-    if (charger.physicalStatus === "CHARGING") {
-      await hardware(request, code, "STOP");
-      await hardware(request, code, "DISCONNECT");
-    } else if (["OFFLINE", "FAULT"].includes(charger.physicalStatus)) await hardware(request, code, "RECOVER");
-    else if (charger.physicalStatus !== "AVAILABLE") await hardware(request, code, "DISCONNECT");
-  }
+async function resetTestData(request: APIRequestContext) {
+  const response = await request.post(`${api}/commercial/test-data/reset`);
+  expect(response.ok(), await response.text()).toBe(true);
 }
 
-async function clearE2eQueue(request: APIRequestContext) {
-  const { entry } = await (await request.get(`${api}/commercial/queue/driver/${e2eDriverId}`)).json();
-  if (entry) await request.post(`${api}/commercial/queue/${entry.id}/leave`, { data: { driverId: e2eDriverId } });
-}
+test.beforeEach(async ({ request }) => { await resetTestData(request); });
+test.afterEach(async ({ request }) => { await resetTestData(request); });
 
-test.beforeEach(async ({ request }) => { await clearE2eQueue(request); await restoreChargers(request); });
-test.afterEach(async ({ request }) => { await clearE2eQueue(request); await restoreChargers(request); });
+test("laboratório reinicia o estado operacional sem apagar o catálogo Aurora", async ({ page, request }) => {
+  await hardware(request, "AURORA-02", "CONNECT");
+  await page.goto(`${admin}/#/login`);
+  await page.getByTestId("login-email").fill("aurora@teste.com");
+  await page.getByTestId("login-password").fill("teste");
+  await page.getByTestId("login-submit").click();
+  await page.goto(`${admin}/#/admin`);
+  await expect(page.getByTestId("hardware-lab")).toContainText("Veículo conectado");
+  page.once("dialog", (dialog) => void dialog.accept());
+  await page.getByRole("button", { name: "Reiniciar dados de teste" }).click();
+  await expect(page.getByRole("status")).toContainText("Os seis carregadores estão disponíveis");
+
+  const snapshot = await (await request.get(`${api}/commercial/snapshot?establishmentId=est_aurora_001`)).json();
+  expect(snapshot.sessions).toEqual([]);
+  expect(snapshot.queue).toEqual([]);
+  expect(snapshot.establishments[0].chargers).toHaveLength(6);
+  expect(snapshot.establishments[0].chargers.every((charger: { physicalStatus: string; commercialStatus: string }) => charger.physicalStatus === "AVAILABLE" && charger.commercialStatus === "AVAILABLE_TO_START")).toBe(true);
+});
 
 test("código operacional e falha física usam o mesmo carregador persistido", async ({ page, request }) => {
   await page.setViewportSize({ width: 390, height: 844 });

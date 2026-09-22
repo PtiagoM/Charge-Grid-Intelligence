@@ -1,4 +1,4 @@
-import { ChargerCommercialStatus, QueueStatus, type CommercialSnapshot } from "@chargegrid/shared";
+import { ChargerCommercialStatus } from "@chargegrid/shared";
 import { useEffect, useMemo, useState } from "react";
 import { Navigate, Link, useNavigate, useParams } from "react-router-dom";
 import { useDriverApp } from "../app/DriverAppContext";
@@ -6,8 +6,7 @@ import { AppIcon } from "../components/AppIcon";
 import { QueueJoinConfirmation } from "../components/QueueJoinConfirmation";
 import { StatusChip } from "../components/StatusChip";
 import { InfoRow, PageIntro, PrimaryButton, SecondaryButton } from "../components/Ui";
-import { getPlantById } from "../data/commercialPlants";
-import { getCommercialSnapshot } from "../services/paymentApi";
+import { useCommercialPlants } from "../data/useCommercialPlants";
 
 const statusPresentation: Record<ChargerCommercialStatus, { label: string; tone: "success" | "info" | "warning" | "danger" | "neutral" }> = {
   AVAILABLE_TO_START: { label: "Disponível", tone: "success" },
@@ -24,16 +23,12 @@ const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "
 export function EstablishmentPage() {
   const { establishmentId } = useParams();
   const navigate = useNavigate();
-  const plant = getPlantById(establishmentId);
+  const { plants, loading: plantsLoading, error: plantsError } = useCommercialPlants();
+  const plant = plants.find((item) => item.id === establishmentId);
   const { isAuthenticated, getQueueJoinPreview, joinQueue, queue, selectedChargerId, selectedEstablishmentId, selectChargingPoint } = useDriverApp();
   const [showQueueConfirmation, setShowQueueConfirmation] = useState(false);
-  const [liveSnapshot, setLiveSnapshot] = useState<CommercialSnapshot | null>(null);
   const [queueError, setQueueError] = useState("");
-  const liveEstablishment = liveSnapshot?.establishments.find((item) => item.id === plant?.id);
-  const displayChargers = useMemo(() => plant?.chargers.map((charger) => {
-    const live = liveEstablishment?.chargers.find((item) => item.code === charger.id);
-    return live ? { ...charger, commercialStatus: live.commercialStatus, nominalPowerKw: live.nominalPowerKw, parkingSpot: live.parkingSpot } : charger;
-  }) ?? [], [liveEstablishment, plant]);
+  const displayChargers = useMemo(() => plant?.chargers ?? [], [plant]);
   const availableChargers = displayChargers.filter((charger) => charger.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START);
   const defaultCharger = availableChargers[0] ?? displayChargers[0];
   const selectedCharger = selectedEstablishmentId === plant?.id
@@ -41,27 +36,16 @@ export function EstablishmentPage() {
     : defaultCharger;
 
   useEffect(() => {
-    if (!plant) return;
-    let active = true;
-    const refresh = async () => {
-      const snapshot = await getCommercialSnapshot(plant.id);
-      if (active && snapshot.establishments.length) setLiveSnapshot(snapshot);
-    };
-    void refresh().catch(() => undefined);
-    const timer = window.setInterval(() => void refresh().catch(() => undefined), 2000);
-    return () => { active = false; window.clearInterval(timer); };
-  }, [plant]);
-
-  useEffect(() => {
     if (plant && defaultCharger && (selectedEstablishmentId !== plant.id || !displayChargers.some((charger) => charger.id === selectedChargerId))) {
       selectChargingPoint(plant.id, defaultCharger.id);
     }
   }, [defaultCharger, displayChargers, plant, selectedChargerId, selectedEstablishmentId, selectChargingPoint]);
 
+  if (!plant && establishmentId === "est_aurora_001") return <section className="empty-state"><AppIcon name="plug" size={38} /><h1>{plantsLoading ? "Atualizando o Hub Solar Aurora" : "Operação indisponível"}</h1><p>{plantsLoading ? "Consultando carregadores, fila e disponibilidade na API ChargeGrid." : plantsError}</p></section>;
   if (!plant) return <Navigate to={isAuthenticated ? "/explore" : "/"} replace />;
 
   const isFull = availableChargers.length === 0;
-  const queueActiveCount = liveSnapshot?.queue.filter((entry) => entry.establishmentId === plant.id && [QueueStatus.WAITING, QueueStatus.CALLED, QueueStatus.ASSIGNED].includes(entry.status)).length ?? plant.queueSummary.activeCount;
+  const queueActiveCount = plant.queueSummary.activeCount;
   const tariff = plant.tariffFrom?.amount ?? 0;
 
   function continueRegistered() {
@@ -102,7 +86,7 @@ export function EstablishmentPage() {
           const isSelected = selectedCharger?.id === charger.id;
           return <button type="button" className={`charger-row charger-choice${isSelected ? " is-selected" : ""}`} aria-pressed={isSelected} onClick={() => selectChargingPoint(plant.id, charger.id)} key={charger.id}>
             <span className="charger-icon"><AppIcon name="plug" /></span>
-            <div><strong>{charger.commercialName}</strong><small>Vaga {charger.parkingSpot} · até {charger.nominalPowerKw} kW</small></div>
+            <div><strong>{charger.commercialName}</strong><small>Vaga {charger.parkingSpot} · {charger.currentPowerKw ? `${charger.currentPowerKw} kW agora` : `até ${charger.nominalPowerKw} kW`}</small></div>
             <StatusChip label={presentation.label} tone={presentation.tone} />
           </button>;
         })}
@@ -122,6 +106,6 @@ export function EstablishmentPage() {
       {!isAuthenticated ? <Link className="text-link" to="/login">Entrar para usar fila e histórico</Link> : null}
       <SecondaryButton onClick={() => navigate(isAuthenticated ? "/explore" : "/")}><AppIcon name="map" size={20} /> Voltar</SecondaryButton>
     </div>
-    {showQueueConfirmation ? <QueueJoinConfirmation {...getQueueJoinPreview(plant.id)} position={queueActiveCount + 1} onCancel={() => setShowQueueConfirmation(false)} onConfirm={() => { void joinQueue(plant.id).then(() => { setShowQueueConfirmation(false); navigate("/queue"); }).catch((error: unknown) => setQueueError(error instanceof Error ? error.message : "Não foi possível entrar na fila.")); }} /> : null}
+    {showQueueConfirmation ? <QueueJoinConfirmation {...getQueueJoinPreview(plant.id)} position={queueActiveCount + 1} estimatedWaitMinutes={(queueActiveCount + 1) * 8} onCancel={() => setShowQueueConfirmation(false)} onConfirm={() => { void joinQueue(plant.id).then(() => { setShowQueueConfirmation(false); navigate("/queue"); }).catch((error: unknown) => setQueueError(error instanceof Error ? error.message : "Não foi possível entrar na fila.")); }} /> : null}
   </>;
 }
