@@ -1,5 +1,5 @@
-import { ChargerCommercialStatus, CommercialAvailability } from "@chargegrid/shared";
-import { useEffect, useState } from "react";
+import { ChargerCommercialStatus, QueueStatus, type CommercialSnapshot } from "@chargegrid/shared";
+import { useEffect, useMemo, useState } from "react";
 import { Navigate, Link, useNavigate, useParams } from "react-router-dom";
 import { useDriverApp } from "../app/DriverAppContext";
 import { AppIcon } from "../components/AppIcon";
@@ -7,6 +7,7 @@ import { QueueJoinConfirmation } from "../components/QueueJoinConfirmation";
 import { StatusChip } from "../components/StatusChip";
 import { InfoRow, PageIntro, PrimaryButton, SecondaryButton } from "../components/Ui";
 import { getPlantById } from "../data/commercialPlants";
+import { getCommercialSnapshot } from "../services/paymentApi";
 
 const statusPresentation: Record<ChargerCommercialStatus, { label: string; tone: "success" | "info" | "warning" | "danger" | "neutral" }> = {
   AVAILABLE_TO_START: { label: "Disponível", tone: "success" },
@@ -26,21 +27,41 @@ export function EstablishmentPage() {
   const plant = getPlantById(establishmentId);
   const { isAuthenticated, getQueueJoinPreview, joinQueue, queue, selectedChargerId, selectedEstablishmentId, selectChargingPoint } = useDriverApp();
   const [showQueueConfirmation, setShowQueueConfirmation] = useState(false);
-  const availableChargers = plant?.chargers.filter((charger) => charger.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START) ?? [];
-  const defaultCharger = availableChargers[0] ?? plant?.chargers[0];
+  const [liveSnapshot, setLiveSnapshot] = useState<CommercialSnapshot | null>(null);
+  const [queueError, setQueueError] = useState("");
+  const liveEstablishment = liveSnapshot?.establishments.find((item) => item.id === plant?.id);
+  const displayChargers = useMemo(() => plant?.chargers.map((charger) => {
+    const live = liveEstablishment?.chargers.find((item) => item.code === charger.id);
+    return live ? { ...charger, commercialName: live.name, commercialStatus: live.commercialStatus, nominalPowerKw: live.nominalPowerKw, parkingSpot: live.parkingSpot } : charger;
+  }) ?? [], [liveEstablishment, plant]);
+  const availableChargers = displayChargers.filter((charger) => charger.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START);
+  const defaultCharger = availableChargers[0] ?? displayChargers[0];
   const selectedCharger = selectedEstablishmentId === plant?.id
-    ? plant?.chargers.find((charger) => charger.id === selectedChargerId) ?? defaultCharger
+    ? displayChargers.find((charger) => charger.id === selectedChargerId) ?? defaultCharger
     : defaultCharger;
 
   useEffect(() => {
-    if (plant && defaultCharger && (selectedEstablishmentId !== plant.id || !plant.chargers.some((charger) => charger.id === selectedChargerId))) {
+    if (!plant) return;
+    let active = true;
+    const refresh = async () => {
+      const snapshot = await getCommercialSnapshot(plant.id);
+      if (active && snapshot.establishments.length) setLiveSnapshot(snapshot);
+    };
+    void refresh().catch(() => undefined);
+    const timer = window.setInterval(() => void refresh().catch(() => undefined), 2000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [plant]);
+
+  useEffect(() => {
+    if (plant && defaultCharger && (selectedEstablishmentId !== plant.id || !displayChargers.some((charger) => charger.id === selectedChargerId))) {
       selectChargingPoint(plant.id, defaultCharger.id);
     }
-  }, [defaultCharger, plant, selectedChargerId, selectedEstablishmentId, selectChargingPoint]);
+  }, [defaultCharger, displayChargers, plant, selectedChargerId, selectedEstablishmentId, selectChargingPoint]);
 
   if (!plant) return <Navigate to={isAuthenticated ? "/explore" : "/"} replace />;
 
-  const isFull = plant.commercialAvailability === CommercialAvailability.FULL_QUEUE || availableChargers.length === 0;
+  const isFull = availableChargers.length === 0;
+  const queueActiveCount = liveSnapshot?.queue.filter((entry) => entry.establishmentId === plant.id && [QueueStatus.WAITING, QueueStatus.CALLED, QueueStatus.ASSIGNED].includes(entry.status)).length ?? plant.queueSummary.activeCount;
   const tariff = plant.tariffFrom?.amount ?? 0;
 
   function continueRegistered() {
@@ -61,7 +82,7 @@ export function EstablishmentPage() {
     <PageIntro eyebrow={plant.category} title={plant.name}><p>{plant.address}</p></PageIntro>
     <section className="place-hero">
       <img src={plant.imageUrl} alt={`Área de recarga do ${plant.name}`} />
-      <div className="place-hero-overlay"><StatusChip label={isFull ? "Lotado · fila ativa" : "Disponível agora"} tone={isFull ? "warning" : "success"} /><strong>{isFull ? `${plant.queueSummary.activeCount} aguardando` : `${plant.availableChargerCount} vagas disponíveis`}</strong></div>
+      <div className="place-hero-overlay"><StatusChip label={isFull ? "Lotado · fila ativa" : "Disponível agora"} tone={isFull ? "warning" : "success"} /><strong>{isFull ? `${queueActiveCount} aguardando` : `${availableChargers.length} vagas disponíveis`}</strong></div>
     </section>
 
     <section className="quick-info-grid">
@@ -76,7 +97,7 @@ export function EstablishmentPage() {
     <section className="mobile-card section-card">
       <div className="section-heading"><div><p className="eyebrow">Sessão desta planta</p><h2>Escolha o carregador</h2></div><span>{plant.chargerCount} no total</span></div>
       <div className="charger-list">
-        {plant.chargers.map((charger) => {
+        {displayChargers.map((charger) => {
           const presentation = statusPresentation[charger.commercialStatus];
           const isSelected = selectedCharger?.id === charger.id;
           return <button type="button" className={`charger-row charger-choice${isSelected ? " is-selected" : ""}`} aria-pressed={isSelected} onClick={() => selectChargingPoint(plant.id, charger.id)} key={charger.id}>
@@ -96,10 +117,11 @@ export function EstablishmentPage() {
     </section>
 
     <div className="sticky-action-space">
+      {queueError ? <p className="form-error" role="alert">{queueError}</p> : null}
       {isAuthenticated ? <PrimaryButton onClick={continueRegistered} disabled={!isFull && selectedCharger?.commercialStatus !== ChargerCommercialStatus.AVAILABLE_TO_START}>{isFull ? "Entrar na fila da planta" : selectedCharger?.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START ? `Recarregar no ${selectedCharger.commercialName}` : "Escolha um carregador disponível"}</PrimaryButton> : <Link className="primary-link" to={`/qr/${plant.qrSlug}`}><AppIcon name="qr" size={20} /> Acessar pelo QR Code</Link>}
       {!isAuthenticated ? <Link className="text-link" to="/login">Entrar para usar fila e histórico</Link> : null}
       <SecondaryButton onClick={() => navigate(isAuthenticated ? "/explore" : "/")}><AppIcon name="map" size={20} /> Voltar</SecondaryButton>
     </div>
-    {showQueueConfirmation ? <QueueJoinConfirmation {...getQueueJoinPreview(plant.id)} onCancel={() => setShowQueueConfirmation(false)} onConfirm={() => { joinQueue(plant.id); setShowQueueConfirmation(false); navigate("/queue"); }} /> : null}
+    {showQueueConfirmation ? <QueueJoinConfirmation {...getQueueJoinPreview(plant.id)} position={queueActiveCount + 1} onCancel={() => setShowQueueConfirmation(false)} onConfirm={() => { void joinQueue(plant.id).then(() => { setShowQueueConfirmation(false); navigate("/queue"); }).catch((error: unknown) => setQueueError(error instanceof Error ? error.message : "Não foi possível entrar na fila.")); }} /> : null}
   </>;
 }

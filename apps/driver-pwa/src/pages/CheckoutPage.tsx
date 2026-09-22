@@ -158,7 +158,7 @@ export function CheckoutPage() {
     const previousPayment = readPendingPayment();
     if (previousPayment && (!previousPayment.establishmentId || !previousPayment.chargerId)) return setError("Existe um pagamento antigo sem identificação do ponto. Consulte e cancele esse pagamento no Stripe antes de limpar os dados da aba.");
     if (session && session.status !== CommercialSessionStatus.COMPLETED) return setError("Conclua a sessão atual antes de autorizar outra recarga.");
-    if (charger?.commercialStatus !== ChargerCommercialStatus.AVAILABLE_TO_START) return setError("Este carregador não está disponível para iniciar.");
+    if (charger?.commercialStatus !== ChargerCommercialStatus.AVAILABLE_TO_START && queue?.status !== QueueStatus.CALLED) return setError("Este carregador não está disponível para iniciar.");
     if (queue?.status === QueueStatus.CALLED && queue.expiresAt && Date.parse(queue.expiresAt) <= Date.now()) return setError("A chamada da fila expirou. Volte à fila antes de continuar.");
     if (!stripePromise || !plant || !charger) return setError("O Stripe sandbox ainda não está configurado. Adicione as chaves de teste no ambiente da aplicação.");
 

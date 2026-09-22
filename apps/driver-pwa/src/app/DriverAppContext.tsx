@@ -1,4 +1,4 @@
-import { ChargerCommercialStatus, CommercialSessionStatus, PaymentStatus, QueueStatus } from "@chargegrid/shared";
+import { CommercialSessionStatus, PaymentStatus, QueueStatus, type CommercialQueueRecord } from "@chargegrid/shared";
 import {
   createContext,
   useCallback,
@@ -12,7 +12,7 @@ import {
 import { commercialPlants, getPlantById } from "../data/commercialPlants";
 import { showBrowserNotification } from "../services/browserNotifications";
 import { remoteAuthConfigured, signInDriver, signOutDriver, signUpDriver, subscribeToRemoteSession } from "../services/driverAuth";
-import { getCommercialSession } from "../services/paymentApi";
+import { getCommercialQueue, getCommercialSession, joinCommercialQueue, leaveCommercialQueue } from "../services/paymentApi";
 
 export type DriverMode = "guest" | "driver";
 export type PaymentMethod = "CARD" | "PIX";
@@ -84,6 +84,7 @@ export interface DriverSessionState {
 }
 
 export interface DriverQueueState {
+  backendEntryId: string;
   status: QueueStatus;
   establishmentId: string;
   establishmentName: string;
@@ -154,9 +155,8 @@ interface DriverAppContextValue extends PersistedState {
   applyIdleFee(): void;
   settleSession(): void;
   getQueueJoinPreview(establishmentId: string): QueueJoinPreview;
-  joinQueue(establishmentId: string): void;
-  callQueue(): void;
-  leaveQueue(): void;
+  joinQueue(establishmentId: string): Promise<void>;
+  leaveQueue(): Promise<void>;
   markNotificationsRead(): void;
   addNotification(title: string, body: string, url?: string): void;
 }
@@ -185,13 +185,28 @@ const initialState: PersistedState = {
 function readStoredState(): PersistedState {
   try {
     const parsed = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "null") as PersistedState | null;
-    return parsed?.version === 2 ? parsed : initialState;
+    return parsed?.version === 2 ? { ...parsed, queue: parsed.queue?.backendEntryId ? parsed.queue : null } : initialState;
   } catch {
     return initialState;
   }
 }
 
 const DriverAppContext = createContext<DriverAppContextValue | null>(null);
+
+function driverQueue(entry: CommercialQueueRecord): DriverQueueState {
+  return {
+    backendEntryId: entry.id,
+    status: entry.status,
+    establishmentId: entry.establishmentId,
+    establishmentName: entry.establishmentName,
+    position: entry.position,
+    estimatedWaitMinutes: Math.max(0, entry.position * 8),
+    expiresAt: entry.assignmentExpiresAt,
+    chargerName: entry.chargerCode,
+    chargerId: entry.chargerCode,
+    parkingSpot: entry.parkingSpot
+  };
+}
 
 function notification(title: string, body: string, url = "/notifications"): DriverNotification {
   return { id: crypto.randomUUID(), title, body, createdAt: new Date().toISOString(), read: false, url };
@@ -435,46 +450,24 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const joinQueue = useCallback((establishmentId: string) => setState((current) => {
-    if (!current.isAuthenticated || current.queue || (current.session && current.session.status !== CommercialSessionStatus.COMPLETED)) return current;
-    const plant = getPlantById(establishmentId) ?? defaultPlant;
-    return {
+  const joinQueue = useCallback(async (establishmentId: string) => {
+    const profile = state.account?.profile;
+    if (!state.isAuthenticated || !profile) throw new Error("Entre na sua conta para usar a fila.");
+    if (state.session && state.session.status !== CommercialSessionStatus.COMPLETED) throw new Error("Conclua sua sessão antes de entrar na fila.");
+    const entry = await joinCommercialQueue({ driverId: profile.id, driverName: profile.fullName, driverVehicle: profile.vehicleName, establishmentId });
+    setState((current) => ({
       ...current,
-      queue: {
-        status: QueueStatus.WAITING,
-        establishmentId: plant.id,
-        establishmentName: plant.name,
-        position: Math.max(1, plant.queueSummary.activeCount + 1),
-        estimatedWaitMinutes: plant.queueSummary.estimatedWaitMinutes ?? 18
-      },
-      notifications: [notification("Você entrou na fila", `Acompanhe sua posição em ${plant.name}.`, "/queue"), ...current.notifications]
-    };
-  }), []);
+      queue: driverQueue(entry),
+      notifications: [notification("Você entrou na fila", `Acompanhe sua posição em ${entry.establishmentName}.`, "/queue"), ...current.notifications]
+    }));
+  }, [state.account?.profile, state.isAuthenticated, state.session]);
 
-  const callQueue = useCallback(() => setState((current) => {
-    if (!current.queue) return current;
-    const plant = getPlantById(current.queue.establishmentId) ?? defaultPlant;
-    const charger = plant.chargers.find((item) => item.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START);
-    if (!charger) return { ...current, notifications: [notification("Sem vaga disponível", "Todos os carregadores continuam ocupados. Sua posição foi mantida.", "/queue"), ...current.notifications] };
-    return {
-      ...current,
-      selectedEstablishmentId: plant.id,
-      selectedChargerId: charger.id,
-      queue: {
-        ...current.queue,
-        status: QueueStatus.CALLED,
-        position: 1,
-        estimatedWaitMinutes: 0,
-        expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
-        chargerName: charger.commercialName,
-        chargerId: charger.id,
-        parkingSpot: charger.parkingSpot
-      },
-      notifications: [notification("Sua vez", `Dirija-se à vaga ${charger.parkingSpot ?? "indicada"} em até 10 minutos.`, "/queue"), ...current.notifications]
-    };
-  }), []);
-
-  const leaveQueue = useCallback(() => setState((current) => ({ ...current, queue: null })), []);
+  const leaveQueue = useCallback(async () => {
+    const entry = state.queue;
+    const driverId = state.account?.profile.id;
+    if (entry && driverId) await leaveCommercialQueue(entry.backendEntryId, driverId);
+    setState((current) => ({ ...current, queue: null }));
+  }, [state.account?.profile.id, state.queue]);
   const markNotificationsRead = useCallback(() => setState((current) => ({ ...current, notifications: current.notifications.map((item) => ({ ...item, read: true })) })), []);
   const addNotification = useCallback((title: string, body: string, url?: string) => setState((current) => ({ ...current, notifications: [notification(title, body, url), ...current.notifications] })), []);
 
@@ -542,6 +535,33 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
     return () => { active = false; window.clearInterval(timer); };
   }, [state.session?.backendManaged, state.session?.paymentSessionId]);
 
+  useEffect(() => {
+    const driverId = state.account?.profile.id;
+    if (!state.isAuthenticated || !driverId) return;
+    let active = true;
+    const refresh = async () => {
+      const { entry } = await getCommercialQueue(driverId);
+      if (!active) return;
+      setState((current) => {
+        if (!entry) return current.queue ? { ...current, queue: null } : current;
+        const nextQueue = driverQueue(entry);
+        const called = entry.status === QueueStatus.CALLED && current.queue?.status !== QueueStatus.CALLED;
+        return {
+          ...current,
+          queue: nextQueue,
+          selectedEstablishmentId: entry.chargerCode ? entry.establishmentId : current.selectedEstablishmentId,
+          selectedChargerId: entry.chargerCode ?? current.selectedChargerId,
+          notifications: called
+            ? [notification("Sua vez", `Dirija-se à vaga ${entry.parkingSpot ?? "indicada"} em até 10 minutos.`, "/queue"), ...current.notifications]
+            : current.notifications
+        };
+      });
+    };
+    void refresh().catch(() => undefined);
+    const timer = window.setInterval(() => void refresh().catch(() => undefined), 2000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [state.account?.profile.id, state.isAuthenticated]);
+
   const value = useMemo<DriverAppContextValue>(() => ({
     ...state,
     profile: state.account?.profile ?? null,
@@ -560,11 +580,10 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
     settleSession,
     getQueueJoinPreview,
     joinQueue,
-    callQueue,
     leaveQueue,
     markNotificationsRead,
     addNotification
-  }), [addNotification, applyIdleFee, authorizeSession, callQueue, clearLocalData, finishEnergy, getQueueJoinPreview, isOnline, joinQueue, leaveQueue, login, logout, markNotificationsRead, register, selectChargingPoint, setSessionStatus, setTheme, settleSession, state, tickSession]);
+  }), [addNotification, applyIdleFee, authorizeSession, clearLocalData, finishEnergy, getQueueJoinPreview, isOnline, joinQueue, leaveQueue, login, logout, markNotificationsRead, register, selectChargingPoint, setSessionStatus, setTheme, settleSession, state, tickSession]);
 
   return <DriverAppContext.Provider value={value}>{children}</DriverAppContext.Provider>;
 }

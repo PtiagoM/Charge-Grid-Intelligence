@@ -1,5 +1,5 @@
-import { CommercialSessionStatus, PaymentStatus, type CommercialSnapshot } from "@chargegrid/shared";
-import type { AdminState, Charger, ChargerTelemetry, CommercialPlantLink, Establishment, Location, PaymentTransaction, Session } from "../domain/admin";
+import { CommercialSessionStatus, PaymentStatus, QueueStatus, type CommercialSnapshot } from "@chargegrid/shared";
+import type { AdminState, Charger, ChargerTelemetry, CommercialPlantLink, Establishment, Location, PaymentTransaction, QueueEntry, Session } from "../domain/admin";
 
 const apiUrl = (import.meta.env.VITE_CHARGEGRID_API_URL || "http://localhost:3333").replace(/\/$/, "");
 
@@ -94,6 +94,22 @@ export function mergeCommercialSnapshot(state: AdminState, snapshot: CommercialS
     createdAt: session.createdAt,
     capturedAt: session.payment.status === PaymentStatus.PAID ? session.endedAt : undefined
   }));
+  const queue: QueueEntry[] = snapshot.queue.map((entry) => ({
+    id: entry.id,
+    driverId: entry.driverId,
+    establishmentId: entry.establishmentId,
+    locationId: locationId(entry.establishmentId),
+    driverName: entry.driverName,
+    vehicle: entry.driverVehicle,
+    requiredConnector: "TYPE_2",
+    status: entry.status === QueueStatus.WAITING ? "waiting" : entry.status === QueueStatus.CALLED ? "called" : entry.status === QueueStatus.ASSIGNED ? "assigned" : entry.status === QueueStatus.EXPIRED ? "expired" : "released",
+    joinedAt: entry.joinedAt,
+    calledAt: entry.calledAt,
+    callExpiresAt: entry.assignmentExpiresAt,
+    suggestedChargerId: entry.chargerCode,
+    assignedAt: entry.status === QueueStatus.ASSIGNED ? entry.calledAt : undefined,
+    completedAt: entry.completedAt
+  }));
   const scopeIds = [...ids];
   return {
     ...state,
@@ -105,6 +121,7 @@ export function mergeCommercialSnapshot(state: AdminState, snapshot: CommercialS
     chargers: [...state.chargers.filter((item) => !ids.has(item.establishmentId)), ...chargers],
     chargerTelemetry: [...state.chargerTelemetry.filter((item) => !chargers.some((charger) => charger.id === item.chargerId)), ...telemetry],
     sessions: [...state.sessions.filter((item) => !ids.has(item.establishmentId)), ...sessions],
-    paymentTransactions: [...state.paymentTransactions.filter((item) => !ids.has(item.establishmentId)), ...paymentTransactions]
+    paymentTransactions: [...state.paymentTransactions.filter((item) => !ids.has(item.establishmentId)), ...paymentTransactions],
+    queue: [...state.queue.filter((item) => !ids.has(item.establishmentId)), ...queue]
   };
 }

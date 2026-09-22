@@ -1,5 +1,5 @@
 import type { PaymentMethod } from "../app/DriverAppContext";
-import type { CommercialSessionRecord, CommercialSnapshot } from "@chargegrid/shared";
+import type { CommercialQueueRecord, CommercialSessionRecord, CommercialSnapshot } from "@chargegrid/shared";
 
 const configuredApiBaseUrl = (import.meta.env.VITE_CHARGEGRID_API_URL || "/api").replace(/\/$/, "");
 
@@ -77,6 +77,26 @@ export function stopCommercialSession(sessionId: string) {
 export function getCommercialSnapshot(establishmentId?: string) {
   const query = establishmentId ? `?establishmentId=${encodeURIComponent(establishmentId)}` : "";
   return apiRequest<CommercialSnapshot>(`/commercial/snapshot${query}`);
+}
+
+export function getCommercialQueue(driverId: string) {
+  return apiRequest<{ entry: CommercialQueueRecord | null }>(`/commercial/queue/driver/${encodeURIComponent(driverId)}`);
+}
+
+export function joinCommercialQueue(input: { driverId: string; driverName: string; driverVehicle: string; establishmentId: string }) {
+  return apiRequest<CommercialQueueRecord>("/commercial/queue", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input)
+  });
+}
+
+export function leaveCommercialQueue(entryId: string, driverId: string) {
+  return apiRequest<void>(`/commercial/queue/${encodeURIComponent(entryId)}/leave`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ driverId })
+  });
 }
 
 export async function settlePayment(input: {

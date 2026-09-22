@@ -108,7 +108,8 @@ export function releaseQueueEntry(state: AdminState, account: Account | null, en
 }
 
 export function queuePosition(state: AdminState, entryId: string, averageWaitMinutes = 18) {
-  const waiting = state.queue.filter((item) => item.status === "waiting").sort((a, b) => a.joinedAt.localeCompare(b.joinedAt));
+  const establishmentId = state.queue.find((item) => item.id === entryId)?.establishmentId;
+  const waiting = state.queue.filter((item) => item.status === "waiting" && item.establishmentId === establishmentId).sort((a, b) => a.joinedAt.localeCompare(b.joinedAt));
   const index = waiting.findIndex((item) => item.id === entryId);
   return index < 0 ? null : { position: index + 1, estimatedWaitMinutes: (index + 1) * averageWaitMinutes };
 }

@@ -14,8 +14,9 @@ function remaining(expiresAt?: string) {
 
 export function QueuePage() {
   const navigate = useNavigate();
-  const { isAuthenticated, queue, callQueue, leaveQueue } = useDriverApp();
+  const { isAuthenticated, queue, leaveQueue } = useDriverApp();
   const [countdown, setCountdown] = useState(() => remaining(queue?.expiresAt));
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (queue?.status !== QueueStatus.CALLED) return;
@@ -25,7 +26,7 @@ export function QueuePage() {
 
   if (!queue) return <section className="empty-state"><AppIcon name="clock" size={34} /><h1>Você não está em uma fila</h1><p>Motoristas logados podem entrar na fila de uma planta quando todos os carregadores estiverem ocupados.</p><PrimaryButton onClick={() => navigate(isAuthenticated ? "/explore" : "/login")}>{isAuthenticated ? "Ver estabelecimentos" : "Entrar na conta"}</PrimaryButton></section>;
 
-  const called = queue.status === QueueStatus.CALLED;
+  const called = [QueueStatus.CALLED, QueueStatus.ASSIGNED].includes(queue.status);
   const expired = called && Boolean(queue.expiresAt) && Date.parse(queue.expiresAt!) <= Date.now();
   return <>
     <PageIntro eyebrow={queue.establishmentName} title={called ? "É a sua vez" : "Você está na fila"}>
@@ -40,8 +41,9 @@ export function QueuePage() {
     <section className="mobile-card queue-rules"><h2>Como a fila funciona</h2><ul className="rule-list"><li>A fila é exclusiva para motoristas com conta; a ordem é definida pela entrada.</li><li>O chamado dura 10 minutos e não é reserva antecipada.</li><li>A fila não altera a tarifa.</li><li>Você só pode estar em uma fila ChargeGrid por vez.</li></ul></section>
 
     {expired ? <p className="form-error" role="alert">A chamada expirou. Saia desta fila e consulte novamente a disponibilidade.</p> : null}
-    <p className="field-help">Fila local simulada. Atualizar consulta o catálogo demonstrativo; não libera um carregador ocupado.</p>
-    {called ? <PrimaryButton disabled={expired} onClick={() => navigate(`/checkout?mode=${isAuthenticated ? "driver" : "guest"}`)}>Continuar para pagamento</PrimaryButton> : <PrimaryButton onClick={callQueue}>Atualizar disponibilidade</PrimaryButton>}
-    <SecondaryButton onClick={() => { leaveQueue(); navigate(isAuthenticated ? "/explore" : "/"); }}>Sair da fila</SecondaryButton>
+    <p className="field-help">A disponibilidade e sua posição são atualizadas automaticamente.</p>
+    {error ? <p className="form-error" role="alert">{error}</p> : null}
+    {called ? <PrimaryButton disabled={expired} onClick={() => navigate(`/checkout?mode=${isAuthenticated ? "driver" : "guest"}`)}>Continuar para pagamento</PrimaryButton> : null}
+    <SecondaryButton onClick={() => { setError(""); void leaveQueue().then(() => navigate(isAuthenticated ? "/explore" : "/")).catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Não foi possível sair da fila.")); }}>Sair da fila</SecondaryButton>
   </>;
 }

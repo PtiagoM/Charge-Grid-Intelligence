@@ -4,7 +4,8 @@ import type {
   CommercialAvailability,
   CommercialSessionStatus,
   PaymentStatus,
-  PlantEnergyStatus
+  PlantEnergyStatus,
+  QueueStatus
 } from "../enums/index.js";
 import type { Money } from "../types/index.js";
 
@@ -151,8 +152,27 @@ export interface CommercialSessionRecord {
   payment: CommercialPaymentRecord;
 }
 
+export interface CommercialQueueRecord {
+  id: string;
+  driverId: string;
+  driverName: string;
+  driverVehicle: string;
+  establishmentId: string;
+  establishmentName: string;
+  status: QueueStatus;
+  position: number;
+  chargerId?: string;
+  chargerCode?: string;
+  parkingSpot?: string;
+  joinedAt: string;
+  calledAt?: string;
+  assignmentExpiresAt?: string;
+  completedAt?: string;
+}
+
 export interface CommercialSnapshot {
   generatedAt: string;
   establishments: CommercialEstablishmentRecord[];
   sessions: CommercialSessionRecord[];
+  queue: CommercialQueueRecord[];
 }

@@ -30,6 +30,16 @@ Marco 2 validado:
 
 Evidência visual: a sessão `CG-868A92DC` no carregador `AURORA-01` avançou até `CHARGING`, encerrou com 21,05 kWh/R$ 40,00, capturou `pi_3UIO8b1zxDyq7sgU0SsaCvFU` no Stripe test e apareceu como finalizada/capturada no Admin. O carregador voltou a `AVAILABLE_TO_START`.
 
+Marco 3 validado:
+
+- migration `202609220003_commercial_queue.sql` persiste a fila e garante no banco uma única entrada ativa por motorista autenticado;
+- PWA normal entra, consulta e sai da fila pela API; posição, chamada e carregador atribuído são atualizados automaticamente a cada dois segundos;
+- Admin `Fila` projeta as mesmas entradas persistidas e calcula a posição dentro do estabelecimento;
+- liberar um carregador pelo laboratório chama o primeiro motorista elegível e mantém o equipamento temporariamente atribuído por dez minutos;
+- a atribuição autoriza o checkout normal no carregador chamado; sair da fila libera o carregador se não houver sessão ativa.
+
+Evidência visual: com os seis carregadores Aurora conectados, `Motorista Fila Browser` entrou como `WAITING`, apareceu no Admin, recebeu `AURORA-03` após o evento físico `DISCONNECT`, apareceu como chamado nas duas interfaces e preservou o estado após reload. A saída removeu a fila ativa e devolveu AURORA-03 a `AVAILABLE_TO_START`.
+
 Limitações do ambiente: Google Maps não carrega porque `VITE_GOOGLE_MAPS_API_KEY` está vazia; a migration não pôde ser aplicada ao Supabase remoto sem login/token da CLI. O fallback executável é PostgreSQL local persistente via PGlite, não JSON.
 
 ## Auditoria de partida

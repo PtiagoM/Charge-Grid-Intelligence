@@ -9,6 +9,33 @@ function errorStatus(error: unknown) {
 
 export function createCommercialRouter() {
   const router = Router();
+  router.get("/queue/driver/:driverId", async (request, response) => {
+    try {
+      return response.json({ entry: await getCommercialRepository().queueForDriver(request.params.driverId) });
+    } catch (error) {
+      return response.status(errorStatus(error)).json({ code: "QUEUE_READ_FAILED", message: error instanceof Error ? error.message : "Não foi possível consultar a fila." });
+    }
+  });
+  router.post("/queue", async (request, response) => {
+    const { driverId, driverName, driverVehicle, establishmentId } = request.body ?? {};
+    if (![driverId, driverName, driverVehicle, establishmentId].every((value) => typeof value === "string" && value.trim().length > 0 && value.length <= 160)) {
+      return response.status(400).json({ code: "INVALID_QUEUE_INPUT", message: "Motorista autenticado, veículo e estabelecimento são obrigatórios." });
+    }
+    try {
+      return response.status(201).json(await getCommercialRepository().joinQueue({ driverId, driverName, driverVehicle, establishmentId }));
+    } catch (error) {
+      return response.status(errorStatus(error)).json({ code: "QUEUE_JOIN_FAILED", message: error instanceof Error ? error.message : "Não foi possível entrar na fila." });
+    }
+  });
+  router.post("/queue/:entryId/leave", async (request, response) => {
+    if (typeof request.body?.driverId !== "string") return response.status(400).json({ code: "INVALID_QUEUE_LEAVE", message: "Motorista obrigatório." });
+    try {
+      await getCommercialRepository().leaveQueue(request.params.entryId, request.body.driverId);
+      return response.status(204).end();
+    } catch (error) {
+      return response.status(errorStatus(error)).json({ code: "QUEUE_LEAVE_FAILED", message: error instanceof Error ? error.message : "Não foi possível sair da fila." });
+    }
+  });
   router.get("/snapshot", async (request, response) => {
     try {
       return response.json(await getCommercialRepository().snapshot(typeof request.query.establishmentId === "string" ? request.query.establishmentId : undefined));

@@ -16,6 +16,7 @@ export function QrLandingPage() {
   const point = getChargingPointBySlug(chargerSlug);
   const { getQueueJoinPreview, isAuthenticated, joinQueue, queue, selectChargingPoint } = useDriverApp();
   const [showQueueConfirmation, setShowQueueConfirmation] = useState(false);
+  const [queueError, setQueueError] = useState("");
   const plantId = point?.plant.id;
   const chargerId = point?.charger.id;
   const isAvailable = point?.charger.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START;
@@ -41,7 +42,8 @@ export function QrLandingPage() {
     <section className="mobile-card consent-summary"><h2>O que acontece agora</h2><ol className="step-list"><li><span>1</span>Você define um limite financeiro.</li><li><span>2</span>O pagamento é autorizado com segurança.</li><li><span>3</span>O carregador confirma o início da energia.</li><li><span>4</span>Você acompanha consumo e custo durante a sessão.</li></ol></section>
     {isAvailable ? <Link className="primary-link" to={`/checkout?mode=${isAuthenticated ? "driver" : "guest"}`}><AppIcon name="chevron-right" size={20} /> {isAuthenticated ? "Continuar com minha conta" : "Continuar como visitante"}</Link> : isAuthenticated ? <button type="button" className="primary-link" onClick={() => queue ? navigate("/queue") : setShowQueueConfirmation(true)}><AppIcon name="clock" size={20} /> {queue ? "Acompanhar minha fila" : "Entrar na fila da planta"}</button> : <Link className="primary-link" to="/login"><AppIcon name="user" size={20} /> Entre para usar a fila</Link>}
     {!isAuthenticated ? <><Link className="secondary-link" to="/login">Entrar na minha conta</Link><Link className="text-link" to="/signup">Criar conta de motorista</Link></> : null}
+    {queueError ? <p className="form-error" role="alert">{queueError}</p> : null}
     <p className="privacy-note centered">Visitantes têm acesso somente à sessão atual e ao comprovante correspondente.</p>
-    {showQueueConfirmation ? <QueueJoinConfirmation {...getQueueJoinPreview(plant.id)} onCancel={() => setShowQueueConfirmation(false)} onConfirm={() => { joinQueue(plant.id); setShowQueueConfirmation(false); navigate("/queue"); }} /> : null}
+    {showQueueConfirmation ? <QueueJoinConfirmation {...getQueueJoinPreview(plant.id)} onCancel={() => setShowQueueConfirmation(false)} onConfirm={() => { void joinQueue(plant.id).then(() => { setShowQueueConfirmation(false); navigate("/queue"); }).catch((error: unknown) => setQueueError(error instanceof Error ? error.message : "Não foi possível entrar na fila.")); }} /> : null}
   </>;
 }

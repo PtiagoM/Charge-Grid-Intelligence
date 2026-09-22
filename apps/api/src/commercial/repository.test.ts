@@ -1,4 +1,4 @@
-import { CommercialSessionStatus, PaymentStatus } from "@chargegrid/shared";
+import { CommercialSessionStatus, PaymentStatus, QueueStatus } from "@chargegrid/shared";
 import { afterEach, describe, expect, it } from "vitest";
 import { CommercialConflictError, CommercialRepository } from "./repository.js";
 
@@ -78,5 +78,27 @@ describe("CommercialRepository", () => {
     const started = await repository.session(id);
     await repository.advanceEnergy(new Date(Date.parse(started.startedAt!) + 3_600_000));
     expect(await repository.session(id)).toMatchObject({ status: CommercialSessionStatus.ENERGY_FINISHED, energyWh: 5263.158, costCents: 1000, currentPowerKw: 0 });
+  }, 20_000);
+
+  it("persists one active queue per driver and calls the first driver when hardware is released", async () => {
+    const repository = new CommercialRepository("memory://");
+    repositories.push(repository);
+    for (let index = 1; index <= 6; index += 1) await repository.hardwareEvent(`AURORA-${String(index).padStart(2, "0")}`, "CONNECT");
+
+    const joined = await repository.joinQueue({ driverId: "driver-queue", driverName: "Motorista Fila", driverVehicle: "EV Teste", establishmentId: "est_aurora_001" });
+    expect(joined).toMatchObject({ status: QueueStatus.WAITING, position: 1 });
+    expect((await repository.joinQueue({ driverId: "driver-queue", driverName: "Motorista Fila", driverVehicle: "EV Teste", establishmentId: "est_aurora_001" })).id).toBe(joined.id);
+
+    await repository.hardwareEvent("AURORA-03", "DISCONNECT");
+    expect(await repository.queueForDriver("driver-queue")).toMatchObject({ status: QueueStatus.CALLED, chargerCode: "AURORA-03", position: 0 });
+    await repository.leaveQueue(joined.id, "driver-queue");
+    expect(await repository.queueForDriver("driver-queue")).toBeNull();
+    expect((await repository.snapshot("est_aurora_001")).establishments[0]?.chargers[2]).toMatchObject({ code: "AURORA-03", commercialStatus: "AVAILABLE_TO_START" });
+
+    await repository.hardwareEvent("AURORA-03", "CONNECT");
+    await repository.joinQueue({ driverId: "driver-queue", driverName: "Motorista Fila", driverVehicle: "EV Teste", establishmentId: "est_aurora_001" });
+    await repository.hardwareEvent("AURORA-03", "DISCONNECT");
+    await expect(repository.reserveSession({ id: "50000000-0000-4000-8000-000000000005", driverId: "driver-queue", driverName: "Motorista Fila", establishmentId: "est_aurora_001", chargerCode: "AURORA-03", method: "CARD", authorizedCents: 2500 })).resolves.toMatchObject({ chargerCode: "AURORA-03" });
+    expect(await repository.queueForDriver("driver-queue")).toMatchObject({ status: QueueStatus.ASSIGNED });
   }, 20_000);
 });

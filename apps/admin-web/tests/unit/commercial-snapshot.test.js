@@ -13,7 +13,8 @@ describe('mergeCommercialSnapshot', () => {
       }],
       sessions: [{
         id: '10000000-0000-4000-8000-000000000001', publicCode: 'CG-10000000', driverName: 'Visitante', establishmentId: 'est_aurora_001', establishmentName: 'Hub Solar Aurora', chargerId: 'AURORA-01', chargerCode: 'AURORA-01', chargerName: 'Aurora 01', parkingSpot: 'A01', status: CommercialSessionStatus.WAITING_START, tariffCents: 190, authorizedCents: 2500, energyWh: 0, costCents: 0, currentPowerKw: 0, createdAt: '2026-09-22T12:00:00.000Z', updatedAt: '2026-09-22T12:00:00.000Z', payment: { paymentIntentId: 'pi_test', method: 'CARD', status: PaymentStatus.AUTHORIZED, providerStatus: 'requires_capture', authorizedCents: 2500, capturedCents: 0 }
-      }]
+      }],
+      queue: []
     };
 
     const state = mergeCommercialSnapshot(createInitialState(), snapshot);
