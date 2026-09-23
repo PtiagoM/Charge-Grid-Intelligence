@@ -6,6 +6,9 @@ O motorista descobre o Hub Solar Aurora, escolhe ou identifica um carregador, au
 
 Esta entrega dá continuidade à [Sprint 2 — Dashboard Comercial ChargeGrid](https://github.com/PtiagoM/Dashboard_Comercial-ChargeGrid), que definiu a proposta, a arquitetura e a experiência administrativa. A Sprint 3 concentra-se na implementação funcional e na integração executável entre os componentes.
 
+##Link do vídeo técnico de apresentação
+Link: https://youtu.be/uPUDfY_bTtw
+
 ## Entrega acadêmica
 
 **Sprint 3 — Prototipagem Funcional e Integração**
