@@ -1,11 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { AccessActionResult, Account, AdminState, ChargerPublicationStatus, FinancialActionResult, IncidentActionResult, PlantOnboardingDraft, PlantOnboardingPublishResult, QueueActionResult, Recommendation, ReportActionResult, ReportSubscription, RequestChargerCommandInput, RequestChargerCommandResult, SupportTicket } from "../domain/admin";
+import type { AccessActionResult, Account, AdminState, ChargerPublicationStatus, FinancialActionResult, IncidentActionResult, PlantOnboardingDraft, PlantOnboardingPublishResult, QueueActionResult, Recommendation, ReportActionResult, ReportSubscription, SupportTicket } from "../domain/admin";
 import { createInitialState } from "../fixtures/adminDemo";
 import { GOODWE_PLANT_CATALOG } from "../fixtures/goodwePlantCatalog";
 import { createEmptyPlantOnboardingDraft, publishPlantOnboarding as publishPlantDraft } from "../domain/plantOnboarding";
 import { browserAdminStateRepository } from "../services/adminStateRepository";
-import { acceptChargerCommand, requestChargerCommand as requestCommand, resolveChargerCommand, updateChargerCommercialStatus as updateCommercialStatus } from "../domain/chargerOperations";
-import { demoAdminChargerCommandRepository } from "../services/adminChargerCommandRepository";
+import { updateChargerCommercialStatus as updateCommercialStatus } from "../domain/chargerOperations";
 import { callNextDriver, confirmQueueArrival as confirmArrival, markQueueNoShow as noShow, releaseQueueEntry as releaseEntry } from "../domain/queueOperations";
 import { activateTariffPolicy as activateTariff, refundPayment as refundTransaction, settlePayment as settleTransaction, type ActivateTariffInput } from "../domain/financialOperations";
 import { acknowledgeIncident as acknowledgeOperationalIncident, correlateOperationalSignals, decideRecommendation as decideOperationalRecommendation, resolveIncident as resolveOperationalIncident } from "../domain/incidentOperations";
@@ -24,7 +23,6 @@ interface AdminContextValue {
   login: (email: string, password: string) => Account | null;
   logout: () => void;
   updateChargerCommercialStatus: (chargerId: string, target: ChargerPublicationStatus) => AccessActionResult;
-  requestChargerCommand: (input: RequestChargerCommandInput) => Promise<RequestChargerCommandResult>;
   callNextQueueDriver: (establishmentId: string) => QueueActionResult;
   confirmQueueArrival: (entryId: string) => QueueActionResult;
   markQueueNoShow: (entryId: string, now?: string) => QueueActionResult;
@@ -83,25 +81,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     const transition = updateCommercialStatus(state, account, chargerId, target);
     if (transition.ok) setState(transition.state);
     return { ok: transition.ok, issues: transition.issues };
-  }, [account, state]);
-
-  const requestChargerCommand = useCallback(async (input: RequestChargerCommandInput) => {
-    const requested = requestCommand(state, account, input);
-    if (!requested.ok || !requested.command) return requested;
-    setState(requested.state);
-
-    const provider = await demoAdminChargerCommandRepository.submit(requested.command);
-    const accepted = acceptChargerCommand(requested.state, requested.command.id, provider.providerCommandId, provider.acceptedAt);
-    if (!accepted.ok || !accepted.command) {
-      setState(accepted.state);
-      return accepted;
-    }
-    setState(accepted.state);
-
-    const observation = await demoAdminChargerCommandRepository.observe(accepted.command);
-    const resolved = resolveChargerCommand(accepted.state, accepted.command.id, observation.outcome, observation.observedAt);
-    setState(correlateOperationalSignals(resolved.state, observation.observedAt));
-    return resolved;
   }, [account, state]);
 
   const callNextQueueDriver = useCallback((establishmentId: string) => {
@@ -235,7 +214,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     return publication.result;
   }, [state]);
 
-  const value = useMemo(() => ({ state, account, login, logout, updateChargerCommercialStatus, requestChargerCommand, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, activateTariffPolicy, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, requestReport: runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding }), [state, account, login, logout, updateChargerCommercialStatus, requestChargerCommand, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, activateTariffPolicy, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding]);
+  const value = useMemo(() => ({ state, account, login, logout, updateChargerCommercialStatus, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, activateTariffPolicy, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, requestReport: runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding }), [state, account, login, logout, updateChargerCommercialStatus, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, activateTariffPolicy, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding]);
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
 }
 

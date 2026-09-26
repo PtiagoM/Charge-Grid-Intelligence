@@ -324,6 +324,8 @@ export interface QueueEntry {
   vehicle: string;
   requiredConnector: "TYPE_2" | "CCS_2";
   status: "waiting" | "called" | "assigned" | "no_show" | "expired" | "released";
+  position?: number;
+  estimatedWaitMinutes?: number | null;
   joinedAt: string;
   calledAt?: string;
   callExpiresAt?: string;

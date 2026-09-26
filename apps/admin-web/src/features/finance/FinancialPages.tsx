@@ -50,15 +50,15 @@ export function FinanceDashboardPage({ establishmentId }: { establishmentId?: st
   const breakdowns = transactions.map(calculateFinancialBreakdown);
   const captured = breakdowns.reduce((sum, item) => sum + item.totalCents, 0);
   const refunds = breakdowns.reduce((sum, item) => sum + item.refundedCents, 0);
-  const platform = breakdowns.reduce((sum, item) => sum + item.platformShareCents, 0);
-  const net = breakdowns.reduce((sum, item) => sum + item.establishmentNetCents, 0);
+  const availableAfterRefunds = captured - refunds;
   function settle(id: string) { const result = settlePayment(id); setFeedback(result.ok ? "Liquidacao conciliada." : result.issues.join(" ")); }
   return <section className="surface panel operations-page sems-reference-list sems-chargegrid-table-page sems-finance-page" data-testid="finance-dashboard">
     <header className="sems-chargegrid-table-heading"><div><h2>Receita e conciliação</h2><p>Valores confirmados pela transação, com taxas, participação e liquidação preservadas por linha.</p></div></header>
-    <dl className="sems-finance-summary" aria-label="Resumo financeiro"><div><dt>Capturado</dt><dd>{cents(captured)}</dd><small>antes de reembolsos</small></div><div><dt>Reembolsado</dt><dd>{cents(refunds)}</dd><small>total processado</small></div><div><dt>Participação</dt><dd>{cents(platform)}</dd><small>por versão de tarifa</small></div><div><dt>Líquido estabelecimentos</dt><dd>{cents(net)}</dd><small>após taxa e participação</small></div></dl>
+    <dl className="sems-finance-summary" aria-label="Resumo financeiro"><div><dt>Capturado</dt><dd>{cents(captured)}</dd><small>antes de reembolsos</small></div><div><dt>Reembolsado</dt><dd>{cents(refunds)}</dd><small>total processado</small></div><div><dt>Taxas e repasse</dt><dd>—</dd><small>não recebidos do Stripe sandbox</small></div><div><dt>Após reembolsos</dt><dd>{cents(availableAfterRefunds)}</dd><small>sem alegar payout líquido</small></div></dl>
     <form className="sems-device-toolbar sems-chargegrid-table-toolbar sems-finance-toolbar" onSubmit={(event) => event.preventDefault()}><label><span className="sr-only">Status financeiro</span><select aria-label="Status financeiro" value={status} onChange={(event) => setStatus(event.target.value)}><option value="all">▣  Todos os estados financeiros</option><option value="AUTHORIZED">Autorizado</option><option value="CAPTURED">Capturado</option><option value="PARTIALLY_REFUNDED">Reembolso parcial</option><option value="REFUNDED">Reembolsado</option><option value="DISPUTED">Em disputa</option><option value="FAILED">Falhou</option></select></label><button className="sems-icon-action" type="submit" aria-label="Pesquisar">⌕</button><button className="sems-icon-action" type="button" aria-label="Limpar filtro financeiro" onClick={() => setStatus("all")}>↻</button></form>
-    <div data-testid="mvp-payments-table"><DataTable columns={["Sessão", "Pagamento", "Capturado", "Reembolso", "Liquidação", "Operação"]}>{transactions.map((item) => <tr key={item.id}><td><strong>{item.sessionId}</strong><span>{item.providerReference}</span></td><td><Badge value={item.status} /></td><td>{cents(item.capturedCents)}<span>autorizado {cents(item.authorizedCents)}</span></td><td>{cents(item.refundedCents)}</td><td><Badge value={item.settlementStatus} /></td><td><div className="financial-row-actions"><a className="sems-row-action" href={`#/mvp/financial-session?est=${item.establishmentId}&transaction=${item.id}`}>Abrir detalhe ›</a>{canManageFinance && item.settlementStatus === "AVAILABLE" && item.status !== "DISPUTED" ? <button className="sems-finance-action" type="button" onClick={() => settle(item.id)}>Conciliar</button> : null}</div></td></tr>)}</DataTable></div>
+    <div data-testid="mvp-payments-table"><DataTable columns={["Sessão", "Pagamento", "Capturado", "Reembolso", "Liquidação", "Operação"]}>{transactions.map((item) => <tr key={item.id}><td><strong>{item.sessionId}</strong><span>{item.providerReference}</span></td><td><Badge value={item.status} /></td><td>{cents(item.capturedCents)}<span>autorizado {cents(item.authorizedCents)}</span></td><td>{cents(item.refundedCents)}</td><td><Badge value={item.settlementStatus} /></td><td><div className="financial-row-actions"><a className="sems-row-action" href={`#/mvp/financial-session?est=${item.establishmentId}&transaction=${item.id}`}>Abrir detalhe ›</a>{canManageFinance && item.provider !== "STRIPE_SANDBOX" && item.settlementStatus === "AVAILABLE" && item.status !== "DISPUTED" ? <button className="sems-finance-action" type="button" onClick={() => settle(item.id)}>Conciliar</button> : null}</div></td></tr>)}</DataTable></div>
     {!transactions.length ? <p className="operations-empty">Nenhuma transação corresponde ao filtro.</p> : null}
+    {transactions.some((item) => item.provider === "STRIPE_SANDBOX") ? <p className="operations-empty">Conciliação e reembolso do Stripe sandbox não são acionados por esta tela; o painel apenas observa o ciclo financeiro persistido.</p> : null}
     {feedback ? <p role="status" className="command-feedback">{feedback}</p> : null}
   </section>;
 }
@@ -77,6 +77,7 @@ export function FinancialSessionPage({ transactionId, establishmentId }: { trans
   const location = charger ? state.locations.find((item) => item.id === charger.locationId) : undefined;
   const calculation = session && tariff ? calculateSessionCharge(session, tariff) : undefined;
   const breakdown = calculateFinancialBreakdown(transaction);
+  const hasPayoutData = transaction.provider !== "STRIPE_SANDBOX";
   const events = state.financialEvents.filter((item) => item.transactionId === transaction.id).sort((a, b) => a.at.localeCompare(b.at));
   const refundableCents = Math.max(0, transaction.capturedCents - transaction.refundedCents);
   const authorizationEvent = events.find((item) => item.type === "AUTHORIZED");
@@ -138,7 +139,7 @@ export function FinancialSessionPage({ transactionId, establishmentId }: { trans
       <article><span>Autorizado</span><strong>{cents(transaction.authorizedCents)}</strong><small>limite confirmado</small></article>
       <article><span>Capturado</span><strong>{cents(transaction.capturedCents)}</strong><small>{statusLabel(transaction.status)}</small></article>
       <article><span>Reembolsado</span><strong>{cents(transaction.refundedCents)}</strong><small>{cents(refundableCents)} disponível</small></article>
-      <article className="is-net"><span>Líquido da operação</span><strong>{cents(breakdown.establishmentNetCents)}</strong><small>após taxas e participação</small></article>
+      <article className="is-net"><span>Repasse líquido</span><strong>{hasPayoutData ? cents(breakdown.establishmentNetCents) : "—"}</strong><small>{hasPayoutData ? "após taxas e participação" : "taxas e payout não recebidos do Stripe sandbox"}</small></article>
     </section>
 
     <div className="cg-payment-layout">
@@ -147,10 +148,10 @@ export function FinancialSessionPage({ transactionId, establishmentId }: { trans
         <div className="cg-payment-breakdown">
           <div><span>Energia da sessão<small>{session?.energyKwh.toLocaleString("pt-BR", { minimumFractionDigits: 2 }) ?? "0,00"} kWh</small></span><strong>{cents(calculation?.energyCents ?? transaction.capturedCents)}</strong></div>
           <div><span>Ociosidade faturável<small>{calculation?.billableIdleMinutes ?? 0} min após carência</small></span><strong>{cents(calculation?.idleCents ?? 0)}</strong></div>
-          <div className="is-deduction"><span>Taxa do provedor<small>{transaction.provider}</small></span><strong>− {cents(breakdown.providerFeeCents)}</strong></div>
-          <div className="is-deduction"><span>Participação ChargeGrid<small>{transaction.platformShareBps / 100}% nesta versão</small></span><strong>− {cents(breakdown.platformShareCents)}</strong></div>
+          <div className="is-deduction"><span>Taxa do provedor<small>{transaction.provider}</small></span><strong>{hasPayoutData ? `− ${cents(breakdown.providerFeeCents)}` : "Não informado"}</strong></div>
+          <div className="is-deduction"><span>Participação ChargeGrid<small>{hasPayoutData ? `${transaction.platformShareBps / 100}% nesta versão` : "não calculada no sandbox"}</small></span><strong>{hasPayoutData ? `− ${cents(breakdown.platformShareCents)}` : "Não informado"}</strong></div>
           {transaction.refundedCents ? <div className="is-deduction"><span>Reembolsos<small>abatidos do valor capturado</small></span><strong>− {cents(transaction.refundedCents)}</strong></div> : null}
-          <div className="is-total"><span>Líquido do estabelecimento<small>valor disponível após deduções</small></span><strong>{cents(breakdown.establishmentNetCents)}</strong></div>
+          <div className="is-total"><span>Após reembolsos<small>valor comercial, sem alegar payout líquido</small></span><strong>{cents(Math.max(0, transaction.capturedCents - transaction.refundedCents))}</strong></div>
         </div>
       </section>
 
@@ -166,7 +167,7 @@ export function FinancialSessionPage({ transactionId, establishmentId }: { trans
         </dl>
         <footer>
           <div><span>Liquidação</span><strong>{statusLabel(transaction.settlementStatus)}</strong></div>
-          {canManageFinance && transaction.settlementStatus === "AVAILABLE" && transaction.status !== "DISPUTED" ? <button type="button" onClick={settle}>Conciliar pagamento</button> : <small>{transaction.settlementStatus === "PAID" ? `Concluída em ${localDate(transaction.settledAt)}` : "Aguardando disponibilidade do provedor"}</small>}
+          {canManageFinance && transaction.provider !== "STRIPE_SANDBOX" && transaction.settlementStatus === "AVAILABLE" && transaction.status !== "DISPUTED" ? <button type="button" onClick={settle}>Conciliar pagamento</button> : <small>{transaction.settlementStatus === "PAID" ? `Concluída em ${localDate(transaction.settledAt)}` : "Aguardando disponibilidade do provedor"}</small>}
         </footer>
       </aside>
 
@@ -180,7 +181,7 @@ export function FinancialSessionPage({ transactionId, establishmentId }: { trans
         {!events.length ? <p className="operations-empty">Nenhum evento financeiro registrado.</p> : null}
       </section>
 
-      {canManageFinance ? <section className="cg-payment-card cg-payment-refund" id="financial-refund">
+      {canManageFinance && transaction.provider !== "STRIPE_SANDBOX" ? <section className="cg-payment-card cg-payment-refund" id="financial-refund">
         <header><div><span>Ação administrativa</span><h2>Registrar reembolso</h2></div><small>Saldo {cents(refundableCents)}</small></header>
         {["CAPTURED", "PARTIALLY_REFUNDED"].includes(transaction.status) && refundableCents > 0 ? <>
           <p>Use somente após a confirmação comercial. A ação é registrada no histórico e não pode ser desfeita por esta tela.</p>

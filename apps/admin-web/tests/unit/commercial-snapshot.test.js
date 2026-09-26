@@ -22,15 +22,17 @@ describe('mergeCommercialSnapshot', () => {
     expect(state.chargers.find((charger) => charger.id === 'AURORA-01')).toEqual(expect.objectContaining({ internalId: '00000000-0000-4000-8000-000000000001', parkingSpot: 'A01', currentSessionId: '10000000-0000-4000-8000-000000000001' }));
     expect(state.establishments.find((item) => item.id === 'est_aurora_001')?.clientId).not.toBe('cli-fiap');
     expect(state.sessions.find((session) => session.id === 'CG-10000000')).toEqual(expect.objectContaining({ internalId: '10000000-0000-4000-8000-000000000001', chargerId: 'AURORA-01', status: 'authorized' }));
-    expect(state.paymentTransactions.find((payment) => payment.providerReference === 'pi_test')).toEqual(expect.objectContaining({ sessionId: 'CG-10000000', status: 'AUTHORIZED', authorizedCents: 2500 }));
+    expect(state.paymentTransactions.find((payment) => payment.providerReference === 'pi_test')).toEqual(expect.objectContaining({ sessionId: 'CG-10000000', status: 'AUTHORIZED', settlementStatus: 'PENDING', authorizedCents: 2500, refundedCents: 0 }));
     expect(state.accessGrants.find((grant) => grant.role === 'GOODWE_CENTRAL')?.establishmentIds).toContain('est_aurora_001');
 
     const completedEnergy = mergeCommercialSnapshot(createInitialState(), {
       ...snapshot,
       establishments: [{ ...snapshot.establishments[0], chargers: [{ ...snapshot.establishments[0].chargers[0], physicalStatus: 'CONNECTED' }] }],
-      sessions: [{ ...snapshot.sessions[0], status: CommercialSessionStatus.ENERGY_FINISHED, energyWh: 3500, costCents: 665 }]
+      sessions: [{ ...snapshot.sessions[0], status: CommercialSessionStatus.ENERGY_FINISHED, energyWh: 3500, costCents: 665 }],
+      queue: [{ id: 'queue-001', driverId: 'driver-001', driverName: 'Motorista', driverVehicle: 'Veiculo', establishmentId: 'est_aurora_001', establishmentName: 'Hub Solar Aurora', status: 'WAITING', position: 2, joinedAt: '2026-09-22T12:00:00.000Z', sessionId: null, estimatedWaitMinutes: 12 }]
     });
     expect(completedEnergy.sessions.find((session) => session.id === 'CG-10000000')).toEqual(expect.objectContaining({ status: 'energy_finished', energyKwh: 3.5, consumedAmount: 6.65 }));
+    expect(completedEnergy.queue.find((entry) => entry.id === 'queue-001')).toEqual(expect.objectContaining({ position: 2, estimatedWaitMinutes: 12 }));
 
     const allConnected = mergeCommercialSnapshot(createInitialState(), {
       ...snapshot,
@@ -50,6 +52,8 @@ describe('mergeCommercialSnapshot', () => {
     const state = mergeCommercialSnapshot(createInitialState(), snapshot);
     expect(state.chargers.find((charger) => charger.id === 'AURORA-01')).toEqual(expect.objectContaining({ status: 'connected', parkingSpot: 'B02', currentSessionId: null }));
     expect(state.sessions.find((session) => session.id === 'CG-OLD')).toEqual(expect.objectContaining({ status: 'finished', internalId: 'session-old' }));
+    expect(state.paymentTransactions.find((transaction) => transaction.sessionId === 'CG-OLD')).toEqual(expect.objectContaining({ status: 'CAPTURED', settlementStatus: 'PAID', capturedCents: 665 }));
     expect(state.sessionEvents.filter((event) => event.sessionId === 'CG-OLD').map((event) => event.type)).toEqual(expect.arrayContaining(['ENERGY_FINISHED', 'PAYMENT_CAPTURED']));
+    expect(state.financialEvents.filter((event) => event.transactionId === 'pay-session-old').map((event) => event.type)).toEqual(expect.arrayContaining(['AUTHORIZED', 'CAPTURED', 'SETTLED']));
   });
 });

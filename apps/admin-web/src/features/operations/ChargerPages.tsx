@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState, type CSSProperties, type FormEvent } from "react";
+import { Fragment, useMemo, useState, type CSSProperties } from "react";
 import { Navigate } from "react-router-dom";
 import { useAdminState } from "../../app/AdminState";
 import { Badge, DataTable, SectionHeader, money, number, statusLabel } from "../../components/AdminUi";
@@ -285,10 +285,7 @@ export function ChargersInventoryPage({ establishmentId }: { establishmentId?: s
 }
 
 export function ChargerDetailPage({ chargerId, establishmentId }: { chargerId: string; establishmentId?: string }) {
-  const { state, account, requestChargerCommand, updateChargerCommercialStatus } = useAdminState();
-  const [reason, setReason] = useState("");
-  const [confirmed, setConfirmed] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const { state, account, updateChargerCommercialStatus } = useAdminState();
   const [feedback, setFeedback] = useState<{ tone: "good" | "danger"; message: string } | null>(null);
   const [drawer, setDrawer] = useState<"details" | "charges" | "controls" | null>(null);
   const [monitorMode, setMonitorMode] = useState<"operations" | "charge">("operations");
@@ -296,7 +293,6 @@ export function ChargerDetailPage({ chargerId, establishmentId }: { chargerId: s
   const accessibleIds = new Set(accessibleEstablishmentIds(state, account));
   if (!charger || !accessibleIds.has(charger.establishmentId) || (establishmentId && charger.establishmentId !== establishmentId)) return <Navigate to="/mvp/chargers" replace />;
   const resolvedChargerId = charger.id;
-  const selectedChargerId = charger.id;
   const canViewCommercial = Boolean(account && (hasAdminCapability(account, "operations:monitor") || hasAdminCapability(account, "commercial:read") || hasAdminCapability(account, "commercial:manage")));
   const canViewSessions = Boolean(account && hasAdminCapability(account, "operations:monitor"));
   const canManagePublication = account?.role === "ESTABLISHMENT_ADMIN";
@@ -307,12 +303,6 @@ export function ChargerDetailPage({ chargerId, establishmentId }: { chargerId: s
   const commands = state.chargerCommands.filter((item) => item.chargerId === charger.id).sort((a, b) => b.requestedAt.localeCompare(a.requestedAt));
   const currentSession = charger.currentSessionId ? sessions.find((item) => item.internalId === charger.currentSessionId) : undefined;
   const latestCharge = sessions.find((item) => item.status === "finished") ?? currentSession ?? sessions[0];
-  const commandType: ChargerCommandType | null = charger.status === "charging" && currentSession?.status === "active"
-    ? "STOP_CHARGE"
-    : currentSession?.status === "authorized" && charger.status !== "offline"
-      ? "START_CHARGE"
-      : null;
-  const pending = commands.find((item) => item.status === "REQUESTED" || item.status === "ACCEPTED");
   const nextCommercialStatus: ChargerPublicationStatus | null = charger.publicationStatus === "ELIGIBLE"
     ? "CONFIGURED"
     : charger.publicationStatus === "CONFIGURED"
@@ -329,27 +319,6 @@ export function ChargerDetailPage({ chargerId, establishmentId }: { chargerId: s
     setFeedback(result.ok
       ? { tone: "good", message: `Estado comercial atualizado para ${nextCommercialStatus}.` }
       : { tone: "danger", message: result.issues.join(" ") });
-  }
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!commandType || !confirmed) return;
-    setSubmitting(true);
-    setFeedback(null);
-    const result = await requestChargerCommand({
-      chargerId: selectedChargerId,
-      type: commandType,
-      reason,
-      idempotencyKey: `${commandType}-${selectedChargerId}-${Date.now()}`
-    });
-    setSubmitting(false);
-    if (result.ok) {
-      setReason("");
-      setConfirmed(false);
-      setFeedback({ tone: "good", message: "Comando confirmado pela telemetria do carregador." });
-    } else {
-      setFeedback({ tone: "danger", message: result.issues.join(" ") || "O comando nao foi confirmado." });
-    }
   }
 
   return <div className="sems-charger-detail" data-testid="mvp-charger-detail">
@@ -385,7 +354,7 @@ export function ChargerDetailPage({ chargerId, establishmentId }: { chargerId: s
     {canViewCommercial ? <section className="surface panel sems-chargegrid-device-context" id="charger-commercial"><SectionHeader eyebrow="Camada ChargeGrid" title="Publicação comercial" subtitle="O estado técnico do equipamento permanece separado da disponibilidade comercial." /><div className="charger-commercial-lifecycle"><div><span>Estado atual</span><Badge value={charger.publicationStatus} /><small>Elegível → configurado → publicado → suspenso</small></div>{canManagePublication && nextCommercialStatus ? <button type="button" className="ghost-button" onClick={changeCommercialStatus}>{nextCommercialStatus === "CONFIGURED" ? "Confirmar configuração" : nextCommercialStatus === "PUBLISHED" ? "Publicar no ChargeGrid" : "Suspender publicação"}</button> : <span>Somente o administrador comercial altera este estado.</span>}</div>{canViewSessions ? currentSession ? <div className="operations-session-summary"><div><Badge value={currentSession.status} /><h3>{currentSession.id}</h3><p>{currentSession.driverName} · {currentSession.vehicle}</p></div><div><strong>{number(currentSession.energyKwh)} kWh</strong><span>{currentSession.durationMinutes} min · {money(currentSession.consumedAmount)}</span></div><a className="ghost-button" href={`#/mvp/session?est=${charger.establishmentId}&session=${currentSession.id}`}>Abrir linha do tempo</a></div> : <p className="operations-empty">Nenhuma sessão ChargeGrid autorizada ou ativa neste conector.</p> : null}</section> : null}
 
     {canViewSessions ? <section id="charger-control" className="surface panel command-panel sems-emergency-control-panel"><div className="sems-command-heading"><SectionHeader eyebrow="Contingência" title="Controle do carregador" subtitle="O fluxo normal é automático. Use estes comandos apenas quando a operação exigir intervenção." /><button type="button" className="ghost-button" onClick={() => setDrawer("controls")}>Abrir registro de controle</button></div>
-      {commandType ? <form onSubmit={submit} className="sems-emergency-control" data-testid="charger-command-form"><header><span>Intervenção disponível</span><strong>{commandLabel(commandType)}</strong><small>{currentSession?.id} · confirmação obrigatória por telemetria</small></header><label className="sems-emergency-reason"><span>Motivo da intervenção</span><textarea value={reason} onChange={(event) => setReason(event.target.value)} minLength={8} required placeholder="Descreva por que este comando esta sendo enviado" /></label><footer><label className="command-confirm"><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} /> Confirmo que validei o carregador, o veículo e a sessão.</label><button type="submit" disabled={!confirmed || reason.trim().length < 8 || submitting || Boolean(pending)}>{submitting ? "Aguardando telemetria..." : pending ? "Comando em processamento" : commandLabel(commandType)}</button></footer></form> : <div className="operations-empty"><strong>Somente monitoramento neste momento.</strong><span>{charger.status === "offline" ? "O equipamento está offline." : "Não há sessão elegível para liberar ou parar."}</span></div>}
+      <div className="operations-empty"><strong>Somente monitoramento neste momento.</strong><span>O fluxo comercial é automático; eventos físicos são emitidos somente pelo laboratório GoodWe.</span></div>
       {commands[0] ? <div className="sems-recent-control"><span>Último controle</span><strong>{commandLabel(commands[0].type)}</strong><Badge value={commands[0].status} /><small>{localDate(commands[0].completedAt ?? commands[0].requestedAt)} · {commands[0].requestedBy}</small></div> : null}
       {feedback ? <p className={`command-feedback tone-${feedback.tone}`} role="status">{feedback.message}</p> : null}
       <p className="command-policy">Operador atual: {account?.displayName} · Escopo {account?.profile === "GOODWE" ? "GoodWe autorizado" : location?.name}</p>

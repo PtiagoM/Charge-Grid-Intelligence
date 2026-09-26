@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useAdminState } from "../../app/AdminState";
 import { Badge, DataTable, SectionHeader } from "../../components/AdminUi";
 import { accessibleEstablishmentIds } from "../../domain/accessOperations";
-import { queuePosition } from "../../domain/queueOperations";
 import { ChargeGridOperationStage } from "./ChargeGridOperationStage";
 
 function localTime(value?: string) {
@@ -76,9 +75,9 @@ export function QueueOperationsPage({ establishmentId }: { establishmentId?: str
     </nav>
     <DataTable columns={["Posição", "Motorista", "Veículo", "Estado", "Entrada / conclusão", "Carregador sugerido"]}>
       {visibleEntries.map((entry) => {
-        const position = entry.status === "waiting" ? queuePosition(state, entry.id) : undefined;
+        const position = entry.status === "waiting" ? entry.position : undefined;
         return <tr key={entry.id}>
-          <td><strong>{position ? `#${position.position}` : "—"}</strong>{position ? <span>{position.estimatedWaitMinutes} min estimados</span> : null}</td>
+          <td><strong>{position ? `#${position}` : "—"}</strong>{position ? <span>{entry.estimatedWaitMinutes ?? "—"} min estimados</span> : null}</td>
           <td><strong>{entry.driverName}</strong><span>{entry.requiredConnector}</span></td>
           <td>{entry.vehicle}</td>
           <td><Badge value={entry.status} /></td>

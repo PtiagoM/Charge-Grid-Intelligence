@@ -1,5 +1,5 @@
 import { CommercialSessionStatus, PaymentStatus, QueueStatus, type CommercialSnapshot } from "@chargegrid/shared";
-import type { AdminState, Charger, ChargerTelemetry, Client, CommercialPlantLink, Establishment, Location, PaymentTransaction, QueueEntry, Session, SessionEvent } from "../domain/admin";
+import type { AdminState, Charger, ChargerTelemetry, Client, CommercialPlantLink, Establishment, FinancialEvent, Location, PaymentTransaction, QueueEntry, Session, SessionEvent } from "../domain/admin";
 
 const apiUrl = (import.meta.env.VITE_CHARGEGRID_API_URL || "http://localhost:3333").replace(/\/$/, "");
 
@@ -109,15 +109,24 @@ export function mergeCommercialSnapshot(state: AdminState, snapshot: CommercialS
     providerReference: session.payment.paymentIntentId!,
     currency: "BRL",
     status: session.payment.status === PaymentStatus.PAID ? "CAPTURED" : session.payment.status === PaymentStatus.FAILED ? "FAILED" : "AUTHORIZED",
-    settlementStatus: session.payment.status === PaymentStatus.PAID ? "AVAILABLE" : session.payment.status === PaymentStatus.FAILED ? "FAILED" : "PENDING",
+    settlementStatus: session.payment.status === PaymentStatus.PAID ? "PAID" : session.payment.status === PaymentStatus.FAILED ? "FAILED" : "PENDING",
     authorizedCents: session.authorizedCents,
     capturedCents: session.payment.capturedCents,
-    refundedCents: 0,
+    refundedCents: session.payment.refundedCents,
     providerFeeCents: 0,
     platformShareBps: 0,
     createdAt: session.createdAt,
-    capturedAt: session.payment.status === PaymentStatus.PAID ? session.endedAt : undefined
+    capturedAt: session.payment.status === PaymentStatus.PAID ? session.settledAt ?? session.endedAt : undefined,
+    settledAt: session.settledAt ?? undefined
   }));
+  const financialEvents = snapshot.sessions.filter((session) => session.payment.paymentIntentId).flatMap((session) => {
+    const transactionId = `pay-${session.id}`;
+    const events: FinancialEvent[] = [{ id: `commercial-${session.id}-authorized`, transactionId, type: "AUTHORIZED", at: session.createdAt, actor: "Stripe sandbox", amountCents: session.authorizedCents }];
+    if (session.payment.capturedCents) events.push({ id: `commercial-${session.id}-captured`, transactionId, type: "CAPTURED" as const, at: session.settledAt ?? session.updatedAt, actor: "Stripe sandbox", amountCents: session.payment.capturedCents });
+    if (session.payment.refundedCents) events.push({ id: `commercial-${session.id}-refunded`, transactionId, type: "REFUNDED" as const, at: session.settledAt ?? session.updatedAt, actor: "Stripe sandbox", amountCents: session.payment.refundedCents });
+    if (session.settledAt) events.push({ id: `commercial-${session.id}-settled`, transactionId, type: "SETTLED" as const, at: session.settledAt, actor: "ChargeGrid" });
+    return events;
+  });
   const queue: QueueEntry[] = snapshot.queue.map((entry) => ({
     id: entry.id,
     driverId: entry.driverId,
@@ -127,6 +136,8 @@ export function mergeCommercialSnapshot(state: AdminState, snapshot: CommercialS
     vehicle: entry.driverVehicle,
     requiredConnector: "TYPE_2",
     status: entry.status === QueueStatus.WAITING ? "waiting" : entry.status === QueueStatus.CALLED ? "called" : entry.status === QueueStatus.ASSIGNED ? "assigned" : entry.status === QueueStatus.EXPIRED ? "expired" : "released",
+    position: entry.position,
+    estimatedWaitMinutes: entry.estimatedWaitMinutes,
     joinedAt: entry.joinedAt,
     calledAt: entry.calledAt,
     callExpiresAt: entry.assignmentExpiresAt,
@@ -148,6 +159,7 @@ export function mergeCommercialSnapshot(state: AdminState, snapshot: CommercialS
     sessions: [...state.sessions.filter((item) => !ids.has(item.establishmentId)), ...sessions],
     sessionEvents: [...state.sessionEvents.filter((item) => !sessions.some((session) => session.id === item.sessionId)), ...sessionEvents],
     paymentTransactions: [...state.paymentTransactions.filter((item) => !ids.has(item.establishmentId)), ...paymentTransactions],
+    financialEvents: [...state.financialEvents.filter((item) => !paymentTransactions.some((transaction) => transaction.id === item.transactionId)), ...financialEvents],
     queue: [...state.queue.filter((item) => !ids.has(item.establishmentId)), ...queue]
   };
 }

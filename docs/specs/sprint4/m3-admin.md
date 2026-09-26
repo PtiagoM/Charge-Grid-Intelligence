@@ -24,6 +24,7 @@ Objetivo: finalizar operação comercial/energética nas superfícies existentes
 - **Aceite:** GIVEN captured500/refunded100 THEN recebido líquido400 identificado, não payout; GIVEN Stop API falha THEN sem toast “parado”; GIVEN CALLED expiry THEN UI só observa relógio servidor.
 - **Testes:** V04/V06/V07; V-ADMIN; financial adapters não convertem AUTHORIZED em receita; command double-click idempotente. Não executar refund real sem gate sandbox controlado.
 - **Saída:** nenhuma ação comercial essencial local. Commit `feat(admin): connect commands queue and settlement to shared API`.
+- **Checkpoint concluído (26/09):** Operação e detalhe de carregador não disparam mais comandos locais; o laboratório GoodWe é a única fronteira para eventos físicos. A fila usa posição e espera calculadas pelo servidor. O financeiro projeta autorização, captura, devolução e liquidação persistidas; taxas e repasse ausentes no Stripe sandbox são exibidos como indisponíveis, sem receita inventada. Teste focal, typecheck, build e carregamento limpo do Admin concluídos.
 
 ## S4-M3-U3 — Tarifas, publicação, métricas e relatórios
 
