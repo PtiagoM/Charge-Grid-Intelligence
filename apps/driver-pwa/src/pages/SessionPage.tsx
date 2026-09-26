@@ -53,7 +53,7 @@ function formatCountdown(seconds: number) {
 }
 
 export function SessionPage() {
-  const { session, receipts, finishEnergy, applyIdleFee, settleSession } = useDriverApp();
+  const { session, receipts, dismissCompletedSession, finishEnergy, applyIdleFee, settleSession } = useDriverApp();
   const [settling, setSettling] = useState(false);
   const [settlementError, setSettlementError] = useState("");
   const [clockNow, setClockNow] = useState(Date.now);
@@ -134,6 +134,6 @@ export function SessionPage() {
     {session.status === CommercialSessionStatus.IDLE_GRACE_PERIOD ? <><PrimaryButton onClick={beginSettlement} disabled={settling || !readyToSettle}>{settling ? "Liquidando com a Stripe…" : readyToSettle ? "Liquidar pagamento" : "Aguardando desconexão do veículo"}</PrimaryButton><SecondaryButton disabled={!graceExpired || session.backendManaged} onClick={applyIdleFee}>Registrar permanência após tolerância</SecondaryButton></> : null}
     {session.status === CommercialSessionStatus.IDLE_FEE ? <PrimaryButton onClick={beginSettlement} disabled={settling || !readyToSettle}>{settling ? "Liquidando com a Stripe…" : readyToSettle ? "Liquidar pagamento" : "Aguardando desconexão do veículo"}</PrimaryButton> : null}
     {settlementError ? <p className="form-error" role="alert">{settlementError}</p> : null}
-    {session.status === CommercialSessionStatus.COMPLETED && (session.backendManaged || completedReceipt) ? <><Link className="primary-link" to={`/receipt/${session.backendManaged ? session.paymentSessionId : completedReceipt!.id}`}><AppIcon name="receipt" size={20} /> Ver comprovante</Link><Link className="text-link" to={session.owner === "driver" ? "/history" : "/"}>{session.owner === "driver" ? "Ir para o histórico" : "Voltar ao início"}</Link></> : null}
+    {session.status === CommercialSessionStatus.COMPLETED && (session.backendManaged || completedReceipt) ? <><Link className="primary-link" to={`/receipt/${session.backendManaged ? session.paymentSessionId : completedReceipt!.id}`}><AppIcon name="receipt" size={20} /> Ver comprovante</Link><Link className="text-link" to={session.owner === "driver" ? "/history" : "/"}>{session.owner === "driver" ? "Ir para o histórico" : "Voltar ao início"}</Link><SecondaryButton onClick={dismissCompletedSession}>Voltar para sessões</SecondaryButton></> : null}
   </>;
 }

@@ -156,6 +156,7 @@ interface DriverAppContextValue extends PersistedState {
   finishEnergy(): void;
   applyIdleFee(): void;
   settleSession(): void;
+  dismissCompletedSession(): void;
   getQueueJoinPreview(establishmentId: string): QueueJoinPreview;
   joinQueue(establishmentId: string): Promise<void>;
   leaveQueue(): Promise<void>;
@@ -474,6 +475,10 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
     };
   }), []);
 
+  const dismissCompletedSession = useCallback(() => setState((current) => current.session?.status === CommercialSessionStatus.COMPLETED
+    ? { ...current, session: null }
+    : current), []);
+
   const getQueueJoinPreview = useCallback((establishmentId: string): QueueJoinPreview => {
     const plant = getPlantById(establishmentId) ?? defaultPlant;
     return {
@@ -610,12 +615,13 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
     finishEnergy,
     applyIdleFee,
     settleSession,
+    dismissCompletedSession,
     getQueueJoinPreview,
     joinQueue,
     leaveQueue,
     markNotificationsRead,
     addNotification
-  }), [addNotification, applyIdleFee, authorizeSession, clearLocalData, finishEnergy, getQueueJoinPreview, isOnline, joinQueue, leaveQueue, login, logout, markNotificationsRead, register, selectChargingPoint, setSessionStatus, setTheme, settleSession, state, tickSession]);
+  }), [addNotification, applyIdleFee, authorizeSession, clearLocalData, dismissCompletedSession, finishEnergy, getQueueJoinPreview, isOnline, joinQueue, leaveQueue, login, logout, markNotificationsRead, register, selectChargingPoint, setSessionStatus, setTheme, settleSession, state, tickSession]);
 
   return <DriverAppContext.Provider value={value}>{children}</DriverAppContext.Provider>;
 }
