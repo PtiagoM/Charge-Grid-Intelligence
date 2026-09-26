@@ -95,6 +95,10 @@ export function getCommercialSession(sessionId: string) {
   return apiRequest<CommercialSessionRecord>(`/commercial/sessions/${encodeURIComponent(sessionId)}`, undefined, guestSessionToken(sessionId));
 }
 
+export function getCommercialSessions(sessionIdForGuestToken?: string) {
+  return apiRequest<{ sessions: CommercialSessionRecord[] }>("/commercial/sessions", undefined, sessionIdForGuestToken ? guestSessionToken(sessionIdForGuestToken) : undefined);
+}
+
 export function stopCommercialSession(sessionId: string) {
   return apiRequest<CommercialSessionRecord>(`/commercial/sessions/${encodeURIComponent(sessionId)}/stop`, { method: "POST" }, guestSessionToken(sessionId));
 }
