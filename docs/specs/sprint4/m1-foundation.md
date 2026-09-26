@@ -61,6 +61,11 @@ Objetivo: API/SQL executam contratos estáveis, sem frontend decidir negócio. G
 
 - `GET /commercial/sessions` entrega o histórico da mesma identidade que pode ler uma sessão individual: bearer do motorista ou token guest hashado. A projeção não aceita `driverId` de cliente e não expõe registros de outro proprietário.
 - Validação focal: Supertest confirma que o motorista A recebe somente sua sessão, enquanto UUID de B continua 404.
+- `GET /commercial/financial-summary` consolida somente dados persistidos por sessão/pagamento: garantia autorizada, consumo, captura, devolução, sessões ativas e total. É a projeção contratual para o resumo financeiro do Admin; a interface será conectada no Marco 3.
+
+## Gate M1 — concluído
+
+O runtime PGlite persistente, catálogo Aurora, cotação, checkout Stripe, ownership, lifecycle comercial, fila, histórico próprio e agregados financeiros possuem contratos de API comuns. PWA e Admin podem avançar sem criar estados comerciais paralelos. Permanecem deliberadamente para os marcos seguintes: telas finais, política de demanda/energia, eventos/auditoria completos, recibo visual e autenticação administrativa corporativa.
 
 ## S4-M1-U3 — Quote, tentativa e Stripe normal
 

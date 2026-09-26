@@ -88,6 +88,13 @@ export function createCommercialRouter(options: { repository?: CommercialReposit
       return response.status(errorStatus(error)).json({ code: "COMMERCIAL_READ_FAILED", message: error instanceof Error ? error.message : "Falha ao consultar a operação comercial." });
     }
   });
+  router.get("/financial-summary", async (request, response) => {
+    try {
+      return response.json(await repository.financialSummary(typeof request.query.establishmentId === "string" ? request.query.establishmentId : undefined));
+    } catch (error) {
+      return response.status(errorStatus(error)).json({ code: "COMMERCIAL_FINANCIAL_READ_FAILED", message: error instanceof Error ? error.message : "Não foi possível calcular o resumo financeiro." });
+    }
+  });
   router.get("/sessions", async (request, response) => {
     try {
       return response.json({ sessions: await repository.sessionsForAccess(await sessionAccess(request)) });

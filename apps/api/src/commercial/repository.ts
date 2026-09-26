@@ -2,7 +2,7 @@ import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
-import { ChargerCommercialStatus, ChargerTechnicalStatus, CommercialAvailability, CommercialSessionStatus, PaymentStatus, QueueStatus, type CommercialCatalog, type CommercialChargerRecord, type CommercialChargerResolution, type CommercialEstablishmentRecord, type CommercialOpeningHoursInterval, type CommercialPublicChargerRecord, type CommercialPublicEstablishmentRecord, type CommercialQueueRecord, type CommercialQuote, type CommercialSessionRecord, type CommercialSnapshot } from "@chargegrid/shared";
+import { ChargerCommercialStatus, ChargerTechnicalStatus, CommercialAvailability, CommercialSessionStatus, PaymentStatus, QueueStatus, type CommercialCatalog, type CommercialChargerRecord, type CommercialChargerResolution, type CommercialEstablishmentRecord, type CommercialFinancialSummary, type CommercialOpeningHoursInterval, type CommercialPublicChargerRecord, type CommercialPublicEstablishmentRecord, type CommercialQueueRecord, type CommercialQuote, type CommercialSessionRecord, type CommercialSnapshot } from "@chargegrid/shared";
 import pg from "pg";
 import { MockGoodWeProvider, type GoodWeProvider } from "../goodwe/index.js";
 
@@ -864,6 +864,21 @@ export class CommercialRepository {
       ? await this.db.query<SessionRow>(`${sessionSelect} where s.driver_id = $1 order by s.created_at desc`, [access.driverId])
       : await this.db.query<SessionRow>(`${sessionSelect} where s.guest_token_hash = $1 order by s.created_at desc`, [hashGuestToken(access.guestToken)]);
     return sessions.rows.map(sessionRecord);
+  }
+
+  async financialSummary(establishmentId?: string): Promise<CommercialFinancialSummary> {
+    await this.ready;
+    const result = await this.db.query<{ session_count: number; active_session_count: number; authorized_cents: number; consumed_cents: number; captured_cents: number; refunded_cents: number }>(`
+      select count(*)::int as session_count,
+        count(*) filter (where s.status not in ('COMPLETED', 'PAYMENT_FAILED', 'START_FAILED', 'FAULTED', 'CANCELLED'))::int as active_session_count,
+        coalesce(sum(s.authorized_cents), 0)::int as authorized_cents,
+        coalesce(sum(s.total_cost_cents), 0)::int as consumed_cents,
+        coalesce(sum(p.captured_cents), 0)::int as captured_cents,
+        coalesce(sum(p.refunded_cents), 0)::int as refunded_cents
+      from commercial_sessions s left join commercial_payments p on p.session_id = s.id
+      ${establishmentId ? "where s.establishment_id = $1" : ""}`, establishmentId ? [establishmentId] : []);
+    const row = result.rows[0]!;
+    return { establishmentId, sessionCount: row.session_count, activeSessionCount: row.active_session_count, authorizedCents: row.authorized_cents, consumedCents: row.consumed_cents, capturedCents: row.captured_cents, refundedCents: row.refunded_cents };
   }
 
   async sessionIdForPaymentIntent(paymentIntentId: string) {

@@ -178,6 +178,16 @@ export interface CommercialPaymentRecord {
   lastErrorCode: string | null;
 }
 
+export interface CommercialFinancialSummary {
+  establishmentId?: string;
+  sessionCount: number;
+  activeSessionCount: number;
+  authorizedCents: number;
+  consumedCents: number;
+  capturedCents: number;
+  refundedCents: number;
+}
+
 export interface CommercialSessionRecord {
   id: string;
   publicCode: string;

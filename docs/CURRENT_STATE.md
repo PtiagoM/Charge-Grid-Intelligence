@@ -14,7 +14,7 @@ A auditoria inicial confirmou Admin nativo funcional com domínio e persistênci
 
 O registro de implementação, evidências e limitações da Sprint fica em [`SPRINT3.md`](SPRINT3.md). Código verificado e decisões posteriores prevalecem sobre descrições antigas de implementação. A transparência sobre simulação é obrigatória: o modo técnico de demonstração deve identificá-la explicitamente, conforme a instrução atual do usuário, superando restrições antigas a esse rótulo. O escopo transversal desta entrega autoriza mudanças coordenadas nos dois produtos e nos contratos; não autoriza publicação ou merge.
 
-### Sprint 4 — checkpoints M1-U1 a U3 (26/09/2026)
+### Sprint 4 — Marco 1 concluído (26/09/2026)
 
 - A base compartilhada agora possui ledger de migrations e aplica `202609260004_s4_foundation.sql` uma única vez; bancos comerciais legados são baselined sem reexecutar o UPSERT destrutivo das migrations antigas.
 - Aurora segue sendo o único catálogo operacional completo: `plant_aurora_001`, seis UUIDs estáveis, códigos/QR e vaga B02 foram preservados. A API publica o catálogo sanitizado em `/commercial/catalog` e resolve UUID/código/QR em `/commercial/chargers/resolve/:identifier`.
@@ -27,6 +27,8 @@ O registro de implementação, evidências e limitações da Sprint fica em [`SP
 - Para sessões backend-managed, a PWA passou a exibir energia, ociosidade e o fim da tolerância do mesmo registro remoto; não avança esses valores pelo relógio da interface.
 - A atribuição temporária da fila agora vence apenas pelo relógio do backend: libera o carregador físico disponível e processa o próximo motorista. Quando uma atribuição vira sessão, o `sessionId` é persistido e o início de carga completa a entrada.
 - A API oferece histórico de sessões por proprietário em `GET /commercial/sessions`; motorista e visitante veem somente registros próprios. A tela de histórico será conectada a essa projeção no Marco 2.
+- O resumo financeiro operacional está disponível em `GET /commercial/financial-summary`, derivado exclusivamente de sessões e pagamentos persistidos (`authorized`, consumo, captura e devolução). O próximo marco é finalizar as jornadas e estados visuais da Driver PWA contra esses contratos.
+- Validação do gate: lint e typecheck globais passaram; testes shared (5), Admin (78) e API (23) passaram. No ambiente atual, a execução paralela da API esgota memória; `npm test --workspace @chargegrid/api -- --maxWorkers=1` é a alternativa verde reproduzível.
 - Lifecycle físico, ociosidade, fila final, energia/demanda e projeções completas Admin/PWA permanecem nos próximos checkpoints M1-U4+.
 
 ### Vertical real vigente — 22/09/2026

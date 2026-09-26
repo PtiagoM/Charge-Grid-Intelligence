@@ -38,6 +38,7 @@ describe("CommercialRepository", () => {
     const snapshot = await repository.snapshot("est_aurora_001");
     expect(snapshot.sessions).toEqual([expect.objectContaining({ id, payment: expect.objectContaining({ paymentIntentId: "pi_test_chargegrid" }) })]);
     expect(snapshot.establishments[0]?.chargers[0]).toEqual(expect.objectContaining({ code: "AURORA-01", commercialStatus: "OCCUPIED", currentSessionId: id }));
+    await expect(repository.financialSummary("est_aurora_001")).resolves.toMatchObject({ establishmentId: "est_aurora_001", sessionCount: 1, activeSessionCount: 1, authorizedCents: 2500, consumedCents: 0 });
     await expect(repository.reserveSession({
       id: "20000000-0000-4000-8000-000000000002",
       establishmentId: "est_aurora_001",
