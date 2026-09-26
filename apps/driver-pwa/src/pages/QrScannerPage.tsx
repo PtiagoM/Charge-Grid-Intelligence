@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "r
 import { useNavigate } from "react-router-dom";
 import { AppIcon } from "../components/AppIcon";
 import { PageIntro, PrimaryButton, SecondaryButton } from "../components/Ui";
-import { getChargingPointBySlug } from "../data/commercialPlants";
+import { resolveCommercialCharger } from "../services/paymentApi";
 
 function chargerSlugFromValue(value: string) {
   const normalized = value.trim();
@@ -10,8 +10,7 @@ function chargerSlugFromValue(value: string) {
   const candidate = routeMatch?.[1] ?? normalized.split(/[/:]/).filter(Boolean).at(-1);
   if (!candidate) return null;
   try {
-    const decoded = decodeURIComponent(candidate);
-    return getChargingPointBySlug(decoded) ? decoded : null;
+    return decodeURIComponent(candidate);
   } catch {
     return null;
   }
@@ -27,15 +26,21 @@ export function QrScannerPage() {
 
   useEffect(() => () => controlsRef.current?.stop(), []);
 
-  function openResult(value: string) {
+  async function openResult(value: string) {
     const slug = chargerSlugFromValue(value);
     if (!slug) {
       setStatus("error");
       setMessage("Este QR Code não pertence a um carregador ChargeGrid ativo.");
       return;
     }
-    controlsRef.current?.stop();
-    navigate(`/qr/${slug}`);
+    try {
+      const resolved = await resolveCommercialCharger(slug);
+      controlsRef.current?.stop();
+      navigate(`/qr/${resolved.charger.qrIdentifier}`);
+    } catch {
+      setStatus("error");
+      setMessage("Este QR Code não pertence a um carregador ChargeGrid ativo.");
+    }
   }
 
   async function startCamera() {
@@ -52,7 +57,7 @@ export function QrScannerPage() {
       controlsRef.current = await reader.decodeFromConstraints(
         { video: { facingMode: { ideal: "environment" } }, audio: false },
         videoRef.current,
-        (result) => { if (result) openResult(result.getText()); }
+        (result) => { if (result) void openResult(result.getText()); }
       );
       setStatus("scanning");
     } catch {
@@ -69,7 +74,7 @@ export function QrScannerPage() {
     try {
       const { BrowserQRCodeReader } = await import("@zxing/browser");
       const result = await new BrowserQRCodeReader().decodeFromImageUrl(objectUrl);
-      openResult(result.getText());
+      await openResult(result.getText());
     } catch {
       setStatus("error");
       setMessage("Não encontramos um QR Code ChargeGrid nessa imagem.");
@@ -81,7 +86,7 @@ export function QrScannerPage() {
 
   function submitManual(event: FormEvent) {
     event.preventDefault();
-    openResult(manualCode);
+    void openResult(manualCode);
   }
 
   return <>

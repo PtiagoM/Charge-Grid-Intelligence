@@ -1,19 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import type { CommercialSnapshot } from "@chargegrid/shared";
-import { getCommercialSnapshot } from "../services/paymentApi";
-import { commercialPlants, mergeCommercialPlants } from "./commercialPlants";
-
-const backendPlantIds = new Set(["est_aurora_001"]);
+import type { CommercialCatalog } from "@chargegrid/shared";
+import { getCommercialCatalog } from "../services/paymentApi";
+import { commercialPlants, mergeCommercialCatalog } from "./commercialPlants";
 
 export function useCommercialPlants() {
-  const [snapshot, setSnapshot] = useState<CommercialSnapshot | null>(null);
+  const [catalog, setCatalog] = useState<CommercialCatalog | null>(null);
   const [error, setError] = useState("");
   useEffect(() => {
     let active = true;
     const refresh = async () => {
       try {
-        const current = await getCommercialSnapshot();
-        if (active) { setSnapshot(current); setError(""); }
+        const current = await getCommercialCatalog();
+        if (active) { setCatalog(current); setError(""); }
       } catch (caught) {
         if (active) setError(caught instanceof Error ? caught.message : "A operação comercial está indisponível.");
       }
@@ -22,6 +20,6 @@ export function useCommercialPlants() {
     const timer = window.setInterval(() => void refresh(), 2000);
     return () => { active = false; window.clearInterval(timer); };
   }, []);
-  const plants = useMemo(() => snapshot ? mergeCommercialPlants(snapshot) : commercialPlants.filter((plant) => !backendPlantIds.has(plant.id)), [snapshot]);
-  return { plants, loading: !snapshot && !error, error };
+  const plants = useMemo(() => catalog ? mergeCommercialCatalog(catalog) : commercialPlants.map((plant) => plant.isOperational ? { ...plant, isOperational: false } : plant), [catalog]);
+  return { plants, loading: !catalog && !error, error };
 }

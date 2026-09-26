@@ -1,5 +1,5 @@
 import type { PaymentMethod } from "../app/DriverAppContext";
-import type { CommercialQueueRecord, CommercialQuote, CommercialSessionRecord, CommercialSnapshot } from "@chargegrid/shared";
+import type { CommercialCatalog, CommercialChargerResolution, CommercialQueueRecord, CommercialQuote, CommercialSessionRecord, CommercialSnapshot } from "@chargegrid/shared";
 import { currentDriverAccessToken } from "./driverAuth";
 
 const configuredApiBaseUrl = (import.meta.env.VITE_CHARGEGRID_API_URL || "/api").replace(/\/$/, "");
@@ -102,6 +102,14 @@ export function stopCommercialSession(sessionId: string) {
 export function getCommercialSnapshot(establishmentId?: string) {
   const query = establishmentId ? `?establishmentId=${encodeURIComponent(establishmentId)}` : "";
   return apiRequest<CommercialSnapshot>(`/commercial/snapshot${query}`);
+}
+
+export function getCommercialCatalog() {
+  return apiRequest<CommercialCatalog>("/commercial/catalog");
+}
+
+export function resolveCommercialCharger(identifier: string) {
+  return apiRequest<CommercialChargerResolution>(`/commercial/chargers/resolve/${encodeURIComponent(identifier)}`);
 }
 
 export function getCommercialQueue(driverId: string) {

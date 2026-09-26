@@ -50,6 +50,7 @@ export function EstablishmentPage() {
 
   function continueRegistered() {
     if (!plant) return;
+    if (!plant.isOperational) return;
     if (isFull) {
       if (queue) {
         navigate("/queue");
@@ -102,7 +103,7 @@ export function EstablishmentPage() {
 
     <div className="sticky-action-space">
       {queueError ? <p className="form-error" role="alert">{queueError}</p> : null}
-      {isAuthenticated ? <PrimaryButton onClick={continueRegistered} disabled={!isFull && selectedCharger?.commercialStatus !== ChargerCommercialStatus.AVAILABLE_TO_START}>{isFull ? "Entrar na fila da planta" : selectedCharger?.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START ? `Recarregar no ${selectedCharger.commercialName}` : "Escolha um carregador disponível"}</PrimaryButton> : <Link className="primary-link" to={`/qr/${plant.qrSlug}`}><AppIcon name="qr" size={20} /> Acessar pelo QR Code</Link>}
+      {!plant.isOperational ? <p className="privacy-note">Este local permanece no mapa como referência da rede. A operação comercial completa está disponível no Hub Solar Aurora.</p> : isAuthenticated ? <PrimaryButton onClick={continueRegistered} disabled={!isFull && selectedCharger?.commercialStatus !== ChargerCommercialStatus.AVAILABLE_TO_START}>{isFull ? "Entrar na fila da planta" : selectedCharger?.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START ? `Recarregar no ${selectedCharger.commercialName}` : "Escolha um carregador disponível"}</PrimaryButton> : <Link className="primary-link" to={`/qr/${plant.qrSlug}`}><AppIcon name="qr" size={20} /> Acessar pelo QR Code</Link>}
       {!isAuthenticated ? <Link className="text-link" to="/login">Entrar para usar fila e histórico</Link> : null}
       <SecondaryButton onClick={() => navigate(isAuthenticated ? "/explore" : "/")}><AppIcon name="map" size={20} /> Voltar</SecondaryButton>
     </div>
