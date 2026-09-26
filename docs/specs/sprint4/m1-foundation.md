@@ -45,6 +45,12 @@ Objetivo: API/SQL executam contratos estáveis, sem frontend decidir negócio. G
 - A parada solicitada pelo motorista também chama `StopCharge` antes de confirmar o evento físico. Ainda faltam os eventos persistidos, falhas recuperáveis de comando e a política energética do U4 completo.
 - Validação focal: `repository.test.ts` cobre as duas ordens, CONNECT repetido antes da autorização e ausência de regressão após fim de energia (9 testes verdes).
 
+### Registro parcial U5 — marcos de custo aceito
+
+- O backend grava o instante único de fim de energia, o fim da tolerância conforme a quote aceita e a desconexão física. Energia, ociosidade e total passam a ter campos persistidos atualizados pelo evento físico, não por polling do cliente.
+- A liquidação Stripe com valor inteiramente calculado no servidor, status pendente e recibo próprio ainda é o subcheckpoint seguinte; o limite externo de captura abaixo de R$ 0,50 não foi alterado.
+- Validação focal: o repository test cria quote guest, encerra energia, desconecta e confirma timestamps/política/custo congelado (10 testes verdes).
+
 ## S4-M1-U3 — Quote, tentativa e Stripe normal
 
 - **Depende:** U2; **tamanho:** MÉDIO.

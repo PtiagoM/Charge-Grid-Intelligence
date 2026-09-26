@@ -84,6 +84,23 @@ describe("CommercialRepository", () => {
     expect(await repository.session(id)).toMatchObject({ status: CommercialSessionStatus.CHARGING, currentPowerKw: 7 });
   }, 20_000);
 
+  it("persists accepted idle policy timestamps and freezes cost when the vehicle disconnects", async () => {
+    const repository = new CommercialRepository("memory://");
+    repositories.push(repository);
+    const id = "13000000-0000-4000-8000-000000000013";
+    const guestToken = "guest-token-idle";
+    const quote = await repository.createQuote({ chargerId: "00000000-0000-4000-8000-000000000001", establishmentId: "est_aurora_001", access: { guestToken } });
+    await repository.reserveQuotedSession({ id, quoteId: quote.id, access: { guestToken }, method: "CARD", authorizedCents: 2500 });
+    await repository.attachPayment(id, "pi_test_idle", "requires_capture");
+    await repository.recordPayment({ sessionId: id, paymentIntentId: "pi_test_idle", status: PaymentStatus.AUTHORIZED, providerStatus: "requires_capture", receivedAmount: 0 });
+    await repository.hardwareEvent("AURORA-01", "CONNECT");
+    await repository.stopSession(id);
+    const ended = await repository.session(id);
+    expect(ended).toMatchObject({ status: CommercialSessionStatus.ENERGY_FINISHED, energyEndedAt: expect.any(String), idleGraceEndsAt: expect.any(String), idleCostCents: 0 });
+    await repository.hardwareEvent("AURORA-01", "DISCONNECT");
+    expect(await repository.session(id)).toMatchObject({ disconnectedAt: expect.any(String), idleCostCents: 0, totalCostCents: ended.energyCostCents });
+  }, 20_000);
+
   it("applies simulated hardware events and advances energy only from the backend clock", async () => {
     const repository = new CommercialRepository("memory://");
     repositories.push(repository);

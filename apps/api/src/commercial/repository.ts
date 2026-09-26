@@ -220,6 +220,14 @@ function quoteFromRow(row: QuoteRow): CommercialQuote {
   };
 }
 
+function idleCharge(quote: CommercialQuote | null, energyEndedAt: Date, disconnectedAt: Date) {
+  if (!quote?.idleEnabled) return { minutes: 0, cents: 0, graceEndsAt: null };
+  const graceEndsAt = new Date(energyEndedAt.getTime() + quote.idleGraceMinutes * 60_000);
+  const overdueMs = disconnectedAt.getTime() - graceEndsAt.getTime();
+  const minutes = overdueMs <= 0 ? 0 : Math.min(quote.idleMaxMinutes, Math.ceil(overdueMs / 60_000));
+  return { minutes, cents: minutes * quote.idleCentsPerMinute, graceEndsAt };
+}
+
 export function hashGuestToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
@@ -678,10 +686,14 @@ export class CommercialRepository {
       const energyWh = row.tariff_cents > 0 ? Math.min(measuredEnergyWh, row.authorized_cents * 1000 / row.tariff_cents) : measuredEnergyWh;
       const costCents = Math.min(row.authorized_cents, Math.round(energyWh * row.tariff_cents / 1000));
       const finished = measuredEnergyWh > energyWh || costCents >= row.authorized_cents;
+      const idle = idleCharge(quoteRecord(row.quote), now, now);
       await this.db.transaction(async (tx) => {
         await tx.query(`update commercial_sessions set energy_wh = $2, cost_cents = $3,
-          last_energy_at = $4, status = case when $5 then 'ENERGY_FINISHED' else status end, updated_at = now()
-          where id = $1 and status = 'CHARGING'`, [row.id, energyWh, costCents, now.toISOString(), finished]);
+          energy_cost_cents = $3, total_cost_cents = $3, last_energy_at = $4,
+          status = case when $5 then 'ENERGY_FINISHED' else status end,
+          energy_ended_at = case when $5 then coalesce(energy_ended_at, $4) else energy_ended_at end,
+          idle_grace_ends_at = case when $5 and $6 then coalesce(idle_grace_ends_at, $7) else idle_grace_ends_at end,
+          updated_at = now() where id = $1 and status = 'CHARGING'`, [row.id, energyWh, costCents, now.toISOString(), finished, idle.graceEndsAt !== null, idle.graceEndsAt?.toISOString() ?? null]);
         if (finished) await tx.query("update commercial_chargers set physical_status = 'CONNECTED', current_power_kw = 0, updated_at = now() where id = $1", [row.charger_id]);
       });
     }
@@ -695,7 +707,7 @@ export class CommercialRepository {
       const chargerResult = await tx.query<ChargerRow>("select * from commercial_chargers where code = $1 and published = true", [chargerCode]);
       const charger = chargerResult.rows[0];
       if (!charger) throw new CommercialNotFoundError("Carregador comercial não encontrado.");
-      const sessionResult = await tx.query<{ id: string; status: CommercialSessionStatus }>(`select id, status from commercial_sessions
+      const sessionResult = await tx.query<{ id: string; status: CommercialSessionStatus; quote: CommercialQuote | string | null; energy_ended_at: Date | string | null; energy_cost_cents: number | null }>(`select id, status, quote, energy_ended_at, energy_cost_cents from commercial_sessions
         where charger_id = $1 and status not in ('COMPLETED', 'PAYMENT_FAILED', 'START_FAILED', 'FAULTED', 'CANCELLED')
         order by created_at desc limit 1`, [charger.id]);
       const session = sessionResult.rows[0];
@@ -711,10 +723,21 @@ export class CommercialRepository {
         await tx.query("update commercial_sessions set status = 'CHARGING', started_at = coalesce(started_at, now()), last_energy_at = now(), updated_at = now() where id = $1", [session.id]);
       } else if (action === "STOP") {
         if (!session || session.status !== CommercialSessionStatus.CHARGING) throw new CommercialConflictError("Não existe recarga ativa neste equipamento.");
-        await tx.query("update commercial_sessions set status = 'ENERGY_FINISHED', last_energy_at = null, updated_at = now() where id = $1", [session.id]);
+        const endedAt = new Date();
+        const idle = idleCharge(quoteRecord(session.quote), endedAt, endedAt);
+        await tx.query(`update commercial_sessions set status = 'ENERGY_FINISHED', last_energy_at = null,
+          energy_ended_at = coalesce(energy_ended_at, $2), idle_grace_ends_at = case when $3 then coalesce(idle_grace_ends_at, $4) else idle_grace_ends_at end,
+          energy_cost_cents = coalesce(energy_cost_cents, cost_cents), total_cost_cents = coalesce(total_cost_cents, cost_cents), updated_at = now() where id = $1`, [session.id, endedAt.toISOString(), idle.graceEndsAt !== null, idle.graceEndsAt?.toISOString() ?? null]);
         await tx.query("update commercial_chargers set physical_status = 'CONNECTED', current_power_kw = 0, updated_at = now() where id = $1", [charger.id]);
       } else if (action === "DISCONNECT") {
         if (session?.status === CommercialSessionStatus.CHARGING) throw new CommercialConflictError("Interrompa a energia antes de desconectar o veículo.");
+        if (session?.status === CommercialSessionStatus.ENERGY_FINISHED) {
+          const disconnectedAt = new Date();
+          const idle = idleCharge(quoteRecord(session.quote), session.energy_ended_at ? new Date(session.energy_ended_at) : disconnectedAt, disconnectedAt);
+          const energyCostCents = session.energy_cost_cents ?? 0;
+          await tx.query(`update commercial_sessions set disconnected_at = coalesce(disconnected_at, $2), idle_cost_cents = $3,
+            total_cost_cents = $4, cost_cents = $4, updated_at = now() where id = $1`, [session.id, disconnectedAt.toISOString(), idle.cents, energyCostCents + idle.cents]);
+        }
         await tx.query("update commercial_chargers set physical_status = 'AVAILABLE', commercial_status = $2, current_power_kw = 0, updated_at = now() where id = $1", [charger.id, session ? "OCCUPIED" : "AVAILABLE_TO_START"]);
       } else if (["OFFLINE", "FAULT"].includes(action)) {
         await tx.query("update commercial_chargers set physical_status = $2, commercial_status = 'FAULTED', current_session_id = null, current_power_kw = 0, updated_at = now() where id = $1", [charger.id, action]);
