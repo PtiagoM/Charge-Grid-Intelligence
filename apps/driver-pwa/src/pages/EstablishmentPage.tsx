@@ -25,7 +25,7 @@ export function EstablishmentPage() {
   const navigate = useNavigate();
   const { plants, loading: plantsLoading, error: plantsError } = useCommercialPlants();
   const plant = plants.find((item) => item.id === establishmentId);
-  const { isAuthenticated, getQueueJoinPreview, joinQueue, queue, selectedChargerId, selectedEstablishmentId, selectChargingPoint } = useDriverApp();
+  const { isAuthenticated, isCommercialDriver, getQueueJoinPreview, joinQueue, queue, selectedChargerId, selectedEstablishmentId, selectChargingPoint } = useDriverApp();
   const [showQueueConfirmation, setShowQueueConfirmation] = useState(false);
   const [queueError, setQueueError] = useState("");
   const displayChargers = useMemo(() => plant?.chargers ?? [], [plant]);
@@ -103,7 +103,7 @@ export function EstablishmentPage() {
 
     <div className="sticky-action-space">
       {queueError ? <p className="form-error" role="alert">{queueError}</p> : null}
-      {!plant.isOperational ? <p className="privacy-note">Este local permanece no mapa como referência da rede. A operação comercial completa está disponível no Hub Solar Aurora.</p> : isAuthenticated ? <PrimaryButton onClick={continueRegistered} disabled={!isFull && selectedCharger?.commercialStatus !== ChargerCommercialStatus.AVAILABLE_TO_START}>{isFull ? "Entrar na fila da planta" : selectedCharger?.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START ? `Recarregar no ${selectedCharger.commercialName}` : "Escolha um carregador disponível"}</PrimaryButton> : <Link className="primary-link" to={`/qr/${plant.qrSlug}`}><AppIcon name="qr" size={20} /> Acessar pelo QR Code</Link>}
+      {!plant.isOperational ? <p className="privacy-note">Este local permanece no mapa como referência da rede. A operação comercial completa está disponível no Hub Solar Aurora.</p> : isCommercialDriver ? <PrimaryButton onClick={continueRegistered} disabled={!isFull && selectedCharger?.commercialStatus !== ChargerCommercialStatus.AVAILABLE_TO_START}>{isFull ? "Entrar na fila da planta" : selectedCharger?.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START ? `Recarregar no ${selectedCharger.commercialName}` : "Escolha um carregador disponível"}</PrimaryButton> : <Link className="primary-link" to={isAuthenticated ? "/login" : `/qr/${plant.qrSlug}`}><AppIcon name="qr" size={20} /> {isAuthenticated ? "Entrar novamente" : "Acessar pelo QR Code"}</Link>}
       {!isAuthenticated ? <Link className="text-link" to="/login">Entrar para usar fila e histórico</Link> : null}
       <SecondaryButton onClick={() => navigate(isAuthenticated ? "/explore" : "/")}><AppIcon name="map" size={20} /> Voltar</SecondaryButton>
     </div>

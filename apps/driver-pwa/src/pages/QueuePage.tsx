@@ -14,7 +14,7 @@ function remaining(expiresAt?: string) {
 
 export function QueuePage() {
   const navigate = useNavigate();
-  const { isAuthenticated, queue, leaveQueue } = useDriverApp();
+  const { isCommercialDriver, queue, leaveQueue } = useDriverApp();
   const [countdown, setCountdown] = useState(() => remaining(queue?.expiresAt));
   const [error, setError] = useState("");
 
@@ -24,7 +24,7 @@ export function QueuePage() {
     return () => window.clearInterval(timer);
   }, [queue]);
 
-  if (!queue) return <section className="empty-state"><AppIcon name="clock" size={34} /><h1>Você não está em uma fila</h1><p>Motoristas logados podem entrar na fila de uma planta quando todos os carregadores estiverem ocupados.</p><PrimaryButton onClick={() => navigate(isAuthenticated ? "/explore" : "/login")}>{isAuthenticated ? "Ver estabelecimentos" : "Entrar na conta"}</PrimaryButton></section>;
+  if (!queue) return <section className="empty-state"><AppIcon name="clock" size={34} /><h1>Você não está em uma fila</h1><p>Motoristas logados podem entrar na fila de uma planta quando todos os carregadores estiverem ocupados.</p><PrimaryButton onClick={() => navigate(isCommercialDriver ? "/explore" : "/login")}>{isCommercialDriver ? "Ver estabelecimentos" : "Entrar na conta"}</PrimaryButton></section>;
 
   const called = [QueueStatus.CALLED, QueueStatus.ASSIGNED].includes(queue.status);
   const expired = called && Boolean(queue.expiresAt) && Date.parse(queue.expiresAt!) <= Date.now();
@@ -43,7 +43,7 @@ export function QueuePage() {
     {expired ? <p className="form-error" role="alert">A chamada expirou. Saia desta fila e consulte novamente a disponibilidade.</p> : null}
     <p className="field-help">A disponibilidade e sua posição são atualizadas automaticamente.</p>
     {error ? <p className="form-error" role="alert">{error}</p> : null}
-    {called ? <PrimaryButton disabled={expired} onClick={() => navigate(`/checkout?mode=${isAuthenticated ? "driver" : "guest"}`)}>Continuar para pagamento</PrimaryButton> : null}
-    <SecondaryButton onClick={() => { setError(""); void leaveQueue().then(() => navigate(isAuthenticated ? "/explore" : "/")).catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Não foi possível sair da fila.")); }}>Sair da fila</SecondaryButton>
+    {called ? <PrimaryButton disabled={expired} onClick={() => navigate(`/checkout?mode=${isCommercialDriver ? "driver" : "guest"}`)}>Continuar para pagamento</PrimaryButton> : null}
+    <SecondaryButton onClick={() => { setError(""); void leaveQueue().then(() => navigate(isCommercialDriver ? "/explore" : "/")).catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Não foi possível sair da fila.")); }}>Sair da fila</SecondaryButton>
   </>;
 }

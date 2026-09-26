@@ -16,7 +16,7 @@ export function QrLandingPage() {
   const navigate = useNavigate();
   const point = getChargingPointBySlug(chargerSlug);
   const { plants, loading, error: loadError } = useCommercialPlants();
-  const { getQueueJoinPreview, isAuthenticated, joinQueue, queue, selectChargingPoint } = useDriverApp();
+  const { getQueueJoinPreview, isAuthenticated, isCommercialDriver, joinQueue, queue, selectChargingPoint } = useDriverApp();
   const [showQueueConfirmation, setShowQueueConfirmation] = useState(false);
   const [queueError, setQueueError] = useState("");
   const plant = plants.find((item) => item.id === point?.plant.id);
@@ -43,7 +43,7 @@ export function QrLandingPage() {
       <InfoRow icon="clock" label="Ociosidade" value="15 min gratuitos" detail="depois R$ 0,50/min, máximo 60 min" />
     </section>
     <section className="mobile-card consent-summary"><h2>O que acontece agora</h2><ol className="step-list"><li><span>1</span>Você define um limite financeiro.</li><li><span>2</span>O pagamento é autorizado com segurança.</li><li><span>3</span>O carregador confirma o início da energia.</li><li><span>4</span>Você acompanha consumo e custo durante a sessão.</li></ol></section>
-    {isAvailable ? <Link className="primary-link" to={`/checkout?mode=${isAuthenticated ? "driver" : "guest"}`}><AppIcon name="chevron-right" size={20} /> {isAuthenticated ? "Continuar com minha conta" : "Continuar como visitante"}</Link> : isAuthenticated ? <button type="button" className="primary-link" onClick={() => queue ? navigate("/queue") : setShowQueueConfirmation(true)}><AppIcon name="clock" size={20} /> {queue ? "Acompanhar minha fila" : "Entrar na fila da planta"}</button> : <Link className="primary-link" to="/login"><AppIcon name="user" size={20} /> Entre para usar a fila</Link>}
+    {isAvailable ? <Link className="primary-link" to={`/checkout?mode=${isCommercialDriver ? "driver" : "guest"}`}><AppIcon name="chevron-right" size={20} /> {isCommercialDriver ? "Continuar com minha conta" : "Continuar como visitante"}</Link> : isCommercialDriver ? <button type="button" className="primary-link" onClick={() => queue ? navigate("/queue") : setShowQueueConfirmation(true)}><AppIcon name="clock" size={20} /> {queue ? "Acompanhar minha fila" : "Entrar na fila da planta"}</button> : <Link className="primary-link" to="/login"><AppIcon name="user" size={20} /> Entre para usar a fila</Link>}
     {!isAuthenticated ? <><Link className="secondary-link" to="/login">Entrar na minha conta</Link><Link className="text-link" to="/signup">Criar conta de motorista</Link></> : null}
     {queueError ? <p className="form-error" role="alert">{queueError}</p> : null}
     <p className="privacy-note centered">Visitantes têm acesso somente à sessão atual e ao comprovante correspondente.</p>
