@@ -858,6 +858,14 @@ export class CommercialRepository {
     return this.session(id);
   }
 
+  async sessionsForAccess(access: CommercialSessionAccess) {
+    await this.ready;
+    const sessions = "driverId" in access
+      ? await this.db.query<SessionRow>(`${sessionSelect} where s.driver_id = $1 order by s.created_at desc`, [access.driverId])
+      : await this.db.query<SessionRow>(`${sessionSelect} where s.guest_token_hash = $1 order by s.created_at desc`, [hashGuestToken(access.guestToken)]);
+    return sessions.rows.map(sessionRecord);
+  }
+
   async sessionIdForPaymentIntent(paymentIntentId: string) {
     await this.ready;
     const result = await this.db.query<{ session_id: string }>("select session_id from commercial_payments where payment_intent_id = $1", [paymentIntentId]);

@@ -57,6 +57,11 @@ Objetivo: API/SQL executam contratos estáveis, sem frontend decidir negócio. G
 - O relógio comercial expira `CALLED` depois da janela persistida, libera somente carregador físico disponível sem sessão corrente e chama a próxima entrada elegível. A atribuição aceita grava `sessionId`; o início de carga a conclui.
 - Validação focal: o repository test ocupa Aurora, chama um motorista, avança exclusivamente o relógio backend e confirma `EXPIRED` + vaga disponível (11 testes verdes).
 
+### Registro parcial U7 — leituras próprias
+
+- `GET /commercial/sessions` entrega o histórico da mesma identidade que pode ler uma sessão individual: bearer do motorista ou token guest hashado. A projeção não aceita `driverId` de cliente e não expõe registros de outro proprietário.
+- Validação focal: Supertest confirma que o motorista A recebe somente sua sessão, enquanto UUID de B continua 404.
+
 ## S4-M1-U3 — Quote, tentativa e Stripe normal
 
 - **Depende:** U2; **tamanho:** MÉDIO.

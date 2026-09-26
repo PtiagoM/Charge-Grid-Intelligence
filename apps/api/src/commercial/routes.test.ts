@@ -36,6 +36,7 @@ describe("commercial ownership routes", () => {
     expect((await request(app).get(`/sessions/${firstSessionId}`)).status).toBe(401);
     expect((await request(app).get(`/sessions/${firstSessionId}`).set("Authorization", "Bearer token-b")).status).toBe(404);
     expect((await request(app).get(`/sessions/${firstSessionId}`).set("Authorization", "Bearer token-a")).status).toBe(200);
+    expect((await request(app).get("/sessions").set("Authorization", "Bearer token-a")).body.sessions).toEqual([expect.objectContaining({ id: firstSessionId })]);
 
     const joined = await request(app).post("/queue").set("Authorization", "Bearer token-a").send({ establishmentId: "est_aurora_001", driverId: "driver-b", driverName: "Outro nome", driverVehicle: "Outro veículo" });
     expect(joined.status).toBe(201);

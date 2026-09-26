@@ -88,6 +88,13 @@ export function createCommercialRouter(options: { repository?: CommercialReposit
       return response.status(errorStatus(error)).json({ code: "COMMERCIAL_READ_FAILED", message: error instanceof Error ? error.message : "Falha ao consultar a operação comercial." });
     }
   });
+  router.get("/sessions", async (request, response) => {
+    try {
+      return response.json({ sessions: await repository.sessionsForAccess(await sessionAccess(request)) });
+    } catch (error) {
+      return response.status(errorStatus(error)).json({ code: "COMMERCIAL_HISTORY_READ_FAILED", message: error instanceof Error ? error.message : "Não foi possível consultar o histórico." });
+    }
+  });
   router.get("/sessions/:sessionId", async (request, response) => {
     try {
       return response.json(await repository.sessionForAccess(request.params.sessionId, await sessionAccess(request)));
