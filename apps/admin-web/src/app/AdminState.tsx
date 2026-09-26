@@ -59,13 +59,16 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!accountId) return;
     let active = true;
+    let controller: AbortController | undefined;
     const refresh = async () => {
-      const snapshot = await fetchCommercialSnapshot();
+      controller?.abort();
+      controller = new AbortController();
+      const snapshot = await fetchCommercialSnapshot(controller.signal);
       if (active) setState((current) => mergeCommercialSnapshot(current, snapshot));
     };
     void refresh().catch(() => undefined);
     const timer = window.setInterval(() => void refresh().catch(() => undefined), 2000);
-    return () => { active = false; window.clearInterval(timer); };
+    return () => { active = false; controller?.abort(); window.clearInterval(timer); };
   }, [accountId]);
 
   const login = useCallback((email: string, password: string) => {

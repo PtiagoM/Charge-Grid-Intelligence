@@ -80,6 +80,7 @@ const DEVICE_COLUMNS: Record<SemsDeviceKind, string[]> = {
 
 function chargerInventoryStatus(value: string): SemsDeviceStatus {
   if (value === "charging") return "charging";
+  if (value === "connected") return "standby";
   if (value === "offline") return "offline";
   if (value === "limited") return "maintenance";
   return "inactive";
@@ -304,7 +305,7 @@ export function ChargerDetailPage({ chargerId, establishmentId }: { chargerId: s
   const telemetry = state.chargerTelemetry.find((item) => item.chargerId === charger.id);
   const sessions = state.sessions.filter((item) => item.chargerId === charger.id).sort((a, b) => b.startedAt.localeCompare(a.startedAt));
   const commands = state.chargerCommands.filter((item) => item.chargerId === charger.id).sort((a, b) => b.requestedAt.localeCompare(a.requestedAt));
-  const currentSession = sessions.find((item) => item.status === "active" || item.status === "authorized" || item.status === "starting");
+  const currentSession = charger.currentSessionId ? sessions.find((item) => item.internalId === charger.currentSessionId) : undefined;
   const latestCharge = sessions.find((item) => item.status === "finished") ?? currentSession ?? sessions[0];
   const commandType: ChargerCommandType | null = charger.status === "charging" && currentSession?.status === "active"
     ? "STOP_CHARGE"
@@ -406,21 +407,21 @@ export function SessionsPage({ establishmentId }: { establishmentId?: string }) 
   const scoped = state.sessions.filter((item) => scopeSet.has(item.establishmentId) && (!establishmentId || item.establishmentId === establishmentId) && (scopeFilter === "all" || item.establishmentId === scopeFilter));
   const normalizedSearch = search.trim().toLowerCase();
   const items = useMemo(() => scoped.filter((item) => {
-    const matchesView = view === "live" ? ["starting", "active"].includes(item.status) : view === "authorized" ? ["authorized", "start_failed"].includes(item.status) : item.status === "finished";
+    const matchesView = view === "live" ? ["starting", "active"].includes(item.status) : view === "authorized" ? ["authorized", "start_failed"].includes(item.status) : ["energy_finished", "settling", "finished"].includes(item.status);
     return matchesView && (!normalizedSearch || `${item.id} ${item.driverName} ${item.vehicle} ${item.chargerId}`.toLowerCase().includes(normalizedSearch));
   }), [normalizedSearch, scoped, view]);
   return <section className="surface panel operations-page sems-reference-list sems-chargegrid-table-page" data-testid="mvp-sessions-active">
-    <header className="sems-chargegrid-table-heading"><div><h2>Sessões de recarga</h2><p>Autorização, início técnico, energia ativa e encerramento permanecem estados distintos.</p></div><div className="sems-chargegrid-compact-summary"><span><b>{scoped.filter((item) => ["starting", "active"].includes(item.status)).length}</b> ao vivo</span><span><b>{scoped.filter((item) => item.status === "finished").length}</b> concluídas</span></div></header>
+    <header className="sems-chargegrid-table-heading"><div><h2>Sessões de recarga</h2><p>Autorização, início técnico, energia ativa e encerramento permanecem estados distintos.</p></div><div className="sems-chargegrid-compact-summary"><span><b>{scoped.filter((item) => ["starting", "active"].includes(item.status)).length}</b> ao vivo</span><span><b>{scoped.filter((item) => ["energy_finished", "settling", "finished"].includes(item.status)).length}</b> concluídas</span></div></header>
     <form className="sems-device-toolbar sems-chargegrid-table-toolbar" onSubmit={(event) => event.preventDefault()}>
       <label><span className="sr-only">Filtrar sessões por usina</span><select aria-label="Filtrar sessões por usina" value={scopeFilter} onChange={(event) => setScopeFilter(event.target.value)} disabled={Boolean(establishmentId)}><option value="all">▣  Todas as usinas comerciais</option>{scopeOptions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
       <label className="sems-chargegrid-search"><span className="sr-only">Buscar sessão</span><input aria-label="Buscar sessão" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="⌕  Sessão, motorista, veículo ou carregador" /></label>
       <button className="sems-icon-action" type="submit" aria-label="Pesquisar">⌕</button>
       <button className="sems-icon-action" type="button" aria-label="Limpar filtros" onClick={() => { setScopeFilter(establishmentId ?? "all"); setSearch(""); }}>↻</button>
     </form>
-    <nav className="sems-reference-status-tabs" aria-label="Estado das sessões" role="tablist"><button type="button" role="tab" aria-selected={view === "live"} className={view === "live" ? "is-active" : ""} onClick={() => setView("live")}>Ao vivo <b>({scoped.filter((item) => ["starting", "active"].includes(item.status)).length})</b></button><button type="button" role="tab" aria-selected={view === "authorized"} className={view === "authorized" ? "is-active" : ""} onClick={() => setView("authorized")}>Aguardando início <b>({scoped.filter((item) => ["authorized", "start_failed"].includes(item.status)).length})</b></button><button type="button" role="tab" aria-selected={view === "history"} className={view === "history" ? "is-active" : ""} onClick={() => setView("history")}>Histórico <b>({scoped.filter((item) => item.status === "finished").length})</b></button></nav>
+    <nav className="sems-reference-status-tabs" aria-label="Estado das sessões" role="tablist"><button type="button" role="tab" aria-selected={view === "live"} className={view === "live" ? "is-active" : ""} onClick={() => setView("live")}>Ao vivo <b>({scoped.filter((item) => ["starting", "active"].includes(item.status)).length})</b></button><button type="button" role="tab" aria-selected={view === "authorized"} className={view === "authorized" ? "is-active" : ""} onClick={() => setView("authorized")}>Aguardando início <b>({scoped.filter((item) => ["authorized", "start_failed"].includes(item.status)).length})</b></button><button type="button" role="tab" aria-selected={view === "history"} className={view === "history" ? "is-active" : ""} onClick={() => setView("history")}>Histórico <b>({scoped.filter((item) => ["energy_finished", "settling", "finished"].includes(item.status)).length})</b></button></nav>
     <DataTable columns={["Sessão", "Motorista", "Carregador", "Estado", "Energia e tempo", "Pagamento", "Operação"]}>{items.map((session) => <tr key={session.id}><td><strong>{session.id}</strong><span>{state.locations.find((item) => item.id === session.locationId)?.name}</span></td><td><strong>{session.driverName}</strong><span>{session.vehicle}</span></td><td><a href={`#/mvp/charger?est=${session.establishmentId}&charger=${session.chargerId}`}>{session.chargerId}</a></td><td><Badge value={session.status} /></td><td>{number(session.energyKwh)} kWh<span>{session.durationMinutes} min · {money(session.consumedAmount)}</span></td><td><Badge value={session.payment.status} /><span>{session.payment.method}</span></td><td><a className="sems-row-action" href={`#/mvp/session?est=${session.establishmentId}&session=${session.id}`}>Abrir sessão ›</a></td></tr>)}</DataTable>
     {!items.length ? <p className="operations-empty">Nenhuma sessão neste estado.</p> : null}
-    <footer className="sems-status-legend" data-testid="mvp-sessions-finished"><span><Badge value="authorized" /> pagamento validado</span><span><Badge value="starting" /> aguardando energia</span><span><Badge value="active" /> telemetria confirmou carga</span><span><Badge value="finished" /> encerrada e calculada</span></footer>
+    <footer className="sems-status-legend" data-testid="mvp-sessions-finished"><span><Badge value="authorized" /> pagamento validado</span><span><Badge value="starting" /> aguardando energia</span><span><Badge value="active" /> telemetria confirmou carga</span><span><Badge value="energy_finished" /> energia encerrada</span><span><Badge value="finished" /> liquidada</span></footer>
   </section>;
 }
 
@@ -440,7 +441,7 @@ export function SessionDetailPage({ sessionId, establishmentId }: { sessionId: s
     ...events.map((event) => ({ id: event.id, at: event.at, source: event.source, label: event.label, detail: event.detail, commandId: event.commandId })),
     ...financialEvents.map((event) => ({ id: event.id, at: event.at, source: "PAYMENT", label: statusLabel(event.type), detail: event.reason ?? (event.amountCents !== undefined ? money(event.amountCents / 100) : undefined), commandId: undefined }))
   ].sort((a, b) => a.at.localeCompare(b.at));
-  const progress = session.status === "finished" ? 4 : session.status === "active" ? 3 : session.status === "starting" ? 2 : session.status === "authorized" ? 1 : 0;
+  const progress = ["energy_finished", "settling", "finished"].includes(session.status) ? 4 : session.status === "active" ? 3 : session.status === "starting" ? 2 : session.status === "authorized" ? 1 : 0;
   const amount = session.finalAmount ?? session.consumedAmount;
   const platformShare = transaction ? transaction.capturedCents * transaction.platformShareBps / 10000 / 100 : 0;
   const netAmount = transaction ? Math.max(0, transaction.capturedCents / 100 - transaction.providerFeeCents / 100 - platformShare) : amount;
@@ -449,7 +450,7 @@ export function SessionDetailPage({ sessionId, establishmentId }: { sessionId: s
     { label: "Autorização", detail: session.payment.status, time: events.find((item) => item.type === "PAYMENT_AUTHORIZED")?.at },
     { label: "Conexão", detail: "Carregador confirmou", time: events.find((item) => item.type === "START_ACCEPTED")?.at },
     { label: "Recarga", detail: progress >= 3 ? "Energia confirmada" : "Aguardando energia", time: events.find((item) => item.type === "ENERGY_CONFIRMED" || item.type === "CHARGING")?.at },
-    { label: "Conclusão", detail: progress >= 4 ? "Energia encerrada" : "Em andamento", time: events.find((item) => item.type === "ENERGY_FINISHED")?.at }
+    { label: "Conclusão", detail: session.status === "finished" ? "Pagamento liquidado" : progress >= 4 ? "Energia encerrada" : "Em andamento", time: events.find((item) => item.type === "PAYMENT_CAPTURED")?.at ?? events.find((item) => item.type === "ENERGY_FINISHED")?.at }
   ];
 
   return <div className="operations-detail cg-session-detail" data-testid="mvp-session-detail">

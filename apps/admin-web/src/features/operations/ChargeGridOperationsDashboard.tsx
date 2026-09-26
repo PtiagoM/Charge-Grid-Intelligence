@@ -45,9 +45,8 @@ function number(value: number, digits = 1) {
 }
 
 function chargerName(chargerId: string, chargers: Charger[]) {
-  const index = chargers.findIndex((item) => item.id === chargerId);
-  const suffix = chargerId.match(/(\d+)$/)?.[1] ?? chargerId;
-  return `CG-${suffix.padStart(2, "0")} (A${String(Math.max(0, index) + 1).padStart(2, "0")})`;
+  const charger = chargers.find((item) => item.id === chargerId);
+  return charger ? `${charger.identifier}${charger.parkingSpot ? ` (${charger.parkingSpot})` : ""}` : chargerId;
 }
 
 function shortSessionId(id: string) {
@@ -98,7 +97,7 @@ export function ChargeGridOperationsDashboard({ establishmentId, chargers, telem
     if (pending) rows.push({ id: pending.id, tone: "danger", message: `Sessão #${shortSessionId(pending.sessionId)} com liquidação pendente`, age: "agora", subject: chargerName(sessions.find((item) => item.id === pending.sessionId)?.chargerId ?? "—", chargers), href: "#/mvp/finance" });
     incidents.slice(0, 2).forEach((incident) => rows.push({ id: incident.id, tone: incident.severity === "HIGH" || incident.severity === "CRITICAL" ? "danger" : "warn", message: incident.title, age: new Date(incident.updatedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }), subject: incident.chargerId ? chargerName(incident.chargerId, chargers) : establishment?.name ?? "Planta", href: `#/mvp/incident?est=${establishmentId}&incident=${incident.id}` }));
     if (energy && energy.powerMarginPercent < 25) rows.push({ id: "energy-margin", tone: "notice", message: `Margem energética baixa (${number(energy.powerMarginPercent, 0)}%). Novos inícios podem ser temporariamente bloqueados`, age: "agora", subject: establishment?.name ?? "Planta", href: `#/mvp/energy?est=${establishmentId}` });
-    const connectedFinished = sessions.find((item) => item.status === "finished" && telemetry.some((telemetryItem) => telemetryItem.chargerId === item.chargerId && telemetryItem.vehicleConnected));
+    const connectedFinished = sessions.find((item) => ["energy_finished", "settling"].includes(item.status) && chargers.find((charger) => charger.id === item.chargerId)?.currentSessionId === item.internalId && telemetry.some((telemetryItem) => telemetryItem.chargerId === item.chargerId && telemetryItem.vehicleConnected));
     if (connectedFinished) rows.push({ id: "connected-finished", tone: "warn", message: "Veículo ainda conectado após carga finalizada", age: "agora", subject: chargerName(connectedFinished.chargerId, chargers), href: `#/mvp/session?est=${establishmentId}&session=${connectedFinished.id}` });
     return rows.slice(0, 4);
   }, [chargers, energy, establishment?.name, establishmentId, incidents, sessions, telemetry, transactions]);

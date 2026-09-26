@@ -9,10 +9,10 @@ export type AdminRole =
   | "ESTABLISHMENT_ADMIN"
   | "ESTABLISHMENT_OPERATOR"
   | "REPORT_VIEWER";
-export type ChargerStatus = "available" | "charging" | "limited" | "offline";
+export type ChargerStatus = "available" | "connected" | "charging" | "limited" | "offline";
 /** Frontend-only publication lifecycle; commercial availability lives in @chargegrid/shared. */
 export type ChargerPublicationStatus = "ELIGIBLE" | "CONFIGURED" | "PUBLISHED" | "SUSPENDED";
-export type SessionStatus = "authorized" | "starting" | "active" | "finished" | "start_failed";
+export type SessionStatus = "authorized" | "starting" | "active" | "energy_finished" | "settling" | "finished" | "start_failed";
 export type ChargerCommandType = "START_CHARGE" | "STOP_CHARGE";
 export type ChargerCommandStatus = "REQUESTED" | "ACCEPTED" | "CONFIRMED" | "FAILED" | "EXPIRED";
 export type ChargerConnectorState = "AVAILABLE" | "CONNECTED" | "CHARGING" | "FAULT" | "OFFLINE";
@@ -147,10 +147,13 @@ export interface Location {
 
 export interface Charger {
   id: string;
+  /** UUID do contrato comercial; `id` continua sendo o código operacional exibido. */
   establishmentId: string;
   locationId: string;
   identifier: string;
   internalId: string;
+  parkingSpot?: string;
+  currentSessionId?: string | null;
   serial: string;
   model: string;
   powerKw: number;
@@ -253,6 +256,8 @@ export interface Payment {
 
 export interface Session {
   id: string;
+  /** UUID da sessão comercial; `id` continua sendo o código público exibido. */
+  internalId?: string;
   chargerId: string;
   establishmentId: string;
   locationId: string;

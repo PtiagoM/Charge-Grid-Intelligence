@@ -1,10 +1,10 @@
 import { CommercialSessionStatus, PaymentStatus, QueueStatus, type CommercialSnapshot } from "@chargegrid/shared";
-import type { AdminState, Charger, ChargerTelemetry, CommercialPlantLink, Establishment, Location, PaymentTransaction, QueueEntry, Session } from "../domain/admin";
+import type { AdminState, Charger, ChargerTelemetry, Client, CommercialPlantLink, Establishment, Location, PaymentTransaction, QueueEntry, Session, SessionEvent } from "../domain/admin";
 
 const apiUrl = (import.meta.env.VITE_CHARGEGRID_API_URL || "http://localhost:3333").replace(/\/$/, "");
 
-export async function fetchCommercialSnapshot() {
-  const response = await fetch(`${apiUrl}/commercial/snapshot`);
+export async function fetchCommercialSnapshot(signal?: AbortSignal) {
+  const response = await fetch(`${apiUrl}/commercial/snapshot`, { signal });
   if (!response.ok) throw new Error("A API ChargeGrid não respondeu ao monitoramento comercial.");
   return response.json() as Promise<CommercialSnapshot>;
 }
@@ -31,17 +31,29 @@ export async function resetCommercialTestData() {
 
 function sessionStatus(status: CommercialSessionStatus): Session["status"] {
   if (status === CommercialSessionStatus.CHARGING) return "active";
-  if ([CommercialSessionStatus.STARTING, CommercialSessionStatus.SETTLING].includes(status)) return "starting";
-  if (status === CommercialSessionStatus.ENERGY_FINISHED) return "finished";
+  if (status === CommercialSessionStatus.STARTING) return "starting";
+  if ([CommercialSessionStatus.ENERGY_FINISHED, CommercialSessionStatus.IDLE_GRACE_PERIOD, CommercialSessionStatus.IDLE_FEE].includes(status)) return "energy_finished";
+  if ([CommercialSessionStatus.SETTLING, CommercialSessionStatus.SETTLEMENT_PENDING].includes(status)) return "settling";
   if (status === CommercialSessionStatus.COMPLETED) return "finished";
   if ([CommercialSessionStatus.PAYMENT_FAILED, CommercialSessionStatus.START_FAILED, CommercialSessionStatus.FAULTED, CommercialSessionStatus.CANCELLED].includes(status)) return "start_failed";
   return "authorized";
 }
 
+function snapshotSessionEvents(session: CommercialSnapshot["sessions"][number]): SessionEvent[] {
+  const money = (cents: number) => `R$ ${(cents / 100).toFixed(2).replace(".", ",")}`;
+  const events: SessionEvent[] = [{ id: `commercial-${session.id}-payment`, sessionId: session.publicCode, type: "PAYMENT_AUTHORIZED", label: "Pagamento autorizado", at: session.createdAt, source: "PAYMENT", detail: `Limite de ${money(session.authorizedCents)}` }];
+  if (session.startedAt) events.push({ id: `commercial-${session.id}-connected`, sessionId: session.publicCode, type: "START_ACCEPTED", label: "Veiculo conectado", at: session.startedAt, source: "GOODWE", detail: "Evento fisico simulado pelo provider GoodWe" });
+  if (session.status === CommercialSessionStatus.CHARGING) events.push({ id: `commercial-${session.id}-charging`, sessionId: session.publicCode, type: "CHARGING", label: "Recarga em andamento", at: session.updatedAt, source: "GOODWE", detail: `${session.currentPowerKw.toFixed(1)} kW observados` });
+  if (session.energyEndedAt) events.push({ id: `commercial-${session.id}-energy-ended`, sessionId: session.publicCode, type: "ENERGY_FINISHED", label: "Entrega de energia encerrada", at: session.energyEndedAt, source: "GOODWE", detail: "Aguardando liquidacao comercial" });
+  if (session.settledAt) events.push({ id: `commercial-${session.id}-settled`, sessionId: session.publicCode, type: "PAYMENT_CAPTURED", label: "Pagamento liquidado", at: session.settledAt, source: "PAYMENT", detail: money(session.totalCostCents) });
+  return events;
+}
+
 export function mergeCommercialSnapshot(state: AdminState, snapshot: CommercialSnapshot): AdminState {
   const ids = new Set(snapshot.establishments.map((item) => item.id));
   const locationId = (establishmentId: string) => `loc-${establishmentId}`;
-  const establishments: Establishment[] = snapshot.establishments.map((item) => ({ id: item.id, clientId: "cli-fiap", name: item.name, city: "São Paulo", state: "SP", address: item.address, pricePerKwh: item.tariffCents / 100, contractCode: `CG-${item.id.toUpperCase()}` }));
+  const commercialClient: Client = { id: "cli-chargegrid-pilot", name: "Operação comercial ChargeGrid", corporateName: "Cenário integrado de demonstração", document: "CHARGEGRID-PILOT", owner: "ChargeGrid", contactName: "Operação ChargeGrid", contactEmail: "operacao@chargegrid.local", status: "Ativo" };
+  const establishments: Establishment[] = snapshot.establishments.map((item) => ({ id: item.id, clientId: commercialClient.id, name: item.name, city: "São Paulo", state: "SP", address: item.address, pricePerKwh: item.tariffCents / 100, contractCode: `CG-${item.id.toUpperCase()}` }));
   const locations: Location[] = snapshot.establishments.map((item) => ({ id: locationId(item.id), establishmentId: item.id, name: item.name, address: item.address, number: "420", city: "São Paulo", state: "SP", zipCode: "01000-000", latitude: item.latitude, longitude: item.longitude, status: "Ativo" }));
   const commercialPlants: CommercialPlantLink[] = snapshot.establishments.map((item) => ({ id: `cplant-${item.id}`, goodwePlantId: `gw-${item.id}`, establishmentId: item.id, locationId: locationId(item.id), commercialName: item.name, accessPolicy: "PUBLIC", alwaysOpen: true, status: "PUBLISHED", publishedAt: snapshot.generatedAt }));
   const chargers: Charger[] = snapshot.establishments.flatMap((establishment) => establishment.chargers.map((charger) => ({
@@ -50,11 +62,13 @@ export function mergeCommercialSnapshot(state: AdminState, snapshot: CommercialS
     locationId: locationId(establishment.id),
     identifier: charger.code,
     internalId: charger.id,
+    parkingSpot: charger.parkingSpot,
+    currentSessionId: charger.currentSessionId,
     serial: charger.code,
     model: "GoodWe AC 7",
     powerKw: charger.nominalPowerKw,
     installationDate: "2026-09-01",
-    status: charger.physicalStatus === "CHARGING" ? "charging" : charger.physicalStatus === "OFFLINE" ? "offline" : charger.physicalStatus === "FAULT" ? "limited" : "available",
+    status: charger.physicalStatus === "CHARGING" ? "charging" : charger.physicalStatus === "CONNECTED" ? "connected" : charger.physicalStatus === "OFFLINE" ? "offline" : charger.physicalStatus === "FAULT" ? "limited" : "available",
     publicationStatus: "PUBLISHED",
     todayEnergyKwh: snapshot.sessions.filter((session) => session.chargerCode === charger.code).reduce((total, session) => total + session.energyWh / 1000, 0),
     revenueToday: snapshot.sessions.filter((session) => session.chargerCode === charger.code).reduce((total, session) => total + session.costCents / 100, 0)
@@ -68,6 +82,7 @@ export function mergeCommercialSnapshot(state: AdminState, snapshot: CommercialS
   })));
   const sessions: Session[] = snapshot.sessions.map((session) => ({
     id: session.publicCode,
+    internalId: session.id,
     chargerId: session.chargerCode,
     establishmentId: session.establishmentId,
     locationId: locationId(session.establishmentId),
@@ -84,6 +99,7 @@ export function mergeCommercialSnapshot(state: AdminState, snapshot: CommercialS
     payment: { status: [PaymentStatus.AUTHORIZED, PaymentStatus.PAID].includes(session.payment.status) ? "Aprovado" : session.payment.status === PaymentStatus.FAILED ? "Recusado" : "Pendente", method: session.payment.method === "PIX" ? "Pix" : "Cartao", limitAmount: session.authorizedCents / 100 },
     idleMinutes: 0
   }));
+  const sessionEvents = snapshot.sessions.flatMap(snapshotSessionEvents);
   const paymentTransactions: PaymentTransaction[] = snapshot.sessions.filter((session) => session.payment.paymentIntentId).map((session) => ({
     id: `pay-${session.id}`,
     sessionId: session.publicCode,
@@ -121,6 +137,7 @@ export function mergeCommercialSnapshot(state: AdminState, snapshot: CommercialS
   const scopeIds = [...ids];
   return {
     ...state,
+    clients: [...state.clients.filter((item) => item.id !== commercialClient.id), commercialClient],
     accounts: state.accounts.map((account) => account.role === "GOODWE_CENTRAL" ? { ...account, technicalEstablishmentIds: [...new Set([...(account.technicalEstablishmentIds ?? []), ...scopeIds])] } : account),
     accessGrants: state.accessGrants.map((grant) => grant.role === "GOODWE_CENTRAL" && grant.status === "ACTIVE" ? { ...grant, establishmentIds: [...new Set([...grant.establishmentIds, ...scopeIds])] } : grant),
     establishments: [...state.establishments.filter((item) => !ids.has(item.id)), ...establishments],
@@ -129,6 +146,7 @@ export function mergeCommercialSnapshot(state: AdminState, snapshot: CommercialS
     chargers: [...state.chargers.filter((item) => !ids.has(item.establishmentId)), ...chargers],
     chargerTelemetry: [...state.chargerTelemetry.filter((item) => !chargers.some((charger) => charger.id === item.chargerId)), ...telemetry],
     sessions: [...state.sessions.filter((item) => !ids.has(item.establishmentId)), ...sessions],
+    sessionEvents: [...state.sessionEvents.filter((item) => !sessions.some((session) => session.id === item.sessionId)), ...sessionEvents],
     paymentTransactions: [...state.paymentTransactions.filter((item) => !ids.has(item.establishmentId)), ...paymentTransactions],
     queue: [...state.queue.filter((item) => !ids.has(item.establishmentId)), ...queue]
   };

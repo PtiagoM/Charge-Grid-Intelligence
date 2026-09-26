@@ -12,6 +12,7 @@ Objetivo: finalizar operação comercial/energética nas superfícies existentes
 - **Aceite:** GIVEN seis CONNECTED WHEN abre overview/location/operations THEN0disponíveis em todos; GIVEN sessão COMPLETED antiga e novo CONNECT THEN currentSessionId null, não antiga “aguardando retirada”.
 - **Testes:** V01/V02/V03, atualizar `tests/unit/commercial-snapshot.test.js` e testes de adapter/state relacionados; V-ADMIN. Revisão visual desktop1440 sem mudar identidade SEMS.
 - **Saída:** Admin observa contrato fiel, sem fabricar dados para encaixar modelo local. Commit `fix(admin): preserve canonical operational state across projections`.
+- **Checkpoint concluído (26/09):** UUID e código público foram preservados na projeção; `CONNECTED` deixou de contar como disponível; a vaga vem do catálogo; a sessão atual depende de `currentSessionId`; o histórico separa energia encerrada de liquidação. Teste focal, typecheck, build e revisão visual desktop concluídos.
 
 ## S4-M3-U2 — Comandos, fila e financeiro
 

@@ -58,16 +58,16 @@ function latestByDate<T>(items: T[], readDate: (item: T) => string) {
   return items.slice().sort((a, b) => readDate(b).localeCompare(readDate(a)))[0];
 }
 
-function spotState(charger: Charger, telemetry: ChargerTelemetry | undefined, sessions: Session[], command: ChargerCommand | undefined): SpotState {
+function spotState(charger: Charger, telemetry: ChargerTelemetry | undefined, session: Session | undefined, command: ChargerCommand | undefined): SpotState {
   if (command && ["REQUESTED", "ACCEPTED"].includes(command.status)) return command.type === "START_CHARGE" ? "starting" : "stopping";
   if (charger.publicationStatus === "SUSPENDED") return "maintenance";
   if (telemetry?.connectorState === "FAULT") return "fault";
   if (telemetry?.connectorState === "OFFLINE" || charger.status === "offline") return "offline";
   if (command?.status === "FAILED" || charger.status === "limited") return "fault";
-  if (telemetry?.connectorState === "CHARGING" || charger.status === "charging" || sessions.some((item) => item.status === "active")) return "charging";
-  if (sessions.some((item) => item.status === "authorized")) return "waiting";
+  if (telemetry?.connectorState === "CHARGING" || charger.status === "charging" || session?.status === "active") return "charging";
+  if (session?.status === "authorized") return "waiting";
   if (telemetry?.vehicleConnected || telemetry?.connectorState === "CONNECTED") {
-    return sessions.some((item) => item.status === "finished") ? "energy-finished" : "waiting";
+    return ["energy_finished", "settling"].includes(session?.status ?? "") ? "energy-finished" : "waiting";
   }
   return "available";
 }
@@ -130,11 +130,11 @@ export function ChargeGridOperationStage({ establishmentId }: { establishmentId:
     const telemetry = operationData.telemetry.find((item) => item.chargerId === charger.id);
     const chargerSessions = operationData.sessions.filter((item) => item.chargerId === charger.id);
     const command = latestByDate(state.chargerCommands.filter((item) => item.chargerId === charger.id), (item) => item.requestedAt);
-    const session = latestByDate(chargerSessions, (item) => item.startedAt);
-    const visualState = spotState(charger, telemetry, chargerSessions, command);
+    const session = charger.currentSessionId ? chargerSessions.find((item) => item.internalId === charger.currentSessionId) : undefined;
+    const visualState = spotState(charger, telemetry, session, command);
     return {
       charger,
-      spotId: `A${String(index + 1).padStart(2, "0")}`,
+      spotId: charger.parkingSpot ?? `A${String(index + 1).padStart(2, "0")}`,
       state: visualState,
       telemetry,
       session,
@@ -155,13 +155,9 @@ export function ChargeGridOperationStage({ establishmentId }: { establishmentId:
   }, [selectedChargerId]);
 
   const selected = spots.find((item) => item.charger.id === selectedChargerId) ?? spots[0];
-  const selectedSessions = selected ? operationData.sessions.filter((item) => item.chargerId === selected.charger.id) : [];
-  const authorizedSession = selectedSessions.find((item) => item.status === "authorized");
-  const activeSession = selectedSessions.find((item) => ["active", "starting"].includes(item.status));
-  const contextualSession = selected && ["starting", "waiting", "energy-finished", "stopping"].includes(selected.state)
-    ? authorizedSession ?? selected.session
-    : undefined;
-  const currentSession = activeSession ?? contextualSession;
+  const currentSession = selected?.session;
+  const authorizedSession = currentSession?.status === "authorized" ? currentSession : undefined;
+  const activeSession = currentSession && ["active", "starting"].includes(currentSession.status) ? currentSession : undefined;
   const incident = selected ? state.incidents.find((item) => item.chargerId === selected.charger.id && item.status !== "RESOLVED") : undefined;
   const canCommand = Boolean(account && hasAdminCapability(account, "chargers:command") && !selected?.charger.id.startsWith("AURORA-"));
 
