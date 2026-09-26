@@ -14,6 +14,13 @@ A auditoria inicial confirmou Admin nativo funcional com domínio e persistênci
 
 O registro de implementação, evidências e limitações da Sprint fica em [`SPRINT3.md`](SPRINT3.md). Código verificado e decisões posteriores prevalecem sobre descrições antigas de implementação. A transparência sobre simulação é obrigatória: o modo técnico de demonstração deve identificá-la explicitamente, conforme a instrução atual do usuário, superando restrições antigas a esse rótulo. O escopo transversal desta entrega autoriza mudanças coordenadas nos dois produtos e nos contratos; não autoriza publicação ou merge.
 
+### Sprint 4 — checkpoint M1-U1 (26/09/2026)
+
+- A base compartilhada agora possui ledger de migrations e aplica `202609260004_s4_foundation.sql` uma única vez; bancos comerciais legados são baselined sem reexecutar o UPSERT destrutivo das migrations antigas.
+- Aurora segue sendo o único catálogo operacional completo: `plant_aurora_001`, seis UUIDs estáveis, códigos/QR e vaga B02 foram preservados. A API publica o catálogo sanitizado em `/commercial/catalog` e resolve UUID/código/QR em `/commercial/chargers/resolve/:identifier`.
+- O snapshot administrativo mantém o código para UI, mas `session.chargerId` passou a ser o UUID real. `currentSessionId` e `assignmentId` existem no registro do carregador; os vínculos são limpos antes do reset das sessões.
+- Essa unidade não implementa ainda ownership, quotes/checkout novo, lifecycle, ociosidade, fila final ou energia/demanda. O próximo checkpoint é M1-U2.
+
 ### Vertical real vigente — 22/09/2026
 
 - A jornada normal da PWA cria um PaymentIntent Stripe real em modo de teste e persiste a mesma sessão comercial observada pelo Admin.

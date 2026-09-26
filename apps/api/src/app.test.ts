@@ -11,6 +11,20 @@ describe("GET /health", () => {
   });
 });
 
+describe("public commercial catalog", () => {
+  it("resolves the canonical Aurora charger without exposing driver or payment data", async () => {
+    const app = createApp();
+    const catalog = await request(app).get("/commercial/catalog");
+    const resolved = await request(app).get("/commercial/chargers/resolve/aurora-02");
+
+    expect(catalog.status).toBe(200);
+    expect(catalog.body.establishments[0].chargers).toHaveLength(6);
+    expect(resolved.status).toBe(200);
+    expect(resolved.body.charger).toMatchObject({ id: "00000000-0000-4000-8000-000000000002", code: "AURORA-02", parkingSpot: "B02" });
+    expect(JSON.stringify(resolved.body)).not.toMatch(/driver|email|payment_intent/i);
+  });
+});
+
 describe("Stripe sandbox routes", () => {
   it("rejects empty bodies without throwing and permits zero settlement", async () => {
     const app = createApp();

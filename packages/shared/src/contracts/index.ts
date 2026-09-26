@@ -96,15 +96,24 @@ export interface CommercialChargerRecord {
   id: string;
   code: string;
   establishmentId: string;
+  plantId: string | null;
   name: string;
   parkingSpot?: string;
   nominalPowerKw: number;
   currentPowerKw: number;
-  physicalStatus: string;
+  physicalStatus: ChargerTechnicalStatus;
   commercialStatus: ChargerCommercialStatus;
   published: boolean;
   qrIdentifier: string;
+  currentSessionId: string | null;
+  assignmentId: string | null;
   updatedAt: string;
+}
+
+export interface CommercialOpeningHoursInterval {
+  day: number;
+  opens: string;
+  closes: string;
 }
 
 export interface CommercialEstablishmentRecord {
@@ -115,16 +124,56 @@ export interface CommercialEstablishmentRecord {
   longitude: number;
   tariffCents: number;
   qrSlug: string;
+  plantId: string | null;
+  timezone: string;
+  openingHours: CommercialOpeningHoursInterval[];
+  published: boolean;
+  availableChargerCount: number;
+  queueSummary: QueueSummary;
   chargers: CommercialChargerRecord[];
 }
 
+export interface CommercialTariffVersion {
+  id: string;
+  establishmentId: string;
+  energyCentsPerKwh: number;
+  solarEnergyCentsPerKwh: number | null;
+  idleGraceMinutes: number;
+  idleCentsPerMinute: number;
+  idleMaxMinutes: number;
+  idleEnabled: boolean;
+  validFrom: string;
+  createdAt: string;
+  reason: string;
+}
+
+export interface CommercialQuote {
+  id: string;
+  chargerId: string;
+  establishmentId: string;
+  policyVersion: string;
+  energyCentsPerKwh: number;
+  idleGraceMinutes: number;
+  idleCentsPerMinute: number;
+  idleMaxMinutes: number;
+  idleEnabled: boolean;
+  offeredAt: string;
+  expiresAt: string;
+  reasonCode: string;
+  energySampleId: string | null;
+}
+
 export interface CommercialPaymentRecord {
+  id: string | null;
   paymentIntentId?: string;
   method: "CARD" | "PIX";
   status: PaymentStatus;
   providerStatus?: string;
   authorizedCents: number;
   capturedCents: number;
+  refundedCents: number;
+  pendingOperation: string | null;
+  lastErrorCode: string | null;
 }
 
 export interface CommercialSessionRecord {
@@ -141,12 +190,24 @@ export interface CommercialSessionRecord {
   parkingSpot?: string;
   status: CommercialSessionStatus;
   tariffCents: number;
+  actorType: "DRIVER" | "GUEST";
+  quote: CommercialQuote | null;
   authorizedCents: number;
   energyWh: number;
   costCents: number;
+  energyCostCents: number;
+  idleCostCents: number;
+  totalCostCents: number;
   currentPowerKw: number;
   startedAt?: string;
   endedAt?: string;
+  energyEndedAt: string | null;
+  disconnectedAt: string | null;
+  settledAt: string | null;
+  idleGraceEndsAt: string | null;
+  endReason: string | null;
+  transitionReason: string | null;
+  pendingCommandId: string | null;
   createdAt: string;
   updatedAt: string;
   payment: CommercialPaymentRecord;
@@ -168,9 +229,55 @@ export interface CommercialQueueRecord {
   calledAt?: string;
   assignmentExpiresAt?: string;
   completedAt?: string;
+  sessionId: string | null;
+  estimatedWaitMinutes: number | null;
+}
+
+export interface CommercialPublicChargerRecord {
+  id: string;
+  code: string;
+  establishmentId: string;
+  plantId: string | null;
+  name: string;
+  parkingSpot?: string;
+  nominalPowerKw: number;
+  currentPowerKw: number;
+  physicalStatus: ChargerTechnicalStatus;
+  commercialStatus: ChargerCommercialStatus;
+  published: boolean;
+  qrIdentifier: string;
+  updatedAt: string;
+}
+
+export interface CommercialPublicEstablishmentRecord {
+  id: string;
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  tariffCents: number;
+  qrSlug: string;
+  plantId: string | null;
+  timezone: string;
+  openingHours: CommercialOpeningHoursInterval[];
+  published: boolean;
+  availableChargerCount: number;
+  queueSummary: QueueSummary;
+  chargers: CommercialPublicChargerRecord[];
+}
+
+export interface CommercialCatalog {
+  generatedAt: string;
+  establishments: CommercialPublicEstablishmentRecord[];
+}
+
+export interface CommercialChargerResolution {
+  establishment: CommercialPublicEstablishmentRecord;
+  charger: CommercialPublicChargerRecord;
 }
 
 export interface CommercialSnapshot {
+  contractVersion: "S4-C1";
   generatedAt: string;
   establishments: CommercialEstablishmentRecord[];
   sessions: CommercialSessionRecord[];

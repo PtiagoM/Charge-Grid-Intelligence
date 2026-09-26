@@ -1,5 +1,9 @@
 import { CommercialSessionStatus, PaymentStatus, QueueStatus } from "@chargegrid/shared";
+import { PGlite } from "@electric-sql/pglite";
 import { afterEach, describe, expect, it } from "vitest";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { CommercialConflictError, CommercialRepository } from "./repository.js";
 
 describe("CommercialRepository", () => {
@@ -30,9 +34,10 @@ describe("CommercialRepository", () => {
 
     expect(session.status).toBe(CommercialSessionStatus.WAITING_START);
     expect(session.chargerCode).toBe("AURORA-01");
+    expect(session.chargerId).toBe("00000000-0000-4000-8000-000000000001");
     const snapshot = await repository.snapshot("est_aurora_001");
     expect(snapshot.sessions).toEqual([expect.objectContaining({ id, payment: expect.objectContaining({ paymentIntentId: "pi_test_chargegrid" }) })]);
-    expect(snapshot.establishments[0]?.chargers[0]).toEqual(expect.objectContaining({ code: "AURORA-01", commercialStatus: "OCCUPIED" }));
+    expect(snapshot.establishments[0]?.chargers[0]).toEqual(expect.objectContaining({ code: "AURORA-01", commercialStatus: "OCCUPIED", currentSessionId: id }));
     await expect(repository.reserveSession({
       id: "20000000-0000-4000-8000-000000000002",
       establishmentId: "est_aurora_001",
@@ -121,4 +126,50 @@ describe("CommercialRepository", () => {
     expect(snapshot.establishments[0]?.chargers.every((charger) => charger.physicalStatus === "AVAILABLE" && charger.commercialStatus === "AVAILABLE_TO_START" && charger.currentPowerKw === 0)).toBe(true);
     expect(snapshot.establishments[0]?.chargers.map((charger) => charger.code)).toEqual(["AURORA-01", "AURORA-02", "AURORA-03", "AURORA-04", "AURORA-05", "AURORA-06"]);
   }, 20_000);
+
+  it("resolves Aurora by UUID, code and QR without exposing commercial session data", async () => {
+    const repository = new CommercialRepository("memory://");
+    repositories.push(repository);
+    const identifiers = ["00000000-0000-4000-8000-000000000002", "AURORA-02", "aurora-02"];
+    const resolutions = await Promise.all(identifiers.map((identifier) => repository.resolveCharger(identifier)));
+
+    expect(resolutions.map((item) => item.charger.id)).toEqual([identifiers[0], identifiers[0], identifiers[0]]);
+    expect(resolutions[0]?.charger.parkingSpot).toBe("B02");
+    expect(await repository.catalog()).toEqual(expect.not.objectContaining({ sessions: expect.anything(), queue: expect.anything() }));
+    expect(JSON.stringify(await repository.catalog())).not.toMatch(/driver|email|payment_intent/i);
+    expect((await repository.catalog()).establishments[0]?.chargers).toHaveLength(6);
+  }, 20_000);
+
+  it("baselines legacy data once and preserves tariff and publication across persistent restarts", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "chargegrid-s4-"));
+    let repository: CommercialRepository | undefined;
+    try {
+      const legacy = new PGlite(dataDir);
+      for (const name of ["202609220001_commercial_core.sql", "202609220002_hardware_lifecycle.sql", "202609220003_commercial_queue.sql"]) {
+        await legacy.exec(await readFile(new URL(`../../../../supabase/migrations/${name}`, import.meta.url), "utf8"));
+      }
+      await legacy.query("update commercial_establishments set tariff_cents = 235 where id = 'est_aurora_001'");
+      await legacy.query("update commercial_chargers set published = false where code = 'AURORA-02'");
+      await legacy.close();
+
+      repository = new CommercialRepository(dataDir);
+      const first = await repository.catalog();
+      expect(first.establishments[0]?.tariffCents).toBe(235);
+      expect(first.establishments[0]?.chargers.map((charger) => charger.code)).not.toContain("AURORA-02");
+      await repository.close();
+      repository = new CommercialRepository(dataDir);
+      const second = await repository.catalog();
+      expect(second.establishments[0]?.tariffCents).toBe(235);
+      expect(second.establishments[0]?.chargers).toHaveLength(5);
+      await repository.close();
+      repository = undefined;
+
+      const inspection = new PGlite(dataDir);
+      expect((await inspection.query<{ count: number }>("select count(*)::int as count from chargegrid_schema_migrations")).rows[0]?.count).toBe(4);
+      await inspection.close();
+    } finally {
+      if (repository) await repository.close();
+      await rm(dataDir, { recursive: true, force: true });
+    }
+  }, 30_000);
 });

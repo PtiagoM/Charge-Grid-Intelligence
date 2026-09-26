@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
-import { CommercialSessionStatus, PaymentStatus, QueueStatus, type CommercialChargerRecord, type CommercialEstablishmentRecord, type CommercialQueueRecord, type CommercialSessionRecord, type CommercialSnapshot } from "@chargegrid/shared";
+import { ChargerCommercialStatus, ChargerTechnicalStatus, CommercialAvailability, CommercialSessionStatus, PaymentStatus, QueueStatus, type CommercialCatalog, type CommercialChargerRecord, type CommercialChargerResolution, type CommercialEstablishmentRecord, type CommercialOpeningHoursInterval, type CommercialPublicChargerRecord, type CommercialPublicEstablishmentRecord, type CommercialQueueRecord, type CommercialQuote, type CommercialSessionRecord, type CommercialSnapshot } from "@chargegrid/shared";
 import pg from "pg";
 import { MockGoodWeProvider, type GoodWeProvider } from "../goodwe/index.js";
 
@@ -22,6 +22,7 @@ interface ChargerRow {
   id: string;
   code: string;
   establishment_id: string;
+  plant_id: string | null;
   name: string;
   parking_spot: string | null;
   nominal_power_kw: number;
@@ -30,6 +31,8 @@ interface ChargerRow {
   commercial_status: string;
   published: boolean;
   qr_identifier: string;
+  current_session_id: string | null;
+  assignment_id: string | null;
   updated_at: Date | string;
 }
 
@@ -41,6 +44,10 @@ interface EstablishmentRow {
   longitude: number;
   tariff_cents: number;
   qr_slug: string;
+  plant_id: string | null;
+  timezone: string;
+  opening_hours: unknown;
+  published: boolean;
 }
 
 interface SessionRow {
@@ -51,6 +58,7 @@ interface SessionRow {
   driver_email: string | null;
   establishment_id: string;
   establishment_name: string;
+  charger_id: string;
   charger_code: string;
   charger_name: string;
   parking_spot: string | null;
@@ -70,6 +78,22 @@ interface SessionRow {
   payment_status: PaymentStatus | null;
   provider_status: string | null;
   captured_cents: number | null;
+  payment_id: string | null;
+  refunded_cents: number | null;
+  pending_operation: string | null;
+  last_error_code: string | null;
+  actor_type: "DRIVER" | "GUEST";
+  quote: CommercialQuote | string | null;
+  energy_cost_cents: number | null;
+  idle_cost_cents: number | null;
+  total_cost_cents: number | null;
+  energy_ended_at: Date | string | null;
+  disconnected_at: Date | string | null;
+  settled_at: Date | string | null;
+  idle_grace_ends_at: Date | string | null;
+  end_reason: string | null;
+  transition_reason: string | null;
+  pending_command_id: string | null;
 }
 
 interface QueueRow {
@@ -87,14 +111,20 @@ interface QueueRow {
   called_at: Date | string | null;
   assignment_expires_at: Date | string | null;
   completed_at: Date | string | null;
+  session_id: string | null;
+  estimated_wait_minutes: number | null;
 }
 
 export class CommercialConflictError extends Error {}
 export class CommercialNotFoundError extends Error {}
 
-const migrationUrl = new URL("../../../../supabase/migrations/202609220001_commercial_core.sql", import.meta.url);
-const hardwareMigrationUrl = new URL("../../../../supabase/migrations/202609220002_hardware_lifecycle.sql", import.meta.url);
-const queueMigrationUrl = new URL("../../../../supabase/migrations/202609220003_commercial_queue.sql", import.meta.url);
+const migrations = [
+  { name: "202609220001_commercial_core", url: new URL("../../../../supabase/migrations/202609220001_commercial_core.sql", import.meta.url) },
+  { name: "202609220002_hardware_lifecycle", url: new URL("../../../../supabase/migrations/202609220002_hardware_lifecycle.sql", import.meta.url) },
+  { name: "202609220003_commercial_queue", url: new URL("../../../../supabase/migrations/202609220003_commercial_queue.sql", import.meta.url) },
+  { name: "202609260004_s4_foundation", url: new URL("../../../../supabase/migrations/202609260004_s4_foundation.sql", import.meta.url) }
+] as const;
+const legacyMigrationNames = new Set(migrations.slice(0, 3).map((migration) => migration.name));
 const defaultDataDir = process.env.CHARGEGRID_DATABASE_PATH ?? (process.env.NODE_ENV === "test" ? "memory://" : fileURLToPath(new URL("../../../../.local/commercial-db", import.meta.url)));
 
 function pgliteDatabase(dataDir: string): SqlDatabase {
@@ -138,19 +168,41 @@ function iso(value: Date | string | null) {
   return value ? new Date(value).toISOString() : undefined;
 }
 
+function openingHours(value: unknown): CommercialOpeningHoursInterval[] {
+  const parsed = typeof value === "string" ? JSON.parse(value) : value;
+  if (!Array.isArray(parsed)) return [];
+  return parsed.filter((item): item is CommercialOpeningHoursInterval => typeof item === "object" && item !== null
+    && typeof item.day === "number" && typeof item.opens === "string" && typeof item.closes === "string");
+}
+
+function quoteRecord(value: SessionRow["quote"]): CommercialQuote | null {
+  if (!value) return null;
+  return (typeof value === "string" ? JSON.parse(value) : value) as CommercialQuote;
+}
+
+function commercialAvailability(chargers: CommercialChargerRecord[]): CommercialAvailability {
+  const available = chargers.filter((charger) => charger.physicalStatus === ChargerTechnicalStatus.AVAILABLE && charger.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START).length;
+  if (chargers.length > 0 && chargers.every((charger) => [ChargerTechnicalStatus.FAULT, ChargerTechnicalStatus.OFFLINE].includes(charger.physicalStatus))) return CommercialAvailability.FAULT;
+  if (available === 0) return CommercialAvailability.FULL_QUEUE;
+  return available === chargers.length ? CommercialAvailability.OPEN_AVAILABLE : CommercialAvailability.OPEN_PARTIAL;
+}
+
 function chargerRecord(row: ChargerRow): CommercialChargerRecord {
   return {
     id: row.id,
     code: row.code,
     establishmentId: row.establishment_id,
+    plantId: row.plant_id,
     name: row.name,
     parkingSpot: row.parking_spot ?? undefined,
     nominalPowerKw: Number(row.nominal_power_kw),
     currentPowerKw: Number(row.current_power_kw),
-    physicalStatus: row.physical_status,
-    commercialStatus: row.commercial_status as CommercialChargerRecord["commercialStatus"],
+    physicalStatus: row.physical_status as ChargerTechnicalStatus,
+    commercialStatus: row.commercial_status as ChargerCommercialStatus,
     published: row.published,
     qrIdentifier: row.qr_identifier,
+    currentSessionId: row.current_session_id,
+    assignmentId: row.assignment_id,
     updatedAt: iso(row.updated_at)!
   };
 }
@@ -164,27 +216,43 @@ function sessionRecord(row: SessionRow): CommercialSessionRecord {
     driverEmail: row.driver_email ?? undefined,
     establishmentId: row.establishment_id,
     establishmentName: row.establishment_name,
-    chargerId: row.charger_code,
+    chargerId: row.charger_id,
     chargerCode: row.charger_code,
     chargerName: row.charger_name,
     parkingSpot: row.parking_spot ?? undefined,
     status: row.status,
     tariffCents: row.tariff_cents,
+    actorType: row.actor_type,
+    quote: quoteRecord(row.quote),
     authorizedCents: row.authorized_cents,
-    energyWh: Number(row.energy_wh),
+    energyWh: Math.round(Number(row.energy_wh) * 1000) / 1000,
     costCents: row.cost_cents,
+    energyCostCents: row.energy_cost_cents ?? row.cost_cents,
+    idleCostCents: row.idle_cost_cents ?? 0,
+    totalCostCents: row.total_cost_cents ?? row.cost_cents,
     currentPowerKw: Number(row.current_power_kw),
     startedAt: iso(row.started_at),
     endedAt: iso(row.ended_at),
+    energyEndedAt: iso(row.energy_ended_at) ?? null,
+    disconnectedAt: iso(row.disconnected_at) ?? null,
+    settledAt: iso(row.settled_at) ?? null,
+    idleGraceEndsAt: iso(row.idle_grace_ends_at) ?? null,
+    endReason: row.end_reason,
+    transitionReason: row.transition_reason,
+    pendingCommandId: row.pending_command_id,
     createdAt: iso(row.created_at)!,
     updatedAt: iso(row.updated_at)!,
     payment: {
+      id: row.payment_id,
       paymentIntentId: row.payment_intent_id ?? undefined,
       method: row.payment_method ?? "CARD",
       status: row.payment_status ?? PaymentStatus.PENDING,
       providerStatus: row.provider_status ?? undefined,
       authorizedCents: row.authorized_cents,
-      capturedCents: row.captured_cents ?? 0
+      capturedCents: row.captured_cents ?? 0,
+      refundedCents: row.refunded_cents ?? 0,
+      pendingOperation: row.pending_operation,
+      lastErrorCode: row.last_error_code
     }
   };
 }
@@ -209,15 +277,50 @@ function queueRecords(rows: QueueRow[]): CommercialQueueRecord[] {
       joinedAt: iso(row.joined_at)!,
       calledAt: iso(row.called_at),
       assignmentExpiresAt: iso(row.assignment_expires_at),
-      completedAt: iso(row.completed_at)
+      completedAt: iso(row.completed_at),
+      sessionId: row.session_id,
+      estimatedWaitMinutes: row.estimated_wait_minutes
     };
   });
 }
 
+function establishmentRecord(row: EstablishmentRow, chargers: CommercialChargerRecord[], queue: CommercialQueueRecord[]): CommercialEstablishmentRecord {
+  const establishmentChargers = chargers.filter((charger) => charger.establishmentId === row.id);
+  const activeCount = queue.filter((entry) => entry.establishmentId === row.id && [QueueStatus.WAITING, QueueStatus.CALLED, QueueStatus.ASSIGNED].includes(entry.status)).length;
+  const availability = commercialAvailability(establishmentChargers);
+  return {
+    id: row.id,
+    name: row.name,
+    address: row.address,
+    latitude: Number(row.latitude),
+    longitude: Number(row.longitude),
+    tariffCents: row.tariff_cents,
+    qrSlug: row.qr_slug,
+    plantId: row.plant_id,
+    timezone: row.timezone,
+    openingHours: openingHours(row.opening_hours),
+    published: row.published,
+    availableChargerCount: establishmentChargers.filter((charger) => charger.physicalStatus === ChargerTechnicalStatus.AVAILABLE && charger.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START).length,
+    queueSummary: { establishmentId: row.id, activeCount, registeredCount: activeCount, commercialAvailability: availability },
+    chargers: establishmentChargers
+  };
+}
+
+function publicChargerRecord(charger: CommercialChargerRecord): CommercialPublicChargerRecord {
+  const { currentSessionId, assignmentId, ...publicCharger } = charger;
+  void currentSessionId;
+  void assignmentId;
+  return publicCharger;
+}
+
+function publicEstablishmentRecord(establishment: CommercialEstablishmentRecord): CommercialPublicEstablishmentRecord {
+  return { ...establishment, chargers: establishment.chargers.map(publicChargerRecord) };
+}
+
 const sessionSelect = `
-  select s.*, e.name as establishment_name, c.code as charger_code, c.name as charger_name,
-    c.parking_spot, c.current_power_kw, p.payment_intent_id, p.method as payment_method, p.status as payment_status,
-    p.provider_status, p.captured_cents
+  select s.*, e.name as establishment_name, c.id as charger_id, c.code as charger_code, c.name as charger_name,
+    c.parking_spot, c.current_power_kw, p.id as payment_id, p.payment_intent_id, p.method as payment_method, p.status as payment_status,
+    p.provider_status, p.captured_cents, p.refunded_cents, p.pending_operation, p.last_error_code
   from commercial_sessions s
   join commercial_establishments e on e.id = s.establishment_id
   join commercial_chargers c on c.id = s.charger_id
@@ -236,9 +339,32 @@ export class CommercialRepository {
   constructor(dataDir?: string, private readonly goodWeProvider: GoodWeProvider = new MockGoodWeProvider()) {
     const remoteUrl = process.env.CHARGEGRID_DATABASE_URL?.trim();
     this.db = !dataDir && remoteUrl ? postgresDatabase(remoteUrl) : pgliteDatabase(dataDir ?? defaultDataDir);
-    this.ready = Promise.all([migrationUrl, hardwareMigrationUrl, queueMigrationUrl].map((url) => readFile(url, "utf8"))).then(async (migrations) => {
-      for (const sql of migrations) await this.db.exec(sql);
-    });
+    this.ready = this.applyMigrations();
+  }
+
+  private async applyMigrations() {
+    await this.db.exec(`create table if not exists chargegrid_schema_migrations (
+      name text primary key,
+      applied_at timestamptz not null default now()
+    )`);
+    const appliedRows = await this.db.query<{ name: string }>("select name from chargegrid_schema_migrations");
+    const applied = new Set(appliedRows.rows.map((row) => row.name));
+    if (applied.size === 0) {
+      const legacy = await this.db.query<{ exists: boolean }>(`select exists (
+        select 1 from information_schema.tables where table_schema = 'public' and table_name = 'commercial_establishments'
+      ) as exists`);
+      if (legacy.rows[0]?.exists) {
+        for (const name of legacyMigrationNames) {
+          await this.db.query("insert into chargegrid_schema_migrations (name) values ($1) on conflict (name) do nothing", [name]);
+          applied.add(name);
+        }
+      }
+    }
+    for (const migration of migrations) {
+      if (applied.has(migration.name)) continue;
+      await this.db.exec(await readFile(migration.url, "utf8"));
+      await this.db.query("insert into chargegrid_schema_migrations (name) values ($1) on conflict (name) do nothing", [migration.name]);
+    }
   }
 
   async close() {
@@ -286,7 +412,7 @@ export class CommercialRepository {
         (id, session_id, method, status, authorized_cents) values ($1, $2, $3, $4, $5)`, [
         randomUUID(), input.id, input.method, PaymentStatus.PENDING, input.authorizedCents
       ]);
-      await tx.query("update commercial_chargers set commercial_status = 'OCCUPIED', updated_at = now() where id = $1", [selected.id]);
+      await tx.query("update commercial_chargers set commercial_status = 'OCCUPIED', current_session_id = $2, assignment_id = null, updated_at = now() where id = $1", [selected.id, input.id]);
       if (assignment.rows[0]) await tx.query("update commercial_queue_entries set status = 'ASSIGNED', updated_at = now() where id = $1", [assignment.rows[0].id]);
     });
     return this.session(input.id);
@@ -302,7 +428,7 @@ export class CommercialRepository {
     await this.db.transaction(async (tx) => {
       await tx.query("update commercial_payments set status = $2, provider_status = $3, updated_at = now() where session_id = $1", [sessionId, PaymentStatus.FAILED, providerStatus]);
       await tx.query("update commercial_sessions set status = $2, updated_at = now() where id = $1", [sessionId, CommercialSessionStatus.PAYMENT_FAILED]);
-      await tx.query("update commercial_chargers set commercial_status = 'AVAILABLE_TO_START', updated_at = now() where id = (select charger_id from commercial_sessions where id = $1)", [sessionId]);
+      await tx.query("update commercial_chargers set commercial_status = 'AVAILABLE_TO_START', current_session_id = null, updated_at = now() where id = (select charger_id from commercial_sessions where id = $1) and current_session_id = $1", [sessionId]);
     });
   }
 
@@ -323,7 +449,7 @@ export class CommercialRepository {
       await tx.query(`update commercial_sessions set status = $2, updated_at = now()
         where id = $1 and status in ('AWAITING_PAYMENT', 'AUTHORIZED', 'WAITING_START', 'PAYMENT_FAILED')`, [sessionId, nextSessionStatus]);
       if (input.status === PaymentStatus.FAILED) {
-        await tx.query("update commercial_chargers set commercial_status = 'AVAILABLE_TO_START', updated_at = now() where id = (select charger_id from commercial_sessions where id = $1)", [sessionId]);
+        await tx.query("update commercial_chargers set commercial_status = 'AVAILABLE_TO_START', current_session_id = null, updated_at = now() where id = (select charger_id from commercial_sessions where id = $1) and current_session_id = $1", [sessionId]);
       }
     });
     return this.session(sessionId);
@@ -358,7 +484,7 @@ export class CommercialRepository {
     if (!result.rows[0]) throw new CommercialNotFoundError("Entrada ativa da fila não encontrada.");
     const entry = result.rows[0];
     if (entry.charger_id) {
-      await this.db.query(`update commercial_chargers set commercial_status = 'AVAILABLE_TO_START', updated_at = now()
+      await this.db.query(`update commercial_chargers set commercial_status = 'AVAILABLE_TO_START', assignment_id = null, updated_at = now()
         where id = $1 and physical_status = 'AVAILABLE' and not exists (
           select 1 from commercial_sessions where charger_id = $1 and status not in ('COMPLETED', 'PAYMENT_FAILED', 'START_FAILED', 'FAULTED', 'CANCELLED')
         )`, [entry.charger_id]);
@@ -377,7 +503,7 @@ export class CommercialRepository {
       if (!charger.rows[0] || !entry.rows[0]) return;
       await tx.query(`update commercial_queue_entries set status = 'CALLED', charger_id = $2, called_at = now(),
         assignment_expires_at = now() + interval '10 minutes', updated_at = now() where id = $1`, [entry.rows[0].id, charger.rows[0].id]);
-      await tx.query("update commercial_chargers set commercial_status = 'OCCUPIED', updated_at = now() where id = $1", [charger.rows[0].id]);
+      await tx.query("update commercial_chargers set commercial_status = 'OCCUPIED', assignment_id = $2, updated_at = now() where id = $1", [charger.rows[0].id, entry.rows[0].id]);
     });
   }
 
@@ -437,7 +563,7 @@ export class CommercialRepository {
         if (session?.status === CommercialSessionStatus.CHARGING) throw new CommercialConflictError("Interrompa a energia antes de desconectar o veículo.");
         await tx.query("update commercial_chargers set physical_status = 'AVAILABLE', commercial_status = $2, current_power_kw = 0, updated_at = now() where id = $1", [charger.id, session ? "OCCUPIED" : "AVAILABLE_TO_START"]);
       } else if (["OFFLINE", "FAULT"].includes(action)) {
-        await tx.query("update commercial_chargers set physical_status = $2, commercial_status = 'FAULTED', current_power_kw = 0, updated_at = now() where id = $1", [charger.id, action]);
+        await tx.query("update commercial_chargers set physical_status = $2, commercial_status = 'FAULTED', current_session_id = null, current_power_kw = 0, updated_at = now() where id = $1", [charger.id, action]);
         if (session) await tx.query("update commercial_sessions set status = 'FAULTED', last_energy_at = null, updated_at = now() where id = $1", [session.id]);
       } else {
         await tx.query("update commercial_chargers set physical_status = 'AVAILABLE', commercial_status = 'AVAILABLE_TO_START', current_power_kw = 0, updated_at = now() where id = $1", [charger.id]);
@@ -457,11 +583,11 @@ export class CommercialRepository {
   async resetTestData(establishmentId = "est_aurora_001") {
     await this.ready;
     await this.db.transaction(async (tx) => {
+      await tx.query(`update commercial_chargers set physical_status = 'AVAILABLE', commercial_status = 'AVAILABLE_TO_START',
+        current_session_id = null, assignment_id = null, current_power_kw = 0, updated_at = now() where establishment_id = $1`, [establishmentId]);
       await tx.query("delete from commercial_payments where session_id in (select id from commercial_sessions where establishment_id = $1)", [establishmentId]);
       await tx.query("delete from commercial_queue_entries where establishment_id = $1", [establishmentId]);
       await tx.query("delete from commercial_sessions where establishment_id = $1", [establishmentId]);
-      await tx.query(`update commercial_chargers set physical_status = 'AVAILABLE', commercial_status = 'AVAILABLE_TO_START',
-        current_power_kw = 0, updated_at = now() where establishment_id = $1`, [establishmentId]);
     });
     return this.snapshot(establishmentId);
   }
@@ -495,7 +621,7 @@ export class CommercialRepository {
       if (current.physical_status !== "AVAILABLE") throw new CommercialConflictError("Desconecte o veículo no carregador antes de liquidar o pagamento.");
       await tx.query("update commercial_payments set status = $2, provider_status = $3, captured_cents = $4, updated_at = now() where session_id = $1", [input.sessionId, input.status, input.providerStatus, input.capturedCents]);
       await tx.query("update commercial_sessions set status = $2, ended_at = now(), last_energy_at = null, updated_at = now() where id = $1", [input.sessionId, input.status === PaymentStatus.PAID ? CommercialSessionStatus.COMPLETED : CommercialSessionStatus.CANCELLED]);
-      await tx.query("update commercial_chargers set commercial_status = 'AVAILABLE_TO_START', current_power_kw = 0, updated_at = now() where id = $1", [current.charger_id]);
+      await tx.query("update commercial_chargers set commercial_status = 'AVAILABLE_TO_START', current_session_id = null, current_power_kw = 0, updated_at = now() where id = $1 and current_session_id = $2", [current.charger_id, input.sessionId]);
       await tx.query(`update commercial_queue_entries set status = 'COMPLETED', completed_at = now(), updated_at = now()
         where driver_id = (select driver_id from commercial_sessions where id = $1) and status = 'ASSIGNED'`, [input.sessionId]);
     });
@@ -511,24 +637,40 @@ export class CommercialRepository {
     return sessionRecord(result.rows[0]);
   }
 
+  async catalog(): Promise<CommercialCatalog> {
+    await this.ready;
+    const establishments = await this.db.query<EstablishmentRow>("select e.*, p.id as plant_id from commercial_establishments e left join commercial_plants p on p.establishment_id = e.id where e.published = true order by e.name");
+    const chargers = await this.db.query<ChargerRow>("select * from commercial_chargers where published = true order by code");
+    const queue = await this.queueSnapshot();
+    const chargerRecords = chargers.rows.map(chargerRecord);
+    return {
+      generatedAt: new Date().toISOString(),
+      establishments: establishments.rows.map((row) => publicEstablishmentRecord(establishmentRecord(row, chargerRecords, queue)))
+    };
+  }
+
+  async resolveCharger(identifier: string): Promise<CommercialChargerResolution> {
+    const normalized = identifier.trim();
+    if (!normalized) throw new CommercialNotFoundError("Carregador comercial não encontrado.");
+    const catalog = await this.catalog();
+    for (const establishment of catalog.establishments) {
+      const charger = establishment.chargers.find((candidate) => candidate.id === normalized
+        || candidate.code.toLocaleLowerCase("pt-BR") === normalized.toLocaleLowerCase("pt-BR")
+        || candidate.qrIdentifier.toLocaleLowerCase("pt-BR") === normalized.toLocaleLowerCase("pt-BR"));
+      if (charger) return { establishment, charger };
+    }
+    throw new CommercialNotFoundError("Carregador comercial não encontrado.");
+  }
+
   async snapshot(establishmentId?: string): Promise<CommercialSnapshot> {
     await this.ready;
-    const establishments = await this.db.query<EstablishmentRow>(`select * from commercial_establishments where published = true ${establishmentId ? "and id = $1" : ""} order by name`, establishmentId ? [establishmentId] : []);
+    const establishments = await this.db.query<EstablishmentRow>(`select e.*, p.id as plant_id from commercial_establishments e left join commercial_plants p on p.establishment_id = e.id where e.published = true ${establishmentId ? "and e.id = $1" : ""} order by e.name`, establishmentId ? [establishmentId] : []);
     const chargers = await this.db.query<ChargerRow>(`select * from commercial_chargers where published = true ${establishmentId ? "and establishment_id = $1" : ""} order by code`, establishmentId ? [establishmentId] : []);
     const sessions = await this.db.query<SessionRow>(`${sessionSelect} ${establishmentId ? "where s.establishment_id = $1" : ""} order by s.created_at desc`, establishmentId ? [establishmentId] : []);
     const queue = await this.queueSnapshot(establishmentId);
     const chargerRecords = chargers.rows.map(chargerRecord);
-    const establishmentRecords: CommercialEstablishmentRecord[] = establishments.rows.map((row) => ({
-      id: row.id,
-      name: row.name,
-      address: row.address,
-      latitude: Number(row.latitude),
-      longitude: Number(row.longitude),
-      tariffCents: row.tariff_cents,
-      qrSlug: row.qr_slug,
-      chargers: chargerRecords.filter((charger) => charger.establishmentId === row.id)
-    }));
-    return { generatedAt: new Date().toISOString(), establishments: establishmentRecords, sessions: sessions.rows.map(sessionRecord), queue };
+    const establishmentRecords = establishments.rows.map((row) => establishmentRecord(row, chargerRecords, queue));
+    return { contractVersion: "S4-C1", generatedAt: new Date().toISOString(), establishments: establishmentRecords, sessions: sessions.rows.map(sessionRecord), queue };
   }
 }
 

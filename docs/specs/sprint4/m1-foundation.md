@@ -4,7 +4,7 @@ Objetivo: API/SQL executam contratos estáveis, sem frontend decidir negócio. G
 
 Área autorizada: `apps/api/src/{commercial,payments,goodwe,app.ts,server.ts}`, `packages/shared/src/{contracts,enums,domain}`, migrations/seed; adapters mínimos de ambos frontends quando campo compartilhado mudar. Não redesenhar telas. Não criar microsserviços, ORM, broker ou engine paralelo.
 
-## S4-M1-U1 — SQL versionado e catálogo público
+## S4-M1-U1 — SQL versionado e catálogo público — IMPLEMENTADO (26/09/2026)
 
 - **Depende:** G0; **tamanho:** MÉDIO.
 - **Alterar:** constructor/migration bootstrap, `chargerRecord/sessionRecord/snapshot` em `commercial/repository.ts`; `routes.ts`; contratos shared; novas migrations. Seed explícito não destrutivo; `supabase/seed.sql` acompanha.
@@ -23,6 +23,14 @@ Objetivo: API/SQL executam contratos estáveis, sem frontend decidir negócio. G
 - **Testes:** Supertest com verificador Auth controlado somente no teste; A/B/guest, UUID conhecido não dá acesso; webhook raw continua aceitando assinatura. Permissões negadas não mudam SQL. `V-API`, `V-PWA`, typecheck.
 - **Aceite:** GIVEN token A e body.driverId B WHEN cria/consulta THEN propriedade é A e B não lê; GIVEN guest WHEN usa outro sessionId THEN404.
 - **Saída:** nenhuma rota antiga de sessão/pagamento escapa à mesma verificação; Admin local explicitamente separado. Commit `feat(api): enforce driver and guest operation ownership`.
+
+### Registro de execução U1
+
+- O bootstrap agora mantém `chargegrid_schema_migrations`, faz baseline das três migrations legadas quando o schema já existe e aplica `202609260004_s4_foundation.sql` uma única vez.
+- O schema recebeu planta Aurora, campos aditivos de tarifa/quote/sessão/pagamento/fila e vínculos explícitos `current_session_id`/`assignment_id`; o reset limpa esses vínculos antes dos registros referenciados.
+- `GET /commercial/catalog` e `GET /commercial/chargers/resolve/:identifier` expõem somente o catálogo publicado. UUID, código e QR resolvem o mesmo carregador; a projeção não inclui sessão, fila, motorista, e-mail ou PaymentIntent.
+- A projeção administrativa passou a emitir `session.chargerId` como UUID real e conserva `chargerCode` para exibição. A migration preserva Aurora, tarifa e publicação existentes; dados legados ficam em `legacy-s3`, sem idle habilitado.
+- Validação: lint, typecheck, builds Admin/PWA/API, 18 testes API e 78 testes Admin passaram. O PWA não possui script de testes unitários neste repositório.
 
 ## S4-M1-U3 — Quote, tentativa e Stripe normal
 

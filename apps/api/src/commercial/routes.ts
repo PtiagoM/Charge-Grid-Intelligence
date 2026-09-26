@@ -9,6 +9,20 @@ function errorStatus(error: unknown) {
 
 export function createCommercialRouter() {
   const router = Router();
+  router.get("/catalog", async (_request, response) => {
+    try {
+      return response.json(await getCommercialRepository().catalog());
+    } catch (error) {
+      return response.status(errorStatus(error)).json({ code: "COMMERCIAL_CATALOG_READ_FAILED", message: error instanceof Error ? error.message : "Falha ao consultar o catálogo comercial." });
+    }
+  });
+  router.get("/chargers/resolve/:identifier", async (request, response) => {
+    try {
+      return response.json(await getCommercialRepository().resolveCharger(request.params.identifier));
+    } catch (error) {
+      return response.status(errorStatus(error)).json({ code: "COMMERCIAL_CHARGER_NOT_FOUND", message: error instanceof Error ? error.message : "Carregador não encontrado." });
+    }
+  });
   router.get("/queue/driver/:driverId", async (request, response) => {
     try {
       return response.json({ entry: await getCommercialRepository().queueForDriver(request.params.driverId) });

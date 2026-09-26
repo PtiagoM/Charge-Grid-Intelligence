@@ -2,11 +2,11 @@
 
 **ChargeGrid Intelligence — Sprint 4: solução final integrada e inovadora GoodWe.**
 
-**Data:** 24/09/2026; atualização de execução: 26/09/2026. **Status:** plano aprovado; Marco 0 documental concluído. Nenhuma mudança de produto foi implementada neste marco. Além deste documento e da [matriz de comportamento](SPRINT4_BEHAVIOR_MATRIX.md), o pacote SDD foi criado e ratificado.
+**Data:** 24/09/2026; atualização de execução: 26/09/2026. **Status:** plano aprovado; Marco 0 documental e M1-U1 concluídos. Além deste documento e da [matriz de comportamento](SPRINT4_BEHAVIOR_MATRIX.md), o pacote SDD foi criado e ratificado.
 
 **Atualização de escopo aprovada:** D1–D4 e o recorte adicional do responsável, registrados na seção 13, substituem as propostas anteriores correspondentes. O núcleo obrigatório é **operação comercial completa + experiência do motorista + energia da planta + controle de demanda + automação explicável + integração final**, no Aurora. Aprovação dessas decisões não é autorização para implementar os marcos. Os achados e resultados abaixo continuam retratando o código auditado, não as mudanças planejadas.
 
-**Desdobramento SDD:** [especificações executáveis](specs/sprint4/spec.md), com contrato comum, decisões técnicas explicitadas, unidades M0–M7 e critérios verificáveis. O gate documental M0 foi aprovado em 26/09/2026; G1–G7 continuam pendentes e o pacote não altera os resultados técnicos da auditoria.
+**Desdobramento SDD:** [especificações executáveis](specs/sprint4/spec.md), com contrato comum, decisões técnicas explicitadas, unidades M0–M7 e critérios verificáveis. O gate documental M0 foi aprovado em 26/09/2026; M1-U1 implementou ledger, catálogo Aurora público e contratos aditivos. G1–G7 continuam pendentes.
 
 **Conclusão:** a Sprint 3 entregou uma vertical comercial real e persistente para o Aurora. O projeto ainda não é um produto final integrado: boa parte do Admin continua usando regras e registros locais; a PWA mistura catálogo remoto com fixtures e guarda histórico/comprovantes no navegador; energia, demanda e inteligência ainda não controlam essa mesma operação. A Sprint 4 deve conectar e corrigir essas capacidades, não redesenhar as telas nem reconstruir a stack.
 
