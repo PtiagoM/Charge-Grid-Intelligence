@@ -67,14 +67,14 @@ export function EstablishmentPage() {
     <PageIntro eyebrow={plant.category} title={plant.name}><p>{plant.address}</p></PageIntro>
     <section className="place-hero">
       <img src={plant.imageUrl} alt={`Área de recarga do ${plant.name}`} />
-      <div className="place-hero-overlay"><StatusChip label={isFull ? "Lotado · fila ativa" : "Disponível agora"} tone={isFull ? "warning" : "success"} /><strong>{isFull ? `${queueActiveCount} aguardando` : `${availableChargers.length} vagas disponíveis`}</strong></div>
+      <div className="place-hero-overlay"><StatusChip label={!plant.isOperational ? "Catálogo em expansão" : isFull ? "Lotado · fila ativa" : "Disponível agora"} tone={!plant.isOperational ? "neutral" : isFull ? "warning" : "success"} /><strong>{!plant.isOperational ? "Informações de referência" : isFull ? `${queueActiveCount} aguardando` : `${availableChargers.length} vagas disponíveis`}</strong></div>
     </section>
 
     <section className="quick-info-grid">
       <InfoRow icon="route" label="Distância" value={`${plant.distanceKm?.toFixed(1).replace(".", ",")} km`} detail="pela sua região" />
       <InfoRow icon="clock" label="Horário" value={plant.openingHours ?? "Consulte o local"} detail="horário de recarga" />
       <InfoRow icon="plug" label="Potência" value={`até ${plant.nominalPowerKw} kW`} detail="nominal por carregador" />
-      <InfoRow icon="card" label="Tarifa agora" value={`${currency.format(tariff)}/kWh`} detail="confirme antes de pagar" />
+      <InfoRow icon="card" label={plant.isOperational ? "Tarifa agora" : "Tarifa de referência"} value={`${currency.format(tariff)}/kWh`} detail={plant.isOperational ? "confirme antes de pagar" : "sem checkout neste local"} />
     </section>
 
     <a className="route-link" href={`https://www.google.com/maps/dir/?api=1&destination=${plant.position.lat},${plant.position.lng}&destination_place_id=${encodeURIComponent(plant.name)}`} target="_blank" rel="noreferrer"><AppIcon name="route" size={20} /> Abrir rota no Google Maps</a>
@@ -92,12 +92,12 @@ export function EstablishmentPage() {
           </button>;
         })}
       </div>
-      <p className="privacy-note">{isFull ? "A fila é única para toda a planta e a vaga será indicada quando chegar sua vez." : selectedCharger?.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START ? `${selectedCharger.commercialName} está selecionado para sua recarga.` : "Escolha um carregador disponível para continuar."}</p>
+      <p className="privacy-note">{!plant.isOperational ? "A disponibilidade comercial deste local ainda não está integrada." : isFull ? "A fila é única para toda a planta e a vaga será indicada quando chegar sua vez." : selectedCharger?.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START ? `${selectedCharger.commercialName} está selecionado para sua recarga.` : "Escolha um carregador disponível para continuar."}</p>
     </section>
 
     <section className="mobile-card tariff-card">
       <div className="section-heading"><div><p className="eyebrow">Antes de autorizar</p><h2>Preço e regras</h2></div>{plant.favorableEnergyCondition ? <StatusChip label="Energia favorável" tone="success" /> : null}</div>
-      <div className="price-line"><strong>{currency.format(tariff)}</strong><span>por kWh neste momento</span></div>
+      <div className="price-line"><strong>{currency.format(tariff)}</strong><span>{plant.isOperational ? "por kWh neste momento" : "valor de referência do catálogo"}</span></div>
       <ul className="rule-list"><li>A tarifa exibida é confirmada novamente antes da autorização.</li><li>15 minutos gratuitos após o fim energético; depois, R$ 0,50/min.</li><li>Fila e lotação não alteram a tarifa.</li><li>A atribuição de vaga acontece no atendimento.</li></ul>
     </section>
 
