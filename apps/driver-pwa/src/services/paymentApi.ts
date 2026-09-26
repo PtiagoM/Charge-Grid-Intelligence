@@ -1,7 +1,9 @@
 import type { PaymentMethod } from "../app/DriverAppContext";
-import type { CommercialQueueRecord, CommercialSessionRecord, CommercialSnapshot } from "@chargegrid/shared";
+import type { CommercialQueueRecord, CommercialQuote, CommercialSessionRecord, CommercialSnapshot } from "@chargegrid/shared";
+import { currentDriverAccessToken } from "./driverAuth";
 
 const configuredApiBaseUrl = (import.meta.env.VITE_CHARGEGRID_API_URL || "/api").replace(/\/$/, "");
+const guestTokenKey = (sessionId: string) => `chargegrid.guest-session-token.${sessionId}`;
 
 export function apiBaseUrl() {
   if (typeof window === "undefined" || !configuredApiBaseUrl.startsWith("http")) return configuredApiBaseUrl;
@@ -18,11 +20,15 @@ interface ApiErrorBody {
   code?: string;
 }
 
-async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
+async function apiRequest<T>(path: string, init?: RequestInit, sessionToken?: string | null): Promise<T> {
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 15_000);
   try {
-    const response = await fetch(`${apiBaseUrl()}${path}`, { ...init, signal: controller.signal });
+    const headers = new Headers(init?.headers);
+    const accessToken = await currentDriverAccessToken();
+    if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
+    if (sessionToken) headers.set("X-Session-Token", sessionToken);
+    const response = await fetch(`${apiBaseUrl()}${path}`, { ...init, headers, signal: controller.signal });
     const payload = await response.json().catch(() => ({})) as T & ApiErrorBody;
     if (!response.ok) throw new Error(payload.message || "O gateway de pagamento não respondeu como esperado.");
     return payload;
@@ -45,33 +51,52 @@ export interface PaymentIntentResult {
   mode: "test";
 }
 
+export interface QuoteResult {
+  quote: CommercialQuote;
+  guestToken?: string;
+}
+
+export function rememberGuestSessionToken(sessionId: string, token?: string) {
+  if (token) sessionStorage.setItem(guestTokenKey(sessionId), token);
+}
+
+function guestSessionToken(sessionId: string) {
+  return sessionStorage.getItem(guestTokenKey(sessionId));
+}
+
+export function createCommercialQuote(input: { chargerId: string; establishmentId: string; guestToken?: string }) {
+  return apiRequest<QuoteResult>("/commercial/quotes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chargerId: input.chargerId, establishmentId: input.establishmentId })
+  }, input.guestToken);
+}
+
 export function createPaymentIntent(input: {
   sessionId: string;
+  quoteId: string;
   method: PaymentMethod;
   amount: number;
-  email?: string;
-  driverId?: string;
-  driverName?: string;
-  establishmentId: string;
-  chargerId: string;
+  guestToken?: string;
 }) {
+  const { guestToken, ...payload } = input;
   return apiRequest<PaymentIntentResult>("/payments/intents", {
     method: "POST",
     headers: { "Content-Type": "application/json", "Idempotency-Key": `intent-${input.sessionId}-${input.method}-${Math.round(input.amount * 100)}` },
-    body: JSON.stringify(input)
-  });
+    body: JSON.stringify(payload)
+  }, guestToken);
 }
 
-export function getPaymentStatus(paymentIntentId: string) {
-  return apiRequest<{ paymentIntentId: string; status: string; providerStatus: string; amount: number; capturableAmount: number; receivedAmount: number; session: CommercialSessionRecord }>(`/payments/${encodeURIComponent(paymentIntentId)}`);
+export function getPaymentStatus(paymentIntentId: string, sessionToken?: string) {
+  return apiRequest<{ paymentIntentId: string; status: string; providerStatus: string; amount: number; capturableAmount: number; receivedAmount: number; session: CommercialSessionRecord }>(`/payments/${encodeURIComponent(paymentIntentId)}`, undefined, sessionToken);
 }
 
 export function getCommercialSession(sessionId: string) {
-  return apiRequest<CommercialSessionRecord>(`/commercial/sessions/${encodeURIComponent(sessionId)}`);
+  return apiRequest<CommercialSessionRecord>(`/commercial/sessions/${encodeURIComponent(sessionId)}`, undefined, guestSessionToken(sessionId));
 }
 
 export function stopCommercialSession(sessionId: string) {
-  return apiRequest<CommercialSessionRecord>(`/commercial/sessions/${encodeURIComponent(sessionId)}/stop`, { method: "POST" });
+  return apiRequest<CommercialSessionRecord>(`/commercial/sessions/${encodeURIComponent(sessionId)}/stop`, { method: "POST" }, guestSessionToken(sessionId));
 }
 
 export function getCommercialSnapshot(establishmentId?: string) {
@@ -111,7 +136,7 @@ export async function settlePayment(input: {
       method: "POST",
       headers: { "Content-Type": "application/json", "Idempotency-Key": `capture-${input.sessionId}-${Math.round(input.totalAmount * 100)}` },
       body: JSON.stringify({ sessionId: input.sessionId, amount: input.totalAmount })
-    });
+    }, guestSessionToken(input.sessionId));
   }
   const refundAmount = Number(Math.max(0, input.financialLimit - input.totalAmount).toFixed(2));
   if (refundAmount <= 0) return { status: "PAID", amount: input.totalAmount };
@@ -119,5 +144,5 @@ export async function settlePayment(input: {
     method: "POST",
     headers: { "Content-Type": "application/json", "Idempotency-Key": `refund-${input.sessionId}-${Math.round(refundAmount * 100)}` },
     body: JSON.stringify({ sessionId: input.sessionId, amount: refundAmount })
-  });
+  }, guestSessionToken(input.sessionId));
 }

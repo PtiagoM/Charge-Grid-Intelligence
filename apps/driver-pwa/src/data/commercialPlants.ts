@@ -202,6 +202,7 @@ export function mergeCommercialPlants(snapshot: CommercialSnapshot): CommercialP
     const activeQueue = snapshot.queue.filter((entry) => entry.establishmentId === plant.id && [QueueStatus.WAITING, QueueStatus.CALLED, QueueStatus.ASSIGNED].includes(entry.status)).length;
     const chargers = establishment.chargers.map((charger): ChargerSummary => ({
       id: charger.code,
+      internalId: charger.id,
       commercialName: charger.code,
       technicalStatus: charger.physicalStatus === "CHARGING" ? ChargerTechnicalStatus.CHARGING
         : charger.physicalStatus === "CONNECTED" ? ChargerTechnicalStatus.CONNECTED

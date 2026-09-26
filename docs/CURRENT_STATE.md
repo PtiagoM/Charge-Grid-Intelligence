@@ -14,12 +14,15 @@ A auditoria inicial confirmou Admin nativo funcional com domínio e persistênci
 
 O registro de implementação, evidências e limitações da Sprint fica em [`SPRINT3.md`](SPRINT3.md). Código verificado e decisões posteriores prevalecem sobre descrições antigas de implementação. A transparência sobre simulação é obrigatória: o modo técnico de demonstração deve identificá-la explicitamente, conforme a instrução atual do usuário, superando restrições antigas a esse rótulo. O escopo transversal desta entrega autoriza mudanças coordenadas nos dois produtos e nos contratos; não autoriza publicação ou merge.
 
-### Sprint 4 — checkpoint M1-U1 (26/09/2026)
+### Sprint 4 — checkpoints M1-U1 a U3 (26/09/2026)
 
 - A base compartilhada agora possui ledger de migrations e aplica `202609260004_s4_foundation.sql` uma única vez; bancos comerciais legados são baselined sem reexecutar o UPSERT destrutivo das migrations antigas.
 - Aurora segue sendo o único catálogo operacional completo: `plant_aurora_001`, seis UUIDs estáveis, códigos/QR e vaga B02 foram preservados. A API publica o catálogo sanitizado em `/commercial/catalog` e resolve UUID/código/QR em `/commercial/chargers/resolve/:identifier`.
 - O snapshot administrativo mantém o código para UI, mas `session.chargerId` passou a ser o UUID real. `currentSessionId` e `assignmentId` existem no registro do carregador; os vínculos são limpos antes do reset das sessões.
-- Essa unidade não implementa ainda ownership, quotes/checkout novo, lifecycle, ociosidade, fila final ou energia/demanda. O próximo checkpoint é M1-U2.
+- A API passa a validar a identidade Supabase do motorista no servidor; `driverId` enviado pelo cliente não define propriedade. Visitantes recebem token opaco apenas no header, persistido somente como hash e limitado à cotação/sessão correspondente. Leituras, parada, captura, reembolso e consulta de PaymentIntent aplicam a mesma posse; fila exige motorista autenticado.
+- O checkout normal cria uma cotação Aurora persistida, válida por cinco minutos e com tarifa congelada, antes do PaymentIntent Stripe. A PWA mantém o token de visitante apenas em `sessionStorage`, envia o UUID interno do mesmo carregador exibido por código e continua usando o Payment Element existente.
+- A tentativa aceita um único `quoteId`/método/limite: repetição idêntica preserva a sessão e a chave Stripe; tentativa divergente conflita. Se o Stripe já respondeu, uma falha posterior não marca a sessão como paga/falha automaticamente nem libera o carregador às cegas.
+- Lifecycle físico, ociosidade, fila final, energia/demanda e projeções completas Admin/PWA permanecem nos próximos checkpoints M1-U4+.
 
 ### Vertical real vigente — 22/09/2026
 

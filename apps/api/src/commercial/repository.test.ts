@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { CommercialConflictError, CommercialRepository } from "./repository.js";
+import { CommercialConflictError, CommercialNotFoundError, CommercialRepository } from "./repository.js";
 
 describe("CommercialRepository", () => {
   const repositories: CommercialRepository[] = [];
@@ -46,6 +46,29 @@ describe("CommercialRepository", () => {
       method: "PIX",
       authorizedCents: 2500
     })).rejects.toBeInstanceOf(CommercialConflictError);
+  }, 20_000);
+
+  it("binds a frozen guest quote to one persistent session without exposing it to another guest", async () => {
+    const repository = new CommercialRepository("memory://");
+    repositories.push(repository);
+    const guestToken = "guest-token-a";
+    const quote = await repository.createQuote({
+      chargerId: "00000000-0000-4000-8000-000000000001",
+      establishmentId: "est_aurora_001",
+      access: { guestToken }
+    });
+    const session = await repository.reserveQuotedSession({
+      id: "11000000-0000-4000-8000-000000000011",
+      quoteId: quote.id,
+      access: { guestToken },
+      method: "PIX",
+      authorizedCents: 2500
+    });
+
+    expect(session).toMatchObject({ actorType: "GUEST", quote: expect.objectContaining({ id: quote.id, energyCentsPerKwh: 190 }) });
+    await expect(repository.sessionForAccess(session.id, { guestToken })).resolves.toMatchObject({ id: session.id });
+    await expect(repository.sessionForAccess(session.id, { guestToken: "guest-token-b" })).rejects.toBeInstanceOf(CommercialNotFoundError);
+    await expect(repository.reserveQuotedSession({ id: session.id, quoteId: quote.id, access: { guestToken }, method: "PIX", authorizedCents: 4000 })).rejects.toBeInstanceOf(CommercialConflictError);
   }, 20_000);
 
   it("applies simulated hardware events and advances energy only from the backend clock", async () => {
@@ -165,7 +188,7 @@ describe("CommercialRepository", () => {
       repository = undefined;
 
       const inspection = new PGlite(dataDir);
-      expect((await inspection.query<{ count: number }>("select count(*)::int as count from chargegrid_schema_migrations")).rows[0]?.count).toBe(4);
+      expect((await inspection.query<{ count: number }>("select count(*)::int as count from chargegrid_schema_migrations")).rows[0]?.count).toBe(5);
       await inspection.close();
     } finally {
       if (repository) await repository.close();

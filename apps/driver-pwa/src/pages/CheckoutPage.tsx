@@ -8,7 +8,7 @@ import { AppIcon } from "../components/AppIcon";
 import { InfoNotice, PageIntro, PrimaryButton } from "../components/Ui";
 import { getPlantById } from "../data/commercialPlants";
 import { useCommercialPlants } from "../data/useCommercialPlants";
-import { createPaymentIntent, getPaymentStatus, type PaymentIntentResult } from "../services/paymentApi";
+import { createCommercialQuote, createPaymentIntent, getPaymentStatus, rememberGuestSessionToken, type PaymentIntentResult } from "../services/paymentApi";
 
 const limits = [25, 40, 60] as const;
 const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
@@ -18,6 +18,8 @@ const PENDING_PAYMENT_KEY = "chargegrid.pending-payment.v1";
 interface PendingPayment {
   sessionId: string;
   paymentIntentId: string;
+  quoteId: string;
+  guestToken?: string;
   clientSecret: string;
   method: PaymentMethod;
   mode: DriverMode;
@@ -51,7 +53,7 @@ function StripeConfirmationForm({
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      void getPaymentStatus(pending.paymentIntentId).then((payment) => {
+      void getPaymentStatus(pending.paymentIntentId, pending.guestToken).then((payment) => {
         if (payment.status === "PAID" || payment.status === "AUTHORIZED") {
           window.clearInterval(timer);
           onAuthorized();
@@ -62,7 +64,7 @@ function StripeConfirmationForm({
       }).catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Não foi possível consultar o pagamento."));
     }, 2500);
     return () => window.clearInterval(timer);
-  }, [onAuthorized, pending.paymentIntentId]);
+  }, [onAuthorized, pending.guestToken, pending.paymentIntentId]);
 
   async function confirm(event: FormEvent) {
     event.preventDefault();
@@ -123,7 +125,7 @@ export function CheckoutPage() {
   const [pending, setPending] = useState<PendingPayment | null>(null);
 
   const completeAuthorization = useCallback(async (payment: PendingPayment) => {
-    const confirmed = await getPaymentStatus(payment.paymentIntentId);
+    const confirmed = await getPaymentStatus(payment.paymentIntentId, payment.guestToken);
     if (confirmed.status !== "PAID" && confirmed.status !== "AUTHORIZED") throw new Error("A Stripe ainda não confirmou este pagamento.");
     authorizeSession({
       owner: payment.mode,
@@ -143,12 +145,12 @@ export function CheckoutPage() {
     const returnedIntentId = searchParams.get("payment_intent");
     const stored = readPendingPayment();
     if (!stored || (returnedIntentId && stored.paymentIntentId !== returnedIntentId)) return;
-    if (!stored.establishmentId || !stored.chargerId) {
+    if (!stored.establishmentId || !stored.chargerId || !stored.quoteId) {
       setError("Pagamento anterior sem identificação do ponto. Consulte seu pagamento antes de criar outro.");
       return;
     }
     setPending(stored);
-    void getPaymentStatus(stored.paymentIntentId).then((payment) => {
+    void getPaymentStatus(stored.paymentIntentId, stored.guestToken).then((payment) => {
       if (payment.status === "PAID" || payment.status === "AUTHORIZED") void completeAuthorization(stored).catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Não foi possível vincular a sessão."));
     }).catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Não foi possível consultar o pagamento."));
   }, [completeAuthorization, searchParams, session]);
@@ -162,23 +164,22 @@ export function CheckoutPage() {
     if (session && session.status !== CommercialSessionStatus.COMPLETED) return setError("Conclua a sessão atual antes de autorizar outra recarga.");
     if (charger?.commercialStatus !== ChargerCommercialStatus.AVAILABLE_TO_START && queue?.status !== QueueStatus.CALLED) return setError("Este carregador não está disponível para iniciar.");
     if (queue?.status === QueueStatus.CALLED && queue.expiresAt && Date.parse(queue.expiresAt) <= Date.now()) return setError("A chamada da fila expirou. Volte à fila antes de continuar.");
-    if (!stripePromise || !plant || !charger) return setError("O Stripe sandbox ainda não está configurado. Adicione as chaves de teste no ambiente da aplicação.");
+    if (!stripePromise || !plant || !charger || !charger.internalId) return setError("O Stripe sandbox ou o catálogo comercial ainda não está configurado. Atualize a disponibilidade antes de continuar.");
 
     setPreparing(true);
     setError("");
     const sessionId = crypto.randomUUID();
     try {
+      const quote = await createCommercialQuote({ chargerId: charger.internalId, establishmentId: plant.id });
       const result: PaymentIntentResult = await createPaymentIntent({
         sessionId,
+        quoteId: quote.quote.id,
         method: paymentMethod,
         amount: limit,
-        email: profile?.email,
-        driverId: profile?.id,
-        driverName: profile?.fullName,
-        establishmentId: plant.id,
-        chargerId: charger.id
+        guestToken: quote.guestToken
       });
-      const nextPending: PendingPayment = { sessionId, paymentIntentId: result.paymentIntentId, clientSecret: result.clientSecret, method: paymentMethod, mode, limit, establishmentId: plant.id, chargerId: charger.id };
+      rememberGuestSessionToken(sessionId, quote.guestToken);
+      const nextPending: PendingPayment = { sessionId, paymentIntentId: result.paymentIntentId, clientSecret: result.clientSecret, quoteId: quote.quote.id, guestToken: quote.guestToken, method: paymentMethod, mode, limit, establishmentId: plant.id, chargerId: charger.id };
       sessionStorage.setItem(PENDING_PAYMENT_KEY, JSON.stringify(nextPending));
       setPending(nextPending);
     } catch (caught) {

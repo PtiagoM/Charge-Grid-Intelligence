@@ -51,6 +51,12 @@ export async function signOutDriver() {
   if (supabase) await supabase.auth.signOut();
 }
 
+export async function currentDriverAccessToken() {
+  if (!supabase) return null;
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token ?? null;
+}
+
 export function subscribeToRemoteSession(onSession: (profile: DriverProfile | null) => void) {
   if (!supabase) return () => undefined;
   void supabase.auth.getSession().then(({ data }) => onSession(data.session ? profileFromUser(data.session.user) : null));

@@ -32,6 +32,13 @@ Objetivo: API/SQL executam contratos estáveis, sem frontend decidir negócio. G
 - A projeção administrativa passou a emitir `session.chargerId` como UUID real e conserva `chargerCode` para exibição. A migration preserva Aurora, tarifa e publicação existentes; dados legados ficam em `legacy-s3`, sem idle habilitado.
 - Validação: lint, typecheck, builds Admin/PWA/API, 18 testes API e 78 testes Admin passaram. O PWA não possui script de testes unitários neste repositório.
 
+### Registro de execução U2–U3
+
+- U2 e U3 foram consolidadas no mesmo checkpoint para não deixar o checkout de visitante sem acesso à própria sessão. A API verifica o bearer Supabase quando presente e nunca usa `driverId` do body como autoridade. Visitantes recebem token opaco somente no header; banco guarda SHA-256 e a comparação é constante.
+- `POST /commercial/quotes` cria a cotação Aurora com tarifa/política congeladas por cinco minutos. `POST /payments/intents` aceita somente `sessionId`, `quoteId`, método e limite, cria a única sessão da quote e usa a mesma chave de idempotência Stripe na repetição. O carregador é o UUID persistido; código continua exclusivamente para a UI.
+- PWA migrou o checkout normal sem uma tela paralela: o adaptador de catálogo preserva `internalId`, o Payment Element mantém-se intacto e o token guest fica em `sessionStorage` por sessão, nunca na URL/localStorage/body. Consultar/parar/liquidar/capturar/reembolsar exige o mesmo proprietário.
+- Validação focal: `npm test --workspace @chargegrid/api -- --run src/commercial/routes.test.ts src/commercial/repository.test.ts` (9 testes), build API e build PWA passaram; lint será executado no checkpoint antes do commit.
+
 ## S4-M1-U3 — Quote, tentativa e Stripe normal
 
 - **Depende:** U2; **tamanho:** MÉDIO.

@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
@@ -115,14 +115,36 @@ interface QueueRow {
   estimated_wait_minutes: number | null;
 }
 
+interface QuoteRow {
+  id: string;
+  charger_id: string;
+  establishment_id: string;
+  tariff_version_id: string;
+  policy_version: string;
+  energy_cents_per_kwh: number;
+  idle_grace_minutes: number;
+  idle_cents_per_minute: number;
+  idle_max_minutes: number;
+  idle_enabled: boolean;
+  offered_at: Date | string;
+  expires_at: Date | string;
+  reason_code: string;
+  energy_sample_id: string | null;
+  driver_id: string | null;
+  guest_token_hash: string | null;
+}
+
 export class CommercialConflictError extends Error {}
 export class CommercialNotFoundError extends Error {}
+
+export type CommercialSessionAccess = { driverId: string } | { guestToken: string };
 
 const migrations = [
   { name: "202609220001_commercial_core", url: new URL("../../../../supabase/migrations/202609220001_commercial_core.sql", import.meta.url) },
   { name: "202609220002_hardware_lifecycle", url: new URL("../../../../supabase/migrations/202609220002_hardware_lifecycle.sql", import.meta.url) },
   { name: "202609220003_commercial_queue", url: new URL("../../../../supabase/migrations/202609220003_commercial_queue.sql", import.meta.url) },
-  { name: "202609260004_s4_foundation", url: new URL("../../../../supabase/migrations/202609260004_s4_foundation.sql", import.meta.url) }
+  { name: "202609260004_s4_foundation", url: new URL("../../../../supabase/migrations/202609260004_s4_foundation.sql", import.meta.url) },
+  { name: "202609260005_checkout_quotes", url: new URL("../../../../supabase/migrations/202609260005_checkout_quotes.sql", import.meta.url) }
 ] as const;
 const legacyMigrationNames = new Set(migrations.slice(0, 3).map((migration) => migration.name));
 const defaultDataDir = process.env.CHARGEGRID_DATABASE_PATH ?? (process.env.NODE_ENV === "test" ? "memory://" : fileURLToPath(new URL("../../../../.local/commercial-db", import.meta.url)));
@@ -178,6 +200,35 @@ function openingHours(value: unknown): CommercialOpeningHoursInterval[] {
 function quoteRecord(value: SessionRow["quote"]): CommercialQuote | null {
   if (!value) return null;
   return (typeof value === "string" ? JSON.parse(value) : value) as CommercialQuote;
+}
+
+function quoteFromRow(row: QuoteRow): CommercialQuote {
+  return {
+    id: row.id,
+    chargerId: row.charger_id,
+    establishmentId: row.establishment_id,
+    policyVersion: row.policy_version,
+    energyCentsPerKwh: row.energy_cents_per_kwh,
+    idleGraceMinutes: row.idle_grace_minutes,
+    idleCentsPerMinute: row.idle_cents_per_minute,
+    idleMaxMinutes: row.idle_max_minutes,
+    idleEnabled: row.idle_enabled,
+    offeredAt: iso(row.offered_at)!,
+    expiresAt: iso(row.expires_at)!,
+    reasonCode: row.reason_code,
+    energySampleId: row.energy_sample_id
+  };
+}
+
+export function hashGuestToken(token: string) {
+  return createHash("sha256").update(token).digest("hex");
+}
+
+function matchingGuestToken(token: string, hash: string | null) {
+  if (!hash) return false;
+  const actual = Buffer.from(hashGuestToken(token), "hex");
+  const expected = Buffer.from(hash, "hex");
+  return actual.length === expected.length && timingSafeEqual(actual, expected);
 }
 
 function commercialAvailability(chargers: CommercialChargerRecord[]): CommercialAvailability {
@@ -369,6 +420,96 @@ export class CommercialRepository {
 
   async close() {
     await this.db.close();
+  }
+
+  async createQuote(input: { chargerId: string; establishmentId: string; access: CommercialSessionAccess }) {
+    await this.ready;
+    return this.db.transaction(async (tx) => {
+      const charger = await tx.query<{ id: string; establishment_id: string; commercial_status: string; physical_status: string }>(`
+        select id, establishment_id, commercial_status, physical_status from commercial_chargers
+        where id = $1 and establishment_id = $2 and published = true`, [input.chargerId, input.establishmentId]);
+      const selected = charger.rows[0];
+      if (!selected) throw new CommercialNotFoundError("Carregador comercial não encontrado.");
+      if (selected.physical_status !== "AVAILABLE" || selected.commercial_status !== "AVAILABLE_TO_START") {
+        throw new CommercialConflictError("Este carregador não está disponível para iniciar.");
+      }
+      const tariff = await tx.query<{ id: string; energy_cents_per_kwh: number; idle_grace_minutes: number; idle_cents_per_minute: number; idle_max_minutes: number; idle_enabled: boolean }>(`
+        select id, energy_cents_per_kwh, idle_grace_minutes, idle_cents_per_minute, idle_max_minutes, idle_enabled
+        from commercial_tariff_versions where establishment_id = $1
+        order by valid_from desc, created_at desc limit 1`, [input.establishmentId]);
+      const currentTariff = tariff.rows[0];
+      if (!currentTariff) throw new CommercialNotFoundError("Tarifa comercial não encontrada.");
+      const id = randomUUID();
+      const expiresAt = new Date(Date.now() + 5 * 60_000).toISOString();
+      await tx.query(`insert into commercial_quotes
+        (id, charger_id, establishment_id, tariff_version_id, policy_version, energy_cents_per_kwh, idle_grace_minutes, idle_cents_per_minute, idle_max_minutes, idle_enabled, expires_at, reason_code, driver_id, guest_token_hash)
+        values ($1, $2, $3, $4, 's4-quote-v1', $5, $6, $7, $8, $9, $10, 'BASE_TARIFF', $11, $12)`, [
+        id, selected.id, selected.establishment_id, currentTariff.id, currentTariff.energy_cents_per_kwh,
+        currentTariff.idle_grace_minutes, currentTariff.idle_cents_per_minute, currentTariff.idle_max_minutes,
+        currentTariff.idle_enabled, expiresAt, "driverId" in input.access ? input.access.driverId : null,
+        "guestToken" in input.access ? hashGuestToken(input.access.guestToken) : null
+      ]);
+      const quote = await tx.query<QuoteRow>("select * from commercial_quotes where id = $1", [id]);
+      return quoteFromRow(quote.rows[0]!);
+    });
+  }
+
+  async reserveQuotedSession(input: {
+    id: string;
+    quoteId: string;
+    access: CommercialSessionAccess;
+    method: "CARD" | "PIX";
+    authorizedCents: number;
+    driverName?: string;
+    driverEmail?: string;
+  }) {
+    await this.ready;
+    await this.db.transaction(async (tx) => {
+      const existing = await tx.query<{ quote_id: string | null; driver_id: string | null; guest_token_hash: string | null; authorized_cents: number; method: "CARD" | "PIX" }>(
+        "select s.quote_id, s.driver_id, s.guest_token_hash, s.authorized_cents, p.method from commercial_sessions s join commercial_payments p on p.session_id = s.id where s.id = $1", [input.id]);
+      if (existing.rows[0]) {
+        const current = existing.rows[0];
+        const owned = "driverId" in input.access
+          ? current.driver_id === input.access.driverId
+          : matchingGuestToken(input.access.guestToken, current.guest_token_hash);
+        if (current.quote_id !== input.quoteId || !owned || current.authorized_cents !== input.authorizedCents || current.method !== input.method) throw new CommercialConflictError("A sessão já pertence a outra tentativa de pagamento.");
+        return;
+      }
+      const quote = await tx.query<QuoteRow>("select * from commercial_quotes where id = $1 and expires_at > now()", [input.quoteId]);
+      const selectedQuote = quote.rows[0];
+      const owned = selectedQuote && ("driverId" in input.access
+        ? selectedQuote.driver_id === input.access.driverId
+        : matchingGuestToken(input.access.guestToken, selectedQuote.guest_token_hash));
+      if (!selectedQuote || !owned) throw new CommercialNotFoundError("Cotação comercial não encontrada.");
+      const charger = await tx.query<{ id: string; commercial_status: string; physical_status: string }>(
+        "select id, commercial_status, physical_status from commercial_chargers where id = $1 and establishment_id = $2 and published = true", [selectedQuote.charger_id, selectedQuote.establishment_id]);
+      const selected = charger.rows[0];
+      if (!selected) throw new CommercialNotFoundError("Carregador comercial não encontrado.");
+      const assignment = "driverId" in input.access ? await tx.query<{ id: string }>(`select id from commercial_queue_entries
+        where driver_id = $1 and charger_id = $2 and status = 'CALLED' and assignment_expires_at > now()`, [input.access.driverId, selected.id]) : { rows: [] };
+      if ((selected.physical_status !== "AVAILABLE" || selected.commercial_status !== "AVAILABLE_TO_START") && !assignment.rows.length) {
+        throw new CommercialConflictError("Este carregador não está disponível para iniciar.");
+      }
+      const actorType = "driverId" in input.access ? "DRIVER" : "GUEST";
+      const quoteSnapshot = JSON.stringify(quoteFromRow(selectedQuote));
+      await tx.query(`insert into commercial_sessions
+        (id, public_code, driver_id, driver_name, driver_email, establishment_id, charger_id, status, tariff_cents, authorized_cents, actor_type, quote_id, quote, policy_version, guest_token_hash, idle_enabled)
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb, $14, $15, $16)`, [
+        input.id, `CG-${input.id.replace(/-/g, "").slice(0, 12).toUpperCase()}`,
+        "driverId" in input.access ? input.access.driverId : null,
+        input.driverName?.trim() || "Visitante", input.driverEmail ?? null,
+        selectedQuote.establishment_id, selected.id, CommercialSessionStatus.AWAITING_PAYMENT,
+        selectedQuote.energy_cents_per_kwh, input.authorizedCents, actorType, selectedQuote.id, quoteSnapshot,
+        selectedQuote.policy_version, "guestToken" in input.access ? selectedQuote.guest_token_hash : null, selectedQuote.idle_enabled
+      ]);
+      await tx.query(`insert into commercial_payments
+        (id, session_id, method, status, authorized_cents) values ($1, $2, $3, $4, $5)`, [
+        randomUUID(), input.id, input.method, PaymentStatus.PENDING, input.authorizedCents
+      ]);
+      await tx.query("update commercial_chargers set commercial_status = 'OCCUPIED', current_session_id = $2, assignment_id = null, updated_at = now() where id = $1", [selected.id, input.id]);
+      if (assignment.rows[0]) await tx.query("update commercial_queue_entries set status = 'ASSIGNED', updated_at = now() where id = $1", [assignment.rows[0].id]);
+    });
+    return this.session(input.id);
   }
 
   async reserveSession(input: {
@@ -635,6 +776,23 @@ export class CommercialRepository {
     const result = await this.db.query<SessionRow>(`${sessionSelect} where s.id = $1`, [id]);
     if (!result.rows[0]) throw new CommercialNotFoundError("Sessão comercial não encontrada.");
     return sessionRecord(result.rows[0]);
+  }
+
+  async sessionForAccess(id: string, access: CommercialSessionAccess) {
+    await this.ready;
+    const owner = await this.db.query<{ driver_id: string | null; guest_token_hash: string | null }>("select driver_id, guest_token_hash from commercial_sessions where id = $1", [id]);
+    const current = owner.rows[0];
+    if (!current || ("driverId" in access ? current.driver_id !== access.driverId : !matchingGuestToken(access.guestToken, current.guest_token_hash))) {
+      throw new CommercialNotFoundError("Sessão comercial não encontrada.");
+    }
+    return this.session(id);
+  }
+
+  async sessionIdForPaymentIntent(paymentIntentId: string) {
+    await this.ready;
+    const result = await this.db.query<{ session_id: string }>("select session_id from commercial_payments where payment_intent_id = $1", [paymentIntentId]);
+    if (!result.rows[0]) throw new CommercialNotFoundError("Pagamento não vinculado a uma sessão ChargeGrid.");
+    return result.rows[0].session_id;
   }
 
   async catalog(): Promise<CommercialCatalog> {

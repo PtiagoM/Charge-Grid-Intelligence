@@ -48,6 +48,8 @@ export interface PlantEnergySnapshot {
 
 export interface ChargerSummary {
   id: string;
+  /** Persistent commercial identifier when the UI uses the operational code as `id`. */
+  internalId?: string;
   commercialName: string;
   technicalStatus: ChargerTechnicalStatus;
   commercialStatus: ChargerCommercialStatus;
