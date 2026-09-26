@@ -1,6 +1,6 @@
 /* global self, caches, fetch, URL */
 
-const CACHE_NAME = "chargegrid-driver-shell-v4";
+const CACHE_NAME = "chargegrid-driver-shell-v5";
 const APP_SHELL = ["/", "/manifest.webmanifest", "/chargegrid-mark.svg"];
 
 self.addEventListener("install", (event) => {
@@ -15,7 +15,8 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
-  if (new URL(event.request.url).pathname.startsWith("/api/")) return;
+  const requestUrl = new URL(event.request.url);
+  if (["/api/", "/commercial/", "/payments/"].some((path) => requestUrl.pathname.startsWith(path))) return;
   if (event.request.mode === "navigate") {
     event.respondWith(fetch(event.request).catch(() => caches.match("/")));
     return;

@@ -1,5 +1,5 @@
 import type { PaymentMethod } from "../app/DriverAppContext";
-import type { CommercialCatalog, CommercialChargerResolution, CommercialQueueRecord, CommercialQuote, CommercialSessionRecord, CommercialSnapshot } from "@chargegrid/shared";
+import type { CommercialCatalog, CommercialChargerResolution, CommercialQueueRecord, CommercialQuote, CommercialSessionRecord } from "@chargegrid/shared";
 import { currentDriverAccessToken } from "./driverAuth";
 
 const configuredApiBaseUrl = (import.meta.env.VITE_CHARGEGRID_API_URL || "/api").replace(/\/$/, "");
@@ -103,11 +103,6 @@ export function stopCommercialSession(sessionId: string) {
   return apiRequest<CommercialSessionRecord>(`/commercial/sessions/${encodeURIComponent(sessionId)}/stop`, { method: "POST" }, guestSessionToken(sessionId));
 }
 
-export function getCommercialSnapshot(establishmentId?: string) {
-  const query = establishmentId ? `?establishmentId=${encodeURIComponent(establishmentId)}` : "";
-  return apiRequest<CommercialSnapshot>(`/commercial/snapshot${query}`);
-}
-
 export function getCommercialCatalog() {
   return apiRequest<CommercialCatalog>("/commercial/catalog");
 }
@@ -120,7 +115,7 @@ export function getCommercialQueue(driverId: string) {
   return apiRequest<{ entry: CommercialQueueRecord | null }>(`/commercial/queue/driver/${encodeURIComponent(driverId)}`);
 }
 
-export function joinCommercialQueue(input: { driverId: string; driverName: string; driverVehicle: string; establishmentId: string }) {
+export function joinCommercialQueue(input: { establishmentId: string }) {
   return apiRequest<CommercialQueueRecord>("/commercial/queue", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -128,11 +123,11 @@ export function joinCommercialQueue(input: { driverId: string; driverName: strin
   });
 }
 
-export function leaveCommercialQueue(entryId: string, driverId: string) {
+export function leaveCommercialQueue(entryId: string) {
   return apiRequest<void>(`/commercial/queue/${encodeURIComponent(entryId)}/leave`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ driverId })
+    body: JSON.stringify({})
   });
 }
 

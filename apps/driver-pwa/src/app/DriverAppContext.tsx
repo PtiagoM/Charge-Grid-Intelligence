@@ -202,7 +202,7 @@ function driverQueue(entry: CommercialQueueRecord): DriverQueueState {
     establishmentId: entry.establishmentId,
     establishmentName: entry.establishmentName,
     position: entry.position,
-    estimatedWaitMinutes: Math.max(0, entry.position * 8),
+    estimatedWaitMinutes: entry.estimatedWaitMinutes ?? Math.max(0, entry.position * 8),
     expiresAt: entry.assignmentExpiresAt,
     chargerName: entry.chargerCode,
     chargerId: entry.chargerCode,
@@ -340,7 +340,7 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     void signOutDriver();
-    setState((current) => ({ ...current, isAuthenticated: false, session: null, queue: null, receipts: [] }));
+    setState((current) => ({ ...current, account: null, isAuthenticated: false, session: null, queue: null, receipts: [], notifications: [] }));
   }, []);
 
   const clearLocalData = useCallback(() => setState((current) => ({ ...initialState, theme: current.theme })), []);
@@ -486,8 +486,9 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
   const joinQueue = useCallback(async (establishmentId: string) => {
     const profile = state.account?.profile;
     if (!state.isAuthenticated || !profile) throw new Error("Entre na sua conta para usar a fila.");
+    if (state.account?.authProvider !== "supabase") throw new Error("Entre novamente para usar a fila comercial.");
     if (state.session && state.session.status !== CommercialSessionStatus.COMPLETED) throw new Error("Conclua sua sessão antes de entrar na fila.");
-    const entry = await joinCommercialQueue({ driverId: profile.id, driverName: profile.fullName, driverVehicle: profile.vehicleName, establishmentId });
+    const entry = await joinCommercialQueue({ establishmentId });
     setState((current) => ({
       ...current,
       queue: driverQueue(entry),
@@ -498,7 +499,7 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
   const leaveQueue = useCallback(async () => {
     const entry = state.queue;
     const driverId = state.account?.profile.id;
-    if (entry && driverId) await leaveCommercialQueue(entry.backendEntryId, driverId);
+    if (entry && driverId) await leaveCommercialQueue(entry.backendEntryId);
     setState((current) => ({ ...current, queue: null }));
   }, [state.account?.profile.id, state.queue]);
   const markNotificationsRead = useCallback(() => setState((current) => ({ ...current, notifications: current.notifications.map((item) => ({ ...item, read: true })) })), []);
@@ -567,7 +568,7 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const driverId = state.account?.profile.id;
-    if (!state.isAuthenticated || !driverId) return;
+    if (!state.isAuthenticated || state.account?.authProvider !== "supabase" || !driverId) return;
     let active = true;
     const refresh = async () => {
       const { entry } = await getCommercialQueue(driverId);

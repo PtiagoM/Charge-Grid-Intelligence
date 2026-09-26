@@ -2,10 +2,8 @@ import {
   ChargerCommercialStatus,
   ChargerTechnicalStatus,
   CommercialAvailability,
-  QueueStatus,
   type ChargerSummary,
   type CommercialCatalog,
-  type CommercialSnapshot,
   type EstablishmentSummary
 } from "@chargegrid/shared";
 import { assets } from "../constants/assets";
@@ -200,50 +198,6 @@ export function getPlantById(id?: string | null) {
   return commercialPlants.find((plant) => plant.id === id);
 }
 
-export function mergeCommercialPlants(snapshot: CommercialSnapshot): CommercialPlant[] {
-  return commercialPlants.map((plant) => {
-    const establishment = snapshot.establishments.find((item) => item.id === plant.id);
-    if (!establishment) return plant;
-    const activeQueue = snapshot.queue.filter((entry) => entry.establishmentId === plant.id && [QueueStatus.WAITING, QueueStatus.CALLED, QueueStatus.ASSIGNED].includes(entry.status)).length;
-    const chargers = establishment.chargers.map((charger): ChargerSummary => ({
-      id: charger.code,
-      internalId: charger.id,
-      commercialName: charger.code,
-      technicalStatus: charger.physicalStatus === "CHARGING" ? ChargerTechnicalStatus.CHARGING
-        : charger.physicalStatus === "CONNECTED" ? ChargerTechnicalStatus.CONNECTED
-          : charger.physicalStatus === "OFFLINE" ? ChargerTechnicalStatus.OFFLINE
-            : charger.physicalStatus === "FAULT" ? ChargerTechnicalStatus.FAULT
-              : ChargerTechnicalStatus.AVAILABLE,
-      commercialStatus: charger.commercialStatus,
-      nominalPowerKw: charger.nominalPowerKw,
-      currentPowerKw: charger.currentPowerKw,
-      parkingSpot: charger.parkingSpot,
-      activeSessionId: snapshot.sessions.find((session) => session.chargerCode === charger.code && !["COMPLETED", "PAYMENT_FAILED", "START_FAILED", "FAULTED", "CANCELLED"].includes(session.status))?.id,
-      lastTechnicalUpdateAt: charger.updatedAt
-    }));
-    const availableChargerCount = establishment.chargers.filter((charger) => charger.physicalStatus === "AVAILABLE" && charger.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START).length;
-    const allFaulted = establishment.chargers.length > 0 && establishment.chargers.every((charger) => ["FAULT", "OFFLINE"].includes(charger.physicalStatus));
-    const commercialAvailability = allFaulted ? CommercialAvailability.FAULT
-      : availableChargerCount === 0 ? CommercialAvailability.FULL_QUEUE
-        : availableChargerCount === chargers.length ? CommercialAvailability.OPEN_AVAILABLE
-          : CommercialAvailability.OPEN_PARTIAL;
-    return {
-      ...plant,
-      name: establishment.name,
-      address: establishment.address,
-      position: { lat: establishment.latitude, lng: establishment.longitude },
-      commercialAvailability,
-      availableChargerCount,
-      tariffFrom: { amount: establishment.tariffCents / 100, currency: "BRL" },
-      favorableEnergyCondition: false,
-      queueSummary: { establishmentId: plant.id, activeCount: activeQueue, registeredCount: activeQueue, estimatedWaitMinutes: activeQueue * 8, commercialAvailability },
-      chargerCount: chargers.length,
-      nominalPowerKw: Math.max(...chargers.map((charger) => charger.nominalPowerKw ?? 0)),
-      chargers
-    };
-  });
-}
-
 export function mergeCommercialCatalog(catalog: CommercialCatalog): CommercialPlant[] {
   return commercialPlants.map((plant) => {
     if (!plant.isOperational) return plant;
@@ -275,6 +229,7 @@ export function mergeCommercialCatalog(catalog: CommercialCatalog): CommercialPl
       commercialAvailability,
       availableChargerCount,
       tariffFrom: { amount: establishment.tariffCents / 100, currency: "BRL" },
+      favorableEnergyCondition: false,
       queueSummary: establishment.queueSummary,
       chargerCount: chargers.length,
       nominalPowerKw: Math.max(...chargers.map((charger) => charger.nominalPowerKw ?? 0)),
