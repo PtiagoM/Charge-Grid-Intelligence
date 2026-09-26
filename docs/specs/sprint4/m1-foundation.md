@@ -50,6 +50,7 @@ Objetivo: API/SQL executam contratos estáveis, sem frontend decidir negócio. G
 - O backend grava o instante único de fim de energia, o fim da tolerância conforme a quote aceita e a desconexão física. Energia, ociosidade e total passam a ter campos persistidos atualizados pelo evento físico, não por polling do cliente.
 - Captura e devolução agora ignoram valor monetário enviado pelo cliente e usam `totalCostCents`/saldo persistidos. A baixa de Pix registra consumo e `refundedCents`; o tratamento de retorno Stripe pendente e recibo próprio ainda é o subcheckpoint seguinte. O limite externo de captura abaixo de R$ 0,50 não foi alterado.
 - Validação focal: o repository test cria quote guest, encerra energia, desconecta e confirma timestamps/política/custo congelado (10 testes verdes).
+- O adaptador da sessão backend-managed da PWA consome `energyCostCents`, `idleCostCents` e `idleGraceEndsAt` do registro remoto; o relógio local continua restrito às sessões legadas não gerenciadas pela API.
 
 ## S4-M1-U3 — Quote, tentativa e Stripe normal
 

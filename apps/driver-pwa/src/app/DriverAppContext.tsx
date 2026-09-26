@@ -525,7 +525,10 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
           financialLimit: remote.authorizedCents / 100,
           paymentMethod: remote.payment.method,
           energyKwh: remote.energyWh / 1000,
-          energyAmount: remote.costCents / 100,
+          energyAmount: remote.energyCostCents / 100,
+          idleMinutes: remote.quote?.idleCentsPerMinute ? Math.round(remote.idleCostCents / remote.quote.idleCentsPerMinute) : 0,
+          idleAmount: remote.idleCostCents / 100,
+          idleGraceEndsAt: remote.idleGraceEndsAt ?? undefined,
           currentPowerKw: remote.currentPowerKw
         }
       });
