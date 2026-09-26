@@ -6,12 +6,12 @@ import { createEmptyPlantOnboardingDraft, publishPlantOnboarding as publishPlant
 import { browserAdminStateRepository } from "../services/adminStateRepository";
 import { updateChargerCommercialStatus as updateCommercialStatus } from "../domain/chargerOperations";
 import { callNextDriver, confirmQueueArrival as confirmArrival, markQueueNoShow as noShow, releaseQueueEntry as releaseEntry } from "../domain/queueOperations";
-import { activateTariffPolicy as activateTariff, refundPayment as refundTransaction, settlePayment as settleTransaction, type ActivateTariffInput } from "../domain/financialOperations";
+import { refundPayment as refundTransaction, settlePayment as settleTransaction } from "../domain/financialOperations";
 import { acknowledgeIncident as acknowledgeOperationalIncident, correlateOperationalSignals, decideRecommendation as decideOperationalRecommendation, resolveIncident as resolveOperationalIncident } from "../domain/incidentOperations";
 import { grantAccess as grantAccountAccess, revokeAccess as revokeAccountAccess, type GrantAccessInput } from "../domain/accessOperations";
 import { completeReport, failReport, markReportProcessing, requestReport as requestOperationalReport, saveReportSubscription as saveOperationalReportSubscription, type RequestReportInput } from "../domain/reportOperations";
 import { demoAdminReportRepository } from "../services/adminReportRepository";
-import { fetchCommercialSnapshot, mergeCommercialSnapshot } from "../services/commercialSnapshotRepository";
+import { fetchCommercialSnapshot, mergeCommercialSnapshot, publishCommercialTariff } from "../services/commercialSnapshotRepository";
 
 function readState(): AdminState {
   return browserAdminStateRepository.load(createInitialState());
@@ -27,7 +27,7 @@ interface AdminContextValue {
   confirmQueueArrival: (entryId: string) => QueueActionResult;
   markQueueNoShow: (entryId: string, now?: string) => QueueActionResult;
   releaseQueueEntry: (entryId: string) => QueueActionResult;
-  activateTariffPolicy: (input: ActivateTariffInput) => FinancialActionResult;
+  publishTariff: (input: { establishmentId: string; energyCentsPerKwh: number; idleCentsPerMinute: number; reason: string }) => Promise<FinancialActionResult>;
   refundPayment: (transactionId: string, amountCents: number, reason: string, idempotencyKey: string) => FinancialActionResult;
   settlePayment: (transactionId: string) => FinancialActionResult;
   acknowledgeIncident: (incidentId: string, assignee: string) => IncidentActionResult;
@@ -107,11 +107,16 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     return transition;
   }, [account, state]);
 
-  const activateTariffPolicy = useCallback((input: ActivateTariffInput) => {
-    const transition = activateTariff(state, account, input);
-    if (transition.ok) setState(transition.state);
-    return transition;
-  }, [account, state]);
+  const publishTariff = useCallback(async (input: { establishmentId: string; energyCentsPerKwh: number; idleCentsPerMinute: number; reason: string }) => {
+    try {
+      await publishCommercialTariff(input);
+      const snapshot = await fetchCommercialSnapshot();
+      setState((current) => mergeCommercialSnapshot(current, snapshot));
+      return { ok: true, issues: [] };
+    } catch (error) {
+      return { ok: false, issues: [error instanceof Error ? error.message : "Não foi possível publicar a tarifa."] };
+    }
+  }, []);
 
   const refundPayment = useCallback((transactionId: string, amountCents: number, reason: string, idempotencyKey: string) => {
     const transition = refundTransaction(state, account, transactionId, amountCents, reason, idempotencyKey);
@@ -214,7 +219,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     return publication.result;
   }, [state]);
 
-  const value = useMemo(() => ({ state, account, login, logout, updateChargerCommercialStatus, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, activateTariffPolicy, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, requestReport: runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding }), [state, account, login, logout, updateChargerCommercialStatus, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, activateTariffPolicy, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding]);
+  const value = useMemo(() => ({ state, account, login, logout, updateChargerCommercialStatus, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, publishTariff, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, requestReport: runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding }), [state, account, login, logout, updateChargerCommercialStatus, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, publishTariff, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding]);
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
 }
 

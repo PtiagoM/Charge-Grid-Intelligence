@@ -1,5 +1,5 @@
 import { CommercialSessionStatus, PaymentStatus, QueueStatus, type CommercialSnapshot } from "@chargegrid/shared";
-import type { AdminState, Charger, ChargerTelemetry, Client, CommercialPlantLink, Establishment, FinancialEvent, Location, PaymentTransaction, QueueEntry, Session, SessionEvent } from "../domain/admin";
+import type { AdminState, Charger, ChargerTelemetry, Client, CommercialPlantLink, Establishment, FinancialEvent, Location, PaymentTransaction, QueueEntry, Session, SessionEvent, TariffPolicy } from "../domain/admin";
 
 const apiUrl = (import.meta.env.VITE_CHARGEGRID_API_URL || "http://localhost:3333").replace(/\/$/, "");
 
@@ -37,6 +37,12 @@ function sessionStatus(status: CommercialSessionStatus): Session["status"] {
   if (status === CommercialSessionStatus.COMPLETED) return "finished";
   if ([CommercialSessionStatus.PAYMENT_FAILED, CommercialSessionStatus.START_FAILED, CommercialSessionStatus.FAULTED, CommercialSessionStatus.CANCELLED].includes(status)) return "start_failed";
   return "authorized";
+}
+
+export async function publishCommercialTariff(input: { establishmentId: string; energyCentsPerKwh: number; idleCentsPerMinute: number; reason: string }) {
+  const response = await fetch(`${apiUrl}/commercial/admin/tariffs`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) });
+  const payload = await response.json().catch(() => ({})) as { message?: string };
+  if (!response.ok) throw new Error(payload.message || "A API não publicou a tarifa comercial.");
 }
 
 function snapshotSessionEvents(session: CommercialSnapshot["sessions"][number]): SessionEvent[] {
@@ -119,6 +125,20 @@ export function mergeCommercialSnapshot(state: AdminState, snapshot: CommercialS
     capturedAt: session.payment.status === PaymentStatus.PAID ? session.settledAt ?? session.endedAt : undefined,
     settledAt: session.settledAt ?? undefined
   }));
+  const tariffPolicies: TariffPolicy[] = (snapshot.tariffs ?? []).map((tariff, index, all) => ({
+    id: tariff.id,
+    establishmentId: tariff.establishmentId,
+    version: all.filter((candidate) => candidate.establishmentId === tariff.establishmentId).length - all.slice(0, index).filter((candidate) => candidate.establishmentId === tariff.establishmentId).length,
+    status: all.find((candidate) => candidate.establishmentId === tariff.establishmentId)?.id === tariff.id ? "ACTIVE" : "RETIRED",
+    energyPriceCentsPerKwh: tariff.energyCentsPerKwh,
+    idlePriceCentsPerMinute: tariff.idleCentsPerMinute,
+    idleGraceMinutes: tariff.idleGraceMinutes,
+    platformShareBps: 0,
+    effectiveFrom: tariff.validFrom,
+    createdAt: tariff.createdAt,
+    createdBy: "ChargeGrid API",
+    changeReason: tariff.reason
+  }));
   const financialEvents = snapshot.sessions.filter((session) => session.payment.paymentIntentId).flatMap((session) => {
     const transactionId = `pay-${session.id}`;
     const events: FinancialEvent[] = [{ id: `commercial-${session.id}-authorized`, transactionId, type: "AUTHORIZED", at: session.createdAt, actor: "Stripe sandbox", amountCents: session.authorizedCents }];
@@ -160,6 +180,7 @@ export function mergeCommercialSnapshot(state: AdminState, snapshot: CommercialS
     sessionEvents: [...state.sessionEvents.filter((item) => !sessions.some((session) => session.id === item.sessionId)), ...sessionEvents],
     paymentTransactions: [...state.paymentTransactions.filter((item) => !ids.has(item.establishmentId)), ...paymentTransactions],
     financialEvents: [...state.financialEvents.filter((item) => !paymentTransactions.some((transaction) => transaction.id === item.transactionId)), ...financialEvents],
+    tariffPolicies: [...state.tariffPolicies.filter((item) => !ids.has(item.establishmentId)), ...tariffPolicies],
     queue: [...state.queue.filter((item) => !ids.has(item.establishmentId)), ...queue]
   };
 }

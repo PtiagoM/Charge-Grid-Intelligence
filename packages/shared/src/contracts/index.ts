@@ -292,6 +292,7 @@ export interface CommercialSnapshot {
   contractVersion: "S4-C1";
   generatedAt: string;
   establishments: CommercialEstablishmentRecord[];
+  tariffs: CommercialTariffVersion[];
   sessions: CommercialSessionRecord[];
   queue: CommercialQueueRecord[];
 }

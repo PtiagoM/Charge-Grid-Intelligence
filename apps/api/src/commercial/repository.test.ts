@@ -49,6 +49,21 @@ describe("CommercialRepository", () => {
     })).rejects.toBeInstanceOf(CommercialConflictError);
   }, 20_000);
 
+  it("publishes a persisted tariff used only by new quotes", async () => {
+    const repository = new CommercialRepository("memory://");
+    repositories.push(repository);
+    const first = await repository.createQuote({ chargerId: "00000000-0000-4000-8000-000000000001", establishmentId: "est_aurora_001", access: { guestToken: "tariff-before" } });
+    const tariff = await repository.publishTariff({ establishmentId: "est_aurora_001", energyCentsPerKwh: 215, idleCentsPerMinute: 60, reason: "Ajuste demonstrável de demanda." });
+    const second = await repository.createQuote({ chargerId: "00000000-0000-4000-8000-000000000001", establishmentId: "est_aurora_001", access: { guestToken: "tariff-after" } });
+    const snapshot = await repository.snapshot("est_aurora_001");
+
+    expect(first.energyCentsPerKwh).toBe(190);
+    expect(tariff.energyCentsPerKwh).toBe(215);
+    expect(second.energyCentsPerKwh).toBe(215);
+    expect(snapshot.establishments[0]?.tariffCents).toBe(215);
+    expect(snapshot.tariffs[0]).toEqual(expect.objectContaining({ id: tariff.id, idleCentsPerMinute: 60 }));
+  }, 20_000);
+
   it("binds a frozen guest quote to one persistent session without exposing it to another guest", async () => {
     const repository = new CommercialRepository("memory://");
     repositories.push(repository);

@@ -95,6 +95,18 @@ export function createCommercialRouter(options: { repository?: CommercialReposit
       return response.status(errorStatus(error)).json({ code: "COMMERCIAL_FINANCIAL_READ_FAILED", message: error instanceof Error ? error.message : "Não foi possível calcular o resumo financeiro." });
     }
   });
+  router.post("/admin/tariffs", async (request, response) => {
+    if (process.env.NODE_ENV === "production") return response.status(404).end();
+    const { establishmentId, energyCentsPerKwh, idleCentsPerMinute, reason } = request.body ?? {};
+    if (typeof establishmentId !== "string" || !Number.isInteger(energyCentsPerKwh) || !Number.isInteger(idleCentsPerMinute) || typeof reason !== "string") {
+      return response.status(400).json({ code: "INVALID_TARIFF_INPUT", message: "Informe os dados inteiros de tarifa e o motivo da alteração." });
+    }
+    try {
+      return response.status(201).json({ tariff: await repository.publishTariff({ establishmentId, energyCentsPerKwh, idleCentsPerMinute, reason }) });
+    } catch (error) {
+      return response.status(errorStatus(error)).json({ code: "TARIFF_PUBLISH_FAILED", message: error instanceof Error ? error.message : "Não foi possível publicar a tarifa." });
+    }
+  });
   router.get("/sessions", async (request, response) => {
     try {
       return response.json({ sessions: await repository.sessionsForAccess(await sessionAccess(request)) });

@@ -1,9 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useAdminState } from "../../app/AdminState";
 import type { Charger, ChargerTelemetry, Session } from "../../domain/admin";
-
-type MonitorMetric = "sessions" | "energy" | "revenue";
-type MonitorRange = "day" | "week" | "month";
 
 interface ChargeGridOperationsDashboardProps {
   establishmentId: string;
@@ -21,20 +18,6 @@ interface AttentionRow {
   href: string;
 }
 
-const metricLabels: Record<MonitorMetric, string> = {
-  sessions: "Sessões",
-  energy: "Energia",
-  revenue: "Receita"
-};
-
-const chartProfiles: Record<MonitorMetric, number[]> = {
-  sessions: [4, 4, 2, 3, 4, 7, 10, 14, 19, 27, 36, 43, 45, 57, 48, 55, 64, 73, 81, 83, 84, 88, 93, 86, 95, 90, 86, 83, 78, 81, 75, 67, 66, 61, 52, 50, 49, 38, 32, 26, 18, 15, 12, 10, 6],
-  energy: [3, 2, 2, 3, 4, 7, 11, 15, 21, 29, 38, 48, 53, 59, 55, 61, 69, 76, 84, 86, 87, 90, 94, 89, 96, 91, 88, 84, 82, 86, 80, 73, 71, 66, 57, 54, 52, 42, 35, 29, 22, 18, 14, 11, 7],
-  revenue: [2, 2, 1, 2, 3, 5, 8, 13, 18, 24, 31, 39, 44, 52, 47, 54, 63, 70, 79, 82, 83, 87, 91, 85, 94, 89, 86, 82, 79, 84, 78, 71, 68, 62, 54, 51, 49, 39, 33, 27, 20, 16, 12, 9, 5]
-};
-
-const comparisonProfile = [3, 2, 2, 2, 3, 4, 6, 9, 13, 18, 23, 29, 31, 39, 34, 38, 43, 48, 52, 53, 54, 56, 58, 53, 58, 55, 53, 50, 48, 51, 47, 43, 41, 38, 31, 30, 29, 22, 18, 15, 10, 8, 6, 4, 2];
-const hourLabels = ["00:00", "02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00", "22:00", "24:00"];
 
 function money(value: number) {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -53,22 +36,8 @@ function shortSessionId(id: string) {
   return id.match(/(\d+)$/)?.[1] ?? id;
 }
 
-function chartPath(values: number[], max = 100) {
-  return values.map((value, index) => {
-    const x = (index / (values.length - 1)) * 1200;
-    const y = 154 - (value / max) * 132;
-    return `${index === 0 ? "M" : "L"}${x.toFixed(1)} ${y.toFixed(1)}`;
-  }).join(" ");
-}
-
-function areaPath(values: number[], max = 100) {
-  return `${chartPath(values, max)} L1200 154 L0 154 Z`;
-}
-
 export function ChargeGridOperationsDashboard({ establishmentId, chargers, telemetry, sessions }: ChargeGridOperationsDashboardProps) {
   const { state } = useAdminState();
-  const [metric, setMetric] = useState<MonitorMetric>("sessions");
-  const [range, setRange] = useState<MonitorRange>("day");
   const energy = state.energy.find((item) => item.establishmentId === establishmentId);
   const establishment = state.establishments.find((item) => item.id === establishmentId);
   const incidents = state.incidents.filter((item) => item.establishmentId === establishmentId && item.status !== "RESOLVED");
@@ -104,10 +73,6 @@ export function ChargeGridOperationsDashboard({ establishmentId, chargers, telem
 
   const demand = { current: energy?.demandKw ?? 0, limit: energy?.contractedLimitKw ?? 0, margin: Math.max(0, (energy?.contractedLimitKw ?? 0) - (energy?.demandKw ?? 0)), marginPercent: energy?.powerMarginPercent ?? 0, state: energy?.demandState ?? "Sem leitura", canStart: energy?.demandState !== "Crítico" };
 
-  const primaryValues = chartProfiles[metric].map((value) => range === "day" ? value : range === "week" ? Math.min(100, value * .9 + 5) : Math.min(100, value * .82 + 9));
-  const primaryLabel = metricLabels[metric];
-  const secondaryLabel = metric === "sessions" ? "Energia (kWh)" : "Sessões";
-
   return <section className="cg-insights" data-testid="chargegrid-operations-dashboard" aria-label="Indicadores da operação ChargeGrid">
     <section className="cg-insight-card cg-attention">
       <header><h2>Atenção</h2></header>
@@ -117,34 +82,18 @@ export function ChargeGridOperationsDashboard({ establishmentId, chargers, telem
     <section className="cg-insight-card cg-commercial-performance">
       <header><h2>Performance comercial</h2></header>
       <dl>
-        <div><dt>Receita</dt><dd>{money(performance.revenue)}</dd><small>↗ 8,6% <span>vs ontem</span></small></div>
-        <div><dt>Energia entregue</dt><dd>{number(performance.energy)} <em>kWh</em></dd><small>↗ 6,3% <span>vs ontem</span></small></div>
-        <div><dt>Sessões concluídas</dt><dd>{performance.completed}</dd><small>↗ 5,0% <span>vs ontem</span></small></div>
-        <div><dt>Utilização</dt><dd>{performance.utilization}%</dd><small>↗ 3 p.p. <span>vs ontem</span></small></div>
-        <div><dt>Ticket médio</dt><dd>{money(performance.averageTicket)}</dd><small>↗ 3,2% <span>vs ontem</span></small></div>
-        <div><dt>Duração média</dt><dd>{performance.averageDuration} <em>min</em></dd><small>↗ 2 min <span>vs ontem</span></small></div>
+        <div><dt>Receita</dt><dd>{money(performance.revenue)}</dd><small>sessões persistidas</small></div>
+        <div><dt>Energia entregue</dt><dd>{number(performance.energy)} <em>kWh</em></dd><small>sessões persistidas</small></div>
+        <div><dt>Sessões concluídas</dt><dd>{performance.completed}</dd><small>registros liquidados</small></div>
+        <div><dt>Utilização</dt><dd>{performance.utilization}%</dd><small>telemetria atual</small></div>
+        <div><dt>Ticket médio</dt><dd>{money(performance.averageTicket)}</dd><small>sessões concluídas</small></div>
+        <div><dt>Duração média</dt><dd>{performance.averageDuration} <em>min</em></dd><small>sessões concluídas</small></div>
       </dl>
     </section>
 
     <section className="cg-insight-card cg-monitoring">
-      <header>
-        <div><h2>Monitoramento</h2><nav aria-label="Métrica do monitoramento">{(Object.keys(metricLabels) as MonitorMetric[]).map((item) => <button type="button" className={metric === item ? "is-active" : ""} aria-pressed={metric === item} onClick={() => setMetric(item)} key={item}>{metricLabels[item]}</button>)}</nav></div>
-        <nav aria-label="Período do monitoramento"><button type="button" className={range === "day" ? "is-active" : ""} aria-pressed={range === "day"} onClick={() => setRange("day")}>Dia</button><button type="button" className={range === "week" ? "is-active" : ""} aria-pressed={range === "week"} onClick={() => setRange("week")}>Semana</button><button type="button" className={range === "month" ? "is-active" : ""} aria-pressed={range === "month"} onClick={() => setRange("month")}>Mês</button><span aria-hidden="true">▣</span></nav>
-      </header>
-      <div className="cg-chart-wrap" aria-label={`Gráfico de ${primaryLabel.toLowerCase()} por hora`}>
-        <span className="cg-chart-axis-title">{primaryLabel}</span><span className="cg-chart-axis-title is-right">kWh</span>
-        <div className="cg-chart-left-scale" aria-hidden="true"><span>100</span><span>80</span><span>60</span><span>40</span><span>20</span><span>0</span></div>
-        <div className="cg-chart-right-scale" aria-hidden="true"><span>250</span><span>200</span><span>150</span><span>100</span><span>50</span><span>0</span></div>
-        <svg className="cg-monitor-chart" viewBox="0 0 1200 170" preserveAspectRatio="none" role="img" aria-label={`${primaryLabel} e ${secondaryLabel} ao longo do período`}>
-          <defs><linearGradient id="cg-monitor-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ff272f" stopOpacity=".32" /><stop offset="1" stopColor="#ff272f" stopOpacity=".015" /></linearGradient></defs>
-          <g className="cg-chart-grid"><path d="M0 22H1200M0 48H1200M0 74H1200M0 101H1200M0 127H1200M0 154H1200" /></g>
-          <path className="cg-chart-area" d={areaPath(primaryValues)} />
-          <path className="cg-chart-primary" d={chartPath(primaryValues)} />
-          <path className="cg-chart-secondary" d={chartPath(comparisonProfile)} />
-        </svg>
-        <div className="cg-chart-hours" aria-hidden="true">{hourLabels.map((hour) => <span key={hour}>{hour}</span>)}</div>
-        <div className="cg-chart-legend"><span className="is-primary">{primaryLabel}</span><span>{secondaryLabel}</span></div>
-      </div>
+      <header><h2>Monitoramento</h2></header>
+      <div className="operations-empty"><strong>Série temporal indisponível nesta versão.</strong><span>Os indicadores acima usam sessões e telemetria persistidas; a curva histórica entra com o contrato energético do Marco 4.</span></div>
     </section>
 
     <section className="cg-insight-card cg-energy-condition">

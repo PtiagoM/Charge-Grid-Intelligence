@@ -2,7 +2,7 @@ import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
-import { ChargerCommercialStatus, ChargerTechnicalStatus, CommercialAvailability, CommercialSessionStatus, PaymentStatus, QueueStatus, type CommercialCatalog, type CommercialChargerRecord, type CommercialChargerResolution, type CommercialEstablishmentRecord, type CommercialFinancialSummary, type CommercialOpeningHoursInterval, type CommercialPublicChargerRecord, type CommercialPublicEstablishmentRecord, type CommercialQueueRecord, type CommercialQuote, type CommercialSessionRecord, type CommercialSnapshot } from "@chargegrid/shared";
+import { ChargerCommercialStatus, ChargerTechnicalStatus, CommercialAvailability, CommercialSessionStatus, PaymentStatus, QueueStatus, type CommercialCatalog, type CommercialChargerRecord, type CommercialChargerResolution, type CommercialEstablishmentRecord, type CommercialFinancialSummary, type CommercialOpeningHoursInterval, type CommercialPublicChargerRecord, type CommercialPublicEstablishmentRecord, type CommercialQueueRecord, type CommercialQuote, type CommercialSessionRecord, type CommercialSnapshot, type CommercialTariffVersion } from "@chargegrid/shared";
 import pg from "pg";
 import { MockGoodWeProvider, type GoodWeProvider } from "../goodwe/index.js";
 
@@ -134,6 +134,20 @@ interface QuoteRow {
   guest_token_hash: string | null;
 }
 
+interface TariffVersionRow {
+  id: string;
+  establishment_id: string;
+  energy_cents_per_kwh: number;
+  solar_energy_cents_per_kwh: number | null;
+  idle_grace_minutes: number;
+  idle_cents_per_minute: number;
+  idle_max_minutes: number;
+  idle_enabled: boolean;
+  valid_from: Date | string;
+  created_at: Date | string;
+  reason: string;
+}
+
 export class CommercialConflictError extends Error {}
 export class CommercialNotFoundError extends Error {}
 
@@ -217,6 +231,22 @@ function quoteFromRow(row: QuoteRow): CommercialQuote {
     expiresAt: iso(row.expires_at)!,
     reasonCode: row.reason_code,
     energySampleId: row.energy_sample_id
+  };
+}
+
+function tariffVersionRecord(row: TariffVersionRow): CommercialTariffVersion {
+  return {
+    id: row.id,
+    establishmentId: row.establishment_id,
+    energyCentsPerKwh: row.energy_cents_per_kwh,
+    solarEnergyCentsPerKwh: row.solar_energy_cents_per_kwh,
+    idleGraceMinutes: row.idle_grace_minutes,
+    idleCentsPerMinute: row.idle_cents_per_minute,
+    idleMaxMinutes: row.idle_max_minutes,
+    idleEnabled: row.idle_enabled,
+    validFrom: iso(row.valid_from)!,
+    createdAt: iso(row.created_at)!,
+    reason: row.reason
   };
 }
 
@@ -459,6 +489,24 @@ export class CommercialRepository {
       ]);
       const quote = await tx.query<QuoteRow>("select * from commercial_quotes where id = $1", [id]);
       return quoteFromRow(quote.rows[0]!);
+    });
+  }
+
+  async publishTariff(input: { establishmentId: string; energyCentsPerKwh: number; idleCentsPerMinute: number; reason: string }) {
+    await this.ready;
+    if (!Number.isInteger(input.energyCentsPerKwh) || input.energyCentsPerKwh < 1 || !Number.isInteger(input.idleCentsPerMinute) || input.idleCentsPerMinute < 0 || input.reason.trim().length < 8) {
+      throw new CommercialConflictError("Informe tarifa, ociosidade e motivo válidos.");
+    }
+    return this.db.transaction(async (tx) => {
+      const establishment = await tx.query<{ id: string }>("select id from commercial_establishments where id = $1", [input.establishmentId]);
+      if (!establishment.rows[0]) throw new CommercialNotFoundError("Estabelecimento comercial não encontrado.");
+      const id = `tariff_${randomUUID()}`;
+      await tx.query(`insert into commercial_tariff_versions
+        (id, establishment_id, energy_cents_per_kwh, idle_grace_minutes, idle_cents_per_minute, idle_max_minutes, idle_enabled, reason)
+        values ($1, $2, $3, 15, $4, 60, true, $5)`, [id, input.establishmentId, input.energyCentsPerKwh, input.idleCentsPerMinute, input.reason.trim()]);
+      await tx.query("update commercial_establishments set tariff_cents = $2 where id = $1", [input.establishmentId, input.energyCentsPerKwh]);
+      const tariff = await tx.query<TariffVersionRow>("select * from commercial_tariff_versions where id = $1", [id]);
+      return tariffVersionRecord(tariff.rows[0]!);
     });
   }
 
@@ -919,9 +967,10 @@ export class CommercialRepository {
     const chargers = await this.db.query<ChargerRow>(`select * from commercial_chargers where published = true ${establishmentId ? "and establishment_id = $1" : ""} order by code`, establishmentId ? [establishmentId] : []);
     const sessions = await this.db.query<SessionRow>(`${sessionSelect} ${establishmentId ? "where s.establishment_id = $1" : ""} order by s.created_at desc`, establishmentId ? [establishmentId] : []);
     const queue = await this.queueSnapshot(establishmentId);
+    const tariffs = await this.db.query<TariffVersionRow>(`select * from commercial_tariff_versions ${establishmentId ? "where establishment_id = $1" : ""} order by valid_from desc, created_at desc`, establishmentId ? [establishmentId] : []);
     const chargerRecords = chargers.rows.map(chargerRecord);
     const establishmentRecords = establishments.rows.map((row) => establishmentRecord(row, chargerRecords, queue));
-    return { contractVersion: "S4-C1", generatedAt: new Date().toISOString(), establishments: establishmentRecords, sessions: sessions.rows.map(sessionRecord), queue };
+    return { contractVersion: "S4-C1", generatedAt: new Date().toISOString(), establishments: establishmentRecords, tariffs: tariffs.rows.map(tariffVersionRecord), sessions: sessions.rows.map(sessionRecord), queue };
   }
 }
 

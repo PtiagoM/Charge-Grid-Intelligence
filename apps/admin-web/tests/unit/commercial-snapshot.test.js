@@ -15,6 +15,7 @@ describe('mergeCommercialSnapshot', () => {
       sessions: [{
         id: '10000000-0000-4000-8000-000000000001', publicCode: 'CG-10000000', driverName: 'Visitante', establishmentId: 'est_aurora_001', establishmentName: 'Hub Solar Aurora', chargerId: '00000000-0000-4000-8000-000000000001', chargerCode: 'AURORA-01', chargerName: 'Aurora 01', parkingSpot: 'A01', status: CommercialSessionStatus.WAITING_START, tariffCents: 190, actorType: 'GUEST', quote: null, authorizedCents: 2500, energyWh: 0, costCents: 0, energyCostCents: 0, idleCostCents: 0, totalCostCents: 0, currentPowerKw: 0, energyEndedAt: null, disconnectedAt: null, settledAt: null, idleGraceEndsAt: null, endReason: null, transitionReason: null, pendingCommandId: null, createdAt: '2026-09-22T12:00:00.000Z', updatedAt: '2026-09-22T12:00:00.000Z', payment: { id: 'pay-001', paymentIntentId: 'pi_test', method: 'CARD', status: PaymentStatus.AUTHORIZED, providerStatus: 'requires_capture', authorizedCents: 2500, capturedCents: 0, refundedCents: 0, pendingOperation: null, lastErrorCode: null }
       }],
+      tariffs: [{ id: 'tariff-aurora-v1', establishmentId: 'est_aurora_001', energyCentsPerKwh: 190, solarEnergyCentsPerKwh: null, idleGraceMinutes: 15, idleCentsPerMinute: 50, idleMaxMinutes: 60, idleEnabled: true, validFrom: '2026-09-22T12:00:00.000Z', createdAt: '2026-09-22T12:00:00.000Z', reason: 'Tarifa Aurora' }],
       queue: []
     };
 
@@ -23,6 +24,7 @@ describe('mergeCommercialSnapshot', () => {
     expect(state.establishments.find((item) => item.id === 'est_aurora_001')?.clientId).not.toBe('cli-fiap');
     expect(state.sessions.find((session) => session.id === 'CG-10000000')).toEqual(expect.objectContaining({ internalId: '10000000-0000-4000-8000-000000000001', chargerId: 'AURORA-01', status: 'authorized' }));
     expect(state.paymentTransactions.find((payment) => payment.providerReference === 'pi_test')).toEqual(expect.objectContaining({ sessionId: 'CG-10000000', status: 'AUTHORIZED', settlementStatus: 'PENDING', authorizedCents: 2500, refundedCents: 0 }));
+    expect(state.tariffPolicies.find((tariff) => tariff.id === 'tariff-aurora-v1')).toEqual(expect.objectContaining({ status: 'ACTIVE', energyPriceCentsPerKwh: 190, idleGraceMinutes: 15 }));
     expect(state.accessGrants.find((grant) => grant.role === 'GOODWE_CENTRAL')?.establishmentIds).toContain('est_aurora_001');
 
     const completedEnergy = mergeCommercialSnapshot(createInitialState(), {
@@ -46,6 +48,7 @@ describe('mergeCommercialSnapshot', () => {
       contractVersion: 'S4-C1', generatedAt: '2026-09-22T12:10:00.000Z',
       establishments: [{ id: 'est_aurora_001', name: 'Hub Solar Aurora', address: 'Av. Mercurio, 420', latitude: -23.55, longitude: -46.63, tariffCents: 190, qrSlug: 'aurora', plantId: 'plant_aurora_001', timezone: 'America/Sao_Paulo', openingHours: [], published: true, availableChargerCount: 0, queueSummary: { establishmentId: 'est_aurora_001', activeCount: 0, commercialAvailability: 'OPEN_PARTIAL' }, chargers: [{ id: 'charger-001', code: 'AURORA-01', establishmentId: 'est_aurora_001', plantId: 'plant_aurora_001', name: 'Aurora 01', parkingSpot: 'B02', nominalPowerKw: 7, currentPowerKw: 0, physicalStatus: 'CONNECTED', commercialStatus: ChargerCommercialStatus.OCCUPIED, published: true, qrIdentifier: 'aurora-01', currentSessionId: null, assignmentId: null, updatedAt: '2026-09-22T12:10:00.000Z' }] }],
       sessions: [{ id: 'session-old', publicCode: 'CG-OLD', driverName: 'Visitante', establishmentId: 'est_aurora_001', establishmentName: 'Hub Solar Aurora', chargerId: 'charger-001', chargerCode: 'AURORA-01', chargerName: 'Aurora 01', parkingSpot: 'B02', status: CommercialSessionStatus.COMPLETED, tariffCents: 190, actorType: 'GUEST', quote: null, authorizedCents: 2500, energyWh: 3500, costCents: 665, energyCostCents: 665, idleCostCents: 0, totalCostCents: 665, currentPowerKw: 0, energyEndedAt: '2026-09-22T12:05:00.000Z', disconnectedAt: '2026-09-22T12:06:00.000Z', settledAt: '2026-09-22T12:07:00.000Z', idleGraceEndsAt: null, endReason: null, transitionReason: null, pendingCommandId: null, createdAt: '2026-09-22T12:00:00.000Z', updatedAt: '2026-09-22T12:07:00.000Z', payment: { id: 'pay-old', paymentIntentId: 'pi_old', method: 'CARD', status: PaymentStatus.PAID, providerStatus: 'succeeded', authorizedCents: 2500, capturedCents: 665, refundedCents: 0, pendingOperation: null, lastErrorCode: null } }],
+      tariffs: [{ id: 'tariff-aurora-v1', establishmentId: 'est_aurora_001', energyCentsPerKwh: 190, solarEnergyCentsPerKwh: null, idleGraceMinutes: 15, idleCentsPerMinute: 50, idleMaxMinutes: 60, idleEnabled: true, validFrom: '2026-09-22T12:00:00.000Z', createdAt: '2026-09-22T12:00:00.000Z', reason: 'Tarifa Aurora' }],
       queue: []
     };
 
