@@ -3,7 +3,7 @@ import { PaymentConfigurationError, StripePaymentProvider, stripeIsConfigured, t
 import { CommercialConflictError, CommercialNotFoundError, getCommercialRepository } from "../commercial/repository.js";
 import { DriverAuthenticationError, DriverAuthenticationUnavailableError, guestToken, requireDriver } from "../commercial/driver-auth.js";
 import type { CommercialSessionAccess } from "../commercial/repository.js";
-import { CommercialSessionStatus } from "@chargegrid/shared";
+import { CommercialSessionStatus, PaymentStatus } from "@chargegrid/shared";
 
 function provider() {
   return new StripePaymentProvider();
@@ -93,18 +93,19 @@ export function createPaymentRouter() {
 
   router.post("/:paymentIntentId/capture", async (request, response) => {
     const body = (request.body ?? {}) as Record<string, unknown>;
-    if ((body.amount !== 0 && !validAmount(body.amount)) || typeof body.sessionId !== "string") return response.status(400).json({ code: "INVALID_CAPTURE_INPUT", message: "Valor ou sessão inválidos." });
+    if (typeof body.sessionId !== "string") return response.status(400).json({ code: "INVALID_CAPTURE_INPUT", message: "Sessão inválida." });
     try {
       const commercialRepository = getCommercialRepository();
       if (await commercialRepository.sessionIdForPaymentIntent(request.params.paymentIntentId) !== body.sessionId) throw new CommercialNotFoundError("Pagamento não vinculado à sessão.");
       const currentSession = await commercialRepository.sessionForAccess(body.sessionId, await accessFor(request));
       if (currentSession.status !== CommercialSessionStatus.ENERGY_FINISHED) throw new CommercialConflictError("Finalize a entrega de energia antes de capturar o pagamento.");
       await commercialRepository.assertReadyForCapture(body.sessionId);
+      const amount = currentSession.totalCostCents / 100;
       const capture = await provider().capture({
         paymentIntentId: request.params.paymentIntentId,
         sessionId: body.sessionId,
-        amount: body.amount,
-        idempotencyKey: request.header("Idempotency-Key") ?? `capture-${body.sessionId}-${Math.round(body.amount * 100)}`
+        amount,
+        idempotencyKey: request.header("Idempotency-Key") ?? `capture-${body.sessionId}-${currentSession.totalCostCents}`
       });
       const session = await commercialRepository.completeCapture({ sessionId: body.sessionId, status: capture.status, providerStatus: capture.providerStatus, capturedCents: Math.round(capture.amount * 100) });
       return response.json({ ...capture, session });
@@ -115,17 +116,25 @@ export function createPaymentRouter() {
 
   router.post("/:paymentIntentId/refund", async (request, response) => {
     const body = (request.body ?? {}) as Record<string, unknown>;
-    if (typeof body.amount !== "number" || !Number.isFinite(body.amount) || body.amount < 0.01 || body.amount > 1000 || typeof body.sessionId !== "string") return response.status(400).json({ code: "INVALID_REFUND_INPUT", message: "Valor ou sessão inválidos." });
+    if (typeof body.sessionId !== "string") return response.status(400).json({ code: "INVALID_REFUND_INPUT", message: "Sessão inválida." });
     try {
       const commercialRepository = getCommercialRepository();
       if (await commercialRepository.sessionIdForPaymentIntent(request.params.paymentIntentId) !== body.sessionId) throw new CommercialNotFoundError("Pagamento não vinculado à sessão.");
-      await commercialRepository.sessionForAccess(body.sessionId, await accessFor(request));
-      return response.json(await provider().refund({
+      const currentSession = await commercialRepository.sessionForAccess(body.sessionId, await accessFor(request));
+      if (currentSession.status !== CommercialSessionStatus.ENERGY_FINISHED) throw new CommercialConflictError("Finalize a entrega de energia antes de devolver o saldo.");
+      await commercialRepository.assertReadyForCapture(body.sessionId);
+      const refundCents = Math.max(0, currentSession.authorizedCents - currentSession.totalCostCents);
+      if (refundCents === 0) return response.json({ status: PaymentStatus.PAID, amount: 0, session: await commercialRepository.completeRefund({ sessionId: body.sessionId, providerStatus: "no_refund_due", refundedCents: 0 }) });
+      const refund = await provider().refund({
         paymentIntentId: request.params.paymentIntentId,
         sessionId: body.sessionId,
-        amount: body.amount,
-        idempotencyKey: request.header("Idempotency-Key") ?? `refund-${body.sessionId}-${Math.round(body.amount * 100)}`
-      }));
+        amount: refundCents / 100,
+        idempotencyKey: request.header("Idempotency-Key") ?? `refund-${body.sessionId}-${refundCents}`
+      });
+      const session = refund.status === PaymentStatus.REFUNDED
+        ? await commercialRepository.completeRefund({ sessionId: body.sessionId, providerStatus: refund.status, refundedCents: refundCents })
+        : undefined;
+      return response.json({ ...refund, session });
     } catch (error) {
       return errorResponse(response, error);
     }

@@ -707,7 +707,7 @@ export class CommercialRepository {
       const chargerResult = await tx.query<ChargerRow>("select * from commercial_chargers where code = $1 and published = true", [chargerCode]);
       const charger = chargerResult.rows[0];
       if (!charger) throw new CommercialNotFoundError("Carregador comercial não encontrado.");
-      const sessionResult = await tx.query<{ id: string; status: CommercialSessionStatus; quote: CommercialQuote | string | null; energy_ended_at: Date | string | null; energy_cost_cents: number | null }>(`select id, status, quote, energy_ended_at, energy_cost_cents from commercial_sessions
+      const sessionResult = await tx.query<{ id: string; status: CommercialSessionStatus; quote: CommercialQuote | string | null; energy_ended_at: Date | string | null; energy_cost_cents: number | null; authorized_cents: number }>(`select id, status, quote, energy_ended_at, energy_cost_cents, authorized_cents from commercial_sessions
         where charger_id = $1 and status not in ('COMPLETED', 'PAYMENT_FAILED', 'START_FAILED', 'FAULTED', 'CANCELLED')
         order by created_at desc limit 1`, [charger.id]);
       const session = sessionResult.rows[0];
@@ -735,8 +735,9 @@ export class CommercialRepository {
           const disconnectedAt = new Date();
           const idle = idleCharge(quoteRecord(session.quote), session.energy_ended_at ? new Date(session.energy_ended_at) : disconnectedAt, disconnectedAt);
           const energyCostCents = session.energy_cost_cents ?? 0;
+          const totalCostCents = Math.min(session.authorized_cents, energyCostCents + idle.cents);
           await tx.query(`update commercial_sessions set disconnected_at = coalesce(disconnected_at, $2), idle_cost_cents = $3,
-            total_cost_cents = $4, cost_cents = $4, updated_at = now() where id = $1`, [session.id, disconnectedAt.toISOString(), idle.cents, energyCostCents + idle.cents]);
+            total_cost_cents = $4, cost_cents = $4, updated_at = now() where id = $1`, [session.id, disconnectedAt.toISOString(), Math.max(0, totalCostCents - energyCostCents), totalCostCents]);
         }
         await tx.query("update commercial_chargers set physical_status = 'AVAILABLE', commercial_status = $2, current_power_kw = 0, updated_at = now() where id = $1", [charger.id, session ? "OCCUPIED" : "AVAILABLE_TO_START"]);
       } else if (["OFFLINE", "FAULT"].includes(action)) {
@@ -796,10 +797,26 @@ export class CommercialRepository {
       if (current.status !== CommercialSessionStatus.ENERGY_FINISHED) throw new CommercialConflictError("Finalize a entrega de energia antes de liquidar o pagamento.");
       if (current.physical_status !== "AVAILABLE") throw new CommercialConflictError("Desconecte o veículo no carregador antes de liquidar o pagamento.");
       await tx.query("update commercial_payments set status = $2, provider_status = $3, captured_cents = $4, updated_at = now() where session_id = $1", [input.sessionId, input.status, input.providerStatus, input.capturedCents]);
-      await tx.query("update commercial_sessions set status = $2, ended_at = now(), last_energy_at = null, updated_at = now() where id = $1", [input.sessionId, input.status === PaymentStatus.PAID ? CommercialSessionStatus.COMPLETED : CommercialSessionStatus.CANCELLED]);
+      await tx.query("update commercial_sessions set status = $2, ended_at = now(), settled_at = now(), last_energy_at = null, updated_at = now() where id = $1", [input.sessionId, input.status === PaymentStatus.PAID ? CommercialSessionStatus.COMPLETED : CommercialSessionStatus.CANCELLED]);
       await tx.query("update commercial_chargers set commercial_status = 'AVAILABLE_TO_START', current_session_id = null, current_power_kw = 0, updated_at = now() where id = $1 and current_session_id = $2", [current.charger_id, input.sessionId]);
       await tx.query(`update commercial_queue_entries set status = 'COMPLETED', completed_at = now(), updated_at = now()
         where driver_id = (select driver_id from commercial_sessions where id = $1) and status = 'ASSIGNED'`, [input.sessionId]);
+    });
+    const session = await this.session(input.sessionId);
+    await this.processQueue(session.establishmentId);
+    return session;
+  }
+
+  async completeRefund(input: { sessionId: string; providerStatus: string; refundedCents: number }) {
+    await this.ready;
+    await this.assertReadyForCapture(input.sessionId);
+    await this.db.transaction(async (tx) => {
+      const session = await tx.query<{ charger_id: string; authorized_cents: number }>("select charger_id, authorized_cents from commercial_sessions where id = $1", [input.sessionId]);
+      const current = session.rows[0];
+      if (!current) throw new CommercialNotFoundError("Sessão comercial não encontrada.");
+      await tx.query("update commercial_payments set status = $2, provider_status = $3, captured_cents = $4, refunded_cents = $5, updated_at = now() where session_id = $1", [input.sessionId, PaymentStatus.PAID, input.providerStatus, current.authorized_cents, input.refundedCents]);
+      await tx.query("update commercial_sessions set status = 'COMPLETED', ended_at = now(), settled_at = now(), last_energy_at = null, updated_at = now() where id = $1", [input.sessionId]);
+      await tx.query("update commercial_chargers set commercial_status = 'AVAILABLE_TO_START', current_session_id = null, current_power_kw = 0, updated_at = now() where id = $1 and current_session_id = $2", [current.charger_id, input.sessionId]);
     });
     const session = await this.session(input.sessionId);
     await this.processQueue(session.establishmentId);

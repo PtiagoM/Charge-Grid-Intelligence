@@ -99,6 +99,8 @@ describe("CommercialRepository", () => {
     expect(ended).toMatchObject({ status: CommercialSessionStatus.ENERGY_FINISHED, energyEndedAt: expect.any(String), idleGraceEndsAt: expect.any(String), idleCostCents: 0 });
     await repository.hardwareEvent("AURORA-01", "DISCONNECT");
     expect(await repository.session(id)).toMatchObject({ disconnectedAt: expect.any(String), idleCostCents: 0, totalCostCents: ended.energyCostCents });
+    await repository.completeRefund({ sessionId: id, providerStatus: "succeeded", refundedCents: 2500 - ended.totalCostCents });
+    expect(await repository.session(id)).toMatchObject({ status: CommercialSessionStatus.COMPLETED, payment: { status: PaymentStatus.PAID, refundedCents: 2500 - ended.totalCostCents } });
   }, 20_000);
 
   it("applies simulated hardware events and advances energy only from the backend clock", async () => {
