@@ -22,6 +22,7 @@ O registro de implementação, evidências e limitações da Sprint fica em [`SP
 - A API passa a validar a identidade Supabase do motorista no servidor; `driverId` enviado pelo cliente não define propriedade. Visitantes recebem token opaco apenas no header, persistido somente como hash e limitado à cotação/sessão correspondente. Leituras, parada, captura, reembolso e consulta de PaymentIntent aplicam a mesma posse; fila exige motorista autenticado.
 - O checkout normal cria uma cotação Aurora persistida, válida por cinco minutos e com tarifa congelada, antes do PaymentIntent Stripe. A PWA mantém o token de visitante apenas em `sessionStorage`, envia o UUID interno do mesmo carregador exibido por código e continua usando o Payment Element existente.
 - A tentativa aceita um único `quoteId`/método/limite: repetição idêntica preserva a sessão e a chave Stripe; tentativa divergente conflita. Se o Stripe já respondeu, uma falha posterior não marca a sessão como paga/falha automaticamente nem libera o carregador às cegas.
+- O início automático cobre agora as duas ordens reais: pagamento autorizado antes de `CONNECT`, ou veículo conectado antes da autorização. Ambos passam pelo `MockGoodWeProvider` e convergem na mesma transição `WAITING_START → CHARGING`; releitura posterior do PaymentIntent não regride uma sessão concluída para aguardando início.
 - Lifecycle físico, ociosidade, fila final, energia/demanda e projeções completas Admin/PWA permanecem nos próximos checkpoints M1-U4+.
 
 ### Vertical real vigente — 22/09/2026

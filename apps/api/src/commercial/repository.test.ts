@@ -71,6 +71,19 @@ describe("CommercialRepository", () => {
     await expect(repository.reserveQuotedSession({ id: session.id, quoteId: quote.id, access: { guestToken }, method: "PIX", authorizedCents: 4000 })).rejects.toBeInstanceOf(CommercialConflictError);
   }, 20_000);
 
+  it("starts once when payment authorization arrives after the vehicle connection", async () => {
+    const repository = new CommercialRepository("memory://");
+    repositories.push(repository);
+    const id = "12000000-0000-4000-8000-000000000012";
+    await repository.reserveSession({ id, establishmentId: "est_aurora_001", chargerCode: "AURORA-01", driverName: "Motorista Teste", method: "CARD", authorizedCents: 2500 });
+    await repository.hardwareEvent("AURORA-01", "CONNECT");
+    await repository.hardwareEvent("AURORA-01", "CONNECT");
+    expect(await repository.session(id)).toMatchObject({ status: CommercialSessionStatus.AWAITING_PAYMENT });
+    await repository.attachPayment(id, "pi_test_connected_first", "requires_capture");
+    await repository.recordPayment({ sessionId: id, paymentIntentId: "pi_test_connected_first", status: PaymentStatus.AUTHORIZED, providerStatus: "requires_capture", receivedAmount: 0 });
+    expect(await repository.session(id)).toMatchObject({ status: CommercialSessionStatus.CHARGING, currentPowerKw: 7 });
+  }, 20_000);
+
   it("applies simulated hardware events and advances energy only from the backend clock", async () => {
     const repository = new CommercialRepository("memory://");
     repositories.push(repository);
@@ -88,6 +101,8 @@ describe("CommercialRepository", () => {
     expect(charging.energyWh).toBeCloseTo(5500, 0);
     await repository.stopSession(id);
     expect(await repository.session(id)).toMatchObject({ status: CommercialSessionStatus.ENERGY_FINISHED, currentPowerKw: 0 });
+    await repository.recordPayment({ sessionId: id, paymentIntentId: "pi_test_hardware", status: PaymentStatus.AUTHORIZED, providerStatus: "requires_capture", receivedAmount: 0 });
+    expect(await repository.session(id)).toMatchObject({ status: CommercialSessionStatus.ENERGY_FINISHED });
     await expect(repository.assertReadyForCapture(id)).rejects.toBeInstanceOf(CommercialConflictError);
     await expect(repository.completeCapture({ sessionId: id, status: PaymentStatus.PAID, providerStatus: "succeeded", capturedCents: 1330 })).rejects.toBeInstanceOf(CommercialConflictError);
     await repository.hardwareEvent("AURORA-01", "DISCONNECT");

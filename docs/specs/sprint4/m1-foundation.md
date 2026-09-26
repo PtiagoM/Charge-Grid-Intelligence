@@ -39,6 +39,12 @@ Objetivo: API/SQL executam contratos estáveis, sem frontend decidir negócio. G
 - PWA migrou o checkout normal sem uma tela paralela: o adaptador de catálogo preserva `internalId`, o Payment Element mantém-se intacto e o token guest fica em `sessionStorage` por sessão, nunca na URL/localStorage/body. Consultar/parar/liquidar/capturar/reembolsar exige o mesmo proprietário.
 - Validação focal: `npm test --workspace @chargegrid/api -- --run src/commercial/routes.test.ts src/commercial/repository.test.ts` (9 testes), build API e build PWA passaram; lint será executado no checkpoint antes do commit.
 
+### Registro parcial U4 — início automático nas duas ordens
+
+- `recordPayment` e o evento físico `CONNECT` agora chamam o mesmo avaliador mínimo: só emite `StartCharge` no `MockGoodWeProvider` quando a sessão atual do carregador está `WAITING_START` e o estado físico é `CONNECTED`. A confirmação passa pelo mesmo evento `START`; leitura posterior de pagamento não volta `ENERGY_FINISHED` para `WAITING_START`.
+- A parada solicitada pelo motorista também chama `StopCharge` antes de confirmar o evento físico. Ainda faltam os eventos persistidos, falhas recuperáveis de comando e a política energética do U4 completo.
+- Validação focal: `repository.test.ts` cobre as duas ordens, CONNECT repetido antes da autorização e ausência de regressão após fim de energia (9 testes verdes).
+
 ## S4-M1-U3 — Quote, tentativa e Stripe normal
 
 - **Depende:** U2; **tamanho:** MÉDIO.

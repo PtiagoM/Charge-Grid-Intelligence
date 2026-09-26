@@ -573,6 +573,17 @@ export class CommercialRepository {
     });
   }
 
+  private async startWhenReady(chargerCode: string, powerKw?: number) {
+    const ready = await this.db.query<{ id: string }>(`select s.id from commercial_sessions s
+      join commercial_chargers c on c.id = s.charger_id
+      where c.code = $1 and c.physical_status = 'CONNECTED' and s.status = 'WAITING_START' and c.current_session_id = s.id`, [chargerCode]);
+    if (!ready.rows[0]) return false;
+    const command = await this.goodWeProvider.startCharge(chargerCode);
+    if (command.status !== "SUCCESS") return false;
+    await this.hardwareEvent(chargerCode, "START", powerKw);
+    return true;
+  }
+
   async recordPayment(input: { paymentIntentId: string; sessionId?: string; status: PaymentStatus; providerStatus: string; receivedAmount: number }) {
     await this.ready;
     const found = input.sessionId
@@ -593,6 +604,8 @@ export class CommercialRepository {
         await tx.query("update commercial_chargers set commercial_status = 'AVAILABLE_TO_START', current_session_id = null, updated_at = now() where id = (select charger_id from commercial_sessions where id = $1) and current_session_id = $1", [sessionId]);
       }
     });
+    const session = await this.session(sessionId);
+    if (session.status === CommercialSessionStatus.WAITING_START) await this.startWhenReady(session.chargerCode);
     return this.session(sessionId);
   }
 
@@ -710,10 +723,7 @@ export class CommercialRepository {
         await tx.query("update commercial_chargers set physical_status = 'AVAILABLE', commercial_status = 'AVAILABLE_TO_START', current_power_kw = 0, updated_at = now() where id = $1", [charger.id]);
       }
     });
-    if (startAutomatically) {
-      const command = await this.goodWeProvider.startCharge(chargerCode);
-      if (command.status === "SUCCESS") return this.hardwareEvent(chargerCode, "START", powerKw);
-    }
+    if (startAutomatically) await this.startWhenReady(chargerCode, powerKw);
     if (["DISCONNECT", "RECOVER"].includes(action)) {
       const charger = (await this.snapshot()).establishments.flatMap((item) => item.chargers).find((item) => item.code === chargerCode);
       if (charger) await this.processQueue(charger.establishmentId);
@@ -737,6 +747,8 @@ export class CommercialRepository {
     await this.advanceEnergy();
     const current = await this.session(id);
     if (current.status !== CommercialSessionStatus.CHARGING) throw new CommercialConflictError("A sessão não está carregando.");
+    const command = await this.goodWeProvider.stopCharge(current.chargerCode);
+    if (command.status !== "SUCCESS") throw new CommercialConflictError("O equipamento não confirmou a interrupção da energia.");
     await this.hardwareEvent(current.chargerCode, "STOP");
     return this.session(id);
   }
