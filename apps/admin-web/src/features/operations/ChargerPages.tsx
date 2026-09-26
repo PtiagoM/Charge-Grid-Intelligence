@@ -285,17 +285,14 @@ export function ChargersInventoryPage({ establishmentId }: { establishmentId?: s
 }
 
 export function ChargerDetailPage({ chargerId, establishmentId }: { chargerId: string; establishmentId?: string }) {
-  const { state, account, updateChargerCommercialStatus } = useAdminState();
-  const [feedback, setFeedback] = useState<{ tone: "good" | "danger"; message: string } | null>(null);
+  const { state, account } = useAdminState();
   const [drawer, setDrawer] = useState<"details" | "charges" | "controls" | null>(null);
   const [monitorMode, setMonitorMode] = useState<"operations" | "charge">("operations");
   const charger = state.chargers.find((item) => item.id === chargerId);
   const accessibleIds = new Set(accessibleEstablishmentIds(state, account));
   if (!charger || !accessibleIds.has(charger.establishmentId) || (establishmentId && charger.establishmentId !== establishmentId)) return <Navigate to="/mvp/chargers" replace />;
-  const resolvedChargerId = charger.id;
   const canViewCommercial = Boolean(account && (hasAdminCapability(account, "operations:monitor") || hasAdminCapability(account, "commercial:read") || hasAdminCapability(account, "commercial:manage")));
   const canViewSessions = Boolean(account && hasAdminCapability(account, "operations:monitor"));
-  const canManagePublication = account?.role === "ESTABLISHMENT_ADMIN";
 
   const location = state.locations.find((item) => item.id === charger.locationId);
   const telemetry = state.chargerTelemetry.find((item) => item.chargerId === charger.id);
@@ -303,24 +300,6 @@ export function ChargerDetailPage({ chargerId, establishmentId }: { chargerId: s
   const commands = state.chargerCommands.filter((item) => item.chargerId === charger.id).sort((a, b) => b.requestedAt.localeCompare(a.requestedAt));
   const currentSession = charger.currentSessionId ? sessions.find((item) => item.internalId === charger.currentSessionId) : undefined;
   const latestCharge = sessions.find((item) => item.status === "finished") ?? currentSession ?? sessions[0];
-  const nextCommercialStatus: ChargerPublicationStatus | null = charger.publicationStatus === "ELIGIBLE"
-    ? "CONFIGURED"
-    : charger.publicationStatus === "CONFIGURED"
-      ? "PUBLISHED"
-      : charger.publicationStatus === "PUBLISHED"
-        ? "SUSPENDED"
-        : charger.publicationStatus === "SUSPENDED"
-          ? "PUBLISHED"
-          : null;
-
-  function changeCommercialStatus() {
-    if (!nextCommercialStatus) return;
-    const result = updateChargerCommercialStatus(resolvedChargerId, nextCommercialStatus);
-    setFeedback(result.ok
-      ? { tone: "good", message: `Estado comercial atualizado para ${nextCommercialStatus}.` }
-      : { tone: "danger", message: result.issues.join(" ") });
-  }
-
   return <div className="sems-charger-detail" data-testid="mvp-charger-detail">
     <nav className="enterprise-breadcrumb" aria-label="Navegação estrutural"><span><a href="#/mvp/chargers">Lista de dispositivos</a><i>/</i></span><span><strong>Detalhes do dispositivo</strong></span></nav>
     <header className="sems-charger-detail-header">
@@ -351,12 +330,11 @@ export function ChargerDetailPage({ chargerId, establishmentId }: { chargerId: s
       </div>
     </section>
 
-    {canViewCommercial ? <section className="surface panel sems-chargegrid-device-context" id="charger-commercial"><SectionHeader eyebrow="Camada ChargeGrid" title="Publicação comercial" subtitle="O estado técnico do equipamento permanece separado da disponibilidade comercial." /><div className="charger-commercial-lifecycle"><div><span>Estado atual</span><Badge value={charger.publicationStatus} /><small>Elegível → configurado → publicado → suspenso</small></div>{canManagePublication && !charger.internalId && nextCommercialStatus ? <button type="button" className="ghost-button" onClick={changeCommercialStatus}>{nextCommercialStatus === "CONFIGURED" ? "Confirmar configuração" : nextCommercialStatus === "PUBLISHED" ? "Publicar no ChargeGrid" : "Suspender publicação"}</button> : <span>A publicação do catálogo Aurora é observada pela API; alteração administrativa ainda não está disponível.</span>}</div>{canViewSessions ? currentSession ? <div className="operations-session-summary"><div><Badge value={currentSession.status} /><h3>{currentSession.id}</h3><p>{currentSession.driverName} · {currentSession.vehicle}</p></div><div><strong>{number(currentSession.energyKwh)} kWh</strong><span>{currentSession.durationMinutes} min · {money(currentSession.consumedAmount)}</span></div><a className="ghost-button" href={`#/mvp/session?est=${charger.establishmentId}&session=${currentSession.id}`}>Abrir linha do tempo</a></div> : <p className="operations-empty">Nenhuma sessão ChargeGrid autorizada ou ativa neste conector.</p> : null}</section> : null}
+    {canViewCommercial ? <section className="surface panel sems-chargegrid-device-context" id="charger-commercial"><SectionHeader eyebrow="Camada ChargeGrid" title="Publicação comercial" subtitle="O estado técnico do equipamento permanece separado da disponibilidade comercial." /><div className="charger-commercial-lifecycle"><div><span>Estado atual</span><Badge value={charger.publicationStatus} /><small>Elegível → configurado → publicado → suspenso</small></div><span>A publicação do catálogo é observada pela API; alteração administrativa não faz parte deste protótipo.</span></div>{canViewSessions ? currentSession ? <div className="operations-session-summary"><div><Badge value={currentSession.status} /><h3>{currentSession.id}</h3><p>{currentSession.driverName} · {currentSession.vehicle}</p></div><div><strong>{number(currentSession.energyKwh)} kWh</strong><span>{currentSession.durationMinutes} min · {money(currentSession.consumedAmount)}</span></div><a className="ghost-button" href={`#/mvp/session?est=${charger.establishmentId}&session=${currentSession.id}`}>Abrir linha do tempo</a></div> : <p className="operations-empty">Nenhuma sessão ChargeGrid autorizada ou ativa neste conector.</p> : null}</section> : null}
 
     {canViewSessions ? <section id="charger-control" className="surface panel command-panel sems-emergency-control-panel"><div className="sems-command-heading"><SectionHeader eyebrow="Contingência" title="Controle do carregador" subtitle="O fluxo normal é automático. Use estes comandos apenas quando a operação exigir intervenção." /><button type="button" className="ghost-button" onClick={() => setDrawer("controls")}>Abrir registro de controle</button></div>
       <div className="operations-empty"><strong>Somente monitoramento neste momento.</strong><span>O fluxo comercial é automático; eventos físicos são emitidos somente pelo laboratório GoodWe.</span></div>
       {commands[0] ? <div className="sems-recent-control"><span>Último controle</span><strong>{commandLabel(commands[0].type)}</strong><Badge value={commands[0].status} /><small>{localDate(commands[0].completedAt ?? commands[0].requestedAt)} · {commands[0].requestedBy}</small></div> : null}
-      {feedback ? <p className={`command-feedback tone-${feedback.tone}`} role="status">{feedback.message}</p> : null}
       <p className="command-policy">Operador atual: {account?.displayName} · Escopo {account?.profile === "GOODWE" ? "GoodWe autorizado" : location?.name}</p>
     </section> : null}
 

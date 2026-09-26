@@ -35,6 +35,7 @@ Objetivo: finalizar operação comercial/energética nas superfícies existentes
 - **Aceite:** GIVEN mudar tarifa190→200 WHEN nova quote THEN200, sessão antiga190; GIVEN período sem dados THENvazio/0 contagem real, sem curva padrão; GIVEN CSV THENtotal reconcilia com mesmo filtro visual.
 - **Testes:** V06/V09; V-ADMIN; test API contrato agregado/projeções; visual overview/finance/pricing/report. Não calcular agregação financeira de forma divergente no React.
 - **Saída:** alterações têm efeito backend e persistem reload/restart. Commit `feat(admin): use persisted pricing and truthful operational metrics`.
+- **Checkpoint concluído (26/09):** versões de tarifa Aurora são persistidas pela API; a cotação aceita permanece congelada e novas cotações usam a versão vigente. O painel removeu curvas e comparativos fictícios; exportação CSV permanece limitada aos registros filtrados presentes no estado. A publicação administrativa do catálogo não é oferecida sem uma autorização de servidor.
 
 ## S4-M3-U4 — Fronteira de capacidades e prontidão energética
 
@@ -45,6 +46,7 @@ Objetivo: finalizar operação comercial/energética nas superfícies existentes
 - **Aceite:** GIVEN bateria sem provider WHEN usuário visita THEN não consegue obter resultado falso; GIVEN energia null THEN explicação indisponível em vez de “0/normal”; GIVEN grants locais THEN não afirmar revogação API efetuada.
 - **Testes:** V-ADMIN; navegação visual áreas atingidas/teclado, estados vazios; grep de ações locais remanescentes limitado às features do núcleo.
 - **Saída/G3:** A2–A7/A10/A12 prontos; A8/A9 aguardam G4, A1/A11 honestamente delimitados. Commit `fix(admin): make unsupported SEMS capabilities explicit`.
+- **Checkpoint concluído (26/09):** controles de publicação locais foram removidos. Diagnóstico IV e de bateria agora informam ausência de provider/telemetria, sem apresentar análises artificiais. O laboratório GoodWe continua sendo a única fronteira de simulação física.
 
 ## Gate e riscos
 

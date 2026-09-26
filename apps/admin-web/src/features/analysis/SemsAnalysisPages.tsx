@@ -5,10 +5,7 @@ import { Badge, DataTable, number } from "../../components/AdminUi";
 const comparisonMetrics = ["Endereço da usina", "Potência nominal", "Capacidade de armazenamento", "Potência FV", "Potência de carga", "Energia entregue", "Receita ChargeGrid"];
 
 export function SemsIvDiagnosisPage({ establishmentId }: { establishmentId?: string }) {
-  const { state } = useAdminState();
-  const [query, setQuery] = useState("");
-  const chargers = state.chargers.filter((item) => (!establishmentId || item.establishmentId === establishmentId) && `${item.identifier} ${item.serial}`.toLowerCase().includes(query.toLowerCase()));
-  return <section className="surface panel sems-analysis-page"><nav className="sems-device-type-tabs"><button className="is-active" type="button">Gerenciamento de cabeamento</button><span>Biblioteca de módulos</span><span>Configuração do módulo</span></nav><form className="sems-reference-filter" onSubmit={(event) => event.preventDefault()}><label><span className="sr-only">Pesquisar inversor</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="NS do inversor ou carregador" /></label><button className="sems-icon-action" type="submit">⌕</button><button className="sems-icon-action" type="button">↻</button></form><DataTable columns={["Nome da usina", "Nome do dispositivo", "NS do dispositivo", "Status", "Última modificação", "Operação"]}>{chargers.map((charger) => <tr key={charger.id}><td>{state.locations.find((item) => item.id === charger.locationId)?.name}</td><td>{charger.identifier}</td><td>{charger.serial}</td><td><Badge value={charger.status} /></td><td>{charger.installationDate}</td><td><a className="sems-row-action" href={`#/mvp/charger?charger=${charger.id}`}>Diagnosticar ›</a></td></tr>)}</DataTable>{!chargers.length ? <div className="sems-analysis-empty"><strong>Sem dados</strong><span>Não há dispositivo correspondente ao filtro.</span></div> : null}</section>;
+  return <section className="surface panel sems-analysis-page"><div className="sems-analysis-empty"><strong>Diagnóstico IV indisponível</strong><span>O protótipo não possui provider de inversor nem medições IV. A operação de recarga continua disponível em ChargeGrid.</span></div></section>;
 }
 
 export function SemsComparisonPage({ establishmentId }: { establishmentId?: string }) {
@@ -22,10 +19,5 @@ export function SemsComparisonPage({ establishmentId }: { establishmentId?: stri
 }
 
 export function SemsBatteryConsistencyPage({ establishmentId }: { establishmentId?: string }) {
-  const { state } = useAdminState();
-  const locations = state.locations.filter((item) => !establishmentId || item.establishmentId === establishmentId);
-  const [locationId, setLocationId] = useState("");
-  const [analyzed, setAnalyzed] = useState(false);
-  const chargers = useMemo(() => state.chargers.filter((item) => item.locationId === locationId), [state.chargers, locationId]);
-  return <section className="surface panel sems-battery-page"><aside><select value={locationId} onChange={(event) => { setLocationId(event.target.value); setAnalyzed(false); }}><option value="">Selecione uma usina</option>{locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}</select>{locationId ? <div><strong>{chargers.length} dispositivos disponíveis</strong><span>Selecione para analisar o conjunto vinculado.</span></div> : <div className="sems-analysis-empty"><strong>Nenhum ativo selecionado</strong></div>}</aside><div><h2>Lista de dispositivos opcionais</h2><DataTable columns={["Nome do dispositivo", "Status", "SN do dispositivo"]}>{chargers.map((charger) => <tr key={charger.id}><td>{charger.identifier}</td><td><Badge value={charger.status} /></td><td>{charger.serial}</td></tr>)}</DataTable>{analyzed ? <div className="sems-consistency-result"><strong>Consistência operacional confirmada</strong><span>{chargers.length} dispositivo(s) analisado(s), com rastreabilidade ChargeGrid preservada.</span></div> : <div className="sems-analysis-empty"><strong>Selecione uma usina para realizar a análise</strong></div>}<button className="sems-primary-action" type="button" disabled={!chargers.length} onClick={() => setAnalyzed(true)}>Análise de consistência</button></div></section>;
+  return <section className="surface panel sems-battery-page"><div className="sems-analysis-empty"><strong>Diagnóstico de bateria indisponível</strong><span>Não há BMS ou telemetria de bateria conectados ao protótipo. Nenhuma conclusão técnica é exibida sem esse provider.</span></div></section>;
 }

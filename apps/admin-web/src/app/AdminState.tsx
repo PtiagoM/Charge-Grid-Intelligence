@@ -1,10 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { AccessActionResult, Account, AdminState, ChargerPublicationStatus, FinancialActionResult, IncidentActionResult, PlantOnboardingDraft, PlantOnboardingPublishResult, QueueActionResult, Recommendation, ReportActionResult, ReportSubscription, SupportTicket } from "../domain/admin";
+import type { AccessActionResult, Account, AdminState, FinancialActionResult, IncidentActionResult, PlantOnboardingDraft, PlantOnboardingPublishResult, QueueActionResult, Recommendation, ReportActionResult, ReportSubscription, SupportTicket } from "../domain/admin";
 import { createInitialState } from "../fixtures/adminDemo";
 import { GOODWE_PLANT_CATALOG } from "../fixtures/goodwePlantCatalog";
 import { createEmptyPlantOnboardingDraft, publishPlantOnboarding as publishPlantDraft } from "../domain/plantOnboarding";
 import { browserAdminStateRepository } from "../services/adminStateRepository";
-import { updateChargerCommercialStatus as updateCommercialStatus } from "../domain/chargerOperations";
 import { callNextDriver, confirmQueueArrival as confirmArrival, markQueueNoShow as noShow, releaseQueueEntry as releaseEntry } from "../domain/queueOperations";
 import { refundPayment as refundTransaction, settlePayment as settleTransaction } from "../domain/financialOperations";
 import { acknowledgeIncident as acknowledgeOperationalIncident, correlateOperationalSignals, decideRecommendation as decideOperationalRecommendation, resolveIncident as resolveOperationalIncident } from "../domain/incidentOperations";
@@ -22,7 +21,6 @@ interface AdminContextValue {
   account: Account | null;
   login: (email: string, password: string) => Account | null;
   logout: () => void;
-  updateChargerCommercialStatus: (chargerId: string, target: ChargerPublicationStatus) => AccessActionResult;
   callNextQueueDriver: (establishmentId: string) => QueueActionResult;
   confirmQueueArrival: (entryId: string) => QueueActionResult;
   markQueueNoShow: (entryId: string, now?: string) => QueueActionResult;
@@ -76,12 +74,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   }, [state]);
 
   const logout = useCallback(() => setState((current) => ({ ...current, currentAccountId: null })), []);
-
-  const updateChargerCommercialStatus = useCallback((chargerId: string, target: ChargerPublicationStatus) => {
-    const transition = updateCommercialStatus(state, account, chargerId, target);
-    if (transition.ok) setState(transition.state);
-    return { ok: transition.ok, issues: transition.issues };
-  }, [account, state]);
 
   const callNextQueueDriver = useCallback((establishmentId: string) => {
     const transition = callNextDriver(state, account, establishmentId);
@@ -219,7 +211,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     return publication.result;
   }, [state]);
 
-  const value = useMemo(() => ({ state, account, login, logout, updateChargerCommercialStatus, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, publishTariff, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, requestReport: runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding }), [state, account, login, logout, updateChargerCommercialStatus, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, publishTariff, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding]);
+  const value = useMemo(() => ({ state, account, login, logout, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, publishTariff, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, requestReport: runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding }), [state, account, login, logout, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, publishTariff, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding]);
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
 }
 
