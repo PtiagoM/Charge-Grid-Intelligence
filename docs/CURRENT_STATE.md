@@ -25,6 +25,7 @@ O registro de implementação, evidências e limitações da Sprint fica em [`SP
 - O início automático cobre agora as duas ordens reais: pagamento autorizado antes de `CONNECT`, ou veículo conectado antes da autorização. Ambos passam pelo `MockGoodWeProvider` e convergem na mesma transição `WAITING_START → CHARGING`; releitura posterior do PaymentIntent não regride uma sessão concluída para aguardando início.
 - Fim de energia e desconexão agora persistem os marcos comerciais da política aceita (`energyEndedAt`, tolerância de 15 minutos quando a quote a habilita, `disconnectedAt`, custos de energia/ociosidade/total). Captura e reembolso passam a usar o valor derivado pela API, não o valor enviado pela tela; a baixa persistida distingue consumo e saldo devolvido. Continua conhecido o limite externo de R$ 0,01–0,49.
 - Para sessões backend-managed, a PWA passou a exibir energia, ociosidade e o fim da tolerância do mesmo registro remoto; não avança esses valores pelo relógio da interface.
+- A atribuição temporária da fila agora vence apenas pelo relógio do backend: libera o carregador físico disponível e processa o próximo motorista. Quando uma atribuição vira sessão, o `sessionId` é persistido e o início de carga completa a entrada.
 - Lifecycle físico, ociosidade, fila final, energia/demanda e projeções completas Admin/PWA permanecem nos próximos checkpoints M1-U4+.
 
 ### Vertical real vigente — 22/09/2026

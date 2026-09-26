@@ -166,6 +166,17 @@ describe("CommercialRepository", () => {
     expect(await repository.queueForDriver("driver-queue")).toMatchObject({ status: QueueStatus.ASSIGNED });
   }, 20_000);
 
+  it("expires a charger assignment only from the backend clock", async () => {
+    const repository = new CommercialRepository("memory://");
+    repositories.push(repository);
+    for (let index = 1; index <= 6; index += 1) await repository.hardwareEvent(`AURORA-${String(index).padStart(2, "0")}`, "CONNECT");
+    const entry = await repository.joinQueue({ driverId: "driver-expire", driverName: "Motorista Expira", driverVehicle: "EV Teste", establishmentId: "est_aurora_001" });
+    await repository.hardwareEvent("AURORA-01", "DISCONNECT");
+    await repository.expireQueueAssignments(new Date(Date.now() + 11 * 60_000));
+    expect((await repository.queueSnapshot()).find((item) => item.id === entry.id)).toMatchObject({ status: QueueStatus.EXPIRED });
+    expect((await repository.snapshot("est_aurora_001")).establishments[0]?.chargers[0]).toMatchObject({ commercialStatus: "AVAILABLE_TO_START", assignmentId: null });
+  }, 20_000);
+
   it("resets Aurora test data without replacing its catalog", async () => {
     const repository = new CommercialRepository("memory://");
     repositories.push(repository);

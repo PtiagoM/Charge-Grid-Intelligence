@@ -515,7 +515,7 @@ export class CommercialRepository {
         randomUUID(), input.id, input.method, PaymentStatus.PENDING, input.authorizedCents
       ]);
       await tx.query("update commercial_chargers set commercial_status = 'OCCUPIED', current_session_id = $2, assignment_id = null, updated_at = now() where id = $1", [selected.id, input.id]);
-      if (assignment.rows[0]) await tx.query("update commercial_queue_entries set status = 'ASSIGNED', updated_at = now() where id = $1", [assignment.rows[0].id]);
+      if (assignment.rows[0]) await tx.query("update commercial_queue_entries set status = 'ASSIGNED', session_id = $2, updated_at = now() where id = $1", [assignment.rows[0].id, input.id]);
     });
     return this.session(input.id);
   }
@@ -676,6 +676,22 @@ export class CommercialRepository {
     return queueRecords(result.rows);
   }
 
+  async expireQueueAssignments(now = new Date()) {
+    await this.ready;
+    const expired = await this.db.transaction(async (tx) => {
+      const entries = await tx.query<{ establishment_id: string; charger_id: string | null }>(`update commercial_queue_entries
+        set status = 'EXPIRED', completed_at = $1, updated_at = now()
+        where status = 'CALLED' and assignment_expires_at <= $1
+        returning establishment_id, charger_id`, [now.toISOString()]);
+      for (const entry of entries.rows) {
+        if (!entry.charger_id) continue;
+        await tx.query("update commercial_chargers set commercial_status = 'AVAILABLE_TO_START', assignment_id = null, updated_at = now() where id = $1 and physical_status = 'AVAILABLE' and current_session_id is null", [entry.charger_id]);
+      }
+      return [...new Set(entries.rows.map((entry) => entry.establishment_id))];
+    });
+    for (const establishmentId of expired) await this.processQueue(establishmentId);
+  }
+
   async advanceEnergy(now = new Date()) {
     await this.ready;
     const charging = await this.db.query<SessionRow & { charger_id: string }>(`${sessionSelect}
@@ -697,6 +713,7 @@ export class CommercialRepository {
         if (finished) await tx.query("update commercial_chargers set physical_status = 'CONNECTED', current_power_kw = 0, updated_at = now() where id = $1", [row.charger_id]);
       });
     }
+    await this.expireQueueAssignments(now);
   }
 
   async hardwareEvent(chargerCode: string, action: "CONNECT" | "DISCONNECT" | "START" | "STOP" | "OFFLINE" | "FAULT" | "RECOVER", powerKw?: number): Promise<CommercialSnapshot> {
@@ -721,6 +738,7 @@ export class CommercialRepository {
         if (!Number.isFinite(selectedPower) || selectedPower <= 0) throw new CommercialConflictError("Informe uma potência simulada válida.");
         await tx.query("update commercial_chargers set physical_status = 'CHARGING', current_power_kw = $2, updated_at = now() where id = $1", [charger.id, selectedPower]);
         await tx.query("update commercial_sessions set status = 'CHARGING', started_at = coalesce(started_at, now()), last_energy_at = now(), updated_at = now() where id = $1", [session.id]);
+        await tx.query("update commercial_queue_entries set status = 'COMPLETED', completed_at = now(), updated_at = now() where session_id = $1 and status = 'ASSIGNED'", [session.id]);
       } else if (action === "STOP") {
         if (!session || session.status !== CommercialSessionStatus.CHARGING) throw new CommercialConflictError("Não existe recarga ativa neste equipamento.");
         const endedAt = new Date();

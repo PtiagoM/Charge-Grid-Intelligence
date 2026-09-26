@@ -52,6 +52,11 @@ Objetivo: API/SQL executam contratos estáveis, sem frontend decidir negócio. G
 - Validação focal: o repository test cria quote guest, encerra energia, desconecta e confirma timestamps/política/custo congelado (10 testes verdes).
 - O adaptador da sessão backend-managed da PWA consome `energyCostCents`, `idleCostCents` e `idleGraceEndsAt` do registro remoto; o relógio local continua restrito às sessões legadas não gerenciadas pela API.
 
+### Registro parcial U6 — expiração de atribuição
+
+- O relógio comercial expira `CALLED` depois da janela persistida, libera somente carregador físico disponível sem sessão corrente e chama a próxima entrada elegível. A atribuição aceita grava `sessionId`; o início de carga a conclui.
+- Validação focal: o repository test ocupa Aurora, chama um motorista, avança exclusivamente o relógio backend e confirma `EXPIRED` + vaga disponível (11 testes verdes).
+
 ## S4-M1-U3 — Quote, tentativa e Stripe normal
 
 - **Depende:** U2; **tamanho:** MÉDIO.
