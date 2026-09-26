@@ -50,3 +50,10 @@ Ponto de entrada: `apps/driver-pwa/src/app/{AppRouter,DriverAppContext}.tsx`, `s
 ## Erros que invalidam G2
 
 Mock comercial no modo normal; botão “liberar recarga” como caminho necessário; code usado como UUID; “pago” pela resposta visual Stripe; ticker React alterando kWh/idle; visitante na fila; catálogo fixture acionável; histórico de outro usuário. Não resolver redesenhando telas.
+
+## Checkpoint de implementação — 26/09/2026
+
+- U1: descoberta do Aurora usa `GET /commercial/catalog`; QR/código manual resolve o identificador no backend. Os demais locais permanecem apenas como referência sem disponibilidade, fila ou checkout simulados. O polling atualiza marcadores sem recriar o Google Maps.
+- U2/U3: checkout de motorista exige sessão Supabase; a PWA recupera sessão comercial ativa, histórico e comprovante pela API. A liquidação aguarda a desconexão física confirmada pelo backend e não cria comprovante local.
+- U4: fila envia somente o estabelecimento (identidade vem do token), o service worker não armazena respostas comerciais e logout descarta o snapshot pessoal.
+- Validação executada: `npx tsc -b apps/driver-pwa` passou após cada checkpoint. O build Vite e a inspeção visual permanecem pendentes: o sandbox bloqueia o esbuild e a ferramenta de navegador recusou conexão por sessão expirada, sem alternativa segura nesta execução.
