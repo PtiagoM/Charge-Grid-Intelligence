@@ -306,6 +306,30 @@ describe("CommercialRepository", () => {
     expect(await repository.session(secondId)).toMatchObject({ status: CommercialSessionStatus.CHARGING });
   }, 30_000);
 
+  it("persists deterministic energy insights without executing a human review", async () => {
+    const repository = new CommercialRepository("memory://");
+    repositories.push(repository);
+    const unavailable = await repository.insights("est_aurora_001");
+    const telemetry = unavailable.alerts.find((item) => item.type === "TELEMETRY_STALE");
+    expect(telemetry).toMatchObject({ conditionActive: true, reviewState: "OPEN", reasonCode: "TELEMETRY_UNAVAILABLE" });
+
+    await repository.configurePlantTelemetry({ plantId: "plant_aurora_001", online: true, pvKw: 20, buildingLoadKw: 10 });
+    await repository.advancePlantTelemetry();
+    const available = await repository.insights("est_aurora_001");
+    const solar = available.recommendations.find((item) => item.type === "SOLAR_OPPORTUNITY");
+    expect(solar).toMatchObject({ conditionActive: true, reviewState: "OPEN", reasonCode: "SOLAR_SURPLUS" });
+
+    const before = await repository.snapshot("est_aurora_001");
+    const decided = await repository.decideInsight({ id: solar!.id, decision: "ACCEPT", reason: "Oferta revisada pela operação." });
+    const after = await repository.snapshot("est_aurora_001");
+    expect(decided).toMatchObject({ id: solar!.id, reviewState: "ACCEPTED" });
+    expect(after.sessions).toEqual(before.sessions);
+    expect((await repository.insights("est_aurora_001")).recommendations).toContainEqual(expect.objectContaining({ id: solar!.id, reviewState: "ACCEPTED" }));
+
+    await repository.hardwareEvent("AURORA-01", "FAULT");
+    expect((await repository.insights("est_aurora_001")).alerts).toContainEqual(expect.objectContaining({ type: "HARDWARE_FAULT", conditionActive: true, reasonCode: "FAULT" }));
+  }, 30_000);
+
   it("resolves Aurora by UUID, code and QR without exposing commercial session data", async () => {
     const repository = new CommercialRepository("memory://");
     repositories.push(repository);

@@ -95,6 +95,24 @@ export function createCommercialRouter(options: { repository?: CommercialReposit
       return response.status(errorStatus(error)).json({ code: "COMMERCIAL_FINANCIAL_READ_FAILED", message: error instanceof Error ? error.message : "Não foi possível calcular o resumo financeiro." });
     }
   });
+  router.get("/insights", async (request, response) => {
+    try {
+      return response.json(await repository.insights(typeof request.query.establishmentId === "string" ? request.query.establishmentId : undefined));
+    } catch (error) {
+      return response.status(errorStatus(error)).json({ code: "COMMERCIAL_INSIGHTS_READ_FAILED", message: error instanceof Error ? error.message : "Não foi possível consultar os insights comerciais." });
+    }
+  });
+  router.post("/insights/:insightId/decision", async (request, response) => {
+    const { decision, reason } = request.body ?? {};
+    if (!["ACKNOWLEDGE", "RESOLVE", "ACCEPT", "DEFER", "REJECT"].includes(decision) || typeof reason !== "string") {
+      return response.status(400).json({ code: "INVALID_INSIGHT_DECISION", message: "Informe uma decisão e um motivo válidos." });
+    }
+    try {
+      return response.json({ insight: await repository.decideInsight({ id: request.params.insightId, decision, reason }) });
+    } catch (error) {
+      return response.status(errorStatus(error)).json({ code: "COMMERCIAL_INSIGHT_DECISION_FAILED", message: error instanceof Error ? error.message : "Não foi possível registrar a decisão." });
+    }
+  });
   router.get("/plants/:plantId/energy", async (request, response) => {
     try {
       return response.json({ snapshot: await repository.plantEnergy(request.params.plantId), series: await repository.plantEnergySeries(request.params.plantId) });

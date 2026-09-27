@@ -52,6 +52,29 @@ export interface PlantEnergySnapshot {
   solarToEvWh: number;
 }
 
+export interface CommercialInsight {
+  id: string;
+  kind: "ALERT" | "RECOMMENDATION";
+  type: string;
+  entityId: string;
+  sourceEventId: string | null;
+  sampleId: string | null;
+  policyVersion: string | null;
+  conditionActive: boolean;
+  severity: "INFO" | "WARNING" | "CRITICAL";
+  reasonCode: string;
+  message: string;
+  evidence: string[];
+  suggestedAction: string | null;
+  reviewState: "OPEN" | "ACKNOWLEDGED" | "RESOLVED" | "ACCEPTED" | "DEFERRED" | "REJECTED";
+  updatedAt: string;
+}
+
+export interface CommercialInsights {
+  alerts: CommercialInsight[];
+  recommendations: CommercialInsight[];
+}
+
 export interface ChargerSummary {
   id: string;
   /** Persistent commercial identifier when the UI uses the operational code as `id`. */
