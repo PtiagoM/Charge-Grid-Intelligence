@@ -63,3 +63,8 @@ Objetivo: provar renováveis+recarga+eficiência, sem EMS industrial. GRANDE, tr
 ## Não implementar
 
 SetPower real, proteção elétrica, bateria simulada desnecessária, modelo ML, previsão meteorológica, carbono certificado, integração GoodWe real sem acesso, console comercial de cenários. Laboratório é único local técnico de ajuste físico; Operação não recebe “Solar/Pico/Avançar tempo”. Tests podem injetar relógio; usuário não ganha relógio comercial paralelo.
+
+## Gate M4
+
+- Validados: `npx tsc -b packages/shared apps/api apps/admin-web apps/driver-pwa`, 79 testes unitários do Admin, builds de Admin e PWA e os testes focais de telemetria, oferta solar, insights e controle de demanda.
+- A suíte completa isolada de `repository.test.ts` não devolveu saída conclusiva neste host; os quatro cenários M4 foram executados separadamente com sucesso. Não houve validação visual nova neste checkpoint para não alterar o cenário persistido do usuário.
