@@ -70,7 +70,7 @@ describe("CommercialRepository", () => {
     await repository.configurePlantTelemetry({ plantId: "plant_aurora_001", online: true, pvKw: 20, buildingLoadKw: 10 });
     await repository.advancePlantTelemetry();
 
-    expect((await repository.catalog()).establishments[0]).toMatchObject({ favorableEnergyCondition: true });
+    expect((await repository.catalog()).establishments[0]).toMatchObject({ favorableEnergyCondition: true, offerTariffCents: 170 });
 
     const quote = await repository.createQuote({
       chargerId: "00000000-0000-4000-8000-000000000001",

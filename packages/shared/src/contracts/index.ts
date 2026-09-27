@@ -305,6 +305,7 @@ export interface CommercialPublicEstablishmentRecord {
   timezone: string;
   openingHours: CommercialOpeningHoursInterval[];
   published: boolean;
+  offerTariffCents: number | null;
   favorableEnergyCondition: boolean;
   availableChargerCount: number;
   queueSummary: QueueSummary;

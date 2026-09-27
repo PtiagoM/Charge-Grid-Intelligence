@@ -228,7 +228,7 @@ export function mergeCommercialCatalog(catalog: CommercialCatalog): CommercialPl
       position: { lat: establishment.latitude, lng: establishment.longitude },
       commercialAvailability,
       availableChargerCount,
-      tariffFrom: { amount: establishment.tariffCents / 100, currency: "BRL" },
+      tariffFrom: { amount: (establishment.offerTariffCents ?? establishment.tariffCents) / 100, currency: "BRL" },
       favorableEnergyCondition: establishment.favorableEnergyCondition,
       queueSummary: establishment.queueSummary,
       chargerCount: chargers.length,

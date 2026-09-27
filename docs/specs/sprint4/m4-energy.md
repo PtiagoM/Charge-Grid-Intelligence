@@ -53,7 +53,7 @@ Objetivo: provar renováveis+recarga+eficiência, sem EMS industrial. GRANDE, tr
 
 - A API consulta a última amostra persistida da planta do carregador ao criar uma nova cotação. Com telemetria `FRESH`, estado normal e excedente solar de ao menos 7 kW, oferece 170 c/kWh; fora dessa condição, preserva a tarifa vigente.
 - `reasonCode` e `energySampleId` ficam gravados na cotação, e a sessão reutiliza a mesma cotação congelada. Uma mudança de telemetria posterior, portanto, não altera o preço aceito.
-- O catálogo público entrega a mesma condição à PWA; o selo já existente de energia favorável e a ordenação de locais deixam de depender de fixture para o Hub Solar Aurora.
+- O catálogo público entrega a mesma condição e o preço da oferta à PWA; o selo, a ordenação e a tarifa exibida no checkout deixam de depender de fixture para o Hub Solar Aurora.
 - `commercial_decisions` persiste alertas e recomendações determinísticos com chave de correlação estável. A API expõe `GET /commercial/insights` e registra decisões em `POST /commercial/insights/:id/decision`; aceitar, adiar ou rejeitar não envia comandos ao provider.
 - Os alertas atuais cobrem telemetria expirada, falha/offline físico e liquidação pendente. As recomendações cobrem excedente solar e revisão de demanda; relatório de resultados e a projeção completa nas superfícies do Admin permanecem nesta unidade.
 - A Central de alarmes e Recomendações do Admin agora projetam os mesmos insights do backend para o Aurora. As decisões feitas nesses registros voltam para a API e sobrevivem ao próximo polling; dados legados de outros cenários permanecem separados.

@@ -540,7 +540,7 @@ function publicChargerRecord(charger: CommercialChargerRecord): CommercialPublic
 }
 
 function publicEstablishmentRecord(establishment: CommercialEstablishmentRecord): CommercialPublicEstablishmentRecord {
-  return { ...establishment, favorableEnergyCondition: false, chargers: establishment.chargers.map(publicChargerRecord) };
+  return { ...establishment, offerTariffCents: null, favorableEnergyCondition: false, chargers: establishment.chargers.map(publicChargerRecord) };
 }
 
 const sessionSelect = `
@@ -1209,10 +1209,14 @@ export class CommercialRepository {
     const energyByPlant = new Map((await Promise.all(establishments.rows.map(async (row) => row.plant_id ? [row.plant_id, await this.plantEnergy(row.plant_id)] as const : null))).filter((item): item is readonly [string, PlantEnergySnapshot | null] => item !== null));
     return {
       generatedAt: new Date().toISOString(),
-      establishments: establishments.rows.map((row) => ({
-        ...publicEstablishmentRecord(establishmentRecord(row, chargerRecords, queue)),
-        favorableEnergyCondition: hasSolarSurplus(row.plant_id ? energyByPlant.get(row.plant_id) ?? null : null)
-      }))
+      establishments: establishments.rows.map((row) => {
+        const favorableEnergyCondition = hasSolarSurplus(row.plant_id ? energyByPlant.get(row.plant_id) ?? null : null);
+        return {
+          ...publicEstablishmentRecord(establishmentRecord(row, chargerRecords, queue)),
+          favorableEnergyCondition,
+          offerTariffCents: favorableEnergyCondition ? Math.min(row.tariff_cents, 170) : null
+        };
+      })
     };
   }
 
