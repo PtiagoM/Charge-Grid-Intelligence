@@ -67,6 +67,9 @@ export interface CommercialInsight {
   evidence: string[];
   suggestedAction: string | null;
   reviewState: "OPEN" | "ACKNOWLEDGED" | "RESOLVED" | "ACCEPTED" | "DEFERRED" | "REJECTED";
+  decidedAt?: string;
+  decidedBy?: string;
+  decisionReason?: string;
   updatedAt: string;
 }
 

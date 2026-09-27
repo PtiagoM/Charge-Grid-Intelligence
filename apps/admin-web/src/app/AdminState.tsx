@@ -10,7 +10,7 @@ import { acknowledgeIncident as acknowledgeOperationalIncident, correlateOperati
 import { grantAccess as grantAccountAccess, revokeAccess as revokeAccountAccess, type GrantAccessInput } from "../domain/accessOperations";
 import { completeReport, failReport, markReportProcessing, requestReport as requestOperationalReport, saveReportSubscription as saveOperationalReportSubscription, type RequestReportInput } from "../domain/reportOperations";
 import { demoAdminReportRepository } from "../services/adminReportRepository";
-import { fetchCommercialSnapshot, mergeCommercialSnapshot, publishCommercialTariff } from "../services/commercialSnapshotRepository";
+import { decideCommercialInsight, fetchCommercialInsights, fetchCommercialSnapshot, mergeCommercialSnapshot, publishCommercialTariff } from "../services/commercialSnapshotRepository";
 
 function readState(): AdminState {
   return browserAdminStateRepository.load(createInitialState());
@@ -28,9 +28,9 @@ interface AdminContextValue {
   publishTariff: (input: { establishmentId: string; energyCentsPerKwh: number; idleCentsPerMinute: number; reason: string }) => Promise<FinancialActionResult>;
   refundPayment: (transactionId: string, amountCents: number, reason: string, idempotencyKey: string) => FinancialActionResult;
   settlePayment: (transactionId: string) => FinancialActionResult;
-  acknowledgeIncident: (incidentId: string, assignee: string) => IncidentActionResult;
-  resolveIncident: (incidentId: string, resolution: string) => IncidentActionResult;
-  decideRecommendation: (recommendationId: string, decision: Extract<Recommendation["status"], "ACCEPTED" | "DEFERRED" | "REJECTED">, reason: string) => IncidentActionResult;
+  acknowledgeIncident: (incidentId: string, assignee: string) => Promise<IncidentActionResult>;
+  resolveIncident: (incidentId: string, resolution: string) => Promise<IncidentActionResult>;
+  decideRecommendation: (recommendationId: string, decision: Extract<Recommendation["status"], "ACCEPTED" | "DEFERRED" | "REJECTED">, reason: string) => Promise<IncidentActionResult>;
   grantAccess: (input: GrantAccessInput) => AccessActionResult;
   revokeAccess: (grantId: string, reason: string) => AccessActionResult;
   requestReport: (input: RequestReportInput) => Promise<ReportActionResult>;
@@ -59,8 +59,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     const refresh = async () => {
       controller?.abort();
       controller = new AbortController();
-      const snapshot = await fetchCommercialSnapshot(controller.signal);
-      if (active) setState((current) => mergeCommercialSnapshot(current, snapshot));
+      const [snapshot, insights] = await Promise.all([fetchCommercialSnapshot(controller.signal), fetchCommercialInsights(controller.signal)]);
+      if (active) setState((current) => mergeCommercialSnapshot(current, snapshot, insights));
     };
     void refresh().catch(() => undefined);
     const timer = window.setInterval(() => void refresh().catch(() => undefined), 2000);
@@ -102,8 +102,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const publishTariff = useCallback(async (input: { establishmentId: string; energyCentsPerKwh: number; idleCentsPerMinute: number; reason: string }) => {
     try {
       await publishCommercialTariff(input);
-      const snapshot = await fetchCommercialSnapshot();
-      setState((current) => mergeCommercialSnapshot(current, snapshot));
+      const [snapshot, insights] = await Promise.all([fetchCommercialSnapshot(), fetchCommercialInsights()]);
+      setState((current) => mergeCommercialSnapshot(current, snapshot, insights));
       return { ok: true, issues: [] };
     } catch (error) {
       return { ok: false, issues: [error instanceof Error ? error.message : "Não foi possível publicar a tarifa."] };
@@ -122,19 +122,49 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     return transition;
   }, [account, state]);
 
-  const acknowledgeIncident = useCallback((incidentId: string, assignee: string) => {
+  const acknowledgeIncident = useCallback(async (incidentId: string, assignee: string) => {
+    if (incidentId.startsWith("insight_")) {
+      try {
+        await decideCommercialInsight(incidentId, "ACKNOWLEDGE", `Reconhecido por ${assignee || "operação"}.`);
+        const [snapshot, insights] = await Promise.all([fetchCommercialSnapshot(), fetchCommercialInsights()]);
+        setState((current) => mergeCommercialSnapshot(current, snapshot, insights));
+        return { ok: true, issues: [] };
+      } catch (error) {
+        return { ok: false, issues: [error instanceof Error ? error.message : "Não foi possível reconhecer a ocorrência."] };
+      }
+    }
     const transition = acknowledgeOperationalIncident(state, account, incidentId, assignee);
     if (transition.ok) setState(transition.state);
     return transition;
   }, [account, state]);
 
-  const resolveIncident = useCallback((incidentId: string, resolution: string) => {
+  const resolveIncident = useCallback(async (incidentId: string, resolution: string) => {
+    if (incidentId.startsWith("insight_")) {
+      try {
+        await decideCommercialInsight(incidentId, "RESOLVE", resolution);
+        const [snapshot, insights] = await Promise.all([fetchCommercialSnapshot(), fetchCommercialInsights()]);
+        setState((current) => mergeCommercialSnapshot(current, snapshot, insights));
+        return { ok: true, issues: [] };
+      } catch (error) {
+        return { ok: false, issues: [error instanceof Error ? error.message : "Não foi possível resolver a ocorrência."] };
+      }
+    }
     const transition = resolveOperationalIncident(state, account, incidentId, resolution);
     if (transition.ok) setState(transition.state);
     return transition;
   }, [account, state]);
 
-  const decideRecommendation = useCallback((recommendationId: string, decision: Extract<Recommendation["status"], "ACCEPTED" | "DEFERRED" | "REJECTED">, reason: string) => {
+  const decideRecommendation = useCallback(async (recommendationId: string, decision: Extract<Recommendation["status"], "ACCEPTED" | "DEFERRED" | "REJECTED">, reason: string) => {
+    if (recommendationId.startsWith("insight_")) {
+      try {
+        await decideCommercialInsight(recommendationId, decision === "ACCEPTED" ? "ACCEPT" : decision === "DEFERRED" ? "DEFER" : "REJECT", reason || "Revisado pela operação.");
+        const [snapshot, insights] = await Promise.all([fetchCommercialSnapshot(), fetchCommercialInsights()]);
+        setState((current) => mergeCommercialSnapshot(current, snapshot, insights));
+        return { ok: true, issues: [] };
+      } catch (error) {
+        return { ok: false, issues: [error instanceof Error ? error.message : "Não foi possível registrar a decisão."] };
+      }
+    }
     const transition = decideOperationalRecommendation(state, account, recommendationId, decision, reason);
     if (transition.ok) setState(transition.state);
     return transition;

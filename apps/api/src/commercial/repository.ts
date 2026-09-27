@@ -188,6 +188,9 @@ interface InsightRow {
   evidence: unknown;
   suggested_action: string | null;
   review_state: CommercialInsight["reviewState"];
+  decided_at: Date | string | null;
+  decided_by: string | null;
+  decision_reason: string | null;
   updated_at: Date | string;
 }
 
@@ -377,6 +380,9 @@ function insightRecord(row: InsightRow): CommercialInsight {
     evidence: Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [],
     suggestedAction: row.suggested_action,
     reviewState: row.review_state,
+    decidedAt: iso(row.decided_at),
+    decidedBy: row.decided_by ?? undefined,
+    decisionReason: row.decision_reason ?? undefined,
     updatedAt: iso(row.updated_at)!
   };
 }

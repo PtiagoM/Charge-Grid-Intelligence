@@ -27,6 +27,13 @@ describe('mergeCommercialSnapshot', () => {
     expect(state.tariffPolicies.find((tariff) => tariff.id === 'tariff-aurora-v1')).toEqual(expect.objectContaining({ status: 'ACTIVE', energyPriceCentsPerKwh: 190, idleGraceMinutes: 15 }));
     expect(state.accessGrants.find((grant) => grant.role === 'GOODWE_CENTRAL')?.establishmentIds).toContain('est_aurora_001');
 
+    const insights = mergeCommercialSnapshot(createInitialState(), snapshot, {
+      alerts: [{ id: 'insight_telemetry', kind: 'ALERT', type: 'TELEMETRY_STALE', entityId: 'plant_aurora_001', sourceEventId: null, sampleId: null, policyVersion: 'demand-v1', conditionActive: true, severity: 'WARNING', reasonCode: 'TELEMETRY_UNAVAILABLE', message: 'Telemetria expirada.', evidence: ['Sem amostra recente.'], suggestedAction: 'OPEN_ENERGY', reviewState: 'OPEN', updatedAt: '2026-09-22T12:00:00.000Z' }],
+      recommendations: [{ id: 'insight_solar', kind: 'RECOMMENDATION', type: 'SOLAR_OPPORTUNITY', entityId: 'plant_aurora_001', sourceEventId: null, sampleId: 'sample-001', policyVersion: 's4-quote-v1', conditionActive: true, severity: 'INFO', reasonCode: 'SOLAR_SURPLUS', message: 'Há excedente solar.', evidence: ['Excedente: 10.0 kW.'], suggestedAction: 'OPEN_ENERGY', reviewState: 'ACCEPTED', updatedAt: '2026-09-22T12:00:00.000Z' }]
+    });
+    expect(insights.incidents).toContainEqual(expect.objectContaining({ id: 'insight_telemetry', establishmentId: 'est_aurora_001', category: 'COMMUNICATION' }));
+    expect(insights.recommendations).toContainEqual(expect.objectContaining({ id: 'insight_solar', status: 'ACCEPTED', proposedAction: 'OPEN_ENERGY' }));
+
     const completedEnergy = mergeCommercialSnapshot(createInitialState(), {
       ...snapshot,
       establishments: [{ ...snapshot.establishments[0], chargers: [{ ...snapshot.establishments[0].chargers[0], physicalStatus: 'CONNECTED' }] }],
