@@ -152,6 +152,7 @@ interface PlantRow {
   id: string;
   establishment_id: string;
   provider_config: unknown;
+  energy_policy: unknown;
 }
 
 interface EnergySampleRow {
@@ -182,7 +183,8 @@ const migrations = [
   { name: "202609220003_commercial_queue", url: new URL("../../../../supabase/migrations/202609220003_commercial_queue.sql", import.meta.url) },
   { name: "202609260004_s4_foundation", url: new URL("../../../../supabase/migrations/202609260004_s4_foundation.sql", import.meta.url) },
   { name: "202609260005_checkout_quotes", url: new URL("../../../../supabase/migrations/202609260005_checkout_quotes.sql", import.meta.url) },
-  { name: "202609260006_energy_telemetry", url: new URL("../../../../supabase/migrations/202609260006_energy_telemetry.sql", import.meta.url) }
+  { name: "202609260006_energy_telemetry", url: new URL("../../../../supabase/migrations/202609260006_energy_telemetry.sql", import.meta.url) },
+  { name: "202609270007_demand_policy", url: new URL("../../../../supabase/migrations/202609270007_demand_policy.sql", import.meta.url) }
 ] as const;
 const legacyMigrationNames = new Set(migrations.slice(0, 3).map((migration) => migration.name));
 const defaultDataDir = process.env.CHARGEGRID_DATABASE_PATH ?? (process.env.NODE_ENV === "test" ? "memory://" : fileURLToPath(new URL("../../../../.local/commercial-db", import.meta.url)));
@@ -279,6 +281,17 @@ function providerConfig(value: unknown) {
   const config = typeof parsed === "object" && parsed !== null ? parsed as Record<string, unknown> : {};
   const numeric = (key: "pvKw" | "buildingLoadKw") => typeof config[key] === "number" && Number.isFinite(config[key]) && config[key] >= 0 ? config[key] : 0;
   return { online: config.online === true, pvKw: numeric("pvKw"), buildingLoadKw: numeric("buildingLoadKw") };
+}
+
+function energyPolicy(value: unknown) {
+  const parsed = typeof value === "string" ? JSON.parse(value) : value;
+  const policy = typeof parsed === "object" && parsed !== null ? parsed as Record<string, unknown> : {};
+  return {
+    demandControlEnabled: policy.demandControlEnabled === true,
+    limitKw: typeof policy.limitKw === "number" && policy.limitKw > 0 ? policy.limitKw : 20,
+    freshSeconds: typeof policy.freshSeconds === "number" && policy.freshSeconds > 0 ? policy.freshSeconds : 15,
+    recoverySeconds: typeof policy.recoverySeconds === "number" && policy.recoverySeconds > 0 ? policy.recoverySeconds : 30
+  };
 }
 
 function energySampleRecord(row: EnergySampleRow): PlantEnergySnapshot {
@@ -480,6 +493,8 @@ export class CommercialRepository {
   private readonly db: SqlDatabase;
   private readonly ready: Promise<void>;
   private readonly plantTickedAt = new Map<string, number>();
+  private readonly demandRecoveredAt = new Map<string, number>();
+  private readonly admittedPowerByPlant = new Map<string, number>();
 
   constructor(dataDir?: string, private readonly goodWeProvider: GoodWeProvider = new MockGoodWeProvider()) {
     const remoteUrl = process.env.CHARGEGRID_DATABASE_URL?.trim();
@@ -686,12 +701,28 @@ export class CommercialRepository {
   }
 
   private async startWhenReady(chargerCode: string, powerKw?: number) {
-    const ready = await this.db.query<{ id: string }>(`select s.id from commercial_sessions s
+    const ready = await this.db.query<{ id: string; plant_id: string | null; nominal_power_kw: number }>(`select s.id, c.plant_id, c.nominal_power_kw from commercial_sessions s
       join commercial_chargers c on c.id = s.charger_id
-      where c.code = $1 and c.physical_status = 'CONNECTED' and s.status = 'WAITING_START' and c.current_session_id = s.id`, [chargerCode]);
+      where c.code = $1 and c.physical_status = 'CONNECTED' and s.status in ('WAITING_START', 'SUSPENDED_BY_DEMAND') and c.current_session_id = s.id`, [chargerCode]);
     if (!ready.rows[0]) return false;
+    const candidate = ready.rows[0];
+    if (candidate.plant_id) {
+      const plant = await this.db.query<PlantRow>("select id, establishment_id, provider_config, energy_policy from commercial_plants where id = $1", [candidate.plant_id]);
+      const policy = plant.rows[0] && energyPolicy(plant.rows[0].energy_policy);
+      const snapshot = await this.plantEnergy(candidate.plant_id);
+      const ageMs = snapshot ? Math.max(0, Date.now() - Date.parse(snapshot.observedAt)) : Number.POSITIVE_INFINITY;
+      const projectedImportKw = snapshot ? snapshot.gridImportKw + (this.admittedPowerByPlant.get(candidate.plant_id) ?? 0) + (powerKw ?? Number(candidate.nominal_power_kw)) : null;
+      if (policy?.demandControlEnabled && (!snapshot || snapshot.quality !== "FRESH" || ageMs > policy.freshSeconds * 1000 || projectedImportKw === null || projectedImportKw >= policy.limitKw * 0.9)) {
+        await this.db.query("update commercial_sessions set transition_reason = $2, updated_at = now() where id = $1", [candidate.id, !snapshot || snapshot.quality !== "FRESH" || ageMs > policy.freshSeconds * 1000 ? "TELEMETRY_UNAVAILABLE" : "RESTRICTED_BY_ENERGY"]);
+        return false;
+      }
+      this.admittedPowerByPlant.set(candidate.plant_id, (this.admittedPowerByPlant.get(candidate.plant_id) ?? 0) + (powerKw ?? Number(candidate.nominal_power_kw)));
+    }
     const command = await this.goodWeProvider.startCharge(chargerCode);
-    if (command.status !== "SUCCESS") return false;
+    if (command.status !== "SUCCESS") {
+      if (candidate.plant_id) this.admittedPowerByPlant.set(candidate.plant_id, Math.max(0, (this.admittedPowerByPlant.get(candidate.plant_id) ?? 0) - (powerKw ?? Number(candidate.nominal_power_kw))));
+      return false;
+    }
     await this.hardwareEvent(chargerCode, "START", powerKw);
     return true;
   }
@@ -799,9 +830,11 @@ export class CommercialRepository {
   async configurePlantTelemetry(input: { plantId: string; online: boolean; pvKw: number; buildingLoadKw: number }) {
     await this.ready;
     if (![input.pvKw, input.buildingLoadKw].every((value) => Number.isFinite(value) && value >= 0)) throw new CommercialConflictError("Os sinais simulados da planta devem ser números não negativos.");
-    const result = await this.db.query<PlantRow>("select id, establishment_id, provider_config from commercial_plants where id = $1", [input.plantId]);
-    if (!result.rows[0]) throw new CommercialNotFoundError("Planta comercial não encontrada.");
-    await this.db.query("update commercial_plants set provider_config = $2::jsonb, updated_at = now() where id = $1", [input.plantId, JSON.stringify(input)]);
+    const result = await this.db.query<PlantRow>("select id, establishment_id, provider_config, energy_policy from commercial_plants where id = $1", [input.plantId]);
+    const plant = result.rows[0];
+    if (!plant) throw new CommercialNotFoundError("Planta comercial não encontrada.");
+    const policy = { ...energyPolicy(plant.energy_policy), demandControlEnabled: input.online || energyPolicy(plant.energy_policy).demandControlEnabled };
+    await this.db.query("update commercial_plants set provider_config = $2::jsonb, energy_policy = $3::jsonb, updated_at = now() where id = $1", [input.plantId, JSON.stringify(input), JSON.stringify(policy)]);
     this.plantTickedAt.delete(input.plantId);
     return this.plantEnergy(input.plantId);
   }
@@ -849,7 +882,48 @@ export class CommercialRepository {
         randomUUID(), plant.id, now.toISOString(), pvKw, buildingLoadKw, evLoadKw, gridImportKw, gridExportKw,
         wh(evLoadKw), wh(gridImportKw), wh(gridExportKw), wh(Math.min(evLoadKw, Math.max(0, pvKw - buildingLoadKw)))
       ]);
+      this.admittedPowerByPlant.set(plant.id, 0);
+      await this.enforceDemandPolicy(plant.id, now);
     }
+  }
+
+  private async enforceDemandPolicy(plantId: string, now: Date) {
+    const plant = await this.db.query<PlantRow>("select id, establishment_id, provider_config, energy_policy from commercial_plants where id = $1", [plantId]);
+    const policy = plant.rows[0] && energyPolicy(plant.rows[0].energy_policy);
+    const snapshot = await this.plantEnergy(plantId);
+    if (!policy?.demandControlEnabled || !snapshot || snapshot.quality !== "FRESH") return;
+    const criticalKw = policy.limitKw * 0.9;
+    const recoveryKw = policy.limitKw * 0.75;
+    if (snapshot.gridImportKw >= criticalKw) {
+      this.demandRecoveredAt.delete(plantId);
+      const candidate = await this.db.query<{ id: string; charger_code: string }>(`${sessionSelect}
+        where c.plant_id = $1 and s.status = 'CHARGING'
+        order by case when s.actor_type = 'GUEST' then 0 else 1 end, s.started_at desc, s.id desc limit 1`, [plantId]);
+      const session = candidate.rows[0];
+      if (!session) return;
+      const command = await this.goodWeProvider.stopCharge(session.charger_code);
+      if (command.status !== "SUCCESS") return;
+      await this.db.transaction(async (tx) => {
+        await tx.query("update commercial_sessions set status = 'SUSPENDED_BY_DEMAND', transition_reason = 'DEMAND_CRITICAL', last_energy_at = null, updated_at = now() where id = $1 and status = 'CHARGING'", [session.id]);
+        await tx.query("update commercial_chargers set physical_status = 'CONNECTED', current_power_kw = 0, updated_at = now() where code = $1", [session.charger_code]);
+      });
+      return;
+    }
+    if (snapshot.gridImportKw >= recoveryKw) {
+      this.demandRecoveredAt.delete(plantId);
+      return;
+    }
+    const stableSince = this.demandRecoveredAt.get(plantId) ?? now.getTime();
+    this.demandRecoveredAt.set(plantId, stableSince);
+    if (now.getTime() - stableSince < policy.recoverySeconds * 1000) return;
+    const suspended = await this.db.query<{ charger_code: string }>(`${sessionSelect}
+      where c.plant_id = $1 and c.physical_status = 'CONNECTED' and s.status = 'SUSPENDED_BY_DEMAND'
+      order by s.started_at asc, s.id asc limit 1`, [plantId]);
+    if (suspended.rows[0]) await this.startWhenReady(suspended.rows[0].charger_code);
+    const waiting = await this.db.query<{ charger_code: string }>(`${sessionSelect}
+      where c.plant_id = $1 and c.physical_status = 'CONNECTED' and s.status = 'WAITING_START'
+      order by s.created_at asc, s.id asc`, [plantId]);
+    for (const candidate of waiting.rows) await this.startWhenReady(candidate.charger_code);
   }
 
   async advanceEnergy(now = new Date()) {
@@ -893,7 +967,7 @@ export class CommercialRepository {
         await tx.query("update commercial_chargers set physical_status = 'CONNECTED', commercial_status = 'OCCUPIED', current_power_kw = 0, updated_at = now() where id = $1", [charger.id]);
         startAutomatically = session?.status === CommercialSessionStatus.WAITING_START;
       } else if (action === "START") {
-        if (!session || session.status !== CommercialSessionStatus.WAITING_START || charger.physical_status !== "CONNECTED") throw new CommercialConflictError("Conecte o veículo de uma sessão autorizada antes de iniciar a energia.");
+        if (!session || ![CommercialSessionStatus.WAITING_START, CommercialSessionStatus.SUSPENDED_BY_DEMAND].includes(session.status) || charger.physical_status !== "CONNECTED") throw new CommercialConflictError("Conecte o veículo de uma sessão autorizada antes de iniciar a energia.");
         const selectedPower = Math.min(Number(charger.nominal_power_kw), powerKw ?? Number(charger.nominal_power_kw));
         if (!Number.isFinite(selectedPower) || selectedPower <= 0) throw new CommercialConflictError("Informe uma potência simulada válida.");
         await tx.query("update commercial_chargers set physical_status = 'CHARGING', current_power_kw = $2, updated_at = now() where id = $1", [charger.id, selectedPower]);

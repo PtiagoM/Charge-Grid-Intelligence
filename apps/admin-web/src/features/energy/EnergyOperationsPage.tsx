@@ -27,7 +27,7 @@ export function EnergyOperationsPage({ establishmentId }: { establishmentId?: st
   const assessment = assessEstablishmentEnergy(state, scopeId);
   const attribution = calculateRenewableAttribution(snapshot);
   const recommendation = recommendEnergyAction(state, scopeId);
-  const sessions = state.sessions.filter((item) => item.establishmentId === scopeId && ["starting", "active"].includes(item.status));
+  const sessions = state.sessions.filter((item) => item.establishmentId === scopeId && ["starting", "active", "suspended"].includes(item.status));
   const waiting = state.queue.filter((item) => item.establishmentId === scopeId && item.status === "waiting");
   const demandWidth = Math.min(100, assessment.utilizationPercent ?? 0);
 

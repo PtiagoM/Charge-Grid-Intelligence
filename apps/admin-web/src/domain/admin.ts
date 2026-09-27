@@ -12,7 +12,7 @@ export type AdminRole =
 export type ChargerStatus = "available" | "connected" | "charging" | "limited" | "offline";
 /** Frontend-only publication lifecycle; commercial availability lives in @chargegrid/shared. */
 export type ChargerPublicationStatus = "ELIGIBLE" | "CONFIGURED" | "PUBLISHED" | "SUSPENDED";
-export type SessionStatus = "authorized" | "starting" | "active" | "energy_finished" | "settling" | "finished" | "start_failed";
+export type SessionStatus = "authorized" | "starting" | "active" | "suspended" | "energy_finished" | "settling" | "finished" | "start_failed";
 export type ChargerCommandType = "START_CHARGE" | "STOP_CHARGE";
 export type ChargerCommandStatus = "REQUESTED" | "ACCEPTED" | "CONFIRMED" | "FAILED" | "EXPIRED";
 export type ChargerConnectorState = "AVAILABLE" | "CONNECTED" | "CHARGING" | "FAULT" | "OFFLINE";

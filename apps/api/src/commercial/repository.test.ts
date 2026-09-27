@@ -254,6 +254,33 @@ describe("CommercialRepository", () => {
     }
   }, 30_000);
 
+  it("admits, suspends and resumes charging from the persisted demand policy", async () => {
+    const repository = new CommercialRepository("memory://");
+    repositories.push(repository);
+    const firstId = "71000000-0000-4000-8000-000000000001";
+    const secondId = "72000000-0000-4000-8000-000000000002";
+    const now = new Date();
+    await repository.configurePlantTelemetry({ plantId: "plant_aurora_001", online: true, pvKw: 0, buildingLoadKw: 0 });
+    await repository.advancePlantTelemetry(now);
+    for (const [id, code] of [[firstId, "AURORA-01"], [secondId, "AURORA-02"]] as const) {
+      await repository.reserveSession({ id, establishmentId: "est_aurora_001", chargerCode: code, driverName: "Motorista Demanda", method: "CARD", authorizedCents: 2500 });
+      await repository.attachPayment(id, `pi_test_demand_${id}`, "requires_capture");
+      await repository.recordPayment({ sessionId: id, paymentIntentId: `pi_test_demand_${id}`, status: PaymentStatus.AUTHORIZED, providerStatus: "requires_capture", receivedAmount: 0 });
+      await repository.hardwareEvent(code, "CONNECT");
+      if (code === "AURORA-01") await repository.advancePlantTelemetry(new Date(now.getTime() + 1_000));
+    }
+    expect(await repository.session(firstId)).toMatchObject({ status: CommercialSessionStatus.CHARGING });
+    expect(await repository.session(secondId)).toMatchObject({ status: CommercialSessionStatus.CHARGING });
+
+    await repository.configurePlantTelemetry({ plantId: "plant_aurora_001", online: true, pvKw: 0, buildingLoadKw: 8 });
+    expect(await repository.session(secondId)).toMatchObject({ status: CommercialSessionStatus.SUSPENDED_BY_DEMAND, transitionReason: "DEMAND_CRITICAL" });
+    expect(await repository.session(firstId)).toMatchObject({ status: CommercialSessionStatus.CHARGING });
+
+    await repository.configurePlantTelemetry({ plantId: "plant_aurora_001", online: true, pvKw: 0, buildingLoadKw: 0 });
+    await repository.advancePlantTelemetry(new Date(Date.now() + 31_000));
+    expect(await repository.session(secondId)).toMatchObject({ status: CommercialSessionStatus.CHARGING });
+  }, 30_000);
+
   it("resolves Aurora by UUID, code and QR without exposing commercial session data", async () => {
     const repository = new CommercialRepository("memory://");
     repositories.push(repository);
@@ -292,7 +319,7 @@ describe("CommercialRepository", () => {
       repository = undefined;
 
       const inspection = new PGlite(dataDir);
-      expect((await inspection.query<{ count: number }>("select count(*)::int as count from chargegrid_schema_migrations")).rows[0]?.count).toBe(6);
+      expect((await inspection.query<{ count: number }>("select count(*)::int as count from chargegrid_schema_migrations")).rows[0]?.count).toBe(7);
       await inspection.close();
     } finally {
       if (repository) await repository.close();

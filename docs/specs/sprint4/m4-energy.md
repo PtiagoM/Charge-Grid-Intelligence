@@ -32,6 +32,12 @@ Objetivo: provar renováveis+recarga+eficiência, sem EMS industrial. GRANDE, tr
 - **Aceite:** GIVEN PV0/base8/EV7/limite20 WHEN pede segundo7 THEN projeção22 bloqueia; GIVEN base sobe com doisEV THEN Stop candidato diminui importação real mock, estado SUSPENDED_BY_DEMAND igual nos clientes.
 - **Saída:** G4 não aprovado por boolean UI; requer evento + comando + efeito. Commit `feat(energy): enforce explainable demand admission and recovery`.
 
+### Checkpoint implementado
+
+- A política permanece desativada até o laboratório colocar o provider online; essa ativação fica persistida no banco. A partir daí, início de energia exige amostra `FRESH` de até 15 s e projeção abaixo de 90% do limite de 20 kW.
+- O backend considera potência já admitida sobre a mesma amostra. Em crítico, interrompe somente uma sessão elegível, preserva pagamento/quote e a marca como `SUSPENDED_BY_DEMAND`; após 30 s abaixo de 75%, tenta retomada individual com as mesmas pré-condições.
+- PWA já apresenta esse enum e o Admin agora o projeta como sessão suspensa na operação e em Energia. O teste de orquestração foi incluído; o runner Vitest local voltou a encerrar o worker por memória antes de concluir essa execução, enquanto tipo e build do Admin passam.
+
 ## S4-M4-U3 — Ofertas, alertas, recomendações e resultados
 
 - **Depende:** U2; **tamanho:** MÉDIO.

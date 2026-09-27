@@ -32,6 +32,7 @@ export async function resetCommercialTestData() {
 function sessionStatus(status: CommercialSessionStatus): Session["status"] {
   if (status === CommercialSessionStatus.CHARGING) return "active";
   if (status === CommercialSessionStatus.STARTING) return "starting";
+  if (status === CommercialSessionStatus.SUSPENDED_BY_DEMAND) return "suspended";
   if ([CommercialSessionStatus.ENERGY_FINISHED, CommercialSessionStatus.IDLE_GRACE_PERIOD, CommercialSessionStatus.IDLE_FEE].includes(status)) return "energy_finished";
   if ([CommercialSessionStatus.SETTLING, CommercialSessionStatus.SETTLEMENT_PENDING].includes(status)) return "settling";
   if (status === CommercialSessionStatus.COMPLETED) return "finished";
