@@ -57,6 +57,7 @@ Objetivo: provar renováveis+recarga+eficiência, sem EMS industrial. GRANDE, tr
 - `commercial_decisions` persiste alertas e recomendações determinísticos com chave de correlação estável. A API expõe `GET /commercial/insights` e registra decisões em `POST /commercial/insights/:id/decision`; aceitar, adiar ou rejeitar não envia comandos ao provider.
 - Os alertas atuais cobrem telemetria expirada, falha/offline físico e liquidação pendente. As recomendações cobrem excedente solar e revisão de demanda; relatório de resultados e a projeção completa nas superfícies do Admin permanecem nesta unidade.
 - A Central de alarmes e Recomendações do Admin agora projetam os mesmos insights do backend para o Aurora. As decisões feitas nesses registros voltam para a API e sobrevivem ao próximo polling; dados legados de outros cenários permanecem separados.
+- `GET /commercial/reports` consolida, para até 31 dias UTC, Wh de EV/solar/rede, valores capturados/devolvidos e as decisões vigentes. Os relatórios de Energia, Financeiro e Incidentes selecionados exclusivamente para Aurora no Admin usam essa mesma API; Sessões e os demais cenários preservam o mecanismo legado identificado.
 - O teste focal cobre PV 20 kW, carga-base 10 kW, a oferta solar persistida, a sessão com a mesma tarifa e a decisão humana sem efeito sobre a sessão.
 
 ## Não implementar

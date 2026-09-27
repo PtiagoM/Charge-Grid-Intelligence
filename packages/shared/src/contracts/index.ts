@@ -78,6 +78,23 @@ export interface CommercialInsights {
   recommendations: CommercialInsight[];
 }
 
+export interface CommercialOperationalReport {
+  establishmentId: string;
+  from: string;
+  to: string;
+  energy: {
+    evWh: number;
+    solarToEvWh: number;
+    gridImportWh: number;
+    gridExportWh: number;
+  };
+  financial: {
+    capturedCents: number;
+    refundedCents: number;
+  };
+  decisions: CommercialInsight[];
+}
+
 export interface ChargerSummary {
   id: string;
   /** Persistent commercial identifier when the UI uses the operational code as `id`. */

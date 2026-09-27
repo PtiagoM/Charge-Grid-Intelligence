@@ -1,4 +1,4 @@
-import { CommercialSessionStatus, PaymentStatus, QueueStatus, type CommercialInsight, type CommercialInsights, type CommercialSnapshot } from "@chargegrid/shared";
+import { CommercialSessionStatus, PaymentStatus, QueueStatus, type CommercialInsight, type CommercialInsights, type CommercialOperationalReport, type CommercialSnapshot } from "@chargegrid/shared";
 import type { AdminState, Charger, ChargerTelemetry, Client, CommercialPlantLink, EnergyPolicy, EnergySnapshot, Establishment, FinancialEvent, Incident, Location, PaymentTransaction, QueueEntry, Recommendation, Session, SessionEvent, TariffPolicy } from "../domain/admin";
 
 const apiUrl = (import.meta.env.VITE_CHARGEGRID_API_URL || "http://localhost:3333").replace(/\/$/, "");
@@ -54,6 +54,30 @@ export async function decideCommercialInsight(id: string, decision: "ACKNOWLEDGE
   });
   const payload = await response.json().catch(() => ({})) as { message?: string };
   if (!response.ok) throw new Error(payload.message || "A API não confirmou a decisão operacional.");
+}
+
+function csvCell(value: unknown) {
+  return `"${String(value ?? "").replaceAll('"', '""')}"`;
+}
+
+export async function generateCommercialReportArtifact(input: { type: "ENERGY" | "FINANCIAL" | "INCIDENTS"; establishmentId: string; periodFrom: string; periodTo: string }) {
+  const from = new Date(`${input.periodFrom}T00:00:00.000Z`);
+  const to = new Date(`${input.periodTo}T00:00:00.000Z`);
+  to.setUTCDate(to.getUTCDate() + 1);
+  const response = await fetch(`${apiUrl}/commercial/reports?${new URLSearchParams({ establishmentId: input.establishmentId, from: from.toISOString(), to: to.toISOString() })}`);
+  const payload = await response.json().catch(() => ({})) as CommercialOperationalReport & { message?: string };
+  if (!response.ok) throw new Error(payload.message || "A API não respondeu ao relatório comercial.");
+  const rows = input.type === "ENERGY"
+    ? [[payload.establishmentId, payload.from, payload.to, payload.energy.evWh, payload.energy.solarToEvWh, payload.energy.gridImportWh, payload.energy.gridExportWh]]
+    : input.type === "FINANCIAL"
+      ? [[payload.establishmentId, payload.from, payload.to, payload.financial.capturedCents, payload.financial.refundedCents]]
+      : payload.decisions.map((item) => [item.id, item.kind, item.type, item.reviewState, item.reasonCode, item.updatedAt]);
+  const headers = input.type === "ENERGY"
+    ? ["estabelecimento", "inicio_utc", "fim_utc", "ev_wh", "solar_para_ev_wh", "importacao_rede_wh", "exportacao_rede_wh"]
+    : input.type === "FINANCIAL"
+      ? ["estabelecimento", "inicio_utc", "fim_utc", "capturado_centavos", "reembolsado_centavos"]
+      : ["decisao", "tipo", "categoria", "estado", "motivo", "atualizado_em"];
+  return { csvContent: `\uFEFF${[headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n")}`, rowCount: rows.length, fileName: `chargegrid-${input.type.toLowerCase()}-${input.periodFrom}-${input.periodTo}.csv` };
 }
 
 export async function configurePlantTelemetry(input: { plantId: string; online: boolean; pvKw: number; buildingLoadKw: number }) {

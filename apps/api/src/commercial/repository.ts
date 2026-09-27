@@ -2,7 +2,7 @@ import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
-import { ChargerCommercialStatus, ChargerTechnicalStatus, CommercialAvailability, CommercialSessionStatus, PaymentStatus, PlantEnergyStatus, QueueStatus, type CommercialCatalog, type CommercialChargerRecord, type CommercialChargerResolution, type CommercialEstablishmentRecord, type CommercialFinancialSummary, type CommercialInsight, type CommercialInsights, type CommercialOpeningHoursInterval, type CommercialPublicChargerRecord, type CommercialPublicEstablishmentRecord, type CommercialQueueRecord, type CommercialQuote, type CommercialSessionRecord, type CommercialSnapshot, type CommercialTariffVersion, type PlantEnergySnapshot } from "@chargegrid/shared";
+import { ChargerCommercialStatus, ChargerTechnicalStatus, CommercialAvailability, CommercialSessionStatus, PaymentStatus, PlantEnergyStatus, QueueStatus, type CommercialCatalog, type CommercialChargerRecord, type CommercialChargerResolution, type CommercialEstablishmentRecord, type CommercialFinancialSummary, type CommercialInsight, type CommercialInsights, type CommercialOperationalReport, type CommercialOpeningHoursInterval, type CommercialPublicChargerRecord, type CommercialPublicEstablishmentRecord, type CommercialQueueRecord, type CommercialQuote, type CommercialSessionRecord, type CommercialSnapshot, type CommercialTariffVersion, type PlantEnergySnapshot } from "@chargegrid/shared";
 import pg from "pg";
 import { MockGoodWeProvider, type GoodWeProvider } from "../goodwe/index.js";
 
@@ -1312,6 +1312,30 @@ export class CommercialRepository {
     await this.db.query("update commercial_decisions set review_state = $2, decided_at = now(), decided_by = $3, decision_reason = $4, updated_at = now() where id = $1", [input.id, reviewState, input.actor ?? "Operação ChargeGrid", input.reason.trim()]);
     const updated = await this.db.query<InsightRow>("select * from commercial_decisions where id = $1", [input.id]);
     return insightRecord(updated.rows[0]!);
+  }
+
+  async operationalReport(input: { establishmentId: string; from: string; to: string }): Promise<CommercialOperationalReport> {
+    await this.ready;
+    const energy = await this.db.query<{ ev_wh: number; solar_to_ev_wh: number; grid_import_wh: number; grid_export_wh: number }>(`select
+      coalesce(sum(es.ev_wh), 0) as ev_wh, coalesce(sum(es.solar_to_ev_wh), 0) as solar_to_ev_wh,
+      coalesce(sum(es.grid_import_wh), 0) as grid_import_wh, coalesce(sum(es.grid_export_wh), 0) as grid_export_wh
+      from commercial_energy_samples es join commercial_plants p on p.id = es.plant_id
+      where p.establishment_id = $1 and es.observed_at >= $2 and es.observed_at < $3`, [input.establishmentId, input.from, input.to]);
+    const financial = await this.db.query<{ captured_cents: number; refunded_cents: number }>(`select
+      coalesce(sum(p.captured_cents), 0) as captured_cents, coalesce(sum(p.refunded_cents), 0) as refunded_cents
+      from commercial_payments p join commercial_sessions s on s.id = p.session_id
+      where s.establishment_id = $1 and coalesce(s.settled_at, s.created_at) >= $2 and coalesce(s.settled_at, s.created_at) < $3`, [input.establishmentId, input.from, input.to]);
+    const values = energy.rows[0] ?? { ev_wh: 0, solar_to_ev_wh: 0, grid_import_wh: 0, grid_export_wh: 0 };
+    const money = financial.rows[0] ?? { captured_cents: 0, refunded_cents: 0 };
+    const insights = await this.insights(input.establishmentId);
+    return {
+      establishmentId: input.establishmentId,
+      from: input.from,
+      to: input.to,
+      energy: { evWh: Number(values.ev_wh), solarToEvWh: Number(values.solar_to_ev_wh), gridImportWh: Number(values.grid_import_wh), gridExportWh: Number(values.grid_export_wh) },
+      financial: { capturedCents: Number(money.captured_cents), refundedCents: Number(money.refunded_cents) },
+      decisions: [...insights.alerts, ...insights.recommendations]
+    };
   }
 
   async resolveCharger(identifier: string): Promise<CommercialChargerResolution> {

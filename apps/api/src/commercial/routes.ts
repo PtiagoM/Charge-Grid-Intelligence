@@ -95,6 +95,21 @@ export function createCommercialRouter(options: { repository?: CommercialReposit
       return response.status(errorStatus(error)).json({ code: "COMMERCIAL_FINANCIAL_READ_FAILED", message: error instanceof Error ? error.message : "Não foi possível calcular o resumo financeiro." });
     }
   });
+  router.get("/reports", async (request, response) => {
+    const establishmentId = typeof request.query.establishmentId === "string" ? request.query.establishmentId : "";
+    const from = typeof request.query.from === "string" ? request.query.from : "";
+    const to = typeof request.query.to === "string" ? request.query.to : "";
+    const fromTime = Date.parse(from);
+    const toTime = Date.parse(to);
+    if (!establishmentId || !Number.isFinite(fromTime) || !Number.isFinite(toTime) || toTime <= fromTime || toTime - fromTime > 31 * 24 * 60 * 60_000) {
+      return response.status(400).json({ code: "INVALID_REPORT_RANGE", message: "Informe estabelecimento e período UTC válido de até 31 dias." });
+    }
+    try {
+      return response.json(await repository.operationalReport({ establishmentId, from: new Date(fromTime).toISOString(), to: new Date(toTime).toISOString() }));
+    } catch (error) {
+      return response.status(errorStatus(error)).json({ code: "COMMERCIAL_REPORT_READ_FAILED", message: error instanceof Error ? error.message : "Não foi possível gerar o relatório comercial." });
+    }
+  });
   router.get("/insights", async (request, response) => {
     try {
       return response.json(await repository.insights(typeof request.query.establishmentId === "string" ? request.query.establishmentId : undefined));

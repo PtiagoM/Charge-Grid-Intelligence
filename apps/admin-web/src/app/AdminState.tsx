@@ -10,7 +10,7 @@ import { acknowledgeIncident as acknowledgeOperationalIncident, correlateOperati
 import { grantAccess as grantAccountAccess, revokeAccess as revokeAccountAccess, type GrantAccessInput } from "../domain/accessOperations";
 import { completeReport, failReport, markReportProcessing, requestReport as requestOperationalReport, saveReportSubscription as saveOperationalReportSubscription, type RequestReportInput } from "../domain/reportOperations";
 import { demoAdminReportRepository } from "../services/adminReportRepository";
-import { decideCommercialInsight, fetchCommercialInsights, fetchCommercialSnapshot, mergeCommercialSnapshot, publishCommercialTariff } from "../services/commercialSnapshotRepository";
+import { decideCommercialInsight, fetchCommercialInsights, fetchCommercialSnapshot, generateCommercialReportArtifact, mergeCommercialSnapshot, publishCommercialTariff } from "../services/commercialSnapshotRepository";
 
 function readState(): AdminState {
   return browserAdminStateRepository.load(createInitialState());
@@ -190,7 +190,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     if (!processing.ok || !processing.job) return processing;
     setState(processing.state);
     try {
-      const artifact = await demoAdminReportRepository.generate(processing.state, processing.job);
+      const isAuroraReport = processing.job.establishmentIds.length === 1 && processing.job.establishmentIds[0] === "est_aurora_001" && ["ENERGY", "FINANCIAL", "INCIDENTS"].includes(processing.job.type);
+      const artifact = isAuroraReport
+        ? await generateCommercialReportArtifact({ type: processing.job.type as "ENERGY" | "FINANCIAL" | "INCIDENTS", establishmentId: "est_aurora_001", periodFrom: processing.job.periodFrom, periodTo: processing.job.periodTo })
+        : await demoAdminReportRepository.generate(processing.state, processing.job);
       const completed = completeReport(processing.state, processing.job.id, artifact);
       setState(completed.state);
       return completed;
