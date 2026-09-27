@@ -229,7 +229,7 @@ export function mergeCommercialCatalog(catalog: CommercialCatalog): CommercialPl
       commercialAvailability,
       availableChargerCount,
       tariffFrom: { amount: establishment.tariffCents / 100, currency: "BRL" },
-      favorableEnergyCondition: false,
+      favorableEnergyCondition: establishment.favorableEnergyCondition,
       queueSummary: establishment.queueSummary,
       chargerCount: chargers.length,
       nominalPowerKw: Math.max(...chargers.map((charger) => charger.nominalPowerKw ?? 0)),

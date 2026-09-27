@@ -53,6 +53,7 @@ Objetivo: provar renováveis+recarga+eficiência, sem EMS industrial. GRANDE, tr
 
 - A API consulta a última amostra persistida da planta do carregador ao criar uma nova cotação. Com telemetria `FRESH`, estado normal e excedente solar de ao menos 7 kW, oferece 170 c/kWh; fora dessa condição, preserva a tarifa vigente.
 - `reasonCode` e `energySampleId` ficam gravados na cotação, e a sessão reutiliza a mesma cotação congelada. Uma mudança de telemetria posterior, portanto, não altera o preço aceito.
+- O catálogo público entrega a mesma condição à PWA; o selo já existente de energia favorável e a ordenação de locais deixam de depender de fixture para o Hub Solar Aurora.
 - O teste focal cobre PV 20 kW, carga-base 10 kW e verifica a oferta solar persistida e a sessão com a mesma tarifa. Alertas, recomendações e relatório de resultados permanecem nesta unidade.
 
 ## Não implementar

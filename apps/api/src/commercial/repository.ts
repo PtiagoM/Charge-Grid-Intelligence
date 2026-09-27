@@ -318,6 +318,11 @@ function energySampleRecord(row: EnergySampleRow): PlantEnergySnapshot {
   };
 }
 
+function hasSolarSurplus(sample: PlantEnergySnapshot | null) {
+  return Boolean(sample && sample.quality === "FRESH" && Date.now() - Date.parse(sample.observedAt) <= 15_000
+    && sample.energyStatus === PlantEnergyStatus.NORMAL && sample.pvKw - sample.buildingLoadKw >= 7);
+}
+
 function idleCharge(quote: CommercialQuote | null, energyEndedAt: Date, disconnectedAt: Date) {
   if (!quote?.idleEnabled) return { minutes: 0, cents: 0, graceEndsAt: null };
   const graceEndsAt = new Date(energyEndedAt.getTime() + quote.idleGraceMinutes * 60_000);
@@ -471,7 +476,7 @@ function publicChargerRecord(charger: CommercialChargerRecord): CommercialPublic
 }
 
 function publicEstablishmentRecord(establishment: CommercialEstablishmentRecord): CommercialPublicEstablishmentRecord {
-  return { ...establishment, chargers: establishment.chargers.map(publicChargerRecord) };
+  return { ...establishment, favorableEnergyCondition: false, chargers: establishment.chargers.map(publicChargerRecord) };
 }
 
 const sessionSelect = `
@@ -550,8 +555,7 @@ export class CommercialRepository {
       if (!currentTariff) throw new CommercialNotFoundError("Tarifa comercial não encontrada.");
       const sample = selected.plant_id ? await tx.query<EnergySampleRow>("select * from commercial_energy_samples where plant_id = $1 order by observed_at desc limit 1", [selected.plant_id]) : { rows: [] as EnergySampleRow[] };
       const latest = sample.rows[0] ? energySampleRecord(sample.rows[0]) : null;
-      const fresh = latest && latest.quality === "FRESH" && Date.now() - Date.parse(latest.observedAt) <= 15_000;
-      const solarOffer = Boolean(fresh && latest.energyStatus === PlantEnergyStatus.NORMAL && latest.pvKw - latest.buildingLoadKw >= 7);
+      const solarOffer = hasSolarSurplus(latest);
       const energyCentsPerKwh = solarOffer ? Math.min(currentTariff.energy_cents_per_kwh, 170) : currentTariff.energy_cents_per_kwh;
       const id = randomUUID();
       const expiresAt = new Date(Date.now() + 5 * 60_000).toISOString();
@@ -1137,9 +1141,13 @@ export class CommercialRepository {
     const chargers = await this.db.query<ChargerRow>("select * from commercial_chargers where published = true order by code");
     const queue = await this.queueSnapshot();
     const chargerRecords = chargers.rows.map(chargerRecord);
+    const energyByPlant = new Map((await Promise.all(establishments.rows.map(async (row) => row.plant_id ? [row.plant_id, await this.plantEnergy(row.plant_id)] as const : null))).filter((item): item is readonly [string, PlantEnergySnapshot | null] => item !== null));
     return {
       generatedAt: new Date().toISOString(),
-      establishments: establishments.rows.map((row) => publicEstablishmentRecord(establishmentRecord(row, chargerRecords, queue)))
+      establishments: establishments.rows.map((row) => ({
+        ...publicEstablishmentRecord(establishmentRecord(row, chargerRecords, queue)),
+        favorableEnergyCondition: hasSolarSurplus(row.plant_id ? energyByPlant.get(row.plant_id) ?? null : null)
+      }))
     };
   }
 
