@@ -300,11 +300,13 @@ describe("CommercialRepository", () => {
     expect(await repository.session(secondId)).toMatchObject({ status: CommercialSessionStatus.CHARGING });
 
     await repository.configurePlantTelemetry({ plantId: "plant_aurora_001", online: true, pvKw: 0, buildingLoadKw: 8 });
+    await repository.advancePlantTelemetry(new Date(now.getTime() + 2_000));
     expect(await repository.session(secondId)).toMatchObject({ status: CommercialSessionStatus.SUSPENDED_BY_DEMAND, transitionReason: "DEMAND_CRITICAL" });
     expect(await repository.session(firstId)).toMatchObject({ status: CommercialSessionStatus.CHARGING });
 
     await repository.configurePlantTelemetry({ plantId: "plant_aurora_001", online: true, pvKw: 0, buildingLoadKw: 0 });
-    await repository.advancePlantTelemetry(new Date(Date.now() + 31_000));
+    await repository.advancePlantTelemetry(new Date(now.getTime() + 3_000));
+    await repository.advancePlantTelemetry(new Date(now.getTime() + 34_000));
     expect(await repository.session(secondId)).toMatchObject({ status: CommercialSessionStatus.CHARGING });
   }, 30_000);
 

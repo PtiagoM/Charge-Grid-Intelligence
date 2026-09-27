@@ -36,7 +36,7 @@ Objetivo: provar renováveis+recarga+eficiência, sem EMS industrial. GRANDE, tr
 
 - A política permanece desativada até o laboratório colocar o provider online; essa ativação fica persistida no banco. A partir daí, início de energia exige amostra `FRESH` de até 15 s e projeção abaixo de 90% do limite de 20 kW.
 - O backend considera potência já admitida sobre a mesma amostra. Em crítico, interrompe somente uma sessão elegível, preserva pagamento/quote e a marca como `SUSPENDED_BY_DEMAND`; após 30 s abaixo de 75%, tenta retomada individual com as mesmas pré-condições.
-- PWA já apresenta esse enum e o Admin agora o projeta como sessão suspensa na operação e em Energia. O teste de orquestração foi incluído; o runner Vitest local voltou a encerrar o worker por memória antes de concluir essa execução, enquanto tipo e build do Admin passam.
+- PWA já apresenta esse enum e o Admin agora o projeta como sessão suspensa na operação e em Energia. O teste focal de orquestração passou com o mesmo tick que a rota do laboratório executa após alterar a telemetria.
 
 ## S4-M4-U3 — Ofertas, alertas, recomendações e resultados
 
