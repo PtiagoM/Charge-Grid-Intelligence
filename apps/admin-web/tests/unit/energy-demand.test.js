@@ -29,6 +29,8 @@ describe('energy demand', () => {
 
   it('atribui origem renovavel apenas com energia acumulada por fonte', () => {
     expect(calculateRenewableAttribution(snapshot(70)).calculable).toBe(false);
+    expect(calculateRenewableAttribution(snapshot(70, { periodSolarKwh: 0, periodGridKwh: 0 }))).toMatchObject({ calculable: false });
+    expect(calculateRenewableAttribution(snapshot(70, { periodSolarKwh: 30, periodGridKwh: 70 }))).toMatchObject({ calculable: true, renewableKwh: 30, gridKwh: 70, renewableSharePercent: 30 });
     expect(calculateRenewableAttribution(snapshot(70, { periodSolarKwh: 30, periodBatteryKwh: 10, periodGridKwh: 60 }))).toMatchObject({ calculable: true, renewableKwh: 40, gridKwh: 60, renewableSharePercent: 40 });
   });
 

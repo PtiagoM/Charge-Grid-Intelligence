@@ -82,7 +82,7 @@ export function QueueOperationsPage({ establishmentId }: { establishmentId?: str
           <td>{entry.vehicle}</td>
           <td><Badge value={entry.status} /></td>
           <td>{localTime(entry.completedAt ?? entry.joinedAt)}</td>
-          <td>{entry.suggestedChargerId ?? "Aguardando alocação"}{entry.status === "called" ? <span>Alocação automática em andamento</span> : null}</td>
+          <td>{entry.suggestedChargerId ? state.chargers.find((charger) => charger.id === entry.suggestedChargerId)?.identifier ?? entry.suggestedChargerId : "Aguardando alocação"}{entry.status === "called" ? <span>Alocação automática em andamento</span> : null}</td>
         </tr>;
       })}
     </DataTable>

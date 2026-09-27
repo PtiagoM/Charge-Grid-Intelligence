@@ -89,6 +89,19 @@ describe("CommercialRepository", () => {
     expect(session.quote).toMatchObject({ id: quote.id, energyCentsPerKwh: 170, reasonCode: "SOLAR_SURPLUS" });
   }, 20_000);
 
+  it("exposes the persisted demand policy and the same admission decision used by starts", async () => {
+    const repository = new CommercialRepository("memory://");
+    repositories.push(repository);
+    await repository.configurePlantTelemetry({ plantId: "plant_aurora_001", online: true, pvKw: 20, buildingLoadKw: 10 });
+    await repository.advancePlantTelemetry();
+
+    await expect(repository.plantEnergyView("plant_aurora_001")).resolves.toMatchObject({
+      snapshot: { plantId: "plant_aurora_001", gridImportKw: 0, evLoadKw: 0 },
+      policy: { plantId: "plant_aurora_001", demandControlEnabled: true, limitKw: 20, alertPercent: 80, criticalPercent: 90 },
+      decision: { plantId: "plant_aurora_001", quality: "FRESH", canAdmit: true, reasonCode: "ADMISSION_ALLOWED", projectedImportKw: 7 }
+    });
+  }, 20_000);
+
   it("binds a frozen guest quote to one persistent session without exposing it to another guest", async () => {
     const repository = new CommercialRepository("memory://");
     repositories.push(repository);
@@ -257,6 +270,9 @@ describe("CommercialRepository", () => {
     expect((await repository.plantEnergySeries("plant_aurora_001"))).toHaveLength(beforeRead.length);
     const report = await repository.operationalReport({ establishmentId: "est_aurora_001", from: "2026-09-26T11:00:00.000Z", to: "2026-09-26T13:00:00.000Z" });
     expect(report.energy).toMatchObject({ evWh: expect.closeTo(1166.667, 3), solarToEvWh: expect.closeTo(1166.667, 3), gridImportWh: 0 });
+    const fullReport = await repository.operationalReport({ establishmentId: "est_aurora_001", from: "2020-01-01T00:00:00.000Z", to: "2100-01-01T00:00:00.000Z" });
+    expect(fullReport.sessions).toContainEqual(expect.objectContaining({ id, publicCode: expect.stringMatching(/^CG-/), chargerCode: "AURORA-01", energyWh: expect.any(Number) }));
+    expect(fullReport.chargers).toMatchObject({ total: 6, charging: 1 });
 
     await repository.configurePlantTelemetry({ plantId: "plant_aurora_001", online: false, pvKw: 20, buildingLoadKw: 10 });
     await repository.advancePlantTelemetry(new Date(startedAt.getTime() + 1_200_000));
@@ -331,7 +347,12 @@ describe("CommercialRepository", () => {
     expect((await repository.insights("est_aurora_001")).recommendations).toContainEqual(expect.objectContaining({ id: solar!.id, reviewState: "ACCEPTED" }));
 
     await repository.hardwareEvent("AURORA-01", "FAULT");
-    expect((await repository.insights("est_aurora_001")).alerts).toContainEqual(expect.objectContaining({ type: "HARDWARE_FAULT", conditionActive: true, reasonCode: "FAULT" }));
+    const fault = (await repository.insights("est_aurora_001")).alerts.find((item) => item.type === "HARDWARE_FAULT");
+    expect(fault).toMatchObject({ conditionActive: true, reasonCode: "FAULT" });
+    await repository.hardwareEvent("AURORA-01", "RECOVER");
+    expect((await repository.insights("est_aurora_001")).alerts).toContainEqual(expect.objectContaining({ id: fault!.id, conditionActive: false, reasonCode: "HARDWARE_RECOVERED" }));
+    await repository.decideInsight({ id: fault!.id, decision: "RESOLVE", reason: "Equipamento recuperado pelo laboratório." });
+    expect((await repository.insights("est_aurora_001")).alerts).toContainEqual(expect.objectContaining({ id: fault!.id, reviewState: "RESOLVED" }));
   }, 30_000);
 
   it("resolves Aurora by UUID, code and QR without exposing commercial session data", async () => {
@@ -372,7 +393,7 @@ describe("CommercialRepository", () => {
       repository = undefined;
 
       const inspection = new PGlite(dataDir);
-      expect((await inspection.query<{ count: number }>("select count(*)::int as count from chargegrid_schema_migrations")).rows[0]?.count).toBe(7);
+      expect((await inspection.query<{ count: number }>("select count(*)::int as count from chargegrid_schema_migrations")).rows[0]?.count).toBe(9);
       await inspection.close();
     } finally {
       if (repository) await repository.close();

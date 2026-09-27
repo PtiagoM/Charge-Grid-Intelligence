@@ -43,10 +43,10 @@ const stateColors: Record<SpotState, string> = {
 const preferredFiapOrder = ["CG-FIAP-02", "CG-FIAP-01", "CG-FIAP-03", "CG-FIAP-04", "CG-FIAP-05"];
 
 function compactChargerName(charger: Charger) {
-  if (!charger.id.startsWith("CG-")) return charger.identifier;
-  const match = charger.id.match(/(\d+)$/);
+  if (!charger.identifier.startsWith("CG-")) return charger.identifier;
+  const match = charger.identifier.match(/(\d+)$/);
   const suffix = match?.[1];
-  return suffix ? `CG-${suffix.padStart(2, "0")}` : charger.id;
+  return suffix ? `CG-${suffix.padStart(2, "0")}` : charger.identifier;
 }
 
 function formatNumber(value: number, digits = 1) {
@@ -62,7 +62,7 @@ function spotState(charger: Charger, telemetry: ChargerTelemetry | undefined, se
   if (charger.publicationStatus === "SUSPENDED") return "maintenance";
   if (telemetry?.connectorState === "FAULT") return "fault";
   if (telemetry?.connectorState === "OFFLINE" || charger.status === "offline") return "offline";
-  if (command?.status === "FAILED" || charger.status === "limited") return "fault";
+  if (command?.status === "FAILED" || charger.status === "limited" || charger.status === "fault") return "fault";
   if (telemetry?.connectorState === "CHARGING" || charger.status === "charging" || session?.status === "active") return "charging";
   if (session?.status === "authorized") return "waiting";
   if (telemetry?.vehicleConnected || telemetry?.connectorState === "CONNECTED") {
@@ -126,7 +126,7 @@ export function ChargeGridOperationStage({ establishmentId }: { establishmentId:
     const telemetry = operationData.telemetry.find((item) => item.chargerId === charger.id);
     const chargerSessions = operationData.sessions.filter((item) => item.chargerId === charger.id);
     const command = latestByDate(state.chargerCommands.filter((item) => item.chargerId === charger.id), (item) => item.requestedAt);
-    const session = charger.currentSessionId ? chargerSessions.find((item) => item.internalId === charger.currentSessionId) : undefined;
+    const session = charger.currentSessionId ? chargerSessions.find((item) => item.id === charger.currentSessionId) : undefined;
     const visualState = spotState(charger, telemetry, session, command);
     return {
       charger,

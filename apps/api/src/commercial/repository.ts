@@ -2,7 +2,7 @@ import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
-import { ChargerCommercialStatus, ChargerTechnicalStatus, CommercialAvailability, CommercialSessionStatus, PaymentStatus, PlantEnergyStatus, QueueStatus, type CommercialCatalog, type CommercialChargerRecord, type CommercialChargerResolution, type CommercialEstablishmentRecord, type CommercialFinancialSummary, type CommercialInsight, type CommercialInsights, type CommercialOperationalReport, type CommercialOpeningHoursInterval, type CommercialPublicChargerRecord, type CommercialPublicEstablishmentRecord, type CommercialQueueRecord, type CommercialQuote, type CommercialSessionRecord, type CommercialSnapshot, type CommercialTariffVersion, type PlantEnergySnapshot } from "@chargegrid/shared";
+import { ChargerCommercialStatus, ChargerTechnicalStatus, CommercialAvailability, CommercialSessionStatus, PaymentStatus, PlantEnergyStatus, QueueStatus, type CommercialCatalog, type CommercialChargerRecord, type CommercialChargerResolution, type CommercialEnergyView, type CommercialEstablishmentRecord, type CommercialFinancialSummary, type CommercialInsight, type CommercialInsights, type CommercialOperationalReport, type CommercialOpeningHoursInterval, type CommercialPublicChargerRecord, type CommercialPublicEstablishmentRecord, type CommercialQueueRecord, type CommercialQuote, type CommercialSessionRecord, type CommercialSnapshot, type CommercialTariffVersion, type PlantEnergySnapshot } from "@chargegrid/shared";
 import pg from "pg";
 import { MockGoodWeProvider, type GoodWeProvider } from "../goodwe/index.js";
 
@@ -153,6 +153,7 @@ interface PlantRow {
   establishment_id: string;
   provider_config: unknown;
   energy_policy: unknown;
+  updated_at?: Date | string;
 }
 
 interface EnergySampleRow {
@@ -182,6 +183,7 @@ interface InsightRow {
   sample_id: string | null;
   policy_version: string | null;
   condition_active: boolean;
+  was_active: boolean;
   severity: CommercialInsight["severity"];
   reason_code: string;
   message: string;
@@ -191,6 +193,7 @@ interface InsightRow {
   decided_at: Date | string | null;
   decided_by: string | null;
   decision_reason: string | null;
+  created_at: Date | string;
   updated_at: Date | string;
 }
 
@@ -224,7 +227,8 @@ const migrations = [
   { name: "202609260005_checkout_quotes", url: new URL("../../../../supabase/migrations/202609260005_checkout_quotes.sql", import.meta.url) },
   { name: "202609260006_energy_telemetry", url: new URL("../../../../supabase/migrations/202609260006_energy_telemetry.sql", import.meta.url) },
   { name: "202609270007_demand_policy", url: new URL("../../../../supabase/migrations/202609270007_demand_policy.sql", import.meta.url) },
-  { name: "202609270008_commercial_insights", url: new URL("../../../../supabase/migrations/202609270008_commercial_insights.sql", import.meta.url) }
+  { name: "202609270008_commercial_insights", url: new URL("../../../../supabase/migrations/202609270008_commercial_insights.sql", import.meta.url) },
+  { name: "202609270009_insight_lifecycle", url: new URL("../../../../supabase/migrations/202609270009_insight_lifecycle.sql", import.meta.url) }
 ] as const;
 const legacyMigrationNames = new Set(migrations.slice(0, 3).map((migration) => migration.name));
 const defaultDataDir = process.env.CHARGEGRID_DATABASE_PATH ?? (process.env.NODE_ENV === "test" ? "memory://" : fileURLToPath(new URL("../../../../.local/commercial-db", import.meta.url)));
@@ -329,6 +333,9 @@ function energyPolicy(value: unknown) {
   return {
     demandControlEnabled: policy.demandControlEnabled === true,
     limitKw: typeof policy.limitKw === "number" && policy.limitKw > 0 ? policy.limitKw : 20,
+    alertPercent: typeof policy.alertPercent === "number" ? policy.alertPercent : 80,
+    criticalPercent: typeof policy.criticalPercent === "number" ? policy.criticalPercent : 90,
+    recoveryPercent: typeof policy.recoveryPercent === "number" ? policy.recoveryPercent : 75,
     freshSeconds: typeof policy.freshSeconds === "number" && policy.freshSeconds > 0 ? policy.freshSeconds : 15,
     recoverySeconds: typeof policy.recoverySeconds === "number" && policy.recoverySeconds > 0 ? policy.recoverySeconds : 30
   };
@@ -383,6 +390,7 @@ function insightRecord(row: InsightRow): CommercialInsight {
     decidedAt: iso(row.decided_at),
     decidedBy: row.decided_by ?? undefined,
     decisionReason: row.decision_reason ?? undefined,
+    createdAt: iso(row.created_at)!,
     updatedAt: iso(row.updated_at)!
   };
 }
@@ -785,7 +793,7 @@ export class CommercialRepository {
       const snapshot = await this.plantEnergy(candidate.plant_id);
       const ageMs = snapshot ? Math.max(0, Date.now() - Date.parse(snapshot.observedAt)) : Number.POSITIVE_INFINITY;
       const projectedImportKw = snapshot ? snapshot.gridImportKw + (this.admittedPowerByPlant.get(candidate.plant_id) ?? 0) + (powerKw ?? Number(candidate.nominal_power_kw)) : null;
-      if (policy?.demandControlEnabled && (!snapshot || snapshot.quality !== "FRESH" || ageMs > policy.freshSeconds * 1000 || projectedImportKw === null || projectedImportKw >= policy.limitKw * 0.9)) {
+      if (policy?.demandControlEnabled && (!snapshot || snapshot.quality !== "FRESH" || ageMs > policy.freshSeconds * 1000 || projectedImportKw === null || projectedImportKw >= policy.limitKw * policy.criticalPercent / 100)) {
         await this.db.query("update commercial_sessions set transition_reason = $2, updated_at = now() where id = $1", [candidate.id, !snapshot || snapshot.quality !== "FRESH" || ageMs > policy.freshSeconds * 1000 ? "TELEMETRY_UNAVAILABLE" : "RESTRICTED_BY_ENERGY"]);
         return false;
       }
@@ -928,6 +936,51 @@ export class CommercialRepository {
     return rows.rows.reverse().map(energySampleRecord);
   }
 
+  async plantEnergyView(plantId: string): Promise<CommercialEnergyView> {
+    await this.ready;
+    const rows = await this.db.query<PlantRow>("select id, establishment_id, provider_config, energy_policy, updated_at from commercial_plants where id = $1", [plantId]);
+    const plant = rows.rows[0];
+    if (!plant) throw new CommercialNotFoundError("Planta comercial não encontrada.");
+    const policy = energyPolicy(plant.energy_policy);
+    const snapshot = await this.plantEnergy(plantId);
+    const available = await this.db.query<{ nominal_power_kw: number }>(`select nominal_power_kw from commercial_chargers
+      where plant_id = $1 and published = true and physical_status = 'AVAILABLE' and commercial_status = 'AVAILABLE_TO_START'
+      order by code limit 1`, [plantId]);
+    const candidates = await this.db.query<{ id: string }>(`select s.id from commercial_sessions s join commercial_chargers c on c.id = s.charger_id
+      where c.plant_id = $1 and s.status in ('CHARGING', 'SUSPENDED_BY_DEMAND')
+      order by case when s.actor_type = 'GUEST' then 0 else 1 end, s.started_at desc, s.id desc`, [plantId]);
+    const ageMs = snapshot ? Math.max(0, Date.now() - Date.parse(snapshot.observedAt)) : Number.POSITIVE_INFINITY;
+    const quality = !snapshot ? "UNKNOWN" as const : snapshot.quality !== "FRESH" || ageMs > policy.freshSeconds * 1000 ? "STALE" as const : "FRESH" as const;
+    const utilization = snapshot ? snapshot.gridImportKw / policy.limitKw * 100 : null;
+    const state = utilization === null ? null : utilization >= policy.criticalPercent ? "CRITICAL" as const : utilization >= policy.alertPercent ? "ALERT" as const : "NORMAL" as const;
+    const projectedImportKw = snapshot && available.rows[0] ? snapshot.gridImportKw + Number(available.rows[0].nominal_power_kw) : null;
+    const projectedCritical = projectedImportKw !== null && projectedImportKw >= policy.limitKw * policy.criticalPercent / 100;
+    const canAdmit = !policy.demandControlEnabled || quality === "FRESH" && state === "NORMAL" && !projectedCritical;
+    const reasonCode = !policy.demandControlEnabled
+      ? "ENERGY_POLICY_DISABLED" as const
+      : quality !== "FRESH"
+        ? "TELEMETRY_UNAVAILABLE" as const
+        : state !== "NORMAL"
+          ? "DEMAND_ALERT" as const
+          : projectedCritical
+            ? "PROJECTED_LIMIT" as const
+            : "ADMISSION_ALLOWED" as const;
+    return {
+      snapshot,
+      policy: {
+        id: `${plantId}:demand`, plantId, version: "demand-v1", demandControlEnabled: policy.demandControlEnabled,
+        limitKw: policy.limitKw, alertPercent: policy.alertPercent, criticalPercent: policy.criticalPercent,
+        recoveryPercent: policy.recoveryPercent, recoveryStableSeconds: policy.recoverySeconds,
+        freshSeconds: policy.freshSeconds, updatedAt: iso(plant.updated_at ?? null) ?? new Date().toISOString()
+      },
+      decision: {
+        plantId, policyVersion: "demand-v1", sampleId: snapshot?.id ?? null, state, quality,
+        enabled: policy.demandControlEnabled, canAdmit, reasonCode, projectedImportKw,
+        candidateSessionIds: candidates.rows.map((item) => item.id), observedAt: snapshot?.observedAt ?? new Date().toISOString()
+      }
+    };
+  }
+
   async advancePlantTelemetry(now = new Date()) {
     await this.ready;
     const plants = await this.db.query<PlantRow>("select id, establishment_id, provider_config from commercial_plants");
@@ -965,8 +1018,8 @@ export class CommercialRepository {
     const policy = plant.rows[0] && energyPolicy(plant.rows[0].energy_policy);
     const snapshot = await this.plantEnergy(plantId);
     if (!policy?.demandControlEnabled || !snapshot || snapshot.quality !== "FRESH") return;
-    const criticalKw = policy.limitKw * 0.9;
-    const recoveryKw = policy.limitKw * 0.75;
+    const criticalKw = policy.limitKw * policy.criticalPercent / 100;
+    const recoveryKw = policy.limitKw * policy.recoveryPercent / 100;
     if (snapshot.gridImportKw >= criticalKw) {
       this.demandRecoveredAt.delete(plantId);
       const candidate = await this.db.query<{ id: string; charger_code: string }>(`${sessionSelect}
@@ -1225,10 +1278,11 @@ export class CommercialRepository {
     const reviewState = "OPEN";
     await this.db.query(`insert into commercial_decisions (
       id, correlation_key, establishment_id, kind, type, entity_id, source_event_id, sample_id, policy_version,
-      condition_active, severity, reason_code, message, evidence, suggested_action, review_state
-    ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14::jsonb, $15, $16)
+      condition_active, was_active, severity, reason_code, message, evidence, suggested_action, review_state
+    ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10, $11, $12, $13, $14::jsonb, $15, $16)
     on conflict (correlation_key) do update set
       condition_active = excluded.condition_active, severity = excluded.severity, reason_code = excluded.reason_code,
+      was_active = commercial_decisions.was_active or excluded.condition_active,
       message = excluded.message, evidence = excluded.evidence, sample_id = excluded.sample_id,
       policy_version = excluded.policy_version, suggested_action = excluded.suggested_action,
       review_state = case when excluded.condition_active and commercial_decisions.review_state = 'RESOLVED' then 'OPEN' else commercial_decisions.review_state end,
@@ -1247,7 +1301,7 @@ export class CommercialRepository {
       const stale = !snapshot || snapshot.quality !== "FRESH" || Date.now() - Date.parse(snapshot.observedAt) > policy.freshSeconds * 1000;
       await this.synchronizeInsight({
         establishmentId: plant.establishment_id, correlationKey: `telemetry:${plant.id}`, kind: "ALERT", type: "TELEMETRY_STALE", entityId: plant.id,
-        sampleId: snapshot?.id ?? null, policyVersion: "demand-v1", conditionActive: stale, severity: "WARNING", reasonCode: "TELEMETRY_UNAVAILABLE",
+        sampleId: snapshot?.id ?? null, policyVersion: "demand-v1", conditionActive: stale, severity: "WARNING", reasonCode: stale ? "TELEMETRY_UNAVAILABLE" : "TELEMETRY_RECOVERED",
         message: stale ? "A telemetria da planta está indisponível ou expirada." : "A telemetria da planta foi restabelecida.",
         evidence: snapshot ? [`Última amostra: ${snapshot.observedAt}.`, `Qualidade: ${snapshot.quality}.`] : ["Nenhuma amostra de telemetria foi recebida."],
         suggestedAction: "OPEN_ENERGY"
@@ -1295,8 +1349,11 @@ export class CommercialRepository {
     await this.ready;
     await this.synchronizeInsights(establishmentId);
     const rows = await this.db.query<InsightRow>(`select * from commercial_decisions ${establishmentId ? "where establishment_id = $1" : ""} order by updated_at desc`, establishmentId ? [establishmentId] : []);
-    const insights = rows.rows.map(insightRecord).filter((item) => item.conditionActive || item.kind === "RECOMMENDATION" && item.reviewState !== "OPEN");
-    return { alerts: insights.filter((item) => item.kind === "ALERT"), recommendations: insights.filter((item) => item.kind === "RECOMMENDATION") };
+    const records = rows.rows.map((row) => ({ row, insight: insightRecord(row) }));
+    return {
+      alerts: records.filter(({ row, insight }) => insight.kind === "ALERT" && (insight.conditionActive || row.was_active)).map(({ insight }) => insight),
+      recommendations: records.filter(({ insight }) => insight.kind === "RECOMMENDATION" && (insight.conditionActive || insight.reviewState !== "OPEN")).map(({ insight }) => insight)
+    };
   }
 
   async decideInsight(input: { id: string; decision: "ACKNOWLEDGE" | "RESOLVE" | "ACCEPT" | "DEFER" | "REJECT"; reason: string; actor?: string }) {
@@ -1325,6 +1382,10 @@ export class CommercialRepository {
       coalesce(sum(p.captured_cents), 0) as captured_cents, coalesce(sum(p.refunded_cents), 0) as refunded_cents
       from commercial_payments p join commercial_sessions s on s.id = p.session_id
       where s.establishment_id = $1 and coalesce(s.settled_at, s.created_at) >= $2 and coalesce(s.settled_at, s.created_at) < $3`, [input.establishmentId, input.from, input.to]);
+    const sessions = await this.db.query<SessionRow>(`${sessionSelect}
+      where s.establishment_id = $1 and s.created_at >= $2 and s.created_at < $3
+      order by s.created_at desc`, [input.establishmentId, input.from, input.to]);
+    const chargers = await this.db.query<ChargerRow>("select * from commercial_chargers where establishment_id = $1 and published = true", [input.establishmentId]);
     const values = energy.rows[0] ?? { ev_wh: 0, solar_to_ev_wh: 0, grid_import_wh: 0, grid_export_wh: 0 };
     const money = financial.rows[0] ?? { captured_cents: 0, refunded_cents: 0 };
     const insights = await this.insights(input.establishmentId);
@@ -1334,6 +1395,25 @@ export class CommercialRepository {
       to: input.to,
       energy: { evWh: Number(values.ev_wh), solarToEvWh: Number(values.solar_to_ev_wh), gridImportWh: Number(values.grid_import_wh), gridExportWh: Number(values.grid_export_wh) },
       financial: { capturedCents: Number(money.captured_cents), refundedCents: Number(money.refunded_cents) },
+      sessions: sessions.rows.map(sessionRecord).map((session) => ({
+        id: session.id,
+        publicCode: session.publicCode,
+        chargerId: session.chargerId,
+        chargerCode: session.chargerCode,
+        driverName: session.driverName,
+        status: session.status,
+        energyWh: session.energyWh,
+        totalCostCents: session.totalCostCents,
+        startedAt: session.startedAt ?? undefined,
+        endedAt: session.endedAt ?? undefined,
+        createdAt: session.createdAt
+      })),
+      chargers: {
+        total: chargers.rows.length,
+        available: chargers.rows.filter((charger) => charger.physical_status === ChargerTechnicalStatus.AVAILABLE).length,
+        charging: chargers.rows.filter((charger) => charger.physical_status === ChargerTechnicalStatus.CHARGING).length,
+        faulted: chargers.rows.filter((charger) => [ChargerTechnicalStatus.FAULT, ChargerTechnicalStatus.OFFLINE].includes(charger.physical_status as ChargerTechnicalStatus)).length
+      },
       decisions: [...insights.alerts, ...insights.recommendations]
     };
   }

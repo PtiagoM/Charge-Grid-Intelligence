@@ -17,6 +17,7 @@ import { hasAdminCapability } from "../../domain/adminCapabilities";
 import { getAdminRouteCapability } from "../../app/adminNavigation";
 import { accessibleEstablishmentIds, commercialAccessibleEstablishmentIds, hasOwnChargeGridOperation, technicalAccessibleEstablishmentIds } from "../../domain/accessOperations";
 import { SemsBatteryConsistencyPage, SemsComparisonPage, SemsIvDiagnosisPage } from "../analysis/SemsAnalysisPages";
+import { catalogWithCommercialPlants } from "../../services/goodwePlantCatalogRepository";
 
 const establishmentTabs = new Set(["overview", "plants", "plant", "locations", "location", "charger", "chargers", "sessions", "session", "operations", "queue", "incidents", "incident", "energy", "pricing", "finance", "financial-session", "invoices", "contract", "support", "ticket", "documents", "ai", "recommendations", "reports", "settings", "access", "plant-onboarding", "analysis-iv", "analysis-comparison", "analysis-battery"]);
 
@@ -84,21 +85,25 @@ function Overview() {
   const sessions = state.sessions.filter((item) => commercialScope.has(item.establishmentId));
   const locations = state.locations.filter((item) => technicalScope.has(item.establishmentId));
   const commercialPlants = state.commercialPlants.filter((item) => commercialScope.has(item.establishmentId) && item.status === "PUBLISHED");
-  const totalPower = chargers.reduce((sum, item) => sum + item.powerKw, 0);
+  const plantCatalog = catalogWithCommercialPlants(state);
+  const totalPower = optionalSum(state.commercialPlants
+    .filter((item) => technicalScope.has(item.establishmentId))
+    .map((item) => plantCatalog.find((plant) => plant.id === item.goodwePlantId)?.capacityKwp)
+    .filter((value) => value !== 0));
   const energySnapshots = state.energy.filter((item) => technicalScope.has(item.establishmentId));
   const generatedEnergy = optionalSum(energySnapshots.map((item) => item.periodSolarKwh));
   const chargedEnergy = optionalSum(energySnapshots.map((item) => item.periodBatteryKwh));
   const gridEnergy = optionalSum(energySnapshots.map((item) => item.periodGridKwh));
   const revenue = sessions.reduce((sum, item) => sum + (item.finalAmount ?? item.consumedAmount), 0);
-  const offline = chargers.filter((item) => item.status === "offline").length;
+  const unavailable = chargers.filter((item) => item.status === "offline" || item.status === "fault").length;
   const solarPower = optionalSum(energySnapshots.map((item) => item.solarPowerKw));
   const gridPower = optionalSum(energySnapshots.map((item) => item.gridPowerKw));
   const currentPower = (solarPower ?? 0) + (gridPower ?? 0);
   const demandPower = optionalSum(energySnapshots.map((item) => item.demandKw));
   const contractedLimit = optionalSum(energySnapshots.map((item) => item.contractedLimitKw));
-  const openIncidents = state.incidents.filter((item) => technicalScope.has(item.establishmentId) && item.status !== "RESOLVED").length;
-  const alarmTotal = openIncidents + offline;
-  const operatingPercent = commercialChargers.length ? Math.round((commercialChargers.filter((item) => item.status !== "offline").length / commercialChargers.length) * 100) : 0;
+  const openIncidents = state.incidents.filter((item) => technicalScope.has(item.establishmentId) && item.status !== "RESOLVED" && item.conditionActive !== false).length;
+  const alarmTotal = openIncidents + unavailable;
+  const operatingPercent = commercialChargers.length ? Math.round((commercialChargers.filter((item) => item.status !== "offline" && item.status !== "fault").length / commercialChargers.length) * 100) : 0;
   const technicalValue = generatedEnergy === null ? null : generatedEnergy * 0.74;
   const stationStates = [
     ["Em operação", locations.filter((location) => chargers.some((charger) => charger.locationId === location.id && charger.status !== "offline")).length],
@@ -134,15 +139,15 @@ function Overview() {
       <WorldMap state={{ ...state, locations, chargers }} />
       <article className="sems-station-summary world-station-summary" data-testid="mvp-overview-kpis">
         <div className="station-row station-row-main"><div className="station-map-illustration" aria-hidden="true"><span /><i /><b /><em /></div><div className="station-value"><p><strong>{locations.length}</strong><button type="button" aria-label="Expandir resumo das usinas" aria-expanded={summaryExpanded} onClick={() => setSummaryExpanded((value) => !value)}>⌄</button></p><span>Usinas monitoradas <small>?</small></span></div></div>
-        <div className="station-row"><div className="station-solar-illustration" aria-hidden="true"><span /><span /><span /></div><div className="station-value"><p><strong>{number(totalPower)}</strong><small>kWp</small></p><span>Capacity</span></div></div>
+        <div className="station-row"><div className="station-solar-illustration" aria-hidden="true"><span /><span /><span /></div><div className="station-value"><p><strong>{totalPower === null ? "—" : number(totalPower)}</strong>{totalPower === null ? null : <small>kWp</small>}</p><span>Capacidade FV</span></div></div>
         <div className="station-row"><div className="station-storage-illustration" aria-hidden="true"><span /><span /><span /></div><div className="station-value"><p><strong>{number(chargedEnergy ?? 0)}</strong><small>kWh</small></p><span>Energia armazenada</span></div></div>
         {summaryExpanded ? <div className="station-state-list" data-testid="dashboard-station-state-list">{stationStates.map(([label, value]) => <p key={label}><span>{label}</span><strong>{value}</strong></p>)}</div> : null}
       </article>
     </section>
     <section className="sems-operator-dashboard" data-testid="mvp-overview-recommendation">
       <div className="sems-operator-column">
-        <article className="sems-dashboard-card sems-power-card"><header><div className="sems-card-heading"><img src={assets.dashboard.power} alt="" /><div><h2>Potência</h2><span>Tempo real</span></div></div></header><div className="sems-power-gauge" style={{ "--gauge-value": `${Math.min(100, Math.round((currentPower / Math.max(totalPower, 1)) * 100)) * 1.8}deg` } as CSSProperties}><div><strong>{solarPower === null && gridPower === null ? "—" : number(currentPower)}</strong><span>kW</span></div></div><footer><span><i className="is-red" />Solar {solarPower === null ? "Sem telemetria" : `${number(solarPower)} kW`}</span><span><i />Rede {gridPower === null ? "Sem telemetria" : `${number(gridPower)} kW`}</span></footer></article>
-        <article className="sems-dashboard-card sems-alarm-card"><header><div className="sems-card-heading"><img src={assets.dashboard.alarm} alt="" /><h2>Alarmes</h2></div><a href="#/mvp/incidents">Detalhes ›</a></header><div className="sems-alarm-body"><div className="sems-alarm-donut" style={{ "--alarm-share": `${Math.min(100, alarmTotal * 12)}%` } as CSSProperties}><strong>{alarmTotal}</strong><span>Total</span></div><ul><li><i className="is-critical" /><span>Falha</span><strong>{offline}</strong></li><li><i className="is-warning" /><span>Aviso</span><strong>{openIncidents}</strong></li></ul></div></article>
+        <article className="sems-dashboard-card sems-power-card"><header><div className="sems-card-heading"><img src={assets.dashboard.power} alt="" /><div><h2>Potência</h2><span>Tempo real</span></div></div></header><div className="sems-power-gauge" style={{ "--gauge-value": `${Math.min(100, Math.round((currentPower / Math.max(totalPower ?? currentPower, 1)) * 100)) * 1.8}deg` } as CSSProperties}><div><strong>{solarPower === null && gridPower === null ? "—" : number(currentPower)}</strong><span>kW</span></div></div><footer><span><i className="is-red" />Solar {solarPower === null ? "Sem telemetria" : `${number(solarPower)} kW`}</span><span><i />Rede {gridPower === null ? "Sem telemetria" : `${number(gridPower)} kW`}</span></footer></article>
+        <article className="sems-dashboard-card sems-alarm-card"><header><div className="sems-card-heading"><img src={assets.dashboard.alarm} alt="" /><h2>Alarmes</h2></div><a href="#/mvp/incidents">Detalhes ›</a></header><div className="sems-alarm-body"><div className="sems-alarm-donut" style={{ "--alarm-share": `${Math.min(100, alarmTotal * 12)}%` } as CSSProperties}><strong>{alarmTotal}</strong><span>Total</span></div><ul><li><i className="is-critical" /><span>Falha</span><strong>{unavailable}</strong></li><li><i className="is-warning" /><span>Aviso</span><strong>{openIncidents}</strong></li></ul></div></article>
         <article className="sems-dashboard-card sems-environment-card"><header><h2>Contribuições ambientais</h2><span>Desde o início da operação</span></header><div><p><img src={assets.dashboard.co2} alt="" /><span>CO₂ evitado</span><strong>{generatedEnergy === null ? "—" : `${number(generatedEnergy * 0.081)} t`}</strong></p><p><img src={assets.dashboard.tree} alt="" /><span>Árvores equivalentes</span><strong>{generatedEnergy === null ? "—" : Math.round(generatedEnergy * 0.42)}</strong></p><p><img src={assets.dashboard.generatedEnergy} alt="" /><span>Carvão padrão evitado</span><strong>{generatedEnergy === null ? "—" : `${number(generatedEnergy * 0.033)} t`}</strong></p></div></article>
       </div>
       <div className="sems-operator-main">
@@ -223,7 +228,7 @@ function LocationsPage({ establishmentId }: { establishmentId?: string }) {
 }
 
 function ChargerCards({ items }: { items: Charger[] }) {
-  return <div className="charger-visual-grid">{items.map((charger) => <article key={charger.id} className="charger-visual-card"><img src={assets.charger} alt={charger.model} /><div><div className="network-card-title"><h3>{charger.internalId || charger.id}</h3><Badge value={charger.status} /></div><p>{charger.model} · {charger.powerKw} kW</p><p>{charger.status === "charging" ? "Sessao ativa" : "Sem sessao ativa"}</p><div className="network-card-meta"><span>Health 92/100</span><span>{number(charger.todayEnergyKwh)} kWh hoje</span></div><a className="ghost-button" href={`#/mvp/charger?est=${charger.establishmentId}&loc=${charger.locationId}&charger=${charger.id}`}>Ver equipamento</a></div></article>)}</div>;
+  return <div className="charger-visual-grid">{items.map((charger) => <article key={charger.id} className="charger-visual-card"><img src={assets.charger} alt={charger.model} /><div><div className="network-card-title"><h3>{charger.identifier}</h3><Badge value={charger.status} /></div><p>{charger.model} · {charger.powerKw} kW</p><p>{charger.status === "charging" ? "Sessao ativa" : "Sem sessao ativa"}</p><div className="network-card-meta"><span>Health 92/100</span><span>{number(charger.todayEnergyKwh)} kWh hoje</span></div><a className="ghost-button" href={`#/mvp/charger?est=${charger.establishmentId}&loc=${charger.locationId}&charger=${charger.id}`}>Ver equipamento</a></div></article>)}</div>;
 }
 
 function LocationDetail({ establishmentId, locationId }: { establishmentId: string; locationId: string }) {

@@ -117,6 +117,14 @@ export function createCommercialRouter(options: { repository?: CommercialReposit
       return response.status(errorStatus(error)).json({ code: "COMMERCIAL_INSIGHTS_READ_FAILED", message: error instanceof Error ? error.message : "Não foi possível consultar os insights comerciais." });
     }
   });
+
+  router.get("/plants/:plantId/energy", async (request, response) => {
+    try {
+      return response.json(await repository.plantEnergyView(request.params.plantId));
+    } catch (error) {
+      return response.status(errorStatus(error)).json({ code: "COMMERCIAL_ENERGY_READ_FAILED", message: error instanceof Error ? error.message : "Não foi possível consultar a energia da planta." });
+    }
+  });
   router.post("/insights/:insightId/decision", async (request, response) => {
     const { decision, reason } = request.body ?? {};
     if (!["ACKNOWLEDGE", "RESOLVE", "ACCEPT", "DEFER", "REJECT"].includes(decision) || typeof reason !== "string") {

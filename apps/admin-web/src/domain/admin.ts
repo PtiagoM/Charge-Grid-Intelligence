@@ -1,3 +1,5 @@
+import type { CommercialEnergyDecision } from "@chargegrid/shared";
+
 export type Profile = "GOODWE" | "ESTABELECIMENTO";
 export type SemsAccountType = "OWNER" | "DISTRIBUTOR_INSTALLER";
 export type SemsOrganizationFunction = "ADMINISTRATOR" | "NAVIGATOR" | "TECHNICIAN";
@@ -9,7 +11,7 @@ export type AdminRole =
   | "ESTABLISHMENT_ADMIN"
   | "ESTABLISHMENT_OPERATOR"
   | "REPORT_VIEWER";
-export type ChargerStatus = "available" | "connected" | "charging" | "limited" | "offline";
+export type ChargerStatus = "available" | "connected" | "charging" | "limited" | "fault" | "offline";
 /** Frontend-only publication lifecycle; commercial availability lives in @chargegrid/shared. */
 export type ChargerPublicationStatus = "ELIGIBLE" | "CONFIGURED" | "PUBLISHED" | "SUSPENDED";
 export type SessionStatus = "authorized" | "starting" | "active" | "suspended" | "energy_finished" | "settling" | "finished" | "start_failed";
@@ -20,6 +22,7 @@ export type PlantAccessPolicy = "PUBLIC" | "PRIVATE" | "MIXED";
 
 export interface GoodWePlantCharger {
   id: string;
+  code?: string;
   serial: string;
   model: string;
   powerKw: number;
@@ -28,6 +31,7 @@ export interface GoodWePlantCharger {
 
 export interface GoodWePlant {
   id: string;
+  source?: "GOODWE_FIXTURE" | "COMMERCIAL_API";
   name: string;
   organization: string;
   address: string;
@@ -147,7 +151,6 @@ export interface Location {
 
 export interface Charger {
   id: string;
-  /** UUID do contrato comercial; `id` continua sendo o código operacional exibido. */
   establishmentId: string;
   locationId: string;
   identifier: string;
@@ -256,7 +259,8 @@ export interface Payment {
 
 export interface Session {
   id: string;
-  /** UUID da sessão comercial; `id` continua sendo o código público exibido. */
+  publicCode?: string;
+  /** Compatibilidade temporária com fixtures SEMS+ legadas. */
   internalId?: string;
   chargerId: string;
   establishmentId: string;
@@ -368,6 +372,10 @@ export interface AuditEntry {
 }
 
 export interface EnergySnapshot {
+  plantId?: string;
+  sampleId?: string;
+  source?: "SIMULATED";
+  quality?: "FRESH" | "STALE" | "UNKNOWN";
   establishmentId: string;
   demandState: "Favorável" | "Alerta" | "Crítico";
   observedAt: string;
@@ -378,6 +386,11 @@ export interface EnergySnapshot {
   batterySocPercent: number | null;
   solarPowerKw: number;
   gridPowerKw: number;
+  buildingLoadKw?: number;
+  evLoadKw?: number;
+  gridImportKw?: number;
+  gridExportKw?: number;
+  decision?: CommercialEnergyDecision;
   periodSolarKwh?: number;
   periodBatteryKwh?: number;
   periodGridKwh?: number;
@@ -390,6 +403,10 @@ export interface EnergyPolicy {
   freshnessMinutes: number;
   blockStartOnCritical: boolean;
   blockStartWithoutFreshTelemetry: boolean;
+  demandControlEnabled?: boolean;
+  version?: string;
+  recoveryUtilizationPercent?: number;
+  recoveryStableSeconds?: number;
 }
 
 export interface TariffPolicy {
@@ -466,6 +483,11 @@ export interface Incident {
   assignee?: string;
   resolvedAt?: string;
   resolution?: string;
+  conditionActive?: boolean;
+  reasonCode?: string;
+  evidence?: string[];
+  policyVersion?: string | null;
+  sampleId?: string | null;
 }
 
 export interface IncidentEvent {
@@ -495,6 +517,13 @@ export interface Recommendation {
   decidedAt?: string;
   decidedBy?: string;
   decisionReason?: string;
+  conditionActive?: boolean;
+  origin?: string;
+  reasonCode?: string;
+  sourceEventId?: string | null;
+  sampleId?: string | null;
+  policyVersion?: string | null;
+  updatedAt?: string;
 }
 
 export interface IncidentActionResult {

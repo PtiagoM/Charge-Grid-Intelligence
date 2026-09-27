@@ -1,16 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { AccessActionResult, Account, AdminState, FinancialActionResult, IncidentActionResult, PlantOnboardingDraft, PlantOnboardingPublishResult, QueueActionResult, Recommendation, ReportActionResult, ReportSubscription, SupportTicket } from "../domain/admin";
+import type { AccessActionResult, Account, AdminState, FinancialActionResult, IncidentActionResult, PlantOnboardingDraft, PlantOnboardingPublishResult, Recommendation, ReportActionResult, ReportSubscription, SupportTicket } from "../domain/admin";
 import { createInitialState } from "../fixtures/adminDemo";
 import { GOODWE_PLANT_CATALOG } from "../fixtures/goodwePlantCatalog";
 import { createEmptyPlantOnboardingDraft, publishPlantOnboarding as publishPlantDraft } from "../domain/plantOnboarding";
 import { browserAdminStateRepository } from "../services/adminStateRepository";
-import { callNextDriver, confirmQueueArrival as confirmArrival, markQueueNoShow as noShow, releaseQueueEntry as releaseEntry } from "../domain/queueOperations";
 import { refundPayment as refundTransaction, settlePayment as settleTransaction } from "../domain/financialOperations";
-import { acknowledgeIncident as acknowledgeOperationalIncident, correlateOperationalSignals, decideRecommendation as decideOperationalRecommendation, resolveIncident as resolveOperationalIncident } from "../domain/incidentOperations";
+import { acknowledgeIncident as acknowledgeOperationalIncident, decideRecommendation as decideOperationalRecommendation, resolveIncident as resolveOperationalIncident } from "../domain/incidentOperations";
 import { grantAccess as grantAccountAccess, revokeAccess as revokeAccountAccess, type GrantAccessInput } from "../domain/accessOperations";
 import { completeReport, failReport, markReportProcessing, requestReport as requestOperationalReport, saveReportSubscription as saveOperationalReportSubscription, type RequestReportInput } from "../domain/reportOperations";
-import { demoAdminReportRepository } from "../services/adminReportRepository";
-import { decideCommercialInsight, fetchCommercialInsights, fetchCommercialSnapshot, generateCommercialReportArtifact, mergeCommercialSnapshot, publishCommercialTariff } from "../services/commercialSnapshotRepository";
+import { decideCommercialInsight, fetchCommercialProjection, generateCommercialReportArtifact, mergeCommercialSnapshot, publishCommercialTariff } from "../services/commercialSnapshotRepository";
 
 function readState(): AdminState {
   return browserAdminStateRepository.load(createInitialState());
@@ -21,10 +19,6 @@ interface AdminContextValue {
   account: Account | null;
   login: (email: string, password: string) => Account | null;
   logout: () => void;
-  callNextQueueDriver: (establishmentId: string) => QueueActionResult;
-  confirmQueueArrival: (entryId: string) => QueueActionResult;
-  markQueueNoShow: (entryId: string, now?: string) => QueueActionResult;
-  releaseQueueEntry: (entryId: string) => QueueActionResult;
   publishTariff: (input: { establishmentId: string; energyCentsPerKwh: number; idleCentsPerMinute: number; reason: string }) => Promise<FinancialActionResult>;
   refundPayment: (transactionId: string, amountCents: number, reason: string, idempotencyKey: string) => FinancialActionResult;
   settlePayment: (transactionId: string) => FinancialActionResult;
@@ -59,8 +53,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     const refresh = async () => {
       controller?.abort();
       controller = new AbortController();
-      const [snapshot, insights] = await Promise.all([fetchCommercialSnapshot(controller.signal), fetchCommercialInsights(controller.signal)]);
-      if (active) setState((current) => mergeCommercialSnapshot(current, snapshot, insights));
+      const { snapshot, insights, energyViews } = await fetchCommercialProjection(controller.signal);
+      if (active) setState((current) => mergeCommercialSnapshot(current, snapshot, insights, energyViews));
     };
     void refresh().catch(() => undefined);
     const timer = window.setInterval(() => void refresh().catch(() => undefined), 2000);
@@ -75,35 +69,11 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => setState((current) => ({ ...current, currentAccountId: null })), []);
 
-  const callNextQueueDriver = useCallback((establishmentId: string) => {
-    const transition = callNextDriver(state, account, establishmentId);
-    if (transition.ok) setState(transition.state);
-    return transition;
-  }, [account, state]);
-
-  const confirmQueueArrival = useCallback((entryId: string) => {
-    const transition = confirmArrival(state, account, entryId);
-    if (transition.ok) setState(transition.state);
-    return transition;
-  }, [account, state]);
-
-  const markQueueNoShow = useCallback((entryId: string, now?: string) => {
-    const transition = noShow(state, account, entryId, now);
-    if (transition.ok) setState(transition.state);
-    return transition;
-  }, [account, state]);
-
-  const releaseQueueEntry = useCallback((entryId: string) => {
-    const transition = releaseEntry(state, account, entryId);
-    if (transition.ok) setState(transition.state);
-    return transition;
-  }, [account, state]);
-
   const publishTariff = useCallback(async (input: { establishmentId: string; energyCentsPerKwh: number; idleCentsPerMinute: number; reason: string }) => {
     try {
       await publishCommercialTariff(input);
-      const [snapshot, insights] = await Promise.all([fetchCommercialSnapshot(), fetchCommercialInsights()]);
-      setState((current) => mergeCommercialSnapshot(current, snapshot, insights));
+      const { snapshot, insights, energyViews } = await fetchCommercialProjection();
+      setState((current) => mergeCommercialSnapshot(current, snapshot, insights, energyViews));
       return { ok: true, issues: [] };
     } catch (error) {
       return { ok: false, issues: [error instanceof Error ? error.message : "Não foi possível publicar a tarifa."] };
@@ -126,8 +96,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     if (incidentId.startsWith("insight_")) {
       try {
         await decideCommercialInsight(incidentId, "ACKNOWLEDGE", `Reconhecido por ${assignee || "operação"}.`);
-        const [snapshot, insights] = await Promise.all([fetchCommercialSnapshot(), fetchCommercialInsights()]);
-        setState((current) => mergeCommercialSnapshot(current, snapshot, insights));
+        const { snapshot, insights, energyViews } = await fetchCommercialProjection();
+        setState((current) => mergeCommercialSnapshot(current, snapshot, insights, energyViews));
         return { ok: true, issues: [] };
       } catch (error) {
         return { ok: false, issues: [error instanceof Error ? error.message : "Não foi possível reconhecer a ocorrência."] };
@@ -142,8 +112,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     if (incidentId.startsWith("insight_")) {
       try {
         await decideCommercialInsight(incidentId, "RESOLVE", resolution);
-        const [snapshot, insights] = await Promise.all([fetchCommercialSnapshot(), fetchCommercialInsights()]);
-        setState((current) => mergeCommercialSnapshot(current, snapshot, insights));
+        const { snapshot, insights, energyViews } = await fetchCommercialProjection();
+        setState((current) => mergeCommercialSnapshot(current, snapshot, insights, energyViews));
         return { ok: true, issues: [] };
       } catch (error) {
         return { ok: false, issues: [error instanceof Error ? error.message : "Não foi possível resolver a ocorrência."] };
@@ -158,8 +128,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     if (recommendationId.startsWith("insight_")) {
       try {
         await decideCommercialInsight(recommendationId, decision === "ACCEPTED" ? "ACCEPT" : decision === "DEFERRED" ? "DEFER" : "REJECT", reason || "Revisado pela operação.");
-        const [snapshot, insights] = await Promise.all([fetchCommercialSnapshot(), fetchCommercialInsights()]);
-        setState((current) => mergeCommercialSnapshot(current, snapshot, insights));
+        const { snapshot, insights, energyViews } = await fetchCommercialProjection();
+        setState((current) => mergeCommercialSnapshot(current, snapshot, insights, energyViews));
         return { ok: true, issues: [] };
       } catch (error) {
         return { ok: false, issues: [error instanceof Error ? error.message : "Não foi possível registrar a decisão."] };
@@ -190,10 +160,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     if (!processing.ok || !processing.job) return processing;
     setState(processing.state);
     try {
-      const isAuroraReport = processing.job.establishmentIds.length === 1 && processing.job.establishmentIds[0] === "est_aurora_001" && ["ENERGY", "FINANCIAL", "INCIDENTS"].includes(processing.job.type);
-      const artifact = isAuroraReport
-        ? await generateCommercialReportArtifact({ type: processing.job.type as "ENERGY" | "FINANCIAL" | "INCIDENTS", establishmentId: "est_aurora_001", periodFrom: processing.job.periodFrom, periodTo: processing.job.periodTo })
-        : await demoAdminReportRepository.generate(processing.state, processing.job);
+      const isAuroraReport = processing.job.establishmentIds.length === 1 && processing.job.establishmentIds[0] === "est_aurora_001";
+      if (!isAuroraReport) throw new Error("Relatórios operacionais estão disponíveis somente para o Hub Solar Aurora neste protótipo.");
+      const artifact = await generateCommercialReportArtifact({ type: processing.job.type, establishmentId: "est_aurora_001", periodFrom: processing.job.periodFrom, periodTo: processing.job.periodTo });
       const completed = completeReport(processing.state, processing.job.id, artifact);
       setState(completed.state);
       return completed;
@@ -244,7 +213,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     return publication.result;
   }, [state]);
 
-  const value = useMemo(() => ({ state, account, login, logout, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, publishTariff, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, requestReport: runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding }), [state, account, login, logout, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, publishTariff, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding]);
+  const value = useMemo(() => ({ state, account, login, logout, publishTariff, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, requestReport: runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding }), [state, account, login, logout, publishTariff, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding]);
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
 }
 

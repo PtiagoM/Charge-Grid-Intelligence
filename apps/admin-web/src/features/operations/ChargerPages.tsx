@@ -83,6 +83,7 @@ function chargerInventoryStatus(value: string): SemsDeviceStatus {
   if (value === "connected") return "standby";
   if (value === "offline") return "offline";
   if (value === "limited") return "maintenance";
+  if (value === "fault") return "fault";
   return "inactive";
 }
 
@@ -129,7 +130,7 @@ function ChargeRecordCard({ session }: { session: Session }) {
     <header><img src={assets.chargerChargingLight} alt="" /><strong>{durationLabel(session.durationMinutes)}</strong><Badge value={session.status} /></header>
     <time>{localDate(session.startedAt)} — {localDate(sessionEnd(session))}</time>
     <div className="sems-charge-record-metrics"><div><strong>{number(session.energyKwh)} <small>kWh</small></strong><span>Energia carregada</span></div><div><strong>{number(session.energyKwh * 5)} <small>km</small></strong><span>Autonomia estimada</span></div></div>
-    <dl><div><dt>Sessão ChargeGrid</dt><dd>{session.id}</dd></div><div><dt>Motorista</dt><dd>{session.driverName}</dd></div><div><dt>Conector</dt><dd>1</dd></div></dl>
+    <dl><div><dt>Sessão ChargeGrid</dt><dd>{session.publicCode ?? session.id}</dd></div><div><dt>Motorista</dt><dd>{session.driverName}</dd></div><div><dt>Conector</dt><dd>1</dd></div></dl>
   </article>;
 }
 
@@ -298,7 +299,7 @@ export function ChargerDetailPage({ chargerId, establishmentId }: { chargerId: s
   const telemetry = state.chargerTelemetry.find((item) => item.chargerId === charger.id);
   const sessions = state.sessions.filter((item) => item.chargerId === charger.id).sort((a, b) => b.startedAt.localeCompare(a.startedAt));
   const commands = state.chargerCommands.filter((item) => item.chargerId === charger.id).sort((a, b) => b.requestedAt.localeCompare(a.requestedAt));
-  const currentSession = charger.currentSessionId ? sessions.find((item) => item.internalId === charger.currentSessionId) : undefined;
+  const currentSession = charger.currentSessionId ? sessions.find((item) => item.id === charger.currentSessionId) : undefined;
   const latestCharge = sessions.find((item) => item.status === "finished") ?? currentSession ?? sessions[0];
   return <div className="sems-charger-detail" data-testid="mvp-charger-detail">
     <nav className="enterprise-breadcrumb" aria-label="Navegação estrutural"><span><a href="#/mvp/chargers">Lista de dispositivos</a><i>/</i></span><span><strong>Detalhes do dispositivo</strong></span></nav>
@@ -319,7 +320,7 @@ export function ChargerDetailPage({ chargerId, establishmentId }: { chargerId: s
         <article className="surface sems-latest-charge">
           {canViewSessions ? <button type="button" onClick={() => setDrawer("charges")}>Registro de carregamento <span>›</span></button> : <span className="sems-technical-kicker">Monitoramento técnico SEMS+</span>}
           <h3>{latestCharge?.status === "finished" ? "Último carregamento" : "Carregamento atual"}</h3>
-          {latestCharge ? <div className="sems-latest-charge-content"><div className="sems-vehicle-state"><img src={assets.chargerNoConnectedCar} alt="" /><span>{telemetry?.vehicleConnected ? "Conectado" : "Não conectado"}</span></div><div className="sems-latest-charge-data"><strong><img src={assets.chargerChargingLight} alt="" />{durationLabel(latestCharge.durationMinutes)}</strong><time>{localDate(latestCharge.startedAt)} — {localDate(sessionEnd(latestCharge))}</time><div><article><b>{number(latestCharge.energyKwh)} <small>kWh</small></b><span>Energia carregada</span></article><article><b>{number(latestCharge.energyKwh * 5)} <small>km</small></b><span>Autonomia estimada</span></article></div>{canViewSessions ? <dl><div><dt>Sessão ChargeGrid</dt><dd>{latestCharge.id}</dd></div><div><dt>Motorista</dt><dd>{latestCharge.driverName}</dd></div><div><dt>Porta de carregamento</dt><dd>1</dd></div></dl> : null}</div></div> : <p className="operations-empty">Nenhum carregamento registrado neste dispositivo.</p>}
+          {latestCharge ? <div className="sems-latest-charge-content"><div className="sems-vehicle-state"><img src={assets.chargerNoConnectedCar} alt="" /><span>{telemetry?.vehicleConnected ? "Conectado" : "Não conectado"}</span></div><div className="sems-latest-charge-data"><strong><img src={assets.chargerChargingLight} alt="" />{durationLabel(latestCharge.durationMinutes)}</strong><time>{localDate(latestCharge.startedAt)} — {localDate(sessionEnd(latestCharge))}</time><div><article><b>{number(latestCharge.energyKwh)} <small>kWh</small></b><span>Energia carregada</span></article><article><b>{number(latestCharge.energyKwh * 5)} <small>km</small></b><span>Autonomia estimada</span></article></div>{canViewSessions ? <dl><div><dt>Sessão ChargeGrid</dt><dd>{latestCharge.publicCode ?? latestCharge.id}</dd></div><div><dt>Motorista</dt><dd>{latestCharge.driverName}</dd></div><div><dt>Porta de carregamento</dt><dd>1</dd></div></dl> : null}</div></div> : <p className="operations-empty">Nenhum carregamento registrado neste dispositivo.</p>}
         </article>
 
         <article className="surface sems-charger-monitoring">
@@ -366,7 +367,7 @@ export function SessionsPage({ establishmentId }: { establishmentId?: string }) 
       <button className="sems-icon-action" type="button" aria-label="Limpar filtros" onClick={() => { setScopeFilter(establishmentId ?? "all"); setSearch(""); }}>↻</button>
     </form>
     <nav className="sems-reference-status-tabs" aria-label="Estado das sessões" role="tablist"><button type="button" role="tab" aria-selected={view === "live"} className={view === "live" ? "is-active" : ""} onClick={() => setView("live")}>Ao vivo <b>({scoped.filter((item) => ["starting", "active", "suspended"].includes(item.status)).length})</b></button><button type="button" role="tab" aria-selected={view === "authorized"} className={view === "authorized" ? "is-active" : ""} onClick={() => setView("authorized")}>Aguardando início <b>({scoped.filter((item) => ["authorized", "start_failed"].includes(item.status)).length})</b></button><button type="button" role="tab" aria-selected={view === "history"} className={view === "history" ? "is-active" : ""} onClick={() => setView("history")}>Histórico <b>({scoped.filter((item) => ["energy_finished", "settling", "finished"].includes(item.status)).length})</b></button></nav>
-    <DataTable columns={["Sessão", "Motorista", "Carregador", "Estado", "Energia e tempo", "Pagamento", "Operação"]}>{items.map((session) => <tr key={session.id}><td><strong>{session.id}</strong><span>{state.locations.find((item) => item.id === session.locationId)?.name}</span></td><td><strong>{session.driverName}</strong><span>{session.vehicle}</span></td><td><a href={`#/mvp/charger?est=${session.establishmentId}&charger=${session.chargerId}`}>{session.chargerId}</a></td><td><Badge value={session.status} /></td><td>{number(session.energyKwh)} kWh<span>{session.durationMinutes} min · {money(session.consumedAmount)}</span></td><td><Badge value={session.payment.status} /><span>{session.payment.method}</span></td><td><a className="sems-row-action" href={`#/mvp/session?est=${session.establishmentId}&session=${session.id}`}>Abrir sessão ›</a></td></tr>)}</DataTable>
+    <DataTable columns={["Sessão", "Motorista", "Carregador", "Estado", "Energia e tempo", "Pagamento", "Operação"]}>{items.map((session) => { const charger = state.chargers.find((item) => item.id === session.chargerId); return <tr key={session.id}><td><strong>{session.publicCode ?? session.id}</strong><span>{state.locations.find((item) => item.id === session.locationId)?.name}</span></td><td><strong>{session.driverName}</strong><span>{session.vehicle}</span></td><td><a href={`#/mvp/charger?est=${session.establishmentId}&charger=${session.chargerId}`}>{charger?.identifier ?? session.chargerId}</a></td><td><Badge value={session.status} /></td><td>{number(session.energyKwh)} kWh<span>{session.durationMinutes} min · {money(session.consumedAmount)}</span></td><td><Badge value={session.payment.status} /><span>{session.payment.method}</span></td><td><a className="sems-row-action" href={`#/mvp/session?est=${session.establishmentId}&session=${session.id}`}>Abrir sessão ›</a></td></tr>; })}</DataTable>
     {!items.length ? <p className="operations-empty">Nenhuma sessão neste estado.</p> : null}
     <footer className="sems-status-legend" data-testid="mvp-sessions-finished"><span><Badge value="authorized" /> pagamento validado</span><span><Badge value="starting" /> aguardando energia</span><span><Badge value="active" /> telemetria confirmou carga</span><span><Badge value="energy_finished" /> energia encerrada</span><span><Badge value="finished" /> liquidada</span></footer>
   </section>;
@@ -404,7 +405,7 @@ export function SessionDetailPage({ sessionId, establishmentId }: { sessionId: s
     <nav className="enterprise-breadcrumb" aria-label="Navegação estrutural"><span><a href={`#/mvp/sessions?est=${session.establishmentId}`}>Sessões</a><i>/</i></span><span><strong>Detalhe da sessão</strong></span></nav>
 
     <section className="cg-session-hero">
-      <div className="cg-session-identity"><a href={`#/mvp/sessions?est=${session.establishmentId}`} aria-label="Voltar para sessões">‹</a><div><span>Sessão de recarga</span><h1>#{session.id.replace("CG-2026-", "")}</h1><p>{establishment?.name} · {location?.name}</p></div></div>
+      <div className="cg-session-identity"><a href={`#/mvp/sessions?est=${session.establishmentId}`} aria-label="Voltar para sessões">‹</a><div><span>Sessão de recarga</span><h1>#{session.publicCode ?? session.id}</h1><p>{establishment?.name} · {location?.name}</p></div></div>
       <div className="cg-session-live-state"><Badge value={session.status} />{session.status === "active" ? <span><i /> Atualização em tempo real</span> : <span>Última atualização {localDate(events.at(-1)?.at ?? session.startedAt)}</span>}</div>
       <div className="cg-session-hero-actions"><a href={`#/mvp/charger?est=${session.establishmentId}&charger=${session.chargerId}`}>Abrir carregador</a><a className="is-primary" href={`#/mvp/operations?est=${session.establishmentId}`}>Voltar à operação</a></div>
     </section>
@@ -420,7 +421,7 @@ export function SessionDetailPage({ sessionId, establishmentId }: { sessionId: s
 
     <div className="cg-session-layout">
       <section className="cg-session-card cg-session-overview" id="session-summary">
-        <header><div><span>Visão geral</span><h2>Contexto da recarga</h2></div><small>{session.id}</small></header>
+        <header><div><span>Visão geral</span><h2>Contexto da recarga</h2></div><small>{session.publicCode ?? session.id}</small></header>
         <div className="cg-session-people">
           <article><i aria-hidden="true">●</i><div><span>Motorista</span><strong>{session.driverName}</strong><small>{session.driverId}</small></div></article>
           <article><i aria-hidden="true">◆</i><div><span>Veículo</span><strong>{session.vehicle}</strong><small>{session.servicePriority === "FLEET_CRITICAL" ? "Prioridade de frota" : session.servicePriority === "ACCESSIBILITY" ? "Atendimento prioritário" : "Atendimento padrão"}</small></div></article>

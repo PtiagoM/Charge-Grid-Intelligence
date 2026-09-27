@@ -78,8 +78,8 @@ export function normalizeAdminState(candidate: AdminState, fallback: AdminState)
     incidents: Array.isArray(candidate.incidents) ? candidate.incidents : fallback.incidents,
     incidentEvents: Array.isArray(candidate.incidentEvents) ? candidate.incidentEvents : fallback.incidentEvents,
     recommendations: Array.isArray(candidate.recommendations) ? candidate.recommendations : fallback.recommendations,
-    reportJobs: Array.isArray(candidate.reportJobs) ? candidate.reportJobs : fallback.reportJobs,
-    reportSubscriptions: Array.isArray(candidate.reportSubscriptions) ? candidate.reportSubscriptions : fallback.reportSubscriptions
+    reportJobs: (Array.isArray(candidate.reportJobs) ? candidate.reportJobs : fallback.reportJobs).filter((item) => item.establishmentIds.every((id) => id === "est_aurora_001")),
+    reportSubscriptions: (Array.isArray(candidate.reportSubscriptions) ? candidate.reportSubscriptions : fallback.reportSubscriptions).filter((item) => item.establishmentIds.every((id) => id === "est_aurora_001"))
   };
 }
 

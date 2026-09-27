@@ -52,6 +52,40 @@ export interface PlantEnergySnapshot {
   solarToEvWh: number;
 }
 
+export interface CommercialEnergyPolicy {
+  id: string;
+  plantId: string;
+  version: string;
+  demandControlEnabled: boolean;
+  limitKw: number;
+  alertPercent: number;
+  criticalPercent: number;
+  recoveryPercent: number;
+  recoveryStableSeconds: number;
+  freshSeconds: number;
+  updatedAt: string;
+}
+
+export interface CommercialEnergyDecision {
+  plantId: string;
+  policyVersion: string;
+  sampleId: string | null;
+  state: "NORMAL" | "ALERT" | "CRITICAL" | null;
+  quality: "FRESH" | "STALE" | "UNKNOWN";
+  enabled: boolean;
+  canAdmit: boolean;
+  reasonCode: "ENERGY_POLICY_DISABLED" | "TELEMETRY_UNAVAILABLE" | "DEMAND_ALERT" | "PROJECTED_LIMIT" | "ADMISSION_ALLOWED";
+  projectedImportKw: number | null;
+  candidateSessionIds: string[];
+  observedAt: string;
+}
+
+export interface CommercialEnergyView {
+  snapshot: PlantEnergySnapshot | null;
+  policy: CommercialEnergyPolicy;
+  decision: CommercialEnergyDecision;
+}
+
 export interface CommercialInsight {
   id: string;
   kind: "ALERT" | "RECOMMENDATION";
@@ -70,6 +104,7 @@ export interface CommercialInsight {
   decidedAt?: string;
   decidedBy?: string;
   decisionReason?: string;
+  createdAt: string;
   updatedAt: string;
 }
 
@@ -92,12 +127,31 @@ export interface CommercialOperationalReport {
     capturedCents: number;
     refundedCents: number;
   };
+  sessions: Array<{
+    id: string;
+    publicCode: string;
+    chargerId: string;
+    chargerCode: string;
+    driverName: string;
+    status: CommercialSessionStatus;
+    energyWh: number;
+    totalCostCents: number;
+    startedAt?: string;
+    endedAt?: string;
+    createdAt: string;
+  }>;
+  chargers: {
+    total: number;
+    available: number;
+    charging: number;
+    faulted: number;
+  };
   decisions: CommercialInsight[];
 }
 
 export interface ChargerSummary {
   id: string;
-  /** Persistent commercial identifier when the UI uses the operational code as `id`. */
+  /** Legacy alias only; canonical integrations keep the persistent UUID in `id`. */
   internalId?: string;
   commercialName: string;
   technicalStatus: ChargerTechnicalStatus;

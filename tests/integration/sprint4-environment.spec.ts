@@ -10,3 +10,36 @@ test("uses an isolated Aurora database without Stripe credentials", async ({ req
   const catalog = await request.get(`${api}/commercial/catalog`);
   expect((await catalog.json()).establishments[0]).toMatchObject({ id: "est_aurora_001", chargers: expect.arrayContaining([expect.objectContaining({ code: "AURORA-01" })]) });
 });
+
+test("projects the same Aurora plant, charger and energy state across Admin surfaces", async ({ page, request }) => {
+  await request.post(`${api}/commercial/test-data/reset`);
+  await request.post(`${api}/commercial/plants/plant_aurora_001/hardware`, { data: { online: true, pvKw: 20, buildingLoadKw: 10 } });
+
+  await page.goto("http://127.0.0.1:5273/#/login");
+  await page.getByTestId("login-email").fill("aurora@teste.com");
+  await page.getByTestId("login-password").fill("teste");
+  await page.getByTestId("login-submit").click();
+  await expect(page.getByRole("link", { name: "ChargeGrid" })).toBeVisible();
+
+  await page.goto("http://127.0.0.1:5273/#/mvp/plants?est=est_aurora_001");
+  await expect(page.getByRole("link", { name: "Abrir Hub Solar Aurora" })).toHaveAttribute("href", "#/mvp/plant?plant=plant_aurora_001");
+
+  await page.goto("http://127.0.0.1:5273/#/mvp/operations?est=est_aurora_001");
+  await expect(page.getByRole("button", { name: /A01, AURORA-01, Disponível/ })).toBeVisible();
+
+  await request.post(`${api}/commercial/chargers/AURORA-01/hardware`, { data: { action: "FAULT" } });
+  await page.goto("http://127.0.0.1:5273/#/mvp/chargers?est=est_aurora_001");
+  await page.getByRole("tab", { name: "Carregador veicular" }).click();
+  const aurora01 = page.getByRole("row").filter({ hasText: "AURORA-01" });
+  await expect(aurora01).toContainText("Falha");
+  await request.post(`${api}/commercial/chargers/AURORA-01/hardware`, { data: { action: "RECOVER" } });
+  await expect(aurora01).toContainText("Inativo");
+
+  await page.goto("http://127.0.0.1:5273/#/mvp/energy?est=est_aurora_001");
+  await expect(page.getByText("20,00 kW", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("demand-v1", { exact: true })).toBeVisible();
+
+  await page.goto("http://127.0.0.1:5273/#/mvp/reports?est=est_aurora_001");
+  await expect(page.getByRole("checkbox", { name: "Hub Solar Aurora" }).first()).toBeChecked();
+  await expect(page.getByText("Outras plantas permanecem indisponíveis neste protótipo")).toBeVisible();
+});

@@ -1,6 +1,6 @@
 # ChargeGrid Intelligence — fonte única de verdade
 
-**Atualizado em:** 22 de setembro de 2026  
+**Atualizado em:** 27 de setembro de 2026  
 **Escopo:** GoodWe, produto, negócio, operação, arquitetura, implementação, histórico e decisões vigentes  
 **Status:** documento canônico para continuidade do projeto
 
@@ -13,6 +13,15 @@ A base desta execução é `c8cc21c`, em `develop/admin-web`, com a PR #16 já i
 A auditoria inicial confirmou Admin nativo funcional com domínio e persistência no navegador, PWA com estado operacional local e API financeira Stripe sandbox. Não existia uma sessão operacional compartilhada pelo servidor entre os dois frontends. A validação inicial passou: lint, 88 testes (76 Admin, 7 API e 5 shared) e todos os builds. Não havia testes automatizados próprios da PWA.
 
 O registro de implementação, evidências e limitações da Sprint fica em [`SPRINT3.md`](SPRINT3.md). Código verificado e decisões posteriores prevalecem sobre descrições antigas de implementação. A transparência sobre simulação é obrigatória: o modo técnico de demonstração deve identificá-la explicitamente, conforme a instrução atual do usuário, superando restrições antigas a esse rótulo. O escopo transversal desta entrega autoriza mudanças coordenadas nos dois produtos e nos contratos; não autoriza publicação ou merge.
+
+### Sprint 4 — consistência transversal do Admin (27/09/2026)
+
+- A identidade canônica do cenário é `est_aurora_001 -> plant_aurora_001 -> UUIDs dos carregadores`, com `AURORA-01` a `AURORA-06` reservados à apresentação, código e QR.
+- Lista de usinas, Lista de dispositivos, ChargeGrid, Sessões, Energia e demanda, Recomendações, Central de alarmes e Central de relatórios projetam os mesmos registros comerciais da API. Os aliases históricos Aurora deixaram de orientar a jornada ativa.
+- Política/decisão de demanda e recomendações explicáveis pertencem ao backend. O Admin apenas apresenta os dados e registra revisão humana; nenhuma recomendação executa comando oculto.
+- Falhas e telemetria recuperadas permanecem auditáveis e podem ser resolvidas por decisão humana. Os relatórios Aurora são derivados de sessões, energia, pagamentos, carregadores e decisões persistidos.
+- O laboratório continua sendo exclusivamente a fronteira simulada GoodWe/hardware. Fixtures SEMS+ não Aurora continuam como referência técnica, sem serem apresentadas como operação comercial real.
+- Diagnóstico completo, matriz de fontes e evidências: [`admin-dashboard/INTEGRATION_CONSISTENCY_AUDIT.md`](admin-dashboard/INTEGRATION_CONSISTENCY_AUDIT.md).
 
 ### Sprint 4 — Marco 1 concluído (26/09/2026)
 

@@ -5,6 +5,8 @@
 **Base avaliada:** conteúdo das PRs #11 → #15, consolidado para `develop/admin-web` pela PR #16  
 **Objetivo:** separar o que já está demonstrável no frontend, o que ainda precisa de validação e o que depende de backend ou integração produtiva.
 
+> **Atualização de 27/09/2026:** este documento preserva o backlog histórico do dashboard. Para o cenário obrigatório Aurora, a integração transversal de planta, carregadores, operação, energia, recomendações, alarmes e relatórios foi concluída e está registrada em [`INTEGRATION_CONSISTENCY_AUDIT.md`](INTEGRATION_CONSISTENCY_AUDIT.md). Itens abaixo sobre outras plantas, personas GoodWe e superfícies corporativas não são pré-requisitos da Sprint 4.
+
 ## Resumo executivo
 
 A fundação compartilhada (F0) está concluída e a experiência principal do proprietário comercial (F1) está em estágio avançado. Painel agregado, listas de usinas e dispositivos e a entrada operacional ChargeGrid já foram implementados. A operação local inclui carrossel de vagas, indicadores, alarmes, gráfico, sessões, fila automática, detalhe do carregador, detalhe da sessão e detalhe do pagamento.

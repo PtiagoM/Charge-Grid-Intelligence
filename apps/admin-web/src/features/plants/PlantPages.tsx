@@ -5,24 +5,14 @@ import { KpiCard, SectionHeader, number } from "../../components/AdminUi";
 import type { GoodWePlant, PlantOnboardingIssue } from "../../domain/admin";
 import { validatePlantOnboarding } from "../../domain/plantOnboarding";
 import { assets } from "../../constants/assets";
-import { mockGoodWePlantCatalogRepository } from "../../services/goodwePlantCatalogRepository";
+import { catalogWithCommercialPlants, mockGoodWePlantCatalogRepository } from "../../services/goodwePlantCatalogRepository";
 import { accessibleEstablishmentIds } from "../../domain/accessOperations";
 import { COMMERCIAL_PLANT_CONTRACTS } from "../../fixtures/commercialGovernance";
 import { hasAdminCapability } from "../../domain/adminCapabilities";
 
 function usePlantCatalog() {
-  const [plants, setPlants] = useState<GoodWePlant[]>([]);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    let active = true;
-    mockGoodWePlantCatalogRepository.list().then((result) => {
-      if (active) setPlants(result);
-    }).finally(() => {
-      if (active) setLoading(false);
-    });
-    return () => { active = false; };
-  }, []);
-  return { plants, loading };
+  const { state } = useAdminState();
+  return { plants: useMemo(() => catalogWithCommercialPlants(state), [state]), loading: false };
 }
 
 function technicalState(plant: GoodWePlant, linked: boolean) {
@@ -161,10 +151,11 @@ export function PlantsPortfolioPage() {
     <div className="table-wrap sems-table-wrap sems-plants-table-wrap"><table className="data-table sems-reference-table sems-plants-table"><thead><tr><th>Informações da usina</th><th>Status da usina</th><th>Geração de hoje<br />(kWh)</th><th>Geração total<br />(kWh)</th><th>Rendimento Específico<br />(kWh/kWp)</th><th>Potência FV (kW)</th><th>Observação</th><th>Operação</th><th aria-label="Configuração">⬡</th></tr></thead><tbody>{visiblePlants.map((plant) => {
       const link = canViewCommercial ? state.commercialPlants.find((candidate) => candidate.goodwePlantId === plant.id) : undefined;
       const status = plantStatus(plant);
-      const todayGeneration = plant.catalogState === "READY" ? plant.capacityKwp * 0.02065 : 0;
-      const totalGeneration = plant.catalogState === "READY" ? plant.capacityKwp * 39.4945 : 0;
-      const specificYield = plant.capacityKwp ? todayGeneration / plant.capacityKwp * 15 : 0;
-      return <tr key={plant.id} data-testid={`plant-card-${plant.id}`}><td><div className="sems-plant-cell"><img src={assets.plant} alt="" /><div><strong>{plant.name}{link ? <em>ChargeGrid</em> : null}</strong><span>{plant.address}, {plant.number}</span><small>▣&nbsp; {number(plant.capacityKwp)} kW</small></div></div></td><td><span className={`sems-plant-operating-state tone-${status.tone}`}><i>{status.icon}</i>{status.label}</span></td><td>{number(todayGeneration)}</td><td>{number(totalGeneration)}</td><td>{number(specificYield)}</td><td>{plant.catalogState === "READY" ? number(plant.capacityKwp) : "--"}</td><td>{link ? "Planta comercial" : "--"}</td><td><button className={favorites.has(plant.id) ? "sems-plant-favorite is-active" : "sems-plant-favorite"} type="button" aria-label={favorites.has(plant.id) ? "Remover dos favoritos" : "Adicionar aos favoritos"} onClick={() => toggleFavorite(plant.id)}>☆</button><a className="sems-device-menu" href={`#/mvp/plant?plant=${plant.id}`} aria-label={`Abrir ${plant.name}`}>•••</a></td><td /></tr>;
+      const hasGeneration = plant.source !== "COMMERCIAL_API" && plant.catalogState === "READY";
+      const todayGeneration = hasGeneration ? plant.capacityKwp * 0.02065 : null;
+      const totalGeneration = hasGeneration ? plant.capacityKwp * 39.4945 : null;
+      const specificYield = hasGeneration && plant.capacityKwp ? todayGeneration! / plant.capacityKwp * 15 : null;
+      return <tr key={plant.id} data-testid={`plant-card-${plant.id}`}><td><div className="sems-plant-cell"><img src={assets.plant} alt="" /><div><strong>{plant.name}{link ? <em>ChargeGrid</em> : null}</strong><span>{plant.address}, {plant.number}</span><small>▣&nbsp; {plant.source === "COMMERCIAL_API" ? "Potência FV indisponível" : `${number(plant.capacityKwp)} kW`}</small></div></div></td><td><span className={`sems-plant-operating-state tone-${status.tone}`}><i>{status.icon}</i>{status.label}</span></td><td>{todayGeneration === null ? "—" : number(todayGeneration)}</td><td>{totalGeneration === null ? "—" : number(totalGeneration)}</td><td>{specificYield === null ? "—" : number(specificYield)}</td><td>{plant.source === "COMMERCIAL_API" ? "—" : plant.catalogState === "READY" ? number(plant.capacityKwp) : "--"}</td><td>{link ? "Planta comercial" : "--"}</td><td><button className={favorites.has(plant.id) ? "sems-plant-favorite is-active" : "sems-plant-favorite"} type="button" aria-label={favorites.has(plant.id) ? "Remover dos favoritos" : "Adicionar aos favoritos"} onClick={() => toggleFavorite(plant.id)}>☆</button><a className="sems-device-menu" href={`#/mvp/plant?plant=${plant.id}`} aria-label={`Abrir ${plant.name}`}>•••</a></td><td /></tr>;
     })}</tbody></table></div>
     <footer className="sems-device-pagination"><button type="button" disabled aria-label="Página anterior">‹</button><strong>1</strong><button type="button" disabled aria-label="Próxima página">›</button><select aria-label="Itens por página" defaultValue="15"><option value="15">15 / página</option><option value="30">30 / página</option></select></footer>
   </section>;
@@ -197,8 +188,8 @@ export function PlantDetailPage({ plantId }: { plantId: string }) {
       {!link && authorizedContract && canStartActivation && plant.authorization === "AUTHORIZED" && plant.catalogState === "READY" && plant.evChargers.length ? <a className="sems-primary-action" href={`#/mvp/plant-onboarding?contract=${authorizedContract.id}`}>Iniciar vínculo</a> : null}
     </section>
     <nav className="entity-tabs"><a className="is-active" href="#plant-summary">Resumo</a><a href="#plant-equipment">Equipamentos detectados</a>{account?.role ? <a href="#plant-commercial">Perfil comercial</a> : null}</nav>
-    <section id="plant-summary" className="surface panel"><SectionHeader title="Dados técnicos sincronizados" subtitle="Campos somente leitura, mantidos pela integração GoodWe." /><div className="kpi-grid four-cols"><KpiCard label="Capacidade fotovoltaica" value={`${number(plant.capacityKwp)} kWp`} /><KpiCard label="Bateria" value={`${number(plant.batteryCapacityKwh)} kWh`} /><KpiCard label="Carregadores EV" value={plant.evChargers.length} /><KpiCard label="Estado do catálogo" value={plant.catalogState} accent={plant.catalogState === "READY" ? "good" : "warn"} /></div><div className="technical-readonly-grid"><article><span>ID GoodWe</span><strong>{plant.id}</strong></article><article><span>Organização</span><strong>{plant.organization}</strong></article><article><span>Última sincronização</span><strong>{plant.lastSyncAt ? new Date(plant.lastSyncAt).toLocaleString("pt-BR") : "Sem dados"}</strong></article><article><span>Autorização</span><strong>{plant.authorization === "AUTHORIZED" ? "Autorizada" : "Negada"}</strong></article></div></section>
-    <section id="plant-equipment" className="surface panel"><SectionHeader title="Carregadores detectados" subtitle="Inventário técnico importado; nenhum número de série é digitado no ChargeGrid." />{plant.evChargers.length ? <div className="detected-charger-list">{plant.evChargers.map((charger) => <article key={charger.id}><div><span>{charger.id}</span><h3>{charger.model}</h3><p>Série {charger.serial}</p></div><strong>{charger.powerKw} kW</strong><span className={`plant-state tone-${charger.technicalStatus === "ONLINE" ? "good" : "danger"}`}>{charger.technicalStatus === "ONLINE" ? "Online" : "Offline"}</span></article>)}</div> : <div className="empty-state">Nenhum carregador EV detectado. A publicação comercial permanece bloqueada.</div>}</section>
+    <section id="plant-summary" className="surface panel"><SectionHeader title="Dados técnicos sincronizados" subtitle="Campos somente leitura, mantidos pela integração GoodWe." /><div className="kpi-grid four-cols"><KpiCard label="Capacidade fotovoltaica" value={plant.source === "COMMERCIAL_API" ? "Indisponível" : `${number(plant.capacityKwp)} kWp`} /><KpiCard label="Bateria" value={plant.source === "COMMERCIAL_API" ? "Não integrada" : `${number(plant.batteryCapacityKwh)} kWh`} /><KpiCard label="Carregadores EV" value={plant.evChargers.length} /><KpiCard label="Estado do catálogo" value={plant.catalogState} accent={plant.catalogState === "READY" ? "good" : "warn"} /></div><div className="technical-readonly-grid"><article><span>ID da planta</span><strong>{plant.id}</strong></article><article><span>Organização</span><strong>{plant.organization}</strong></article><article><span>Última sincronização</span><strong>{plant.lastSyncAt ? new Date(plant.lastSyncAt).toLocaleString("pt-BR") : "Sem dados"}</strong></article><article><span>Autorização</span><strong>{plant.authorization === "AUTHORIZED" ? "Autorizada" : "Negada"}</strong></article></div></section>
+    <section id="plant-equipment" className="surface panel"><SectionHeader title="Carregadores detectados" subtitle="Inventário técnico importado; nenhum número de série é digitado no ChargeGrid." />{plant.evChargers.length ? <div className="detected-charger-list">{plant.evChargers.map((charger) => <article key={charger.id}><div><span>{charger.code ?? charger.id}</span><h3>{charger.model}</h3><p>ID {charger.id}</p></div><strong>{charger.powerKw} kW</strong><span className={`plant-state tone-${charger.technicalStatus === "ONLINE" ? "good" : "danger"}`}>{charger.technicalStatus === "ONLINE" ? "Online" : "Offline"}</span></article>)}</div> : <div className="empty-state">Nenhum carregador EV detectado. A publicação comercial permanece bloqueada.</div>}</section>
     {account?.role ? <section id="plant-commercial" className="surface panel"><SectionHeader title="Perfil comercial" subtitle={canViewCommercial ? "Vínculo publicado no ChargeGrid." : "Nenhum vínculo comercial foi publicado."} />{canViewCommercial ? <div className="commercial-profile-grid"><article><span>Nome no ChargeGrid</span><strong>{link?.commercialName}</strong></article><article><span>Estabelecimento</span><strong>{establishment?.name}</strong></article><article><span>Ponto projetado</span><strong>{location?.name}</strong></article><article><span>Acesso</span><strong>{link?.accessPolicy}</strong></article><article><span>Funcionamento</span><strong>{link?.alwaysOpen ? "24 horas" : `${link?.opensAt}–${link?.closesAt}`}</strong></article><article><span>Publicado em</span><strong>{link?.publishedAt ? new Date(link.publishedAt).toLocaleString("pt-BR") : "—"}</strong></article></div> : <PlantPublicationBlocker plant={plant} contractId={authorizedContract?.id} />}</section> : null}
   </>;
 }
