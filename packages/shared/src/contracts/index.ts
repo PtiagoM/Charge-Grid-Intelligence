@@ -33,17 +33,23 @@ export interface EstablishmentSummary {
 }
 
 export interface PlantEnergySnapshot {
+  id: string;
   plantId: string;
   observedAt: string;
+  source: "SIMULATED";
+  quality: "FRESH" | "STALE" | "UNKNOWN";
   pvKw: number;
   gridImportKw: number;
+  gridExportKw: number;
   buildingLoadKw: number;
   evLoadKw: number;
   energyStatus: PlantEnergyStatus;
-  batteryDischargeKw?: number;
-  batteryChargeKw?: number;
-  gridExportKw?: number;
-  freshnessSeconds?: number;
+  batteryDischargeKw: null;
+  batteryChargeKw: null;
+  evWh: number;
+  gridImportWh: number;
+  gridExportWh: number;
+  solarToEvWh: number;
 }
 
 export interface ChargerSummary {
@@ -293,6 +299,7 @@ export interface CommercialSnapshot {
   generatedAt: string;
   establishments: CommercialEstablishmentRecord[];
   tariffs: CommercialTariffVersion[];
+  plantEnergy: PlantEnergySnapshot[];
   sessions: CommercialSessionRecord[];
   queue: CommercialQueueRecord[];
 }

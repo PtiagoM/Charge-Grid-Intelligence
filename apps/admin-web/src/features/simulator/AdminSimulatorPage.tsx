@@ -4,13 +4,14 @@ import type { CommercialSnapshot } from "@chargegrid/shared";
 import { useAdminState } from "../../app/AdminState";
 import { DataTable, SectionHeader, number } from "../../components/AdminUi";
 import { canUseHardwareLab } from "../../services/hardwareLabAccess";
-import { fetchCommercialSnapshot, resetCommercialTestData, sendHardwareEvent, type HardwareAction } from "../../services/commercialSnapshotRepository";
+import { configurePlantTelemetry, fetchCommercialSnapshot, resetCommercialTestData, sendHardwareEvent, type HardwareAction } from "../../services/commercialSnapshotRepository";
 
 const statusLabels: Record<string, string> = { AVAILABLE: "Disponível", CONNECTED: "Veículo conectado", CHARGING: "Entregando energia", OFFLINE: "Offline", FAULT: "Falha" };
 
 function HardwareLab() {
   const [snapshot, setSnapshot] = useState<CommercialSnapshot | null>(null);
   const [power, setPower] = useState<Record<string, number>>({});
+  const [plantSignal, setPlantSignal] = useState({ online: false, pvKw: 20, buildingLoadKw: 10 });
   const [busy, setBusy] = useState("");
   const [message, setMessage] = useState("");
   const refresh = useCallback(async () => {
@@ -47,12 +48,29 @@ function HardwareLab() {
     } finally { setBusy(""); }
   }
 
+  async function updatePlantSignal() {
+    setBusy("plant");
+    setMessage("");
+    try {
+      setSnapshot(await configurePlantTelemetry({ plantId: "plant_aurora_001", ...plantSignal }));
+      setMessage(plantSignal.online ? "Sinais físicos simulados da planta aplicados pela API." : "Provider energético simulado marcado como indisponível.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Não foi possível configurar a telemetria da planta.");
+    } finally { setBusy(""); }
+  }
+
   const chargers = snapshot?.establishments.flatMap((establishment) => establishment.chargers.map((charger) => ({ establishment, charger }))) ?? [];
   return <section className="admin-simulator operations-detail" data-testid="hardware-lab">
     <SectionHeader eyebrow="Ferramenta técnica · GoodWe simulado" title="Laboratório de hardware" subtitle="Emite somente eventos físicos no backend compartilhado. Pagamentos e sessões continuam no fluxo normal da PWA e da Stripe em teste." />
     <section className="surface panel">
       <p>Os mesmos carregadores aparecem na PWA e em ChargeGrid &gt; Operação. O polling apenas observa; energia e custo avançam no backend.</p>
       <button type="button" className="cg-danger-action" disabled={Boolean(busy)} onClick={() => void resetTestData()}>Reiniciar dados de teste</button>
+      <div className="detail-grid">
+        <label><input type="checkbox" checked={plantSignal.online} onChange={(event) => setPlantSignal((current) => ({ ...current, online: event.target.checked }))} /> Provider energético online</label>
+        <label>Solar simulada (kW)<input aria-label="Solar simulada" type="number" min="0" step="0.1" value={plantSignal.pvKw} onChange={(event) => setPlantSignal((current) => ({ ...current, pvKw: event.target.valueAsNumber }))} /></label>
+        <label>Carga-base simulada (kW)<input aria-label="Carga-base simulada" type="number" min="0" step="0.1" value={plantSignal.buildingLoadKw} onChange={(event) => setPlantSignal((current) => ({ ...current, buildingLoadKw: event.target.valueAsNumber }))} /></label>
+        <button type="button" disabled={Boolean(busy)} onClick={() => void updatePlantSignal()}>Aplicar sinais da planta</button>
+      </div>
       {message ? <p role="status" className="command-feedback">{message}</p> : null}
       <DataTable columns={["Local / carregador", "Estado físico", "Potência", "Eventos GoodWe simulados"]}>{chargers.map(({ establishment, charger }) => {
         const disabled = busy === charger.code;

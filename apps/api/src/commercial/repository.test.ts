@@ -211,6 +211,49 @@ describe("CommercialRepository", () => {
     expect(snapshot.establishments[0]?.chargers.map((charger) => charger.code)).toEqual(["AURORA-01", "AURORA-02", "AURORA-03", "AURORA-04", "AURORA-05", "AURORA-06"]);
   }, 20_000);
 
+  it("persists balanced plant telemetry from the backend clock without advancing on reads", async () => {
+    const repository = new CommercialRepository("memory://");
+    repositories.push(repository);
+    const id = "70000000-0000-4000-8000-000000000007";
+    await repository.reserveSession({ id, establishmentId: "est_aurora_001", chargerCode: "AURORA-01", driverName: "Motorista Energia", method: "CARD", authorizedCents: 2500 });
+    await repository.attachPayment(id, "pi_test_energy", "requires_capture");
+    await repository.recordPayment({ sessionId: id, paymentIntentId: "pi_test_energy", status: PaymentStatus.AUTHORIZED, providerStatus: "requires_capture", receivedAmount: 0 });
+    await repository.hardwareEvent("AURORA-01", "CONNECT");
+    await repository.configurePlantTelemetry({ plantId: "plant_aurora_001", online: true, pvKw: 20, buildingLoadKw: 10 });
+    const startedAt = new Date("2026-09-26T12:00:00.000Z");
+    await repository.advancePlantTelemetry(startedAt);
+    await repository.advancePlantTelemetry(new Date(startedAt.getTime() + 600_000));
+    const measurement = await repository.plantEnergy("plant_aurora_001");
+    const beforeRead = await repository.plantEnergySeries("plant_aurora_001");
+    await repository.plantEnergy("plant_aurora_001");
+    expect(measurement).toMatchObject({ pvKw: 20, buildingLoadKw: 10, evLoadKw: 7, gridImportKw: 0, gridExportKw: 3 });
+    expect(measurement?.evWh).toBeCloseTo(1166.667, 3);
+    expect(measurement?.solarToEvWh).toBeCloseTo(1166.667, 3);
+    expect((await repository.plantEnergySeries("plant_aurora_001"))).toHaveLength(beforeRead.length);
+
+    await repository.configurePlantTelemetry({ plantId: "plant_aurora_001", online: false, pvKw: 20, buildingLoadKw: 10 });
+    await repository.advancePlantTelemetry(new Date(startedAt.getTime() + 1_200_000));
+    expect(await repository.plantEnergy("plant_aurora_001")).toMatchObject({ quality: "STALE", pvKw: 20 });
+    expect((await repository.plantEnergySeries("plant_aurora_001"))).toHaveLength(beforeRead.length);
+  }, 20_000);
+
+  it("keeps the last simulated plant sample after a repository restart", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "chargegrid-energy-"));
+    let repository: CommercialRepository | undefined;
+    try {
+      repository = new CommercialRepository(dataDir);
+      await repository.configurePlantTelemetry({ plantId: "plant_aurora_001", online: true, pvKw: 20, buildingLoadKw: 10 });
+      await repository.advancePlantTelemetry(new Date("2026-09-26T12:00:00.000Z"));
+      await repository.close();
+      repository = undefined;
+      repository = new CommercialRepository(dataDir);
+      expect(await repository.plantEnergy("plant_aurora_001")).toMatchObject({ quality: "FRESH", pvKw: 20, buildingLoadKw: 10, evLoadKw: 0 });
+    } finally {
+      if (repository) await repository.close();
+      await rm(dataDir, { recursive: true, force: true });
+    }
+  }, 30_000);
+
   it("resolves Aurora by UUID, code and QR without exposing commercial session data", async () => {
     const repository = new CommercialRepository("memory://");
     repositories.push(repository);
@@ -249,7 +292,7 @@ describe("CommercialRepository", () => {
       repository = undefined;
 
       const inspection = new PGlite(dataDir);
-      expect((await inspection.query<{ count: number }>("select count(*)::int as count from chargegrid_schema_migrations")).rows[0]?.count).toBe(5);
+      expect((await inspection.query<{ count: number }>("select count(*)::int as count from chargegrid_schema_migrations")).rows[0]?.count).toBe(6);
       await inspection.close();
     } finally {
       if (repository) await repository.close();

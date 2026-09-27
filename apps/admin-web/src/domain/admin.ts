@@ -375,7 +375,7 @@ export interface EnergySnapshot {
   demandKw: number;
   contractedLimitKw: number;
   powerMarginPercent: number;
-  batterySocPercent: number;
+  batterySocPercent: number | null;
   solarPowerKw: number;
   gridPowerKw: number;
   periodSolarKwh?: number;

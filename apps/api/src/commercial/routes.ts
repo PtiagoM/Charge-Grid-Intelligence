@@ -95,6 +95,26 @@ export function createCommercialRouter(options: { repository?: CommercialReposit
       return response.status(errorStatus(error)).json({ code: "COMMERCIAL_FINANCIAL_READ_FAILED", message: error instanceof Error ? error.message : "Não foi possível calcular o resumo financeiro." });
     }
   });
+  router.get("/plants/:plantId/energy", async (request, response) => {
+    try {
+      return response.json({ snapshot: await repository.plantEnergy(request.params.plantId), series: await repository.plantEnergySeries(request.params.plantId) });
+    } catch (error) {
+      return response.status(errorStatus(error)).json({ code: "PLANT_ENERGY_READ_FAILED", message: error instanceof Error ? error.message : "Não foi possível consultar a telemetria da planta." });
+    }
+  });
+  router.post("/plants/:plantId/hardware", async (request, response) => {
+    const { online, pvKw, buildingLoadKw } = request.body ?? {};
+    if (typeof online !== "boolean" || ![pvKw, buildingLoadKw].every((value) => typeof value === "number" && Number.isFinite(value) && value >= 0)) {
+      return response.status(400).json({ code: "INVALID_PLANT_HARDWARE_INPUT", message: "Informe provider, solar e carga-base simulados válidos." });
+    }
+    try {
+      await repository.configurePlantTelemetry({ plantId: request.params.plantId, online, pvKw, buildingLoadKw });
+      await repository.advancePlantTelemetry();
+      return response.json(await repository.snapshot());
+    } catch (error) {
+      return response.status(errorStatus(error)).json({ code: "PLANT_HARDWARE_EVENT_FAILED", message: error instanceof Error ? error.message : "Não foi possível aplicar o cenário físico da planta." });
+    }
+  });
   router.post("/admin/tariffs", async (request, response) => {
     if (process.env.NODE_ENV === "production") return response.status(404).end();
     const { establishmentId, energyCentsPerKwh, idleCentsPerMinute, reason } = request.body ?? {};

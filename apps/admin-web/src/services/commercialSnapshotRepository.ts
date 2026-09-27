@@ -1,5 +1,5 @@
 import { CommercialSessionStatus, PaymentStatus, QueueStatus, type CommercialSnapshot } from "@chargegrid/shared";
-import type { AdminState, Charger, ChargerTelemetry, Client, CommercialPlantLink, Establishment, FinancialEvent, Location, PaymentTransaction, QueueEntry, Session, SessionEvent, TariffPolicy } from "../domain/admin";
+import type { AdminState, Charger, ChargerTelemetry, Client, CommercialPlantLink, EnergyPolicy, EnergySnapshot, Establishment, FinancialEvent, Location, PaymentTransaction, QueueEntry, Session, SessionEvent, TariffPolicy } from "../domain/admin";
 
 const apiUrl = (import.meta.env.VITE_CHARGEGRID_API_URL || "http://localhost:3333").replace(/\/$/, "");
 
@@ -37,6 +37,13 @@ function sessionStatus(status: CommercialSessionStatus): Session["status"] {
   if (status === CommercialSessionStatus.COMPLETED) return "finished";
   if ([CommercialSessionStatus.PAYMENT_FAILED, CommercialSessionStatus.START_FAILED, CommercialSessionStatus.FAULTED, CommercialSessionStatus.CANCELLED].includes(status)) return "start_failed";
   return "authorized";
+}
+
+export async function configurePlantTelemetry(input: { plantId: string; online: boolean; pvKw: number; buildingLoadKw: number }) {
+  const response = await fetch(`${apiUrl}/commercial/plants/${encodeURIComponent(input.plantId)}/hardware`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) });
+  const payload = await response.json().catch(() => ({})) as CommercialSnapshot & { message?: string };
+  if (!response.ok) throw new Error(payload.message || "A API não confirmou o cenário energético.");
+  return payload;
 }
 
 export async function publishCommercialTariff(input: { establishmentId: string; energyCentsPerKwh: number; idleCentsPerMinute: number; reason: string }) {
@@ -165,6 +172,26 @@ export function mergeCommercialSnapshot(state: AdminState, snapshot: CommercialS
     assignedAt: entry.status === QueueStatus.ASSIGNED ? entry.calledAt : undefined,
     completedAt: entry.completedAt
   }));
+  const energy: EnergySnapshot[] = (snapshot.plantEnergy ?? []).map((item) => {
+    const establishment = snapshot.establishments.find((candidate) => candidate.plantId === item.plantId);
+    const contractedLimitKw = 20;
+    const demandState = item.energyStatus === "CRITICAL" ? "Crítico" : item.energyStatus === "ALERT" ? "Alerta" : "Favorável";
+    return {
+      establishmentId: establishment?.id ?? item.plantId,
+      demandState,
+      observedAt: item.observedAt,
+      providerStatus: item.quality === "FRESH" ? "ONLINE" : "OFFLINE",
+      demandKw: item.gridImportKw,
+      contractedLimitKw,
+      powerMarginPercent: Math.max(0, ((contractedLimitKw - item.gridImportKw) / contractedLimitKw) * 100),
+      batterySocPercent: null,
+      solarPowerKw: item.pvKw,
+      gridPowerKw: item.gridImportKw - item.gridExportKw,
+      periodSolarKwh: item.solarToEvWh / 1000,
+      periodGridKwh: item.gridImportWh / 1000
+    };
+  });
+  const energyPolicies: EnergyPolicy[] = snapshot.establishments.filter((item) => item.plantId).map((item) => ({ establishmentId: item.id, alertUtilizationPercent: 80, criticalUtilizationPercent: 90, freshnessMinutes: 15, blockStartOnCritical: true, blockStartWithoutFreshTelemetry: true }));
   const scopeIds = [...ids];
   return {
     ...state,
@@ -181,6 +208,8 @@ export function mergeCommercialSnapshot(state: AdminState, snapshot: CommercialS
     paymentTransactions: [...state.paymentTransactions.filter((item) => !ids.has(item.establishmentId)), ...paymentTransactions],
     financialEvents: [...state.financialEvents.filter((item) => !paymentTransactions.some((transaction) => transaction.id === item.transactionId)), ...financialEvents],
     tariffPolicies: [...state.tariffPolicies.filter((item) => !ids.has(item.establishmentId)), ...tariffPolicies],
-    queue: [...state.queue.filter((item) => !ids.has(item.establishmentId)), ...queue]
+    queue: [...state.queue.filter((item) => !ids.has(item.establishmentId)), ...queue],
+    energy: [...state.energy.filter((item) => !ids.has(item.establishmentId)), ...energy],
+    energyPolicies: [...state.energyPolicies.filter((item) => !ids.has(item.establishmentId)), ...energyPolicies]
   };
 }

@@ -13,6 +13,13 @@ Objetivo: provar renováveis+recarga+eficiência, sem EMS industrial. GRANDE, tr
 - **Aceite:** GIVEN PV20/base10/EV7 WHEN dez minutos confirmados THENimport0/export3, EV1166,667Wh, solarToEv1166,667Wh; GIVEN offline THEN qualityindisponível, não novo zero medido.
 - **Saída:** mesma energia alimenta Admin/PWA/API; dados quantitativos reproduzíveis. Commit `feat(energy): persist coherent simulated plant telemetry`.
 
+### Checkpoint implementado
+
+- `commercial_energy_samples` persiste somente leituras do provider simulado online; ausência do provider mantém a última leitura como `STALE`, sem criar uma medição zero.
+- O relógio da API avança energia comercial e telemetria da planta; `GET` apenas observa. O laboratório persiste `online`, solar e carga-base do Aurora pelo endpoint de hardware da planta.
+- A API deriva EV da potência dos carregadores em `CHARGING`; para uma planta sem bateria, calcula importação/exportação e Wh de cada intervalo pela mesma amostra. A tela Energia do Admin recebe a projeção da API e identifica o provider como simulado.
+- Validado por tipo nos três pacotes e pelos testes focais de conservação (20/10/7 kW por 10 min) e persistência após reinício. A oferta solar, admissões por demanda e o indicador da PWA seguem para U2/U3.
+
 ## S4-M4-U2 — Admissão, corte e retomada
 
 - **Depende:** U1 e lifecycle G1; **tamanho:** GRANDE.
