@@ -534,8 +534,8 @@ export class CommercialRepository {
   async createQuote(input: { chargerId: string; establishmentId: string; access: CommercialSessionAccess }) {
     await this.ready;
     return this.db.transaction(async (tx) => {
-      const charger = await tx.query<{ id: string; establishment_id: string; commercial_status: string; physical_status: string }>(`
-        select id, establishment_id, commercial_status, physical_status from commercial_chargers
+      const charger = await tx.query<{ id: string; establishment_id: string; plant_id: string | null; commercial_status: string; physical_status: string }>(`
+        select id, establishment_id, plant_id, commercial_status, physical_status from commercial_chargers
         where id = $1 and establishment_id = $2 and published = true`, [input.chargerId, input.establishmentId]);
       const selected = charger.rows[0];
       if (!selected) throw new CommercialNotFoundError("Carregador comercial não encontrado.");
@@ -548,15 +548,20 @@ export class CommercialRepository {
         order by valid_from desc, created_at desc limit 1`, [input.establishmentId]);
       const currentTariff = tariff.rows[0];
       if (!currentTariff) throw new CommercialNotFoundError("Tarifa comercial não encontrada.");
+      const sample = selected.plant_id ? await tx.query<EnergySampleRow>("select * from commercial_energy_samples where plant_id = $1 order by observed_at desc limit 1", [selected.plant_id]) : { rows: [] as EnergySampleRow[] };
+      const latest = sample.rows[0] ? energySampleRecord(sample.rows[0]) : null;
+      const fresh = latest && latest.quality === "FRESH" && Date.now() - Date.parse(latest.observedAt) <= 15_000;
+      const solarOffer = Boolean(fresh && latest.energyStatus === PlantEnergyStatus.NORMAL && latest.pvKw - latest.buildingLoadKw >= 7);
+      const energyCentsPerKwh = solarOffer ? Math.min(currentTariff.energy_cents_per_kwh, 170) : currentTariff.energy_cents_per_kwh;
       const id = randomUUID();
       const expiresAt = new Date(Date.now() + 5 * 60_000).toISOString();
       await tx.query(`insert into commercial_quotes
-        (id, charger_id, establishment_id, tariff_version_id, policy_version, energy_cents_per_kwh, idle_grace_minutes, idle_cents_per_minute, idle_max_minutes, idle_enabled, expires_at, reason_code, driver_id, guest_token_hash)
-        values ($1, $2, $3, $4, 's4-quote-v1', $5, $6, $7, $8, $9, $10, 'BASE_TARIFF', $11, $12)`, [
-        id, selected.id, selected.establishment_id, currentTariff.id, currentTariff.energy_cents_per_kwh,
+        (id, charger_id, establishment_id, tariff_version_id, policy_version, energy_cents_per_kwh, idle_grace_minutes, idle_cents_per_minute, idle_max_minutes, idle_enabled, expires_at, reason_code, energy_sample_id, driver_id, guest_token_hash)
+        values ($1, $2, $3, $4, 's4-quote-v1', $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`, [
+        id, selected.id, selected.establishment_id, currentTariff.id, energyCentsPerKwh,
         currentTariff.idle_grace_minutes, currentTariff.idle_cents_per_minute, currentTariff.idle_max_minutes,
-        currentTariff.idle_enabled, expiresAt, "driverId" in input.access ? input.access.driverId : null,
-        "guestToken" in input.access ? hashGuestToken(input.access.guestToken) : null
+        currentTariff.idle_enabled, expiresAt, solarOffer ? "SOLAR_SURPLUS" : "BASE_TARIFF", latest?.id ?? null,
+        "driverId" in input.access ? input.access.driverId : null, "guestToken" in input.access ? hashGuestToken(input.access.guestToken) : null
       ]);
       const quote = await tx.query<QuoteRow>("select * from commercial_quotes where id = $1", [id]);
       return quoteFromRow(quote.rows[0]!);

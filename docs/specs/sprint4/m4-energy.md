@@ -49,6 +49,12 @@ Objetivo: provar renováveis+recarga+eficiência, sem EMS industrial. GRANDE, tr
 - **Aceite:** GIVEN PV20/base10/fresh/NORMAL WHEN nova quote THEN170 e sampleId; GIVEN sessão190 em curso THENcontinua190. GIVEN recomendação aceita THENnenhum Start/Stop adicional; origem e resultado da automação visíveis.
 - **Saída/G4:** V08 reproduzível e PWA/Admin revalidados com policyenabled. Commit `feat(energy): connect solar offers and evidence-based recommendations`.
 
+### Checkpoint parcial implementado
+
+- A API consulta a última amostra persistida da planta do carregador ao criar uma nova cotação. Com telemetria `FRESH`, estado normal e excedente solar de ao menos 7 kW, oferece 170 c/kWh; fora dessa condição, preserva a tarifa vigente.
+- `reasonCode` e `energySampleId` ficam gravados na cotação, e a sessão reutiliza a mesma cotação congelada. Uma mudança de telemetria posterior, portanto, não altera o preço aceito.
+- O teste focal cobre PV 20 kW, carga-base 10 kW e verifica a oferta solar persistida e a sessão com a mesma tarifa. Alertas, recomendações e relatório de resultados permanecem nesta unidade.
+
 ## Não implementar
 
 SetPower real, proteção elétrica, bateria simulada desnecessária, modelo ML, previsão meteorológica, carbono certificado, integração GoodWe real sem acesso, console comercial de cenários. Laboratório é único local técnico de ajuste físico; Operação não recebe “Solar/Pico/Avançar tempo”. Tests podem injetar relógio; usuário não ganha relógio comercial paralelo.

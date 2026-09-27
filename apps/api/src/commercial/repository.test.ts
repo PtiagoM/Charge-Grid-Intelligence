@@ -64,6 +64,29 @@ describe("CommercialRepository", () => {
     expect(snapshot.tariffs[0]).toEqual(expect.objectContaining({ id: tariff.id, idleCentsPerMinute: 60 }));
   }, 20_000);
 
+  it("offers a frozen solar tariff only from a fresh surplus sample", async () => {
+    const repository = new CommercialRepository("memory://");
+    repositories.push(repository);
+    await repository.configurePlantTelemetry({ plantId: "plant_aurora_001", online: true, pvKw: 20, buildingLoadKw: 10 });
+    await repository.advancePlantTelemetry();
+
+    const quote = await repository.createQuote({
+      chargerId: "00000000-0000-4000-8000-000000000001",
+      establishmentId: "est_aurora_001",
+      access: { guestToken: "solar-surplus" }
+    });
+    const session = await repository.reserveQuotedSession({
+      id: "73000000-0000-4000-8000-000000000003",
+      quoteId: quote.id,
+      access: { guestToken: "solar-surplus" },
+      method: "CARD",
+      authorizedCents: 2500
+    });
+
+    expect(quote).toMatchObject({ energyCentsPerKwh: 170, reasonCode: "SOLAR_SURPLUS", energySampleId: expect.any(String) });
+    expect(session.quote).toMatchObject({ id: quote.id, energyCentsPerKwh: 170, reasonCode: "SOLAR_SURPLUS" });
+  }, 20_000);
+
   it("binds a frozen guest quote to one persistent session without exposing it to another guest", async () => {
     const repository = new CommercialRepository("memory://");
     repositories.push(repository);
