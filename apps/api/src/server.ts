@@ -2,7 +2,7 @@ import { config } from "dotenv";
 import { createApp } from "./app.js";
 import { startCommercialClock } from "./commercial/repository.js";
 
-config({ path: new URL("../../../.env", import.meta.url) });
+if (process.env.NODE_ENV !== "test") config({ path: new URL("../../../.env", import.meta.url) });
 
 const port = Number(process.env.PORT ?? 3333);
 const app = createApp();

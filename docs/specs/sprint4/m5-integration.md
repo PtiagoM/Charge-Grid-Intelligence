@@ -13,6 +13,11 @@ Objetivo: integrar interfaces já corretas contra C1, não descobrir domínio no
 - **Testes:** health+marcador de DBteste; test seed/resetsafe; documentar comandoV-E2E que passa a existir.
 - **Saída:** harness pronto sem executar nenhuma operação real de cobrança. Commit `test(integration): isolate Sprint 4 browser environment`.
 
+### Checkpoint implementado
+
+- `playwright.sprint4.config.ts` inicia API, Admin e PWA em 3433/5273/5274, sem reutilizar processos existentes. A API usa exclusivamente `.tmp/sprint4-e2e-db`; o launcher remove URL de banco e credenciais Stripe herdadas.
+- Em `NODE_ENV=test`, o servidor não carrega `.env`, impedindo acesso acidental a chaves reais pelo harness. O teste de sanidade confirmou health, catálogo Aurora e Stripe não configurado nesse processo isolado.
+
 ## S4-M5-U2 — E2E central, falhas e reload
 
 - **Depende:** U1 e G2/G3/G4.
