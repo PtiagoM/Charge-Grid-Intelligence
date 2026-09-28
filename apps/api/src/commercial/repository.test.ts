@@ -1,7 +1,7 @@
 import { CommercialSessionStatus, PaymentStatus, QueueStatus } from "@chargegrid/shared";
 import { PGlite } from "@electric-sql/pglite";
 import { afterEach, describe, expect, it } from "vitest";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { CommercialConflictError, CommercialNotFoundError, CommercialRepository } from "./repository.js";
@@ -312,6 +312,21 @@ describe("CommercialRepository", () => {
     } finally {
       if (first) await first.close();
       if (reopened) await reopened.close();
+      await rm(dataDir, { recursive: true, force: true });
+    }
+  }, 30_000);
+
+  it("recovers a persistent PGlite lock owned by a terminated process", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "chargegrid-stale-lock-"));
+    const lockDir = `${dataDir}.chargegrid-lock`;
+    let repository: CommercialRepository | undefined;
+    try {
+      await mkdir(lockDir);
+      await writeFile(join(lockDir, "owner.json"), JSON.stringify({ pid: 999_999_999, startedAt: new Date().toISOString() }));
+      repository = new CommercialRepository(dataDir);
+      await expect(repository.catalog()).resolves.toMatchObject({ establishments: expect.any(Array) });
+    } finally {
+      if (repository) await repository.close();
       await rm(dataDir, { recursive: true, force: true });
     }
   }, 30_000);

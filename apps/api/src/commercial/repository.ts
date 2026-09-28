@@ -1,5 +1,5 @@
 import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -246,8 +246,24 @@ function acquirePgliteLease(dataDir: string): DatabaseLease | undefined {
   try {
     mkdirSync(lockDir);
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "EEXIST") throw new Error(`O banco local ChargeGrid já está em uso (${lockDir}). Encerre a outra API; após uma queda confirmada, remova somente essa pasta de lock.`);
-    throw error;
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+    let stale = false;
+    try {
+      const owner = JSON.parse(readFileSync(join(lockDir, "owner.json"), "utf8")) as { pid?: unknown };
+      const pid = Number(owner.pid);
+      if (Number.isInteger(pid) && pid > 0) {
+        try {
+          process.kill(pid, 0);
+        } catch (ownerError) {
+          stale = (ownerError as NodeJS.ErrnoException).code === "ESRCH";
+        }
+      }
+    } catch {
+      // Lock sem proprietário verificável continua protegido para não arriscar o banco.
+    }
+    if (!stale) throw new Error(`O banco local ChargeGrid já está em uso (${lockDir}). Encerre a outra API; após uma queda confirmada, remova somente essa pasta de lock.`);
+    rmSync(lockDir, { recursive: true, force: true });
+    mkdirSync(lockDir);
   }
   try {
     writeFileSync(join(lockDir, "owner.json"), JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() }), "utf8");
