@@ -1,5 +1,7 @@
 import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
 import { ChargerCommercialStatus, ChargerTechnicalStatus, CommercialAvailability, CommercialSessionStatus, PaymentStatus, PlantEnergyStatus, QueueStatus, type CommercialCatalog, type CommercialChargerRecord, type CommercialChargerResolution, type CommercialEnergyView, type CommercialEstablishmentRecord, type CommercialFinancialSummary, type CommercialInsight, type CommercialInsights, type CommercialOperationalReport, type CommercialOpeningHoursInterval, type CommercialPublicChargerRecord, type CommercialPublicEstablishmentRecord, type CommercialQueueRecord, type CommercialQuote, type CommercialSessionRecord, type CommercialSnapshot, type CommercialTariffVersion, type PlantEnergySnapshot } from "@chargegrid/shared";
@@ -233,14 +235,50 @@ const migrations = [
 const legacyMigrationNames = new Set(migrations.slice(0, 3).map((migration) => migration.name));
 const defaultDataDir = process.env.CHARGEGRID_DATABASE_PATH ?? (process.env.NODE_ENV === "test" ? "memory://" : fileURLToPath(new URL("../../../../.local/commercial-db", import.meta.url)));
 
+interface DatabaseLease {
+  release(): void;
+}
+
+function acquirePgliteLease(dataDir: string): DatabaseLease | undefined {
+  if (dataDir.startsWith("memory://")) return undefined;
+  const lockDir = `${dataDir}.chargegrid-lock`;
+  mkdirSync(dirname(lockDir), { recursive: true });
+  try {
+    mkdirSync(lockDir);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "EEXIST") throw new Error(`O banco local ChargeGrid já está em uso (${lockDir}). Encerre a outra API; após uma queda confirmada, remova somente essa pasta de lock.`);
+    throw error;
+  }
+  try {
+    writeFileSync(join(lockDir, "owner.json"), JSON.stringify({ pid: process.pid, startedAt: new Date().toISOString() }), "utf8");
+  } catch (error) {
+    rmSync(lockDir, { recursive: true, force: true });
+    throw error;
+  }
+  return { release: () => rmSync(lockDir, { recursive: true, force: true }) };
+}
+
 function pgliteDatabase(dataDir: string): SqlDatabase {
-  const db = new PGlite(dataDir);
+  const lease = acquirePgliteLease(dataDir);
+  let db: PGlite;
+  try {
+    db = new PGlite(dataDir);
+  } catch (error) {
+    lease?.release();
+    throw error;
+  }
   const client = (queryable: { query<T>(sql: string, params?: unknown[]): Promise<{ rows: T[] }> }): SqlClient => ({ query: (sql, params = []) => queryable.query(sql, params) });
   return {
     ...client(db),
     exec: async (sql) => { await db.exec(sql); },
     transaction: (callback) => db.transaction((tx) => callback(client(tx))),
-    close: () => db.close()
+    close: async () => {
+      try {
+        await db.close();
+      } finally {
+        lease?.release();
+      }
+    }
   };
 }
 
@@ -605,7 +643,11 @@ export class CommercialRepository {
   }
 
   async close() {
-    await this.db.close();
+    try {
+      await this.ready;
+    } finally {
+      await this.db.close();
+    }
   }
 
   async createQuote(input: { chargerId: string; establishmentId: string; access: CommercialSessionAccess }) {
@@ -1451,12 +1493,30 @@ export function getCommercialRepository() {
   return repository ??= new CommercialRepository();
 }
 
+export async function closeCommercialRepository() {
+  const activeRepository = repository;
+  repository = undefined;
+  await activeRepository?.close();
+}
+
 export function startCommercialClock() {
-  const timer = setInterval(() => void (async () => {
-    const repository = getCommercialRepository();
-    await repository.advanceEnergy();
-    await repository.advancePlantTelemetry();
-  })().catch((error) => console.error(JSON.stringify({ level: "error", service: "chargegrid-api", message: "Commercial energy clock failed", error: error instanceof Error ? error.message : String(error) }))), 1000);
+  let stopped = false;
+  let pending = Promise.resolve();
+  const tick = () => {
+    pending = pending.then(async () => {
+      if (stopped) return;
+      const repository = getCommercialRepository();
+      await repository.advanceEnergy();
+      await repository.advancePlantTelemetry();
+    }).catch((error) => console.error(JSON.stringify({ level: "error", service: "chargegrid-api", message: "Commercial energy clock failed", error: error instanceof Error ? error.message : String(error) })));
+  };
+  const timer = setInterval(tick, 1000);
   timer.unref();
-  return timer;
+  return {
+    stop: async () => {
+      stopped = true;
+      clearInterval(timer);
+      await pending;
+    }
+  };
 }

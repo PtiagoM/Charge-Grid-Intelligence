@@ -183,6 +183,8 @@ npm run dev
 - Driver PWA: `http://localhost:5174`
 - API/health: `http://localhost:3333/health`
 
+O runtime local usa um único processo de API para `.local/commercial-db`. Pare `npm run dev` com `Ctrl+C` uma vez e aguarde o log `API shutting down` antes de iniciar novamente. Se a API informar que o banco já está em uso, encerre a outra API; somente após confirmar que não há processo ativo, remova `.local/commercial-db.chargegrid-lock`. Nunca apague `.local/commercial-db`, pois ele contém as sessões e dados persistidos da demonstração.
+
 Processos também podem ser iniciados separadamente com `npm run dev:admin`, `npm run dev:pwa` e `npm run dev:api`.
 
 Contas demonstrativas do Admin:

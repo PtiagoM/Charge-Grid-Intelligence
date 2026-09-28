@@ -297,6 +297,25 @@ describe("CommercialRepository", () => {
     }
   }, 30_000);
 
+  it("rejects a second repository using the same persistent PGlite directory", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "chargegrid-lock-"));
+    let first: CommercialRepository | undefined;
+    let reopened: CommercialRepository | undefined;
+    try {
+      first = new CommercialRepository(dataDir);
+      await first.catalog();
+      expect(() => new CommercialRepository(dataDir)).toThrow(/já está em uso/);
+      await first.close();
+      first = undefined;
+      reopened = new CommercialRepository(dataDir);
+      await expect(reopened.catalog()).resolves.toMatchObject({ establishments: expect.any(Array) });
+    } finally {
+      if (first) await first.close();
+      if (reopened) await reopened.close();
+      await rm(dataDir, { recursive: true, force: true });
+    }
+  }, 30_000);
+
   it("admits, suspends and resumes charging from the persisted demand policy", async () => {
     const repository = new CommercialRepository("memory://");
     repositories.push(repository);
