@@ -26,7 +26,7 @@ Depende de AI-05. O backend já admite/bloqueia/corta/retoma com telemetria real
 - Abaixo de 80%: estado normal preditivo; não revoga bloqueio da telemetria real.
 - Previsão sozinha nunca envia Stop nem suspende sessão ativa. Proteção reativa vigente continua responsável por corte.
 - Forecast indisponível não enfraquece regras atuais; decisão explica fallback determinístico.
-- Persistir forecastId, policyVersion, limites, ponto de pico, modelVersion e outcome. Chave de correlação evita duplicar mesma avaliação.
+- Persistir `DemandDecisionEvidence` S4-C2: forecastId, sampleId, policyVersion, modelVersion, correlationKey, limite/limiares, ponto de pico em kW/UTC e outcome. Chave de correlação evita duplicar mesma avaliação.
 
 ## Critérios de aceite
 
@@ -42,4 +42,3 @@ Unit dos limites e integration de admissão/idempotência/fallback. Atualizar co
 ## Condição de parada
 
 Parar se for necessário mudar limiares vigentes ou permitir comando direto do modelo.
-

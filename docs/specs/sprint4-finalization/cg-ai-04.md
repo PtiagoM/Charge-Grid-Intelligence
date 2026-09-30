@@ -21,7 +21,7 @@ Depende de AI-03B. Artefato e pré-processamento estão congelados.
 ## Comportamento esperado
 
 - Loader valida `modelVersion`, schema, features, unidades e checksum; falha fechada em incompatibilidade.
-- Inferência recebe série/features já ordenadas e devolve pontos no contrato S4-C2.
+- Inferência recebe série/features já ordenadas e devolve `ForecastRecord` S4-C2: ponto `predictedGridImportKw` em kW, sem confiança artificial; `ForecastTestMetrics` é o resultado histórico congelado no model card.
 - Pré-processamento Node replica valores ausentes, escala e ordem das features do artefato.
 - Sem “confidence” arbitrária: publicar métricas históricas do model card e estado `UNAVAILABLE` quando inputs não atendem cobertura/freshness.
 - Não instalar runtime Python/FastAPI no servidor. Dependência Node nova só se necessária e justificada; preferir artefato JSON simples.
@@ -39,4 +39,3 @@ Contract/parity test com vetores versionados e teste de artefato inválido. Atua
 ## Condição de parada
 
 Parar se a paridade exigir serviço Python permanente ou custom runtime complexo; retornar a AI-03B e escolher artefato mais simples.
-

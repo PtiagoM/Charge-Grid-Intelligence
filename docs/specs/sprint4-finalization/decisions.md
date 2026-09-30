@@ -17,6 +17,8 @@ Este arquivo complementa, sem substituir, [decisions S4-C1](../sprint4/decisions
 | F-D11 | INFERÊNCIA | Horizonte inicial da previsão será definido em AI-01 pela disponibilidade e pelo valor operacional; não é congelado antes do dataset. |
 | F-D12 | INFERÊNCIA | Primeiro modelo elegível é o mais simples que superar baseline temporal no conjunto de teste e mantiver inferência reproduzível em Node. |
 | F-D13 | APROVADA | O pacote original `sprint4` deve concluir M5–M7/G7 antes de qualquer unidade `CG-*`; a finalização S4-C2 reutiliza evidências não afetadas da baseline. |
+| F-D14 | DECISÃO TÉCNICA | S4-C2 é aditivo: o snapshot comercial existente permanece `S4-C1`; agregados usam `CommercialDashboardSummary`, proveniência não substitui `DataOrigin`, e ausências são null + qualidade/motivo explícitos. |
+| F-D15 | DECISÃO TÉCNICA | Contrato de forecast prevê `gridImportKw` em kW e publica MAE/RMSE vs. baseline sem confiança artificial; horizonte/step permanecem decisão da avaliação AI-01, em minutos. |
 
 ## Decisões ainda condicionais
 

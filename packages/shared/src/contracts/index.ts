@@ -402,3 +402,108 @@ export interface CommercialSnapshot {
   sessions: CommercialSessionRecord[];
   queue: CommercialQueueRecord[];
 }
+
+/** Provenance of an observed or derived value; distinct from its provider. */
+export type DataProvenance = "REAL" | "SANDBOX" | "SIMULATED" | "DERIVED";
+export type DataQuality = "FRESH" | "STALE" | "UNAVAILABLE";
+
+export type CommercialDashboardMetric<T> =
+  | { value: T; provenance: DataProvenance; quality: "FRESH" | "STALE"; unavailableReason: null }
+  | { value: null; provenance: DataProvenance | null; quality: "UNAVAILABLE"; unavailableReason: string };
+
+export interface CommercialDashboardSummary {
+  contractVersion: "S4-C2";
+  establishmentId: string;
+  plantId: string | null;
+  period: { from: string; to: string };
+  generatedAt: string;
+  energy: {
+    evWh: CommercialDashboardMetric<number>;
+    solarToEvWh: CommercialDashboardMetric<number>;
+    gridImportWh: CommercialDashboardMetric<number>;
+    gridExportWh: CommercialDashboardMetric<number>;
+  };
+  financial: {
+    capturedCents: CommercialDashboardMetric<number>;
+    refundedCents: CommercialDashboardMetric<number>;
+    netCapturedCents: CommercialDashboardMetric<number>;
+  };
+  demand: {
+    currentGridImportKw: CommercialDashboardMetric<number>;
+    peakGridImportKw: CommercialDashboardMetric<number>;
+    limitKw: CommercialDashboardMetric<number>;
+  };
+  utilization: {
+    occupiedChargerSeconds: CommercialDashboardMetric<number>;
+    publishedChargerSeconds: CommercialDashboardMetric<number>;
+    ratio: CommercialDashboardMetric<number>;
+  };
+  counts: {
+    sessionsCreatedInPeriod: CommercialDashboardMetric<number>;
+    activeSessionsAtGeneration: CommercialDashboardMetric<number>;
+    chargersAtGeneration: CommercialDashboardMetric<number>;
+    availableChargersAtGeneration: CommercialDashboardMetric<number>;
+    queuedEntriesAtGeneration: CommercialDashboardMetric<number>;
+  };
+}
+
+export interface ForecastPoint {
+  at: string;
+  predictedGridImportKw: number;
+}
+
+export interface ForecastTestMetrics {
+  maeKw: number;
+  rmseKw: number;
+  baselineMaeKw: number;
+  baselineRmseKw: number;
+  testFrom: string;
+  testTo: string;
+}
+
+interface ForecastRecordBase {
+  contractVersion: "S4-C2";
+  id: string;
+  plantId: string;
+  generatedAt: string;
+  inputFrom: string;
+  inputTo: string;
+  horizonMinutes: number;
+  stepMinutes: number;
+  modelVersion: string;
+  provenance: DataProvenance;
+}
+
+export type ForecastQuality =
+  | { availability: "AVAILABLE"; inputQuality: "FRESH"; unavailableReason: null }
+  | { availability: "UNAVAILABLE"; inputQuality: DataQuality; unavailableReason: string };
+
+export type ForecastRecord = ForecastRecordBase &
+  (
+    | { quality: Extract<ForecastQuality, { availability: "AVAILABLE" }>; metrics: ForecastTestMetrics; points: ForecastPoint[] }
+    | { quality: Extract<ForecastQuality, { availability: "UNAVAILABLE" }>; metrics: null; points: null }
+  );
+
+export interface DemandDecisionEvidence {
+  contractVersion: "S4-C2";
+  forecastId: string;
+  sampleId: string;
+  policyVersion: string;
+  modelVersion: string;
+  correlationKey: string;
+  limitKw: number;
+  alertThresholdPercent: number;
+  criticalThresholdPercent: number;
+  peak: ForecastPoint;
+  outcome: "PREDICTED_NORMAL" | "PREDICTED_ALERT" | "PREDICTED_CRITICAL";
+}
+
+export const LAB_SCENARIO_IDS = [
+  "SOLAR_SURPLUS",
+  "DEMAND_RAMP",
+  "LOW_SOLAR",
+  "TELEMETRY_LOSS",
+  "RECOVERY"
+] as const;
+
+export type LabScenarioId = (typeof LAB_SCENARIO_IDS)[number];

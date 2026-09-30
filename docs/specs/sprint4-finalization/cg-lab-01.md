@@ -20,7 +20,7 @@ Depende de F0-02. O laboratório já define PV/base/online e eventos físicos po
 
 ## Cenários mínimos
 
-Definir IDs/versões imutáveis:
+Definir IDs imutáveis de `LabScenarioId` em shared (versão pertence ao perfil aplicado):
 
 - `SOLAR_SURPLUS`: PV acima de base + EV, oferta solar/admissão favoráveis;
 - `DEMAND_RAMP`: carga-base crescente até alerta/crítico previsto e real;
@@ -48,4 +48,3 @@ Integration focal por perfil, idempotência e restart; unit só para gerador tem
 ## Condição de parada
 
 Parar se o perfil precisar escrever estado comercial ou se dados simulados não puderem ser distinguidos dos reais.
-

@@ -20,7 +20,7 @@ Migration nova, `apps/api/src/ai/`, commercial repository/clock/routes, shared c
 
 ## Banco e API
 
-Criar `commercial_forecasts` com ID, plantId, modelVersion, generatedAt, inputFrom/inputTo, horizon/step, quality, unavailableReason, metrics snapshot e points JSON validado. Índice por `(plant_id, generated_at desc)`; retenção simples documentada, sem job distribuído.
+Criar `commercial_forecasts` persistindo `ForecastRecord` S4-C2: ID, plantId, modelVersion, generatedAt, inputFrom/inputTo, horizon/step, provenance, quality, unavailableReason, `ForecastTestMetrics` snapshot e points JSON validado. Registro `UNAVAILABLE` tem `points:null` e `metrics:null`; disponível exige pontos/metrics. Índice por `(plant_id, generated_at desc)`; retenção simples documentada, sem job distribuído.
 
 Criar `GET /commercial/plants/:plantId/forecast` para último registro. O clock Node tenta inferência no intervalo definido pelo contrato apenas quando existem amostras suficientes; GET apenas lê. Mesmo input/modelVersion usa chave idempotente e não duplica linha.
 
@@ -38,4 +38,3 @@ Integration focal: happy path, insuficiência, idempotência e restart em DB iso
 ## Condição de parada
 
 Parar se a implementação tentar depender de browser aberto, FastAPI ou Supabase remoto obrigatório.
-

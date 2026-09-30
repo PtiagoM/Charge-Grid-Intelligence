@@ -24,7 +24,7 @@ Avaliar fontes primárias/oficiais para carga de edifício, solar e EV (por exem
 
 Uma combinação só é elegível se unidades, frequência e relógio puderem ser normalizados sem alegar causalidade inexistente. Dados de locais diferentes podem compor perfis de treino/simulação, mas não ser apresentados como uma única medição real do Aurora.
 
-`dataset-decision.md` deve congelar target (`gridImportKw` ou proxy explicitado), resolução, horizonte, features disponíveis, regra de combinação, parte simulada complementar e limitações.
+`dataset-decision.md` deve congelar target `gridImportKw` (kW), resolução, horizonte, features disponíveis, regra de combinação, parte simulada complementar e limitações. Um proxy que não represente diretamente a importação da planta não é intercambiável para a regra operacional; se nenhum dataset sustentar o target, parar e registrar a evidência para decisão explícita antes de treinar ou gerar substituto.
 
 ## Critérios de aceite
 

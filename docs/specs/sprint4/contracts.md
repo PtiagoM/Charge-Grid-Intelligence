@@ -1,6 +1,6 @@
 # Contrato comum S4-C1
 
-Alvo a congelar em G0, **não implementado**. Ler [decisões](decisions.md). Reutilizar interfaces `Commercial*Record` em `packages/shared/src/contracts/index.ts`, enums existentes e fronteira `apps/api/src/goodwe/goodwe-provider.ts`. Não criar modelos comerciais independentes nos frontends.
+Contrato histórico da baseline S4-C1. Para o estado atual e contratos aditivos, consulte a seção S4-C2 ao final e [decisões](decisions.md). Reutilizar interfaces `Commercial*Record` em `packages/shared/src/contracts/index.ts`, enums existentes e fronteira `apps/api/src/goodwe/goodwe-provider.ts`. Não criar modelos comerciais independentes nos frontends.
 
 ## C1 — Identificadores, tipos e catálogo
 
@@ -187,3 +187,16 @@ Alertas mínimos: HARDWARE_FAULT, TELEMETRY_STALE, SETTLEMENT_PENDING; uma ocorr
 Labels são projeção de enum, não nova máquina de estados. Sessão energética finalizada não é receita capturada. Operation usa currentSessionId; timeline usa eventos dessa sessão. Totais financeiros separam autorizado, capturado, devolvido e consumido; fee/payout desconhecidos são null/indisponível. Intervalo de relatórios [from,to), energia por amostras/intervalos, receita por confirmação financeira; incluir período e método.
 
 Antes de G1: vetores de [acceptance](acceptance.md) serializados como fixtures **somente de teste**, consumidos pelos adapters Admin/PWA. Um payload pode ser renderizado diferente, mas IDs/status/Wh/cents/PI devem ser iguais. C1 não permite alias code no campo ID nem reduzir FAULTED/SETTLEMENT_PENDING a finished.
+
+## Contrato aditivo S4-C2
+
+S4-C2 não altera `CommercialSnapshot.contractVersion` nem os DTOs S4-C1 já consumidos pela PWA. Os tipos abaixo são contratos novos/aditivos para agregação, previsão, evidência preditiva e cenários do laboratório. Timestamps são ISO-8601 UTC; períodos são `[from,to)`.
+
+- `DataProvenance`: `REAL | SANDBOX | SIMULATED | DERIVED`. Descreve a origem do valor entregue: por exemplo, pagamento Stripe test é `SANDBOX`, amostra do MockGoodWe é `SIMULATED`, e razão/totais calculados são `DERIVED`. Não substitui o campo legado `DataOrigin`, que descreve sistemas de origem.
+- `DataQuality`: `FRESH | STALE | UNAVAILABLE`. Valor indisponível usa `value:null`, qualidade `UNAVAILABLE` e `unavailableReason` não vazio; nunca converter ausência em zero. Valor presente pode ser `FRESH` ou `STALE`, sempre com `unavailableReason:null`.
+- `CommercialDashboardSummary`: resposta `S4-C2` do agregado temporal. Contém IDs, período e geração UTC; energia EV/solar-para-EV/importação/exportação em Wh; financeiro em centavos (capturado, devolvido e líquido capturado); importação atual/pico e limite em kW; utilização; contagens. Cada métrica é `CommercialDashboardMetric<T>` com valor, proveniência e qualidade explícitos. Autorização não é receita. `utilization.ratio` é fração de 0 a 1; numerador/denominador são segundos. Se cobertura ou histórico de capacidade publicada não sustentarem o cálculo no período, responder indisponível com motivo, sem estimar.
+- `ForecastRecord`: previsão persistida com `contractVersion:'S4-C2'`, IDs, `generatedAt`, janela de input, horizonte/step em minutos, `modelVersion`, proveniência e qualidade. Para previsão disponível, `points` contém timestamps UTC e `predictedGridImportKw`, e `metrics` contém MAE/RMSE do modelo e baseline em kW com janela de teste. Para indisponível, pontos/métricas são `null` e a razão é explícita. Não há campo de confiança ou intervalo não calibrado. `ForecastQuality` separa disponibilidade de qualidade dos inputs.
+- `DemandDecisionEvidence`: evidência auditável com `forecastId`, `sampleId`, `policyVersion`, `modelVersion`, chave de correlação, limite/limiares em kW/percentual, ponto de pico previsto e outcome `PREDICTED_NORMAL | PREDICTED_ALERT | PREDICTED_CRITICAL`. É evidência de regra, não comando de hardware.
+- `LabScenarioId`: `SOLAR_SURPLUS | DEMAND_RAMP | LOW_SOLAR | TELEMETRY_LOSS | RECOVERY`. IDs são estáveis; versão/seed/step/unidades ficam no payload de aplicação definido pela API do laboratório. Cenários mantêm proveniência simulada e não criam registros comerciais.
+
+Os contratos TypeScript canônicos estão em `packages/shared/src/contracts/index.ts`; qualquer alteração incompatível exige nova versão explícita. O dataset pode determinar horizonte/step e métricas concretas, mas não altera os nomes/unidades do payload acima.
