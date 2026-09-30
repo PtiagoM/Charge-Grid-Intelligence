@@ -6145,7 +6145,7 @@ body.layout-auth {
 .hardware-lab-signals article { display: grid; gap: 6px; }
 .hardware-lab-signals article > span, .hardware-lab-metrics article > span { color: var(--goodwe-red); font-size: 22px; }
 .hardware-lab-signals small, .hardware-lab-metrics small, .hardware-lab-state footer small { color: var(--text-secondary); font-size: 11px; }
-.hardware-lab-signals strong { font-size: 18px; }
+.hardware-lab-signals strong { overflow-wrap: anywhere; font-size: 16px; }
 .hardware-lab-controls { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-color); }
 .hardware-lab-controls button, .hardware-lab-charger footer button { min-height: 42px; padding: 0 14px; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); background: var(--surface-raised, #252930); font-weight: 700; cursor: pointer; }
 .hardware-lab-controls .hardware-lab-primary, .hardware-lab-charger footer .hardware-lab-primary { border-color: transparent; color: #fff; background: linear-gradient(110deg, #f3213a, #d8112e); }

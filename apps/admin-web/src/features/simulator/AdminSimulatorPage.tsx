@@ -7,17 +7,35 @@ import { assets } from "../../constants/assets";
 import { canUseHardwareLab } from "../../services/hardwareLabAccess";
 import { applyPlantScenario, fetchCommercialSnapshot, fetchPlantEnergyView, resetCommercialTestData, sendHardwareEvent, type HardwareAction } from "../../services/commercialSnapshotRepository";
 
-const scenarios: Record<LabScenarioId, { name: string; description: string }> = {
-  SOLAR_SURPLUS: { name: "Excedente solar", description: "FV 30 kW e carga-base 8 kW." },
-  DEMAND_RAMP: { name: "Rampa de demanda", description: "FV 2 kW; carga-base crescente de 8 a 28 kW." },
-  LOW_SOLAR: { name: "Baixa geração solar", description: "FV 1 kW e carga-base 12 kW." },
-  TELEMETRY_LOSS: { name: "Perda de telemetria", description: "Provider offline; amostra anterior fica stale." },
-  RECOVERY: { name: "Recuperação", description: "FV crescente de 2 a 30 kW e carga-base 12 kW." }
+type PreviewSignal = number | readonly [number, number] | null;
+
+const scenarios: Record<LabScenarioId, { name: string; description: string; pvKw: PreviewSignal; buildingLoadKw: PreviewSignal }> = {
+  SOLAR_SURPLUS: { name: "Excedente solar", description: "FV 30 kW e carga-base 8 kW.", pvKw: 30, buildingLoadKw: 8 },
+  DEMAND_RAMP: { name: "Rampa de demanda", description: "FV 2 kW; carga-base crescente de 8 a 28 kW.", pvKw: 2, buildingLoadKw: [8, 28] },
+  LOW_SOLAR: { name: "Baixa geração solar", description: "FV 1 kW e carga-base 12 kW.", pvKw: 1, buildingLoadKw: 12 },
+  TELEMETRY_LOSS: { name: "Perda de telemetria", description: "Provider offline; amostra anterior fica stale.", pvKw: null, buildingLoadKw: null },
+  RECOVERY: { name: "Recuperação", description: "FV crescente de 2 a 30 kW e carga-base 12 kW.", pvKw: [2, 30], buildingLoadKw: 12 }
 };
 
 const statusLabels: Record<string, string> = { AVAILABLE: "Disponível", CONNECTED: "Veículo conectado", CHARGING: "Carregando", OFFLINE: "Offline", FAULT: "Falha" };
 const localTime = (date?: string) => date ? new Date(date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "—";
 const measurement = (value?: number | null) => value === null || value === undefined ? "—" : `${number(value)} kW`;
+const isRange = (value: PreviewSignal): value is readonly [number, number] => typeof value !== "number" && value !== null;
+
+function previewMeasurement(value: PreviewSignal, selected: boolean) {
+  if (!selected) return "—";
+  if (value === null) return "Indisponível";
+  return isRange(value) ? `${number(value[0])}–${number(value[1])} kW` : measurement(value);
+}
+
+function estimatedGridImport(pvKw: PreviewSignal, buildingLoadKw: PreviewSignal, evLoadKw: number | null): PreviewSignal {
+  if (pvKw === null || buildingLoadKw === null || evLoadKw === null) return null;
+  const [pvMin, pvMax] = isRange(pvKw) ? pvKw : [pvKw, pvKw];
+  const [loadMin, loadMax] = isRange(buildingLoadKw) ? buildingLoadKw : [buildingLoadKw, buildingLoadKw];
+  const min = Math.max(0, loadMin + evLoadKw - pvMax);
+  const max = Math.max(0, loadMax + evLoadKw - pvMin);
+  return min === max ? min : [min, max];
+}
 
 function HardwareLab() {
   const [snapshot, setSnapshot] = useState<CommercialSnapshot | null>(null);
@@ -97,6 +115,8 @@ function HardwareLab() {
   const charging = chargers.filter(({ charger }) => charger.physicalStatus === "CHARGING").length;
   const activeScenario = energyView?.simulation;
   const selected = scenarioId ? scenarios[scenarioId] : null;
+  const previewEvLoad = snapshot ? chargers.filter(({ charger }) => charger.physicalStatus === "CHARGING").reduce((total, { charger }) => total + charger.currentPowerKw, 0) : null;
+  const previewGridImport = selected ? estimatedGridImport(selected.pvKw, selected.buildingLoadKw, previewEvLoad) : null;
   const labState = !apiAvailable || !plant || plant.quality === "UNKNOWN" ? "Indisponível" : plant.quality === "FRESH" ? "Em operação" : "Telemetria desatualizada";
 
   useEffect(() => {
@@ -114,17 +134,17 @@ function HardwareLab() {
         <header><h2>Cenário de simulação <span aria-hidden="true">ⓘ</span></h2><p>Selecione um perfil de operação e aplique na planta.</p></header>
         <div className="hardware-lab-selector">
           <label className="sr-only" htmlFor="lab-scenario">Cenário de simulação</label>
-          <select id="lab-scenario" value={scenarioId} onChange={(event) => setScenarioId(event.target.value as LabScenarioId | "")}>
+          <select id="lab-scenario" value={scenarioId} onChange={(event) => { setScenarioId(event.target.value as LabScenarioId | ""); setMessage(""); }}>
             <option value="">Selecione um cenário</option>
             {LAB_SCENARIO_IDS.map((id) => <option key={id} value={id}>{scenarios[id].name}</option>)}
           </select>
           <dl><div><dt>ID do cenário</dt><dd>{scenarioId || "—"}</dd></div><div><dt>Versão</dt><dd>{activeScenario?.scenarioId === scenarioId ? `v${activeScenario.version}.0` : "v1.0"}</dd></div><div><dt>Proveniência</dt><dd>Simulado GoodWe</dd></div><div><dt>Finalidade</dt><dd>{selected?.description ?? "Selecione um perfil para ver os sinais simulados."}</dd></div></dl>
         </div>
         <div className="hardware-lab-signals">
-          <article><span>☀</span><small>Solar simulada</small><strong>{measurement(plant?.pvKw)}</strong></article>
-          <article><span>⌂</span><small>Carga-base</small><strong>{measurement(plant?.buildingLoadKw)}</strong></article>
-          <article><span>⌁</span><small>Carga EV</small><strong>{measurement(plant?.evLoadKw)}</strong></article>
-          <article><span>ϟ</span><small>Importação da rede</small><strong>{measurement(plant?.gridImportKw)}</strong></article>
+          <article><span>☀</span><small>Geração solar prevista</small><strong>{previewMeasurement(selected?.pvKw ?? null, Boolean(selected))}</strong></article>
+          <article><span>⌂</span><small>Carga-base prevista</small><strong>{previewMeasurement(selected?.buildingLoadKw ?? null, Boolean(selected))}</strong></article>
+          <article><span>⌁</span><small>Carga EV atual estimada</small><strong>{scenarioId ? measurement(previewEvLoad) : "—"}</strong></article>
+          <article><span>ϟ</span><small>Importação estimada</small><strong>{previewMeasurement(previewGridImport, Boolean(selected))}</strong></article>
         </div>
         <footer className="hardware-lab-controls">
           <button type="button" className="hardware-lab-primary" disabled={Boolean(busy) || !plantId || !scenarioId} onClick={() => void applyScenario()}>▷ Aplicar cenário</button>
