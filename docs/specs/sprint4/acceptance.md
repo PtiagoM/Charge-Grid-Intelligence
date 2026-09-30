@@ -105,7 +105,7 @@ CONTRACT = asserts de payload nos testes existentes, não biblioteca nova. Teste
 - **G-M3:** seis ocupados → driverfila → lablibera → chamada → checkout ou expiração; Admin/PWA mesmosdados.
 - **G-M4:** PV/base/EV/rede → restrição/corte/retomada → motivo/evento e efeito numérico. Mesma sessão/quote; simulação explicitada.
 - **G-M5:** falhaessencial/retry/ownership e inspeção mobile/desktop das superfícies; IV/bateria/helpdesk etc sem falso sucesso.
-- **G-M6:** executar por README com PGlite/Node, seed não destrutivo, processos e env documentados, sem SQLremoto/cloud. Ensaiar vídeo contínuo e registrar limitações.
+- **G-M6:** automação de reprodução executada em checkout limpo, sem `.env`, `.local` ou banco remoto: `npm ci`, lint, typecheck, testes, builds e E2E; API oficial/PGlite iniciou e respondeu `/health` em porta isolada. **Ensaio manual contínuo do README com Maps/Stripe test e gravação permanece pendente.**
 
 ## Registro de gates
 
@@ -120,6 +120,6 @@ Preencher somente após execução real. Uma linha pode apontar para relatório 
 | G4 energia | CONCLUÍDO — 27/09/2026 | checkpoints M4, testes focais e registro `dfab16d`; integração ampla permanece responsabilidade de G5 |
 | G5 integração | CONCLUÍDO — 30/09/2026 | M5-U1 (`11692ff`) e U2A–U2C: sessão/persistência, fila/checkout atribuído, tarifas/relatórios, energia/stop/retirada/liquidação controlados e recuperação de falha. U3: responsável confirmou Maps real, Payment Element Stripe test, operação compartilhada, consumo ≥R$ 0,50, liquidação e reload. Os testes automatizados usam providers determinísticos somente nos cenários isolados; U3 não usa stub. Referências detalhadas e capturas não foram fornecidas. |
 | G6 estabilidade | CONCLUÍDO — 30/09/2026 | G-M5 confirmado manualmente pelo responsável; M6-U1/U2 e validações automatizadas registradas em CURRENT_STATE e na ordem canônica. Não implica nova validação de hardware físico/Stripe live. |
-| G7 entrega | PENDENTE | G-M6, README/diagramas/resultados, estadoGit, checklistfinal |
+| G7 entrega | PARCIAL — ENSAIO MANUAL PENDENTE | README/diagramas/resultados e gates automatizados atualizados; falta ensaio contínuo do responsável com Maps/Stripe test configurados e confirmação do roteiro/limitações. `npm ci` relatou 3 vulnerabilidades (2 moderadas, 1 alta); nenhuma correção de dependência aplicada. |
 
 Formato da evidência de unidade: `S4-Mx-Uy | commit/build | ambiente/DBteste | comandos + exit/resultados | IDs/vetores | limites/nãoexecutado | próximoID`. Não gravar segredo, clientSecret, bearer, email ou foto do usuário. Screenshots sanitizados; pasta output local não é publicação automática.

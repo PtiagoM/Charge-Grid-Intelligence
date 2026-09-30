@@ -1,6 +1,6 @@
 # M7 — Evidências e entrega final
 
-**Estado:** U1 concluída em 30/09/2026; U2 pendente. Objetivo: consolidar a baseline S4-C1 com o que funciona. MÉDIO. Não construir feature nova para preencher relatório. G7 concluído desbloqueia `CG-F0-01`; ele não elimina a validação posterior dos deltas S4-C2.
+**Estado:** U1 e validação automatizada de U2 concluídas em 30/09/2026; G7 aguarda ensaio manual M7-U2. Objetivo: consolidar a baseline S4-C1 com o que funciona. MÉDIO. Não construir feature nova para preencher relatório. G7 concluído desbloqueia `CG-F0-01`; ele não elimina a validação posterior dos deltas S4-C2.
 
 ## S4-M7-U1 — Documentação e resultados verdadeiros
 

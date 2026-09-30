@@ -156,8 +156,8 @@ docs/
 ## Configuração
 
 ```bash
-npm install
-cp .env.example .env
+npm ci
+Copy-Item .env.example .env
 ```
 
 Para o protótipo local, PGlite persiste sem credenciais ou variáveis obrigatórias adicionais. Preencha somente integrações usadas na demonstração, sempre localmente e sem versionar segredos:
