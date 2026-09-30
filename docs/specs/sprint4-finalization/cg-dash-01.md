@@ -1,6 +1,6 @@
 # CG-DASH-01 — agregados temporais canônicos
 
-**Classificação:** BACKEND ONLY · **Status:** PLANNED · **Tamanho:** MÉDIO · **Risco:** ALTO.
+**Classificação:** BACKEND ONLY · **Status:** DONE · **Tamanho:** MÉDIO · **Risco:** ALTO.
 
 ## Objetivo e escopo
 
@@ -22,10 +22,12 @@ Depende de F0-02. Energia, relatórios, financeiro e snapshot já saem da API, m
 
 Criar `GET /commercial/dashboard-summary?establishmentId&from&to` usando `CommercialDashboardSummary` S4-C2 conforme congelado em F0-02. Período é UTC `[from,to)`, máximo 31 dias. `period` ecoa os limites normalizados e cada métrica segue `CommercialDashboardMetric<T>`; ausência/cobertura insuficiente é `value:null`, `quality:'UNAVAILABLE'` e motivo estável, não zero.
 
+Implementado como `GET /commercial/dashboard-summary`; a rota só valida/normaliza os parâmetros e consulta o repository. Não executa clock, reconciliação ou sincronização de insights.
+
 - energia de `commercial_energy_samples`/relatório vigente;
 - financeiro somente de capturado menos devolvido; autorizado não é receita;
 - demanda atual e pico de importação medida, com limite/política vigentes;
-- `utilization.occupiedChargerSeconds` é a soma das durações confirmadas de sessão intersectadas com o período; `publishedChargerSeconds` é a capacidade publicada comprovável no período; `ratio` é a fração `[0,1]`. Se o histórico não permitir comprovar a capacidade publicada histórica, retornar indisponível;
+- `utilization.occupiedChargerSeconds` é a soma das durações confirmadas de sessão intersectadas com o período; `publishedChargerSeconds` é carregadores publicados × segundos do período (o catálogo Aurora não possui mutação de publicação no runtime atual); `ratio` é a fração `[0,1]`. Se uma unidade futura adicionar alteração de publicação, precisa adicionar histórico ou tornar o período afetado indisponível;
 - contagens `sessionsCreatedInPeriod`, `activeSessionsAtGeneration`, `chargersAtGeneration`, `availableChargersAtGeneration` e `queuedEntriesAtGeneration` usam registros persistidos; as primeiras são da janela e as demais são fotografia em `generatedAt`;
 - `null + reason` quando cobertura de amostras for insuficiente.
 
@@ -39,10 +41,11 @@ GET não cria amostra, tick, decisão nem sessão. Reutilizar queries do relató
 - Janela vazia retorna zeros apenas para somas comprovadamente vazias; medição sem cobertura retorna indisponível.
 - Reload/restart preserva resultado.
 - Outro establishment não recebe dados Aurora.
+- Resumo financeiro agrupa pelo mesmo instante efetivo do relatório (`settledAt`, ou `createdAt` enquanto pendente); autorização aparece somente nos registros da sessão, nunca como receita.
 
 ## Testes, documentação e commit
 
-Integration focal para período, receita, cobertura e isolamento; unit apenas para cálculo temporal extraído. Atualizar contrato e API docs. Commit: `feat(api): expose canonical dashboard aggregates`.
+Integration focal executada: período/normalização, paridade de energia e financeiro com relatório, autorização não contabilizada como captura, amostra ausente, isolamento por estabelecimento e ausência de efeitos de leitura. `npm run typecheck` passou. Commit: `feat(api): expose canonical dashboard aggregates`.
 
 ## Condição de parada
 

@@ -18,7 +18,8 @@ Este arquivo complementa, sem substituir, [decisions S4-C1](../sprint4/decisions
 | F-D12 | INFERÊNCIA | Primeiro modelo elegível é o mais simples que superar baseline temporal no conjunto de teste e mantiver inferência reproduzível em Node. |
 | F-D13 | APROVADA | O pacote original `sprint4` deve concluir M5–M7/G7 antes de qualquer unidade `CG-*`; a finalização S4-C2 reutiliza evidências não afetadas da baseline. |
 | F-D14 | DECISÃO TÉCNICA | S4-C2 é aditivo: o snapshot comercial existente permanece `S4-C1`; agregados usam `CommercialDashboardSummary`, proveniência não substitui `DataOrigin`, e ausências são null + qualidade/motivo explícitos. |
-| F-D15 | DECISÃO TÉCNICA | Contrato de forecast prevê `gridImportKw` em kW e publica MAE/RMSE vs. baseline sem confiança artificial; horizonte/step permanecem decisão da avaliação AI-01, em minutos. |
+| F-D15 | DECISÃO TÉCNICA | Contrato de forecast prevê importação da rede da planta em kW (`predictedGridImportKw`) e publica MAE/RMSE vs. baseline sem confiança artificial; horizonte/step permanecem decisão da avaliação AI-01, em minutos. |
+| F-D16 | INFERÊNCIA | A utilização Aurora pode usar o inventário publicado atual como capacidade constante no período porque o runtime não possui operação de publicar/despublicar carregador; se esse ciclo de vida mudar, precisa persistir histórico ou indisponibilizar a métrica histórica. |
 
 ## Decisões ainda condicionais
 

@@ -313,6 +313,64 @@ describe("CommercialRepository", () => {
     expect((await repository.plantEnergySeries("plant_aurora_001"))).toHaveLength(beforeRead.length);
   }, 20_000);
 
+  it("builds a read-only S4-C2 dashboard summary from the same report and shared records", async () => {
+    const repository = new CommercialRepository("memory://");
+    repositories.push(repository);
+    const id = "71000000-0000-4000-8000-000000000007";
+    const startedAt = new Date(Date.now() - 12_000);
+    const nextSampleAt = new Date(startedAt.getTime() + 10_000);
+    const from = new Date(startedAt.getTime() - 1_000).toISOString();
+    await repository.reserveSession({ id, establishmentId: "est_aurora_001", chargerCode: "AURORA-01", driverName: "Motorista Dashboard", method: "CARD", authorizedCents: 2500 });
+    await repository.attachPayment(id, "pi_test_dashboard_summary", "requires_capture");
+    await repository.recordPayment({ sessionId: id, paymentIntentId: "pi_test_dashboard_summary", status: PaymentStatus.AUTHORIZED, providerStatus: "requires_capture", receivedAmount: 0 });
+    await repository.hardwareEvent("AURORA-01", "CONNECT");
+    await repository.configurePlantTelemetry({ plantId: "plant_aurora_001", online: true, pvKw: 20, buildingLoadKw: 10 });
+    await repository.advancePlantTelemetry(startedAt);
+    await repository.advancePlantTelemetry(nextSampleAt);
+    const to = new Date(Date.now() + 1_000).toISOString();
+    const seriesBeforeRead = await repository.plantEnergySeries("plant_aurora_001");
+    const report = await repository.operationalReport({ establishmentId: "est_aurora_001", from, to });
+    const summary = await repository.dashboardSummary({ establishmentId: "est_aurora_001", from, to });
+
+    expect(summary).toMatchObject({
+      contractVersion: "S4-C2",
+      establishmentId: "est_aurora_001",
+      plantId: "plant_aurora_001",
+      period: { from, to },
+      energy: {
+        evWh: { value: report.energy.evWh, provenance: "SIMULATED", quality: "FRESH" },
+        solarToEvWh: { value: report.energy.solarToEvWh, provenance: "SIMULATED" },
+        gridImportWh: { value: report.energy.gridImportWh, provenance: "SIMULATED" },
+        gridExportWh: { value: report.energy.gridExportWh, provenance: "SIMULATED" }
+      },
+      financial: {
+        capturedCents: { value: report.financial.capturedCents, provenance: "SANDBOX" },
+        refundedCents: { value: report.financial.refundedCents, provenance: "SANDBOX" },
+        netCapturedCents: { value: 0, provenance: "SANDBOX" }
+      },
+      counts: {
+        sessionsCreatedInPeriod: { value: 1 },
+        activeSessionsAtGeneration: { value: 1 },
+        chargersAtGeneration: { value: 6 },
+        availableChargersAtGeneration: { value: 5 }
+      }
+    });
+    expect(summary.utilization.ratio.value).toBeGreaterThan(0);
+    expect(summary.utilization.ratio.value).toBeLessThanOrEqual(1);
+    expect(await repository.plantEnergySeries("plant_aurora_001")).toHaveLength(seriesBeforeRead.length);
+    expect((await repository.snapshot("est_aurora_001")).sessions).toHaveLength(1);
+  }, 20_000);
+
+  it("marks an energy window without samples unavailable and scopes the summary by establishment", async () => {
+    const repository = new CommercialRepository("memory://");
+    repositories.push(repository);
+    const from = "2020-01-01T00:00:00.000Z";
+    const to = "2020-01-02T00:00:00.000Z";
+    const summary = await repository.dashboardSummary({ establishmentId: "est_aurora_001", from, to });
+    expect(summary.energy.evWh).toMatchObject({ value: null, quality: "UNAVAILABLE", unavailableReason: "NO_ENERGY_SAMPLES_IN_PERIOD" });
+    await expect(repository.dashboardSummary({ establishmentId: "other-establishment", from, to })).rejects.toBeInstanceOf(CommercialNotFoundError);
+  }, 20_000);
+
   it("keeps the last simulated plant sample after a repository restart", async () => {
     const dataDir = await mkdtemp(join(tmpdir(), "chargegrid-energy-"));
     let repository: CommercialRepository | undefined;
@@ -320,10 +378,14 @@ describe("CommercialRepository", () => {
       repository = new CommercialRepository(dataDir);
       await repository.configurePlantTelemetry({ plantId: "plant_aurora_001", online: true, pvKw: 20, buildingLoadKw: 10 });
       await repository.advancePlantTelemetry(new Date("2026-09-26T12:00:00.000Z"));
+      const beforeRestart = await repository.dashboardSummary({ establishmentId: "est_aurora_001", from: "2026-09-26T11:00:00.000Z", to: "2026-09-26T13:00:00.000Z" });
       await repository.close();
       repository = undefined;
       repository = new CommercialRepository(dataDir);
       expect(await repository.plantEnergy("plant_aurora_001")).toMatchObject({ quality: "FRESH", pvKw: 20, buildingLoadKw: 10, evLoadKw: 0 });
+      const afterRestart = await repository.dashboardSummary({ establishmentId: "est_aurora_001", from: "2026-09-26T11:00:00.000Z", to: "2026-09-26T13:00:00.000Z" });
+      expect(afterRestart.energy).toEqual(beforeRestart.energy);
+      expect(afterRestart.counts).toEqual(beforeRestart.counts);
     } finally {
       if (repository) await repository.close();
       await rm(dataDir, { recursive: true, force: true });

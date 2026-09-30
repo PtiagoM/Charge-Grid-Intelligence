@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
-import { ChargerCommercialStatus, ChargerTechnicalStatus, CommercialAvailability, CommercialSessionStatus, PaymentStatus, PlantEnergyStatus, QueueStatus, type CommercialCatalog, type CommercialChargerRecord, type CommercialChargerResolution, type CommercialEnergyView, type CommercialEstablishmentRecord, type CommercialFinancialSummary, type CommercialInsight, type CommercialInsights, type CommercialOperationalReport, type CommercialOpeningHoursInterval, type CommercialPublicChargerRecord, type CommercialPublicEstablishmentRecord, type CommercialQueueRecord, type CommercialQuote, type CommercialSessionRecord, type CommercialSnapshot, type CommercialTariffVersion, type PlantEnergySnapshot } from "@chargegrid/shared";
+import { ChargerCommercialStatus, ChargerTechnicalStatus, CommercialAvailability, CommercialSessionStatus, PaymentStatus, PlantEnergyStatus, QueueStatus, type CommercialCatalog, type CommercialChargerRecord, type CommercialChargerResolution, type CommercialDashboardMetric, type CommercialDashboardSummary, type CommercialEnergyView, type CommercialEstablishmentRecord, type CommercialFinancialSummary, type CommercialInsight, type CommercialInsights, type CommercialOperationalReport, type CommercialOpeningHoursInterval, type CommercialPublicChargerRecord, type CommercialPublicEstablishmentRecord, type CommercialQueueRecord, type CommercialQuote, type CommercialSessionRecord, type CommercialSnapshot, type CommercialTariffVersion, type DataProvenance, type PlantEnergySnapshot } from "@chargegrid/shared";
 import pg from "pg";
 import { MockGoodWeProvider, type GoodWeProvider } from "../goodwe/index.js";
 
@@ -1429,6 +1429,129 @@ export class CommercialRepository {
     await this.db.query("update commercial_decisions set review_state = $2, decided_at = now(), decided_by = $3, decision_reason = $4, updated_at = now() where id = $1", [input.id, reviewState, input.actor ?? "Operação ChargeGrid", input.reason.trim()]);
     const updated = await this.db.query<InsightRow>("select * from commercial_decisions where id = $1", [input.id]);
     return insightRecord(updated.rows[0]!);
+  }
+
+  async dashboardSummary(input: { establishmentId: string; from: string; to: string }): Promise<CommercialDashboardSummary> {
+    await this.ready;
+    const generatedAt = new Date();
+    const establishment = await this.db.query<{ id: string; plant_id: string | null; energy_policy: unknown }>(`select e.id, p.id as plant_id, p.energy_policy
+      from commercial_establishments e left join commercial_plants p on p.establishment_id = e.id
+      where e.id = $1 and e.published = true`, [input.establishmentId]);
+    const scope = establishment.rows[0];
+    if (!scope) throw new CommercialNotFoundError("Estabelecimento comercial não encontrado.");
+
+    const policy = scope.energy_policy ? energyPolicy(scope.energy_policy) : null;
+    const freshSeconds = policy?.freshSeconds ?? 15;
+    const periodMs = Date.parse(input.to) - Date.parse(input.from);
+    const samples = scope.plant_id ? await this.db.query<{
+      sample_count: number; fresh_count: number; first_at: Date | string | null; last_at: Date | string | null; max_gap_seconds: number | null;
+      ev_wh: number | null; solar_to_ev_wh: number | null; grid_import_wh: number | null; grid_export_wh: number | null; peak_grid_import_kw: number | null;
+    }>(`with ordered as (
+        select observed_at, quality,
+          lag(observed_at) over (order by observed_at) as previous_at,
+          ev_wh, solar_to_ev_wh, grid_import_wh, grid_export_wh, grid_import_kw
+        from commercial_energy_samples
+        where plant_id = $1 and observed_at >= $2 and observed_at < $3
+      )
+      select count(*)::int as sample_count,
+        count(*) filter (where quality = 'FRESH')::int as fresh_count,
+        min(observed_at) as first_at, max(observed_at) as last_at,
+        max(extract(epoch from observed_at - previous_at)) as max_gap_seconds,
+        sum(ev_wh) as ev_wh, sum(solar_to_ev_wh) as solar_to_ev_wh,
+        sum(grid_import_wh) as grid_import_wh, sum(grid_export_wh) as grid_export_wh,
+        max(grid_import_kw) as peak_grid_import_kw
+      from ordered`, [scope.plant_id, input.from, input.to]) : { rows: [] };
+    const sample = samples.rows[0];
+    const hasSamples = (sample?.sample_count ?? 0) > 0;
+    const sampleCoverageStale = hasSamples && (
+      sample!.fresh_count !== sample!.sample_count
+      || Date.parse(String(sample!.first_at)) - Date.parse(input.from) > freshSeconds * 1000
+      || Date.parse(input.to) - Date.parse(String(sample!.last_at)) > freshSeconds * 1000
+      || Number(sample!.max_gap_seconds ?? 0) > freshSeconds
+    );
+    const energyQuality = sampleCoverageStale ? "STALE" as const : "FRESH" as const;
+    const energyMetric = (value: number | null | undefined): CommercialDashboardMetric<number> => hasSamples
+      ? { value: Number(value ?? 0), provenance: "SIMULATED", quality: energyQuality, unavailableReason: null }
+      : { value: null, provenance: scope.plant_id ? "SIMULATED" : null, quality: "UNAVAILABLE", unavailableReason: scope.plant_id ? "NO_ENERGY_SAMPLES_IN_PERIOD" : "PLANT_NOT_CONFIGURED" };
+
+    const financial = await this.db.query<{ payment_count: number; captured_cents: number | null; refunded_cents: number | null }>(`select count(p.id)::int as payment_count,
+        coalesce(sum(p.captured_cents), 0)::int as captured_cents, coalesce(sum(p.refunded_cents), 0)::int as refunded_cents
+      from commercial_payments p join commercial_sessions s on s.id = p.session_id
+      where s.establishment_id = $1 and coalesce(s.settled_at, s.created_at) >= $2 and coalesce(s.settled_at, s.created_at) < $3`, [input.establishmentId, input.from, input.to]);
+    const financialRow = financial.rows[0]!;
+    const paymentProvenance: DataProvenance = financialRow.payment_count > 0 ? "SANDBOX" : "DERIVED";
+    const financialMetric = (value: number): CommercialDashboardMetric<number> => ({ value, provenance: paymentProvenance, quality: "FRESH", unavailableReason: null });
+
+    const demand = scope.plant_id ? await this.plantEnergyView(scope.plant_id) : null;
+    const currentDemand = demand?.snapshot && demand.decision.quality !== "UNKNOWN"
+      ? { value: demand.snapshot.gridImportKw, provenance: "SIMULATED" as const, quality: demand.decision.quality === "FRESH" ? "FRESH" as const : "STALE" as const, unavailableReason: null }
+      : { value: null, provenance: scope.plant_id ? "SIMULATED" as const : null, quality: "UNAVAILABLE" as const, unavailableReason: scope.plant_id ? "CURRENT_TELEMETRY_UNAVAILABLE" : "PLANT_NOT_CONFIGURED" };
+    const peakDemand: CommercialDashboardMetric<number> = hasSamples
+      ? { value: Number(sample!.peak_grid_import_kw ?? 0), provenance: "SIMULATED", quality: energyQuality, unavailableReason: null }
+      : { value: null, provenance: scope.plant_id ? "SIMULATED" : null, quality: "UNAVAILABLE", unavailableReason: scope.plant_id ? "NO_ENERGY_SAMPLES_IN_PERIOD" : "PLANT_NOT_CONFIGURED" };
+    const limitKw: CommercialDashboardMetric<number> = policy
+      ? { value: policy.limitKw, provenance: "DERIVED", quality: "FRESH", unavailableReason: null }
+      : { value: null, provenance: null, quality: "UNAVAILABLE", unavailableReason: "DEMAND_POLICY_NOT_CONFIGURED" };
+
+    const sessions = await this.db.query<{ created_count: number; active_count: number; occupied_seconds: number }>(`select
+        count(*) filter (where created_at >= $2 and created_at < $3)::int as created_count,
+        count(*) filter (where status not in ('COMPLETED', 'PAYMENT_FAILED', 'START_FAILED', 'FAULTED', 'CANCELLED'))::int as active_count,
+        coalesce(sum(extract(epoch from (least(coalesce(ended_at, $3::timestamptz), $3::timestamptz) - greatest(started_at, $2::timestamptz))))
+          filter (where started_at is not null and started_at < $3::timestamptz and coalesce(ended_at, $3::timestamptz) > $2::timestamptz), 0)::float8 as occupied_seconds
+      from commercial_sessions where establishment_id = $1`, [input.establishmentId, input.from, input.to]);
+    const chargerRows = await this.db.query<{ charger_count: number; published_count: number; available_count: number }>(`select count(*)::int as charger_count,
+        count(*) filter (where published)::int as published_count,
+        count(*) filter (where published and physical_status = 'AVAILABLE' and commercial_status = 'AVAILABLE_TO_START')::int as available_count
+      from commercial_chargers where establishment_id = $1`, [input.establishmentId]);
+    const queueRows = await this.db.query<{ active_count: number }>(`select count(*)::int as active_count from commercial_queue_entries
+      where establishment_id = $1 and status in ('WAITING', 'CALLED', 'ASSIGNED')`, [input.establishmentId]);
+    const sessionRow = sessions.rows[0]!;
+    const chargerRow = chargerRows.rows[0]!;
+    const queueCount = queueRows.rows[0]!.active_count;
+    const derivedMetric = (value: number): CommercialDashboardMetric<number> => ({ value, provenance: "DERIVED", quality: "FRESH", unavailableReason: null });
+    const occupiedSeconds = Number(sessionRow.occupied_seconds);
+    const publishedSeconds = chargerRow.published_count * periodMs / 1000;
+    const utilizationRatio: CommercialDashboardMetric<number> = publishedSeconds > 0
+      ? derivedMetric(Math.max(0, Math.min(1, occupiedSeconds / publishedSeconds)))
+      : { value: null, provenance: "DERIVED", quality: "UNAVAILABLE", unavailableReason: "NO_PUBLISHED_CHARGERS" };
+    const generatedAtIso = generatedAt.toISOString();
+    const numeric = (value: number | null | undefined) => Number(value ?? 0);
+
+    return {
+      contractVersion: "S4-C2",
+      establishmentId: scope.id,
+      plantId: scope.plant_id,
+      period: { from: input.from, to: input.to },
+      generatedAt: generatedAtIso,
+      energy: {
+        evWh: energyMetric(sample?.ev_wh),
+        solarToEvWh: energyMetric(sample?.solar_to_ev_wh),
+        gridImportWh: energyMetric(sample?.grid_import_wh),
+        gridExportWh: energyMetric(sample?.grid_export_wh)
+      },
+      financial: {
+        capturedCents: financialMetric(numeric(financialRow.captured_cents)),
+        refundedCents: financialMetric(numeric(financialRow.refunded_cents)),
+        netCapturedCents: financialMetric(numeric(financialRow.captured_cents) - numeric(financialRow.refunded_cents))
+      },
+      demand: {
+        currentGridImportKw: currentDemand,
+        peakGridImportKw: peakDemand,
+        limitKw
+      },
+      utilization: {
+        occupiedChargerSeconds: derivedMetric(occupiedSeconds),
+        publishedChargerSeconds: derivedMetric(publishedSeconds),
+        ratio: utilizationRatio
+      },
+      counts: {
+        sessionsCreatedInPeriod: derivedMetric(sessionRow.created_count),
+        activeSessionsAtGeneration: derivedMetric(sessionRow.active_count),
+        chargersAtGeneration: derivedMetric(chargerRow.charger_count),
+        availableChargersAtGeneration: derivedMetric(chargerRow.available_count),
+        queuedEntriesAtGeneration: derivedMetric(queueCount)
+      }
+    };
   }
 
   async operationalReport(input: { establishmentId: string; from: string; to: string }): Promise<CommercialOperationalReport> {

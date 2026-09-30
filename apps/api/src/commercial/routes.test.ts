@@ -42,4 +42,25 @@ describe("commercial ownership routes", () => {
     expect(joined.status).toBe(201);
     expect(joined.body).toMatchObject({ driverId: "driver-a", driverName: "Motorista A", driverVehicle: "EV A" });
   }, 20_000);
+
+  it("exposes the canonical dashboard summary and rejects invalid periods", async () => {
+    const repository = new CommercialRepository("memory://");
+    repositories.push(repository);
+    const app = express();
+    app.use(express.json());
+    app.use(createCommercialRouter({ repository, verifyDriver }));
+    const query = "?establishmentId=est_aurora_001&from=2020-01-01T00%3A00%3A00.000Z&to=2020-01-02T00%3A00%3A00.000Z";
+
+    const summary = await request(app).get(`/dashboard-summary${query}`);
+    expect(summary.status).toBe(200);
+    expect(summary.body).toMatchObject({
+      contractVersion: "S4-C2",
+      establishmentId: "est_aurora_001",
+      plantId: "plant_aurora_001",
+      period: { from: "2020-01-01T00:00:00.000Z", to: "2020-01-02T00:00:00.000Z" },
+      energy: { evWh: { value: null, quality: "UNAVAILABLE" } }
+    });
+    expect((await request(app).get("/dashboard-summary?establishmentId=est_aurora_001&from=2020-01-01&to=2020-02-02")).status).toBe(400);
+    expect((await request(app).get(`/dashboard-summary${query.replace("est_aurora_001", "unknown")}`)).status).toBe(404);
+  }, 20_000);
 });

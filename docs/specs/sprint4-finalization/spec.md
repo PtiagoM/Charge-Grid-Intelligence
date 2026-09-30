@@ -1,6 +1,6 @@
 # Sprint 4 — pacote final de execução
 
-Status: **G7, CG-F0-01 E CG-F0-02 CONCLUÍDOS; CG-DASH-01, CG-AI-01 E CG-LAB-01 SÃO AS PRÓXIMAS UNIDADES ELEGÍVEIS**. Este pacote transforma o plano mestre aprovado em unidades executáveis. Ele não substitui M5–M7 de `docs/specs/sprint4`.
+Status: **G7, CG-F0-01, CG-F0-02 E CG-DASH-01 CONCLUÍDOS; CG-DASH-02, CG-DASH-03, CG-AI-01 E CG-LAB-01 SÃO AS PRÓXIMAS UNIDADES ELEGÍVEIS**. Este pacote transforma o plano mestre aprovado em unidades executáveis. Ele não substitui M5–M7 de `docs/specs/sprint4`.
 
 ## Como usar
 
@@ -31,9 +31,9 @@ Status: **G7, CG-F0-01 E CG-F0-02 CONCLUÍDOS; CG-DASH-01, CG-AI-01 E CG-LAB-01 
 |---|---|---|---|---|---|---|---|
 | CG-F0-01 | [Base Git e evidências](cg-f0-01.md) | S4-G7 | PEQUENO | MÉDIO | BACKEND ONLY | Git/docs | DONE — MERGE LOCAL `8355c23`; BRANCH S3 PRESERVADA |
 | CG-F0-02 | [Contrato final S4-C2](cg-f0-02.md) | F0-01 | MÉDIO | ALTO | BACKEND ONLY | contrato | DONE |
-| CG-DASH-01 | [Agregados temporais canônicos](cg-dash-01.md) | F0-02 | MÉDIO | ALTO | BACKEND ONLY | unit/integration | READY |
-| CG-DASH-02 | [Cards do Dashboard](cg-dash-02.md) | DASH-01 | MÉDIO | MÉDIO | PEQUENO AJUSTE NO FRONT | unit/E2E focal | PLANNED |
-| CG-DASH-03 | [Sustentabilidade e economia](cg-dash-03.md) | DASH-01 | MÉDIO | ALTO | PEQUENO AJUSTE NO FRONT | unit/integration | PLANNED |
+| CG-DASH-01 | [Agregados temporais canônicos](cg-dash-01.md) | F0-02 | MÉDIO | ALTO | BACKEND ONLY | unit/integration | DONE |
+| CG-DASH-02 | [Cards do Dashboard](cg-dash-02.md) | DASH-01 | MÉDIO | MÉDIO | PEQUENO AJUSTE NO FRONT | unit/E2E focal | READY |
+| CG-DASH-03 | [Sustentabilidade e economia](cg-dash-03.md) | DASH-01 | MÉDIO | ALTO | PEQUENO AJUSTE NO FRONT | unit/integration | READY |
 | CG-AI-01 | [Due diligence de datasets](cg-ai-01.md) | F0-02 | MÉDIO | ALTO | BACKEND ONLY | validação documental | READY |
 | CG-AI-02 | [Pipeline reproduzível](cg-ai-02.md) | AI-01 | MÉDIO | ALTO | BACKEND ONLY | pipeline | PLANNED |
 | CG-AI-03 | [Treino e seleção — pai](cg-ai-03.md) | AI-02 | GRANDE | ALTO | BACKEND ONLY | executar A/B | PLANNED |
