@@ -1,0 +1,37 @@
+# CG-AI-01 — avaliação de fontes para previsão de demanda
+
+**Revisado em:** 30/09/2026  
+**Target de produto:** `gridImportKw` da planta, em kW.  
+**Resultado:** nenhuma fonte avaliada mede diretamente, com proveniência verificável, importação de rede de um hub comercial integrado a FV e recarga EV. Não iniciar treino nem montar um composto antes da decisão registrada em `dataset-decision.md`.
+
+## Candidatos
+
+| Fonte | Proveniência, acesso e termos | Tempo e variáveis | Adequação ao target |
+|---|---|---|---|
+| [Building Data Genome 2 (BDG2)](https://github.com/buds-lab/building-data-genome-project-2) | Repositório mantido pelo BUDS Lab; release v1.0; dados e metadados versionáveis no GitHub. A licença do repositório é CC BY-SA 4.0; atribuição e compartilhamento pela mesma licença precisam ser respeitados ao redistribuir derivados. | Medições de 3.053 medidores em 1.636 edifícios não residenciais, 2016–2017, frequência horária. Há eletricidade e outros medidores; metadados incluem tipo de medidor e fuso/local. | Melhor candidato aberto para carga medida de edifício, mas não prova que o medidor é importação líquida do PCC com FV e EV co-localizados. Não equivale a `gridImportKw` do Aurora; também é antigo e horário, limitando alertas de curto horizonte. Pode servir a baseline/pesquisa de carga predial, não à regra operacional do site. |
+| [ACN-Data (Caltech)](https://ev.caltech.edu/dataset) | Dados reais de sessões EV; API requer cadastro/token e o portal limita o uso a fins educacionais e de pesquisa. A fonte solicita citação em trabalhos. A página consultada não estabelece licença aberta irrestrita para redistribuir dados brutos; manter qualquer amostra fora do Git até verificar os termos aplicáveis. | Registros de conexão/desconexão, energia entregue, EVSE/site/space e séries de corrente/pilot; timestamps UTC e timezone do site; locais incluem Caltech, JPL e Office 1. API suporta filtros e paginação. | Adequado para estimar/avaliar perfis de sessão ou carga EV. Não contém consumo base, FV nem importação no ponto de conexão da planta; por si só não treina o target. É localidade dos EUA, não Aurora. |
+| [NREL PVDAQ / OEDI](https://data.openei.org/submissions/4568) | Dataset público NREL hospedado no OEDI; acesso por data lake, selecionável por sistema. O catálogo exibe licença “CC”, mas a versão/condições específicas da amostra precisam ser confirmadas antes de uso ou distribuição. O conjunto completo é muito grande; evitar download integral. | Séries reais de produção e metadados de sistemas FV; sensores ambientais existem em alguns sistemas. A resolução varia por sistema/arquivo, portanto precisa ser inspecionada na amostra escolhida. | Adequado para perfil de geração FV isolado. Não oferece carga predial/EV do mesmo local ou medição de importação líquida; não equivale ao target. |
+| [NREL/DOE End-Use Load Profiles (EULP)](https://data.openei.org/submissions/4520) | Dataset público calibrado/modelado por NREL/LBNL, distribuído pelo OEDI. O catálogo sinaliza licença “CC” sem versão explícita na página; confirmar o arquivo README/licença antes de incorporar qualquer amostra. Arquivos individuais e agregados são grandes; a seleção deve ser pequena e reproduzível. | Perfis comerciais e residenciais em passos de 15 minutos, ano completo e diversas geografias/tipos de edifício; derivados de modelos calibrados e dados de validação, não medição direta de cada perfil disponibilizado. | Pode complementar um perfil simulado de carga base com cadência melhor que BDG2, mas não é telemetria do Aurora nem inclui por si só FV/EV e importação líquida. Só usar como componente explicitamente modelado/simulado. |
+| [Pecan Street Dataport](https://dataport.pecanstreet.org/) | Acesso universitário exige cadastro, validação de vínculo e aceite de licença; acesso gratuito cobre subconjunto (75 residências) e pesquisa acadêmica não financiada; demais conjuntos podem exigir licença paga. O termo limita uso pelo prazo da licença, então não atende à reprodutibilidade pública sem confirmar licença e retenção. | O catálogo anuncia dados por residência e metadados, mas o esquema exato, cadência e cobertura simultânea de carga/FV/EV para a seleção precisam ser conferidos após acesso. | Potencialmente interessante para perfis co-localizados residenciais, porém não é um hub comercial e o acesso/licença e a amostra elegível não estão disponíveis para verificação nesta execução. Não selecionar sem acesso e metadados concretos. |
+| [ONS — Curva de Carga Horária](https://dados.ons.org.br/dataset/curva-carga) | Fonte oficial brasileira de dados abertos do ONS; CSV/XLSX/Parquet por ano; dados sujeitos a consistência/publicação recorrente. | Curvas horárias agregadas do sistema elétrico, em nível sistêmico/subsistema conforme dicionário, não no ponto de uma planta. | Pode contextualizar uma tendência regional brasileira, mas a escala e o target são incompatíveis com importação de um hub; não utilizar como rótulo nem substituir dados locais. |
+
+## Avaliação de combinação
+
+É possível normalizar timestamps para UTC, reamostrar potência/energia e formar um **perfil composto simulado** com componentes separados de carga predial, PV e sessões EV. Isso não produz uma observação real de Aurora: locais, calendários, clima, tarifas, níveis de medição e cobertura são diferentes; nenhum pareamento estabelece causalidade ou sincronização física. Além disso, há diferenças de resolução (horária, 15 minutos e cadência variável) e licenças/acessos que ainda exigem confirmação por amostra.
+
+Combinar as fontes só seria aceitável como experimento declarado `SIMULATED_COMPOSITE`, com colunas de origem por componente, regras de alinhamento explícitas, gaps marcados e `gridImportKw` derivado pela regra física escolhida — nunca rotulado como medição real. Esse rótulo também não demonstra desempenho preditivo sobre uma planta real.
+
+## Conclusão técnica
+
+1. **Treino para operação do Aurora:** não elegível com a evidência disponível. A telemetria local simulada é curta e as fontes públicas avaliadas não medem o target integrado no local.
+2. **Fontes reais aproveitáveis:** BDG2 para carga predial medida, ACN-Data para comportamento/carga EV e PVDAQ para geração FV; são componentes independentes, não uma série conjunta do Aurora. EULP pode apoiar perfil base modelado. ONS é contexto agregado, não entrada do target local.
+3. **Alternativa:** manter previsão indisponível até obter telemetria local suficiente; ou pedir aprovação explícita para um benchmark/prova de pipeline `SIMULATED_COMPOSITE`, sem alegação de validação operacional. A escolha muda o significado da IA e, portanto, não será feita implicitamente.
+
+## Fontes oficiais consultadas
+
+- BDG2 [README](https://github.com/buds-lab/building-data-genome-project-2) e [LICENSE](https://github.com/buds-lab/building-data-genome-project-2/blob/master/LICENSE).
+- ACN-Data [campos, sites e API](https://ev.caltech.edu/dataset) e [termos de registro educacional/pesquisa](https://ev.caltech.edu/register).
+- NREL [PVDAQ no OEDI](https://data.openei.org/submissions/4568); catálogo e documentação associados devem ser revalidados para a amostra selecionada.
+- NREL/LBNL [EULP no OEDI](https://data.openei.org/submissions/4520); a página informa perfis comerciais/residenciais calibrados em passos de 15 minutos.
+- ONS [Curva de Carga Horária](https://dados.ons.org.br/dataset/curva-carga).
+- Pecan Street [acesso/termos](https://dataport.pecanstreet.org/) e [licenças disponíveis](https://www.pecanstreet.org/dataport/licenses/).
