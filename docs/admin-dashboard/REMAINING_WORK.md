@@ -5,7 +5,7 @@
 **Base avaliada:** conteúdo das PRs #11 → #15, consolidado para `develop/admin-web` pela PR #16  
 **Objetivo:** separar o que já está demonstrável no frontend, o que ainda precisa de validação e o que depende de backend ou integração produtiva.
 
-> **Atualização de 27/09/2026:** este documento preserva o backlog histórico do dashboard. Para o cenário obrigatório Aurora, a integração transversal de planta, carregadores, operação, energia, recomendações, alarmes e relatórios foi concluída e está registrada em [`INTEGRATION_CONSISTENCY_AUDIT.md`](INTEGRATION_CONSISTENCY_AUDIT.md). Itens abaixo sobre outras plantas, personas GoodWe e superfícies corporativas não são pré-requisitos da Sprint 4.
+> **Atualização de 29/09/2026:** este documento preserva o backlog histórico do dashboard e não define a próxima unidade da Sprint 4. A ordem vigente está em [`../specs/SPRINT4_EXECUTION_ORDER.md`](../specs/SPRINT4_EXECUTION_ORDER.md). Para o cenário obrigatório Aurora, a integração transversal está registrada em [`INTEGRATION_CONSISTENCY_AUDIT.md`](INTEGRATION_CONSISTENCY_AUDIT.md). Itens abaixo sobre outras plantas, personas GoodWe e superfícies corporativas não são pré-requisitos.
 
 ## Resumo executivo
 

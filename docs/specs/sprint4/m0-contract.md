@@ -38,4 +38,4 @@ Ordem de mudança obrigatória: M1-U1 cria ledger/catálogo/campos aditivos → 
 
 ## Gate G0
 
-Contrato e comportamento conhecidos; não significa implementação. **G0 está aprovado documentalmente:** regras ratificadas, conflitos atuais mapeados, vetores e rastreabilidade revisados. A próxima unidade elegível é M1-U1. Checkpoint sugerido: `docs(sprint4): freeze executable product contract`. Nenhum `npm install`, novo serviço, push ou reset fez parte deste marco.
+Contrato e comportamento conhecidos. **G0 foi aprovado documentalmente:** regras ratificadas, conflitos atuais mapeados, vetores e rastreabilidade revisados. A indicação original de M1-U1 foi cumprida e permanece apenas como histórico; a próxima unidade vigente está na [ordem canônica](../SPRINT4_EXECUTION_ORDER.md). Nenhum `npm install`, novo serviço, push ou reset fez parte deste marco.

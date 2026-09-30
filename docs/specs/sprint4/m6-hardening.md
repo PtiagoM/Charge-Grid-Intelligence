@@ -1,6 +1,6 @@
 # M6 — Estabilidade proporcional ao protótipo
 
-Objetivo: corrigir somente falhas demonstradas de coerência/persistência/UX. MÉDIO. Entrada G5; não inventar suite enterprise. Ler C4–C7/C9 e achados concretos de M5.
+**Estado:** pendente; iniciar somente após M5-U3/G5. Objetivo: corrigir somente falhas demonstradas de coerência/persistência/UX da baseline S4-C1. MÉDIO. Não inventar suite enterprise. Ler C4–C7/C9, achados concretos de M5 e a [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
 
 ## S4-M6-U1 — Retomada, polling e SW
 

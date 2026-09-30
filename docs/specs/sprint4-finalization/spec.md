@@ -1,14 +1,15 @@
 # Sprint 4 — pacote final de execução
 
-Status: **PLANEJADO**. Este pacote transforma o plano mestre aprovado em unidades executáveis. Ele não registra implementação nova.
+Status: **PLANEJADO E BLOQUEADO ATÉ G7 DO PACOTE ANTERIOR**. Este pacote transforma o plano mestre aprovado em unidades executáveis. Ele não registra implementação nova e não substitui M5–M7 de `docs/specs/sprint4`.
 
 ## Como usar
 
-1. Ler [CURRENT_STATE](../../CURRENT_STATE.md), o [contrato S4-C1](../sprint4/contracts.md) e as [decisões deste pacote](decisions.md).
-2. Executar somente uma unidade marcada `READY` e suas dependências concluídas.
-3. Não decidir arquitetura, produto ou interface fora do SDD. Divergência exige parar e registrar decisão.
-4. Atualizar código, teste proporcional, documentação e um commit coerente na mesma unidade.
-5. Não executar os pais `CG-AI-03` e `CG-INT-01`; usar suas subunidades.
+1. Ler a [ordem canônica](../SPRINT4_EXECUTION_ORDER.md). Se `S4-M7-U2/G7` não estiver concluído, parar e executar o pacote anterior.
+2. Depois de G7, ler [CURRENT_STATE](../../CURRENT_STATE.md), o [contrato S4-C1](../sprint4/contracts.md) e as [decisões deste pacote](decisions.md).
+3. Executar somente uma unidade marcada `READY` e suas dependências concluídas.
+4. Não decidir arquitetura, produto ou interface fora do SDD. Divergência exige parar e registrar decisão.
+5. Atualizar código, teste proporcional, documentação e um commit coerente na mesma unidade.
+6. Não executar os pais `CG-AI-03` e `CG-INT-01`; usar suas subunidades.
 
 ## Invariantes
 
@@ -28,7 +29,7 @@ Status: **PLANEJADO**. Este pacote transforma o plano mestre aprovado em unidade
 
 | ID | SDD | Dependências | Tamanho | Risco | Frontend Gate | Testes | Status |
 |---|---|---|---|---|---|---|---|
-| CG-F0-01 | [Base Git e evidências](cg-f0-01.md) | — | PEQUENO | MÉDIO | BACKEND ONLY | Git/docs | READY |
+| CG-F0-01 | [Base Git e evidências](cg-f0-01.md) | S4-G7 | PEQUENO | MÉDIO | BACKEND ONLY | Git/docs | PLANNED |
 | CG-F0-02 | [Contrato final S4-C2](cg-f0-02.md) | F0-01 | MÉDIO | ALTO | BACKEND ONLY | contrato | PLANNED |
 | CG-DASH-01 | [Agregados temporais canônicos](cg-dash-01.md) | F0-02 | MÉDIO | ALTO | BACKEND ONLY | unit/integration | PLANNED |
 | CG-DASH-02 | [Cards do Dashboard](cg-dash-02.md) | DASH-01 | MÉDIO | MÉDIO | PEQUENO AJUSTE NO FRONT | unit/E2E focal | PLANNED |
@@ -53,6 +54,6 @@ Status: **PLANEJADO**. Este pacote transforma o plano mestre aprovado em unidade
 
 ## Ordem obrigatória
 
-`F0-01 → F0-02 → {DASH-01, AI-01, LAB-01} → DASH-02/DASH-03 → AI-02 → AI-03A → AI-03B → AI-04 → AI-05 → DEC-01 → {LAB-02, UI-01, OPS-01} → INT-01A → INT-01B → STAB-01 → DEL-01`.
+`S4-M7-U2/G7 → F0-01 → F0-02 → {DASH-01, AI-01, LAB-01} → DASH-02/DASH-03 → AI-02 → AI-03A → AI-03B → AI-04 → AI-05 → DEC-01 → {LAB-02, UI-01, OPS-01} → INT-01A → INT-01B → STAB-01 → DEL-01`.
 
-AI e laboratório podem avançar em paralelo depois de F0-02. Nenhum executor antecipa UI bloqueada por gate humano.
+AI e laboratório podem avançar em paralelo depois de F0-02. Nenhum executor antecipa UI bloqueada por gate humano. As evidências de M5–M7 são baseline reutilizável; unidades `CG-INT/STAB/DEL` repetem apenas fluxos afetados pelos deltas S4-C2.

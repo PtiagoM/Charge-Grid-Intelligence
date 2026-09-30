@@ -4,7 +4,7 @@
 
 ## Objetivo e escopo
 
-Consolidar documentação, resultados, roteiro e estado Git para que outra pessoa execute e demonstre o ChargeGrid sem contexto oculto.
+Atualizar a entrega baseline de M7 com os resultados S4-C2, sem reescrever ou duplicar evidências ainda válidas.
 
 ## Fora de escopo
 

@@ -1,6 +1,6 @@
 # Aceite executável e registro de evidências
 
-Estado: **G0 documental aprovado; G1–G7 pendentes de implementação**. Testes/auditoria históricos do plano não aprovam os gates de produto. Valores abaixo são entradas e resultados esperados, não medições realizadas nesta etapa. Ver [contrato](contracts.md).
+Estado em 29/09/2026: **G0–G4 concluídos; G5 em andamento com M5-U1 concluído; G6–G7 pendentes**. Os vetores abaixo continuam sendo critérios executáveis; somente evidências registradas aprovam cada gate. Ver [contrato](contracts.md) e [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
 
 ## Vetores comuns de contrato
 
@@ -114,11 +114,11 @@ Preencher somente após execução real. Uma linha pode apontar para relatório 
 | Gate | Estado inicial | Evidência exigida |
 |---|---|---|
 | G0 contrato | APROVADO DOCUMENTALMENTE — 26/09/2026 | I-S01–I-S11 ratificadas; revisão de contrato/vetores, rastreabilidade e conflitos atuais registrados em M0-U1/U2 |
-| G1 serviços | PENDENTE | U1–U7, V01–V07 comerciais, testesAPI, V-GLOBAL |
-| G2 PWA | PENDENTE | U1–U4, P1–P12, build/testescliente; energia pendente explicitada |
-| G3 Admin | PENDENTE | U1–U4, operaçõescentrais, V-ADMIN; limites honestos |
-| G4 energia | PENDENTE | V08/V09 e revalidaçãoPWA/Admin com política habilitada |
-| G5 integração | PENDENTE | E01–E06, G-M1–G-M4, DBtesteisolado e integrações reais qualificadas |
+| G1 serviços | CONCLUÍDO — 26/09/2026 | checkpoints M1, contratos compartilhados, testes API/shared e validações registradas em CURRENT_STATE |
+| G2 PWA | CONCLUÍDO — 26/09/2026 | checkpoints M2, build/typecheck, validação visual e encerramento manual após `124d255`/`6223d76` |
+| G3 Admin | CONCLUÍDO — 26/09/2026 | checkpoints M3, testes/build e validação manual do responsável |
+| G4 energia | CONCLUÍDO — 27/09/2026 | checkpoints M4, testes focais e registro `dfab16d`; integração ampla permanece responsabilidade de G5 |
+| G5 integração | EM ANDAMENTO | M5-U1 concluído em `11692ff`; E01–E06 pertencem a M5-U2A/B/C e G-M1–G-M4 a M5-U3 |
 | G6 estabilidade | PENDENTE | SW/restart/falhas/visual, V-GLOBAL/V-E2E, G-M5 |
 | G7 entrega | PENDENTE | G-M6, README/diagramas/resultados, estadoGit, checklistfinal |
 

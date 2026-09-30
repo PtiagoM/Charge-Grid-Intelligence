@@ -12,7 +12,7 @@ Alta disponibilidade, cloud, observabilidade enterprise, IAM novo, offline avan�
 
 ## Dependências e estado atual
 
-Depende de INT-01B. Shutdown/lock PGlite e execução sem watch já possuem correções recentes; devem ser revalidados, não reescritos preventivamente.
+Depende de INT-01B. Shutdown/lock PGlite e execução sem watch já possuem correções recentes e gate M6 da baseline; devem ser revalidados somente quando os deltas S4-C2 os afetarem.
 
 ## Arquivos relevantes
 

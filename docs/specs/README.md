@@ -6,13 +6,13 @@ Leia primeiro `docs/CURRENT_STATE.md`. Uma spec descreve comportamento implement
 
 | Spec | Estado | Escopo |
 | --- | --- | --- |
-| [`sprint4-finalization`](sprint4-finalization/spec.md) | planejada; somente SDDs nesta etapa | unidades finais pós-M4: Dashboard, previsão, Decision Engine, laboratório, integração, estabilidade e entrega |
 | [`driver-pwa-mobile`](driver-pwa-mobile/spec.md) | implementada, com dependências externas | visitante, motorista, mapa, Supabase Auth, Stripe sandbox, fila, sessão e notificações |
-| [`sprint4`](sprint4/spec.md) | especificação executável; código não implementado nesta etapa | contrato comum, decisões, aceites e unidades dos Marcos 0–7; Aurora e núcleo final aprovado |
+| [`sprint4`](sprint4/spec.md) | em execução; M0–M4 e M5-U1 concluídos | baseline S4-C1; próxima unidade obrigatória `S4-M5-U2A` |
+| [`sprint4-finalization`](sprint4-finalization/spec.md) | planejada; bloqueada até G7 do pacote anterior | extensão S4-C2: Dashboard, previsão, Decision Engine, laboratório, integração, estabilidade e entrega |
 
-Para executar a Sprint 4, começar por `sprint4/spec.md`. As specs históricas e o backlog abaixo não ampliam o escopo aprovado: autenticação administrativa nova, grants multi-organização, helpdesk, IV/bateria, expansão, offline avançado e cloud não são pré-requisitos. D1–D4 prevalecem; nenhuma spec equivale a evidência de implementação.
+Antes de executar, ler a [ordem canônica da Sprint 4](SPRINT4_EXECUTION_ORDER.md). Primeiro concluir `sprint4` M5–M7; somente então iniciar `sprint4-finalization`. As specs históricas e o backlog abaixo não ampliam o escopo aprovado: autenticação administrativa nova, grants multi-organização, helpdesk, IV/bateria, expansão, offline avançado e cloud não são pré-requisitos. Nenhuma spec equivale a evidência de implementação.
 
-> O pacote `sprint4` preserva o contrato e o histórico executado até M4. O pacote `sprint4-finalization` é a fila vigente do trabalho restante e prevalece para novas execuções.
+> Próximo passo único: `S4-M5-U2A`. `CG-F0-01` só se torna elegível após `S4-M7-U2/G7`.
 
 ## Fluxo para novas features
 

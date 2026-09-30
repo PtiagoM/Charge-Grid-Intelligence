@@ -1,9 +1,11 @@
 # Plano de execução — próxima rodada do Admin
 
-**Status:** `EM EXECUÇÃO — F0 CONCLUÍDA, F1 AVANÇADA`  
+**Status:** `HISTÓRICO — NÃO É A FILA VIGENTE DA SPRINT 4`  
 **Data:** 27 de agosto de 2026  
 **Linha de integração:** `develop/admin-web`  
 **Escopo:** frontend Admin, fixtures, estados locais, navegação, UI/UX e testes proporcionais. Backend, RLS, emissão segura de código e integrações produtivas permanecem fora desta rodada.
+
+> Para continuar a Sprint 4, use [`../specs/SPRINT4_EXECUTION_ORDER.md`](../specs/SPRINT4_EXECUTION_ORDER.md). O próximo passo atual é `S4-M5-U2A`; este documento preserva apenas a rodada histórica do Admin.
 
 ## Objetivo
 

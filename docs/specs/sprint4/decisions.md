@@ -65,3 +65,7 @@ As inferências S01/S02 devem estar escritas nas condições aceitas, não aplic
 `CommercialSessionRecord.chargerId` promete ID, mapper atual devolve code; corrigir mapper e consumidores juntos. `COMPLETED`/`ENERGY_FINISHED` não podem virar um único estado funcional `finished`. Migrações atuais reexecutam UPSERT e restauram seed; introduzir ledger sem sobrescrever configuração do banco existente. PWA local e shared calculam idle diferente: S01 é o alvo proposto explícito, não dizer que API já aplica.
 
 Decisão técnica incompatível com o plano: abrir entrada aqui com motivo/impacto antes de executar; não esconder em componente React. D1–D6 não precisam ser perguntadas novamente.
+
+## Transição aprovada em 29/09/2026
+
+Este pacote deve concluir M5–M7/G7 antes da extensão `sprint4-finalization`. A próxima unidade é `S4-M5-U2A`, seguida por U2B, U2C e U3. Depois de G7, `CG-F0-01` inicia S4-C2. A [ordem canônica](../SPRINT4_EXECUTION_ORDER.md) prevalece sobre indicações históricas de próximo passo.

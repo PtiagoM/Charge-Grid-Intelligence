@@ -4,7 +4,7 @@
 
 ## Objetivo e escopo
 
-Criar a menor bateria automatizada que prove contratos e propagação de estado nos cenários finais, reutilizando infraestrutura Sprint 4.
+Criar a menor bateria automatizada que prove os **deltas S4-C2** e sua propagação, reutilizando infraestrutura e evidências M5–M7 da baseline.
 
 ## Fora de escopo
 
@@ -26,7 +26,7 @@ Depende de DASH-03, LAB-01, DEC-01 e OPS-01. LAB-02/UI-01 não são necessários
 4. **Persistência:** restart da API mantém sessão, amostras, forecast, decisão e insights; GETs não avançam estado.
 5. **Identidade:** todos os payloads mantêm `est_aurora_001`, `plant_aurora_001` e chargerId/code canônicos.
 
-PWA entra apenas como smoke dos fluxos já finalizados quando contrato compartilhado mudar; não reescrever seus testes.
+PWA entra apenas como smoke dos fluxos já finalizados quando contrato compartilhado mudar; não reescrever seus testes. E01–E06 da baseline são referenciados e só reexecutados se Dashboard/IA/cenários alterarem seu caminho.
 
 ## Critérios de aceite
 

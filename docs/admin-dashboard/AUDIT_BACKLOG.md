@@ -4,6 +4,8 @@
 **Rodada inicial:** 25 de agosto de 2026  
 **Escopo:** auditoria manual iniciada pelo perfil Central GoodWe. Este documento registra defeitos, decisões aprovadas, hipóteses secundárias e itens deferidos; `PRODUCT_DECISIONS.md` permanece como contrato canônico de produto.
 
+> Este backlog não é uma fila de execução da Sprint 4. Para próximo passo e precedência entre os dois pacotes, use [`../specs/SPRINT4_EXECUTION_ORDER.md`](../specs/SPRINT4_EXECUTION_ORDER.md).
+
 ## Como usar este backlog
 
 - `CONFIRMADO PARA CORREÇÃO`: comportamento, fluxo ou hierarquia já conflita com decisão vigente.

@@ -16,6 +16,7 @@ Este arquivo complementa, sem substituir, [decisions S4-C1](../sprint4/decisions
 | F-D10 | APROVADA | Nova composição visual relevante depende de referência do responsável. |
 | F-D11 | INFERÊNCIA | Horizonte inicial da previsão será definido em AI-01 pela disponibilidade e pelo valor operacional; não é congelado antes do dataset. |
 | F-D12 | INFERÊNCIA | Primeiro modelo elegível é o mais simples que superar baseline temporal no conjunto de teste e mantiver inferência reproduzível em Node. |
+| F-D13 | APROVADA | O pacote original `sprint4` deve concluir M5–M7/G7 antes de qualquer unidade `CG-*`; a finalização S4-C2 reutiliza evidências não afetadas da baseline. |
 
 ## Decisões ainda condicionais
 
@@ -31,4 +32,3 @@ Este arquivo complementa, sem substituir, [decisions S4-C1](../sprint4/decisions
 - `feature/admin-sprint4` existe apenas localmente em `c8cc21c` e é histórica; não é base da finalização.
 - Não há PR aberto/fechado das duas branches no GitHub.
 - Este pacote nasce em `docs/sprint4-final-sdds`. Reconciliação/branch final pertence a CG-F0-01 e exige autorização para merge/rebase/push conforme workflow.
-

@@ -2,10 +2,12 @@
 
 ## Planejamento final da Sprint 4 — 29/09/2026
 
-- O trabalho restante pós-M4 foi decomposto no pacote executável [`docs/specs/sprint4-finalization`](specs/sprint4-finalization/spec.md).
+- A ordem canônica está em [`docs/specs/SPRINT4_EXECUTION_ORDER.md`](specs/SPRINT4_EXECUTION_ORDER.md): primeiro concluir o pacote original `sprint4` em M5–M7; depois iniciar `sprint4-finalization`.
+- Estado de execução: M0–M4 e M5-U1 concluídos; `S4-M5-U2A` é a próxima unidade. Nenhuma unidade `CG-*` está liberada antes de `S4-M7-U2/G7`.
+- O pacote [`docs/specs/sprint4-finalization`](specs/sprint4-finalization/spec.md) contém a extensão S4-C2 aprovada, mas permanece planejado até o fechamento da baseline S4-C1.
 - Esta etapa produziu somente documentação: nenhuma feature, migration, tela, treino ou alteração de banco foi executada.
 - A PWA permanece considerada finalizada; bateria segue fora do escopo obrigatório; previsão segue a cadeia treino offline Python → artefato versionado → inferência Node → regras → Decision Engine.
-- A base implementada está no histórico de `feature/admin-sprint3-integration`; a branch local histórica `feature/admin-sprint4@c8cc21c` não representa M1–M4. A reconciliação segura do histórico é a primeira unidade `CG-F0-01`.
+- A base implementada está no histórico de `feature/admin-sprint3-integration`; a branch local histórica `feature/admin-sprint4@c8cc21c` não representa M1–M4. A reconciliação segura do histórico será `CG-F0-01`, somente depois de G7.
 
 **Atualizado em:** 29 de setembro de 2026  
 **Escopo:** GoodWe, produto, negócio, operação, arquitetura, implementação, histórico e decisões vigentes  
@@ -32,6 +34,8 @@ O registro de implementação, evidências e limitações da Sprint fica em [`SP
 
 ### Sprint 4 — Marco 1 concluído (26/09/2026)
 
+> Checkpoint histórico. Referências abaixo a “próximo marco” ou trabalho ainda pendente descrevem o estado de 26/09 e não substituem a ordem canônica atual (`S4-M5-U2A`).
+
 - A base compartilhada agora possui ledger de migrations e aplica `202609260004_s4_foundation.sql` uma única vez; bancos comerciais legados são baselined sem reexecutar o UPSERT destrutivo das migrations antigas.
 - Aurora segue sendo o único catálogo operacional completo: `plant_aurora_001`, seis UUIDs estáveis, códigos/QR e vaga B02 foram preservados. A API publica o catálogo sanitizado em `/commercial/catalog` e resolve UUID/código/QR em `/commercial/chargers/resolve/:identifier`.
 - O snapshot administrativo mantém o código para UI, mas `session.chargerId` passou a ser o UUID real. `currentSessionId` e `assignmentId` existem no registro do carregador; os vínculos são limpos antes do reset das sessões.
@@ -43,7 +47,7 @@ O registro de implementação, evidências e limitações da Sprint fica em [`SP
 - Para sessões backend-managed, a PWA passou a exibir energia, ociosidade e o fim da tolerância do mesmo registro remoto; não avança esses valores pelo relógio da interface.
 - A atribuição temporária da fila agora vence apenas pelo relógio do backend: libera o carregador físico disponível e processa o próximo motorista. Quando uma atribuição vira sessão, o `sessionId` é persistido e o início de carga completa a entrada.
 - A API oferece histórico de sessões por proprietário em `GET /commercial/sessions`; motorista e visitante veem somente registros próprios. A tela de histórico será conectada a essa projeção no Marco 2.
-- O resumo financeiro operacional está disponível em `GET /commercial/financial-summary`, derivado exclusivamente de sessões e pagamentos persistidos (`authorized`, consumo, captura e devolução). O próximo marco é finalizar as jornadas e estados visuais da Driver PWA contra esses contratos.
+- O resumo financeiro operacional está disponível em `GET /commercial/financial-summary`, derivado exclusivamente de sessões e pagamentos persistidos (`authorized`, consumo, captura e devolução). Na data deste checkpoint, o passo seguinte era finalizar a Driver PWA; essa etapa já foi concluída posteriormente.
 - Validação do gate: lint e typecheck globais passaram; testes shared (5), Admin (78) e API (23) passaram. No ambiente atual, a execução paralela da API esgota memória; `npm test --workspace @chargegrid/api -- --maxWorkers=1` é a alternativa verde reproduzível.
 - Lifecycle físico, ociosidade, fila final, energia/demanda e projeções completas Admin/PWA permanecem nos próximos checkpoints M1-U4+.
 
@@ -142,9 +146,9 @@ Não confundir documentação com homologação, sandbox com produção, ou fixt
 
 O registro completo e canônico destas decisões está em `docs/admin-dashboard/PRODUCT_DECISIONS.md`.
 
-O plano aprovado para a próxima construção está em `docs/admin-dashboard/NEXT_EXECUTION_PLAN.md`.
+O plano histórico da reconstrução do Admin está em `docs/admin-dashboard/NEXT_EXECUTION_PLAN.md`. Para qualquer continuação da Sprint 4, a fonte de próximo passo é `docs/specs/SPRINT4_EXECUTION_ORDER.md`.
 
-O recorte entre trabalho concluído, gates abertos e ordem recomendada de continuidade está em `docs/admin-dashboard/REMAINING_WORK.md`.
+O recorte histórico do Admin está em `docs/admin-dashboard/REMAINING_WORK.md`; ele não substitui os gates e a ordem canônica da Sprint 4.
 
 ### Implementação local da decisão — 23/08/2026
 

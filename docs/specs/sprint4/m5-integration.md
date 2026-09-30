@@ -1,6 +1,6 @@
 # M5 — Prova da operação única
 
-Objetivo: integrar interfaces já corretas contra C1, não descobrir domínio no E2E. MÉDIO. Entrada G2/G3/G4; U1 pode ser preparada após G1 para validar unidades sem tocar dados pessoais. Ler acceptance.md e C1–C9.
+**Estado em 29/09/2026:** U1 concluída; **U2A é a próxima unidade obrigatória**; U2B/U2C/U3 pendentes. Objetivo: integrar interfaces já corretas contra C1, não descobrir domínio no E2E. Entrada G2/G3/G4 concluída. Ler acceptance.md, C1–C9 e a [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
 
 ## S4-M5-U1 — Ambiente E2E isolado
 
@@ -18,9 +18,9 @@ Objetivo: integrar interfaces já corretas contra C1, não descobrir domínio no
 - `playwright.sprint4.config.ts` inicia API, Admin e PWA em 3433/5273/5274, sem reutilizar processos existentes. A API usa exclusivamente `.tmp/sprint4-e2e-db`; o launcher remove URL de banco e credenciais Stripe herdadas.
 - Em `NODE_ENV=test`, o servidor não carrega `.env`, impedindo acesso acidental a chaves reais pelo harness. O teste de sanidade confirmou health, catálogo Aurora e Stripe não configurado nesse processo isolado.
 
-## S4-M5-U2 — E2E central, falhas e reload
+## S4-M5-U2 — E2E central, falhas e reload (unidade-pai)
 
-- **Depende:** U1 e G2/G3/G4.
+- **Depende:** U1 e G2/G3/G4. Não executar U2 diretamente; executar U2A → U2B → U2C.
 - **Implementar:** cenários abaixo em páginas normais, verificando sessionUUID/code/PI/Wh/cents contra API/DB do teste. Não contar dois frontends que compartilham a mesma fixture client como integração.
 
 | Caso | Passos | Asserts indispensáveis |
@@ -32,13 +32,36 @@ Objetivo: integrar interfaces já corretas contra C1, não descobrir domínio no
 | E05 falha | ProviderFAULT→stop/freeze→pendência→recuperação física/financeira | Sem sucesso falso, sem receber dados alheios, próxima jornada elegível funciona |
 | E06 configuração | Tarifa/publicação→nova quote; histórico/CSV | Nova oferta muda, sessão atual não; sem gráfico/receita fixture |
 
-- **Testes:** V-E2E com screenshots/trace failure; relógio controlado somente harness para15min/10min, nunca botão comercial de avançar tempo. E02 usa diretório persistente de teste e reinício controlado, não memory://.
-- **Aceite:** atualização entre clientes em até dois polls (~4s) no ambiente saudável; timeout financeiro simulado não cria segundo PI/capture; zero console errors relevantes.
-- **Saída:** E01–E06 registrados com resultados reais de teste. Commit `test(integration): prove shared commercial and energy journeys`.
+- **Critérios comuns:** V-E2E com screenshots/trace failure; relógio controlado somente no harness para 15 min/10 min, nunca botão comercial de avançar tempo. E02 usa diretório persistente de teste e reinício controlado, não `memory://`. Atualização entre clientes ocorre em até dois polls (~4 s) no ambiente saudável; timeout financeiro controlado não cria segundo PI/capture; zero console errors relevantes.
+- **Conclusão da unidade-pai:** U2 só está concluída depois de U2A, U2B e U2C verdes. Não existe implementação ou commit separado para U2; após U2C, apenas consolidar E01–E06 em `acceptance.md`, sem rerodar testes não afetados.
+
+### S4-M5-U2A — Comércio e persistência
+
+- **Escopo:** E01 e E02 somente; criar/ajustar specs do fluxo comercial normal e restart no harness isolado.
+- **Invariantes:** uma sessão/PI, IDs canônicos, sem `/demo`, sem downtime cobrado e sem tocar banco pessoal/Stripe real.
+- **Teste:** executar somente os specs E01/E02 e testes API diretamente afetados.
+- **Aceite:** comércio completo controlado e restart preservam os mesmos registros; falha volta para a unidade dona, não recebe stub de frontend.
+- **Commit:** `test(integration): prove commercial journey and persistence`.
+
+### S4-M5-U2B — Fila e configuração
+
+- **Depende:** U2A; **escopo:** E03 e E06 somente.
+- **Invariantes:** fila autenticada/assignment servidor; tarifa/publicação só afetam novas jornadas; CSV e UI reconciliam com a mesma fonte.
+- **Teste:** specs E03/E06 e testes focais de fila/tarifa/relatório afetados.
+- **Aceite:** posição/expiração/configuração persistem e nenhum gráfico/receita fixture reaparece.
+- **Commit:** `test(integration): prove queue and configuration journeys`.
+
+### S4-M5-U2C — Energia e falhas
+
+- **Depende:** U2B; **escopo:** E04 e E05 somente.
+- **Invariantes:** política usa amostra persistida; suspensão não gera idle; falha não produz sucesso, energia ou acesso indevido.
+- **Teste:** specs E04/E05 e regressões focais de demand/provider/settlement.
+- **Aceite:** reason/amostra/comando/efeito são rastreáveis e uma jornada elegível funciona após recuperação.
+- **Saída de U2:** consolidar E01–E06 sem rerodar specs não afetados; atualizar acceptance. Commit documental somente se necessário para evidência agregada.
 
 ## S4-M5-U3 — Gates reais e evidência visual
 
-- **Depende:** U2; aplicação normal PGlite+Node, Stripe test configurado, Maps com cota. Testes reais só em dataset sandbox explicitamente destinado à validação, não contas/sessões pessoais sem autorização.
+- **Depende:** U2A, U2B e U2C concluídas; aplicação normal PGlite+Node, Stripe test configurado, Maps com cota. Testes reais só em dataset sandbox explicitamente destinado à validação, não contas/sessões pessoais sem autorização.
 - **Executar:** G-M1–G-M4 em acceptance.md; Maps tiles/pino/code real; Payment Element test sem stub; verificar PI e SQL; dois browsers/PWA/Admin e lab normal; sem novos botões. Consumir ≥50 centavos antes de encerrar. Não prometer validar físico real. G-M5 pertence a M6 e G-M6 a M7; ensaios antecipados são permitidos, mas não dependências circulares de G5.
 - **Registro:** data/build/ambiente, IDs de sessão/code, intervalos/Wh/centavos, referência Stripe test sem segredo, capturas sanitizadas e console. Interrupção por cota/credencial registra gate não validado, não “passou mock”.
 - **Aceite:** evidência visual demonstra fluxo contínuo e efeito energético; banco/PI correspondem à UI; reload sem perda.

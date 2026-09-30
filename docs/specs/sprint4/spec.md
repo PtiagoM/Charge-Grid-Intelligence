@@ -1,8 +1,8 @@
 # Sprint 4 — Especificação executável do protótipo final
 
-Estado: **especificação; nenhuma unidade implementada por este pacote**. Base: `a767f79`, branch `feature/admin-sprint3-integration`, 24/09/2026. Plano superior: [Sprint 4](../../SPRINT4_FINAL_EXECUTION_PLAN.md); inventário: [matriz](../../SPRINT4_BEHAVIOR_MATRIX.md). A branch estava dois commits atrás da referência remota local; não sincronizar nem publicar sem respeitar o workflow.
+Estado em 29/09/2026: **M0–M4 concluídos; M5-U1 concluído; M5-U2A é a próxima unidade**. A implementação está na linha local derivada de `feature/admin-sprint3-integration`; a documentação de execução está em `docs/sprint4-final-sdds`. Plano superior: [Sprint 4](../../SPRINT4_FINAL_EXECUTION_PLAN.md); inventário: [matriz](../../SPRINT4_BEHAVIOR_MATRIX.md). Não sincronizar nem publicar sem respeitar o workflow.
 
-**M0 concluído em 26/09/2026:** 12 documentos, 27 unidades M0–M7; links, estrutura, tabelas e aritmética dos vetores de energia/ociosidade conferidos. O responsável ratificou I-S01–I-S11 como `S4-C1`; leitura independente encontrou ambiguidades de ownership guest, DTOs, recuperação e dependências de gates, corrigidas neste pacote. A correção final de restart com Stop pendente foi confirmada pelo revisor. Isso valida a especificação, não o software: G1–G7 continuam pendentes de implementação.
+M0 congelou `S4-C1`; M1–M4 implementaram a operação compartilhada, PWA, Admin, energia, demanda e insights determinísticos. M5-U1 criou o ambiente E2E isolado. O registro atualizado de gates está em [acceptance](acceptance.md) e a precedência entre este pacote e o pacote posterior está na [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
 
 ## Objetivo e atores
 
@@ -11,7 +11,7 @@ Finalizar uma única operação Aurora, observada pelo motorista/visitante na PW
 ## Como executar com contexto pequeno
 
 1. Ler `AGENTS.md`, o workflow aplicável e `git status -sb`; preservar alterações locais. Não executar na `main`.
-2. Ler este arquivo, [decisões](decisions.md), apenas as seções de [contratos](contracts.md) citadas pela unidade e o arquivo do marco selecionado.
+2. Ler a [ordem canônica](../SPRINT4_EXECUTION_ORDER.md), este arquivo, [decisões](decisions.md), apenas as seções de [contratos](contracts.md) citadas pela unidade e o arquivo do marco selecionado.
 3. Conferir a evidência de conclusão das dependências. Arquivo de spec existente não significa tarefa implementada. Se a base mudou, conferir somente os símbolos/arquivos listados; não refazer auditoria geral.
 4. Executar **uma unidade identificada**, seus testes e documentação afetada. Não preencher lacunas com fixtures comerciais nem modificar contratos unilateralmente.
 5. Revisar diff, registrar evidência e checkpoint lógico conforme autorização/workflow. Não fazer push/PR/merge por conta própria.
@@ -19,9 +19,9 @@ Finalizar uma única operação Aurora, observada pelo motorista/visitante na PW
 
 Modelo de instrução para um executor futuro:
 
-> Execute somente S4-Mx-Uy seguindo docs/specs/sprint4/spec.md e o arquivo do marco. Confira dependências, implemente nos arquivos permitidos, rode a validação indicada e atualize a evidência. Não altere regras congeladas nem inicie a próxima unidade. Se houver incompatibilidade real de contrato, registre o conflito e pare apenas a unidade afetada.
+> Execute somente `S4-M5-U2A` seguindo `docs/specs/SPRINT4_EXECUTION_ORDER.md`, `docs/specs/sprint4/spec.md` e `m5-integration.md`. Confira dependências, implemente nos arquivos permitidos, rode a validação indicada e atualize a evidência. Não altere regras congeladas nem inicie a próxima unidade. Se houver incompatibilidade real de contrato, registre o conflito e pare apenas a unidade afetada.
 
-Este pacote não é autorização para iniciar essa instrução agora. Campos/rotas novos são requisitos futuros, não descrição enganosa do código atual.
+O responsável deve autorizar a execução da unidade; este documento fixa o escopo. Campos/rotas novos continuam sendo requisitos da unidade correspondente, não descrição enganosa do código atual.
 
 ## Escopo fixo
 
@@ -41,7 +41,7 @@ Este pacote não é autorização para iniciar essa instrução agora. Campos/ro
 | [M2 — PWA](m2-pwa.md) | U1 descoberta, U2 conta/checkout, U3 sessão/recibo, U4 fila/preferências | G1 | G2: motorista correto contra API |
 | [M3 — Admin](m3-admin.md) | U1 projeções, U2 comandos/financeiro, U3 métricas/tarifas, U4 limites SEMS | G1; independente de M2 | G3: operação correta contra API |
 | [M4 — energia](m4-energy.md) | U1 amostras, U2 demanda, U3 ofertas/inteligência | G1; G2/G3 para aceite visual | G4: energia/automação mensuráveis |
-| [M5 — integração](m5-integration.md) | U1 ambiente isolado, U2 E2E, U3 gates reais | G2/G3/G4 | G5: mesma operação nas interfaces |
+| [M5 — integração](m5-integration.md) | U1 ambiente isolado, U2A–C E2E, U3 gates reais | G2/G3/G4 | G5: mesma operação nas interfaces |
 | [M6 — estabilidade](m6-hardening.md) | U1 retomada/cache, U2 falhas/visual | G5 | G6: demonstração repetível |
 | [M7 — entrega](m7-delivery.md) | U1 documentação/resultados, U2 reprodução/entrega | G6 | G7: evidências e DoD final |
 
@@ -72,9 +72,13 @@ Comandos existentes (prefixar `rtk` no ambiente Codex deste repositório):
 | V-ADMIN | `npm run test --workspace @chargegrid/admin-web` e `npm run build --workspace @chargegrid/admin-web` |
 | V-PWA | `npm run build --workspace @chargegrid/driver-pwa`; não há script unit PWA hoje, usar integração/Playwright existente |
 | V-GLOBAL | `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` |
-| V-E2E | Futuro `npx playwright test --config playwright.sprint4.config.ts`, criado por M5-U1; não existe ainda |
+| V-E2E | `npm run test:e2e:sprint4` ou `npx playwright test --config playwright.sprint4.config.ts`; ambiente isolado criado por M5-U1 |
 
-`npm run test:e2e:sprint3` hoje reutiliza servidor e reseta Aurora. **Não rodar contra banco pessoal.** M5-U1 isola os testes antes de usar reset. Testes focais por unidade; V-GLOBAL em checkpoints compartilhados conforme AGENTS e ao final. Não executar testes de produto para validar esta edição documental.
+`npm run test:e2e:sprint3` reutiliza outro harness e não substitui V-E2E. **Não rodar reset contra banco pessoal.** O ambiente Sprint 4 usa portas e banco temporário isolados. Testes focais por unidade; V-GLOBAL em checkpoints compartilhados conforme AGENTS e ao final. Não executar testes de produto para validar edição exclusivamente documental.
+
+## Transição após G7
+
+M7 fecha a baseline `S4-C1`. Depois de `S4-M7-U2/G7`, a próxima unidade passa a ser `CG-F0-01` do pacote [`sprint4-finalization`](../sprint4-finalization/spec.md). Antes disso, nenhuma unidade `CG-*` é elegível.
 
 ## Aceite, evidência e parada
 

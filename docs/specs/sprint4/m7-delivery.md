@@ -1,6 +1,6 @@
 # M7 — Evidências e entrega final
 
-Objetivo: consolidar critérios 60/25/15 com o que funciona. MÉDIO. Entrada G6. Não construir feature nova para preencher relatório.
+**Estado:** pendente; iniciar somente após M6-U2/G6. Objetivo: consolidar a baseline S4-C1 com o que funciona. MÉDIO. Não construir feature nova para preencher relatório. G7 concluído desbloqueia `CG-F0-01`; ele não elimina a validação posterior dos deltas S4-C2.
 
 ## S4-M7-U1 — Documentação e resultados verdadeiros
 
@@ -26,3 +26,7 @@ Objetivo: consolidar critérios 60/25/15 com o que funciona. MÉDIO. Entrada G6.
 ## Entrega do executor
 
 Listar unidades concluídas, arquitetura realmente executável, arquivos/migrations, comandos/resultados de testes, gates reais, limitações, passos de demonstração e estado Git. Não propor novo roadmap como condição de entrega. O núcleo pode estar finalizado com IV/bateria/helpdesk/cloud explicitamente indisponíveis.
+
+## Transição obrigatória
+
+Após U2/G7, atualizar [a ordem canônica](../SPRINT4_EXECUTION_ORDER.md) e somente então marcar `CG-F0-01` como `READY`. Evidências válidas de M5–M7 devem ser referenciadas pelo pacote novo, não repetidas sem alteração relacionada.

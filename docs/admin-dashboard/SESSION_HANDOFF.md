@@ -1,6 +1,6 @@
 # Handoff histórico da sessão — Admin SEMS+ + ChargeGrid
 
-> Este arquivo preserva o handoff da rodada de 23/08/2026. Não use a branch abaixo como base de continuação. O estado vigente está em [`../CURRENT_STATE.md`](../CURRENT_STATE.md), [`NEXT_EXECUTION_PLAN.md`](NEXT_EXECUTION_PLAN.md) e [`REMAINING_WORK.md`](REMAINING_WORK.md).
+> Este arquivo preserva o handoff da rodada de 23/08/2026. Não use a branch nem a ordem abaixo como base de continuação. O estado vigente está em [`../CURRENT_STATE.md`](../CURRENT_STATE.md) e a próxima unidade da Sprint 4 em [`../specs/SPRINT4_EXECUTION_ORDER.md`](../specs/SPRINT4_EXECUTION_ORDER.md).
 
 ## Handoff vigente — 27/08/2026
 
