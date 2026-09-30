@@ -599,7 +599,7 @@
 .sems-chargegrid-summary dd { margin: 0; color: #fff; font-size: 15px; font-weight: 700; }
 
 .sems-monitor-card { min-height: 440px; }
-.sems-monitor-card > header > div:last-child { display: none; }
+.sems-monitor-card > header > div:last-child { display: flex; gap: 6px; }
 .sems-monitor-card .sems-card-heading > div span { display: none; }
 .sems-monitor-card h2 { font-size: 0; }
 .sems-monitor-card h2::after { content: "Monitoramento de energia"; font-size: 17px; }

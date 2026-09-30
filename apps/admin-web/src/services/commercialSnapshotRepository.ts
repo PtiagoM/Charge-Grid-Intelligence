@@ -1,7 +1,22 @@
-import { CommercialSessionStatus, PaymentStatus, QueueStatus, type CommercialEnergyView, type CommercialInsight, type CommercialInsights, type CommercialOperationalReport, type CommercialSnapshot } from "@chargegrid/shared";
+import { CommercialSessionStatus, PaymentStatus, QueueStatus, type CommercialDashboardSummary, type CommercialEnergyView, type CommercialInsight, type CommercialInsights, type CommercialOperationalReport, type CommercialSnapshot } from "@chargegrid/shared";
 import type { AdminState, Charger, ChargerTelemetry, Client, CommercialPlantLink, EnergyPolicy, EnergySnapshot, Establishment, FinancialEvent, Incident, IncidentEvent, Location, PaymentTransaction, QueueEntry, Recommendation, Session, SessionEvent, TariffPolicy } from "../domain/admin";
 
 const apiUrl = (import.meta.env.VITE_CHARGEGRID_API_URL || "http://localhost:3333").replace(/\/$/, "");
+
+export type DashboardPeriod = "day" | "week" | "month";
+
+export function dashboardPeriodBounds(period: DashboardPeriod, to = new Date()) {
+  const end = new Date(to);
+  const windowMs = { day: 24, week: 24 * 7, month: 24 * 30 }[period] * 60 * 60 * 1000;
+  return { from: new Date(end.getTime() - windowMs).toISOString(), to: end.toISOString() };
+}
+
+export async function fetchCommercialDashboardSummary(input: { establishmentId: string; from: string; to: string }, signal?: AbortSignal) {
+  const query = new URLSearchParams(input);
+  const response = await fetch(`${apiUrl}/commercial/dashboard-summary?${query}`, { signal });
+  if (!response.ok) throw new Error("A API ChargeGrid não respondeu ao resumo do Dashboard.");
+  return response.json() as Promise<CommercialDashboardSummary>;
+}
 
 export async function fetchCommercialSnapshot(signal?: AbortSignal) {
   const response = await fetch(`${apiUrl}/commercial/snapshot`, { signal });

@@ -1,4 +1,5 @@
-import { useState, type CSSProperties, type FormEvent } from "react";
+import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
+import type { CommercialDashboardMetric, CommercialDashboardSummary } from "@chargegrid/shared";
 import { Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAdminState } from "../../app/AdminState";
 import type { Charger, Client } from "../../domain/admin";
@@ -18,6 +19,7 @@ import { getAdminRouteCapability } from "../../app/adminNavigation";
 import { accessibleEstablishmentIds, commercialAccessibleEstablishmentIds, hasOwnChargeGridOperation, technicalAccessibleEstablishmentIds } from "../../domain/accessOperations";
 import { SemsBatteryConsistencyPage, SemsComparisonPage, SemsIvDiagnosisPage } from "../analysis/SemsAnalysisPages";
 import { catalogWithCommercialPlants } from "../../services/goodwePlantCatalogRepository";
+import { dashboardPeriodBounds, fetchCommercialDashboardSummary, type DashboardPeriod } from "../../services/commercialSnapshotRepository";
 
 const establishmentTabs = new Set(["overview", "plants", "plant", "locations", "location", "charger", "chargers", "sessions", "session", "operations", "queue", "incidents", "incident", "energy", "pricing", "finance", "financial-session", "invoices", "contract", "support", "ticket", "documents", "ai", "recommendations", "reports", "settings", "access", "plant-onboarding", "analysis-iv", "analysis-comparison", "analysis-battery"]);
 
@@ -30,61 +32,85 @@ function StatusPill({ value }: { value: string }) {
 }
 
 type DashboardChartMode = "energy" | "revenue" | "demand" | "utilization";
-type DashboardPeriod = "day" | "week" | "month";
 
 type DashboardChartSeries = {
   label: string;
   color: string;
-  unit: string;
-  values: Array<number | null>;
-  kind?: "currency" | "percent";
+  displayValue: string;
 };
-
-const dashboardPeriodLabels: Record<DashboardPeriod, string[]> = {
-  day: ["00h", "04h", "08h", "12h", "16h", "20h", "Agora"],
-  week: ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"],
-  month: ["01", "05", "10", "15", "20", "25", "Hoje"]
-};
-
-const dashboardTrendWeights = [0.46, 0.61, 0.55, 0.76, 0.68, 0.9, 0.83];
 
 function optionalSum(values: Array<number | undefined>) {
   const present = values.filter((value): value is number => typeof value === "number");
   return present.length ? present.reduce((sum, value) => sum + value, 0) : null;
 }
 
-function chartValues(value: number | null) {
-  return value === null ? dashboardTrendWeights.map(() => null) : dashboardTrendWeights.map((weight) => Number((value * weight).toFixed(2)));
+function metricValue(metric: CommercialDashboardMetric<number> | undefined) {
+  return metric && metric.quality !== "UNAVAILABLE" ? metric.value : null;
 }
 
-function chartPath(values: Array<number | null>, max: number) {
-  const valid = values.map((value, index) => value === null ? null : `${(index / Math.max(values.length - 1, 1)) * 100},${94 - (value / Math.max(max, 1)) * 78}`);
-  return valid.reduce<string>((path, point, index) => point ? `${path}${path ? " " : "M"}${point}` : (index ? path : ""), "");
+function metricLabel(metric: CommercialDashboardMetric<number> | undefined, format: (value: number) => string) {
+  if (!metric) return "Carregando";
+  if (metric.quality === "UNAVAILABLE") return "Indisponível";
+  return `${format(metric.value)}${metric.quality === "STALE" ? " · desatualizado" : ""}`;
 }
 
-function formatChartValue(value: number | null | undefined, series: DashboardChartSeries) {
-  if (value === null || value === undefined) return "Sem telemetria";
-  if (series.kind === "currency") return money(value);
-  if (series.kind === "percent") return `${number(value)}%`;
-  return `${number(value)} ${series.unit}`.trim();
-}
-
-function Overview() {
+function Overview({ requestedEstablishmentId }: { requestedEstablishmentId?: string }) {
   const { state, account } = useAdminState();
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [chartMode, setChartMode] = useState<DashboardChartMode>("energy");
   const [chartPeriod, setChartPeriod] = useState<DashboardPeriod>("week");
   const [economyPeriodOffset, setEconomyPeriodOffset] = useState(0);
-  const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
   const technicalScope = new Set(technicalAccessibleEstablishmentIds(account));
   const commercialScope = new Set(commercialAccessibleEstablishmentIds(state, account).filter((id) => technicalScope.has(id)));
   const canReadCommercial = Boolean(account && hasAdminCapability(account, "commercial:read") && commercialScope.size);
   const canReadFinance = Boolean(account && hasAdminCapability(account, "finance:read"));
+  const dashboardEstablishmentId = requestedEstablishmentId && commercialScope.has(requestedEstablishmentId)
+    ? requestedEstablishmentId
+    : commercialScope.has("est_aurora_001")
+      ? "est_aurora_001"
+      : commercialScope.size === 1 ? [...commercialScope][0] : undefined;
+  const [dashboardSummary, setDashboardSummary] = useState<CommercialDashboardSummary | null>(null);
+  const [dashboardStatus, setDashboardStatus] = useState<"LOADING" | "READY" | "STALE" | "UNAVAILABLE">("LOADING");
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
+  useEffect(() => {
+    if (!canReadCommercial || !dashboardEstablishmentId) {
+      setDashboardSummary(null);
+      setDashboardError(null);
+      setDashboardStatus("UNAVAILABLE");
+      return;
+    }
+    let active = true;
+    let successfulRead = false;
+    let timer = 0;
+    let controller: AbortController | undefined;
+    setDashboardSummary(null);
+    setDashboardError(null);
+    setDashboardStatus("LOADING");
+    const refresh = async () => {
+      controller = new AbortController();
+      try {
+        const period = dashboardPeriodBounds(chartPeriod);
+        const summary = await fetchCommercialDashboardSummary({ establishmentId: dashboardEstablishmentId, ...period }, controller.signal);
+        if (active) {
+          successfulRead = true;
+          setDashboardSummary(summary);
+          setDashboardError(null);
+          setDashboardStatus("READY");
+        }
+      } catch (error) {
+        if (active && !controller.signal.aborted) {
+          setDashboardError(error instanceof Error ? error.message : "A API ChargeGrid está indisponível.");
+          setDashboardStatus(successfulRead ? "STALE" : "UNAVAILABLE");
+        }
+      } finally {
+        if (active) timer = window.setTimeout(() => void refresh(), 2000);
+      }
+    };
+    void refresh();
+    return () => { active = false; window.clearTimeout(timer); controller?.abort(); };
+  }, [canReadCommercial, chartPeriod, dashboardEstablishmentId]);
   const chargers = state.chargers.filter((item) => technicalScope.has(item.establishmentId));
-  const commercialChargers = chargers.filter((item) => commercialScope.has(item.establishmentId) && item.publicationStatus === "PUBLISHED");
-  const sessions = state.sessions.filter((item) => commercialScope.has(item.establishmentId));
   const locations = state.locations.filter((item) => technicalScope.has(item.establishmentId));
-  const commercialPlants = state.commercialPlants.filter((item) => commercialScope.has(item.establishmentId) && item.status === "PUBLISHED");
   const plantCatalog = catalogWithCommercialPlants(state);
   const totalPower = optionalSum(state.commercialPlants
     .filter((item) => technicalScope.has(item.establishmentId))
@@ -93,17 +119,16 @@ function Overview() {
   const energySnapshots = state.energy.filter((item) => technicalScope.has(item.establishmentId));
   const generatedEnergy = optionalSum(energySnapshots.map((item) => item.periodSolarKwh));
   const chargedEnergy = optionalSum(energySnapshots.map((item) => item.periodBatteryKwh));
-  const gridEnergy = optionalSum(energySnapshots.map((item) => item.periodGridKwh));
-  const revenue = sessions.reduce((sum, item) => sum + (item.finalAmount ?? item.consumedAmount), 0);
   const unavailable = chargers.filter((item) => item.status === "offline" || item.status === "fault").length;
   const solarPower = optionalSum(energySnapshots.map((item) => item.solarPowerKw));
   const gridPower = optionalSum(energySnapshots.map((item) => item.gridPowerKw));
   const currentPower = (solarPower ?? 0) + (gridPower ?? 0);
-  const demandPower = optionalSum(energySnapshots.map((item) => item.demandKw));
-  const contractedLimit = optionalSum(energySnapshots.map((item) => item.contractedLimitKw));
   const openIncidents = state.incidents.filter((item) => technicalScope.has(item.establishmentId) && item.status !== "RESOLVED" && item.conditionActive !== false).length;
   const alarmTotal = openIncidents + unavailable;
-  const operatingPercent = commercialChargers.length ? Math.round((commercialChargers.filter((item) => item.status !== "offline" && item.status !== "fault").length / commercialChargers.length) * 100) : 0;
+  const chargerCount = metricValue(dashboardSummary?.counts.chargersAtGeneration);
+  const availableChargerCount = metricValue(dashboardSummary?.counts.availableChargersAtGeneration);
+  const availabilityPercent = chargerCount !== null && chargerCount > 0 && availableChargerCount !== null ? availableChargerCount / chargerCount * 100 : null;
+  const periodLabels: Record<DashboardPeriod, string> = { day: "24 horas", week: "7 dias", month: "30 dias" };
   const technicalValue = generatedEnergy === null ? null : generatedEnergy * 0.74;
   const stationStates = [
     ["Em operação", locations.filter((location) => chargers.some((charger) => charger.locationId === location.id && charger.status !== "offline")).length],
@@ -114,25 +139,25 @@ function Overview() {
   ] as const;
   const chartSeriesByMode: Record<DashboardChartMode, DashboardChartSeries[]> = {
     energy: [
-      { label: "Geração", color: "#ff323a", unit: "kWh", values: chartValues(generatedEnergy) },
-      { label: "Energia carregada", color: "#f3bd46", unit: "kWh", values: chartValues(chargedEnergy) },
-      { label: "Energia da rede", color: "#7b858e", unit: "kWh", values: chartValues(gridEnergy) }
+      { label: "Energia de recarga", color: "#ff323a", displayValue: metricLabel(dashboardSummary?.energy.evWh, (value) => `${number(value / 1000)} kWh`) },
+      { label: "Solar para EV", color: "#f3bd46", displayValue: metricLabel(dashboardSummary?.energy.solarToEvWh, (value) => `${number(value / 1000)} kWh`) },
+      { label: "Importação da rede", color: "#7b858e", displayValue: metricLabel(dashboardSummary?.energy.gridImportWh, (value) => `${number(value / 1000)} kWh`) }
     ],
-    revenue: [{ label: "Receita ChargeGrid", color: "#ff323a", unit: "", kind: "currency", values: chartValues(canReadFinance ? revenue : null) }],
+    revenue: [{ label: "Receita líquida capturada", color: "#ff323a", displayValue: canReadFinance ? metricLabel(dashboardSummary?.financial.netCapturedCents, (value) => money(value / 100)) : "Sem permissão financeira" }],
     demand: [
-      { label: "Demanda", color: "#ff323a", unit: "kW", values: chartValues(demandPower) },
-      { label: "Limite contratado", color: "#7b858e", unit: "kW", values: chartValues(contractedLimit) }
+      { label: "Importação atual", color: "#ff323a", displayValue: metricLabel(dashboardSummary?.demand.currentGridImportKw, (value) => `${number(value)} kW`) },
+      { label: "Pico do período", color: "#f3bd46", displayValue: metricLabel(dashboardSummary?.demand.peakGridImportKw, (value) => `${number(value)} kW`) },
+      { label: "Limite da política", color: "#7b858e", displayValue: metricLabel(dashboardSummary?.demand.limitKw, (value) => `${number(value)} kW`) }
     ],
     utilization: [
-      { label: "Disponibilidade", color: "#ff323a", unit: "", kind: "percent", values: chartValues(canReadCommercial ? operatingPercent : null) },
-      { label: "Carregadores em uso", color: "#7b858e", unit: "", values: chartValues(canReadCommercial ? commercialChargers.filter((item) => item.status === "charging").length : null) }
+      { label: "Utilização no período", color: "#ff323a", displayValue: metricLabel(dashboardSummary?.utilization.ratio, (value) => `${number(value * 100)}%`) },
+      { label: "Disponíveis", color: "#7b858e", displayValue: chargerCount === null || availableChargerCount === null ? "Indisponível" : `${availableChargerCount}/${chargerCount}` }
     ]
   };
   const chartSeries = chartSeriesByMode[chartMode];
-  const chartMax = Math.max(1, ...chartSeries.flatMap((series) => series.values.filter((value): value is number => value !== null)));
-  const activePoint = hoveredPoint ?? -1;
   const showCommercialChart = canReadCommercial;
-  const activeChartLabel = dashboardPeriodLabels[chartPeriod][Math.max(activePoint, 0)];
+  const dashboardEstablishmentName = state.establishments.find((item) => item.id === dashboardEstablishmentId)?.name ?? "Estabelecimento ChargeGrid";
+  const dashboardStatusLabel = dashboardStatus === "LOADING" ? "Carregando dados" : dashboardStatus === "STALE" ? "Última leitura · atualização indisponível" : dashboardStatus === "UNAVAILABLE" ? dashboardError ?? "Dados indisponíveis para este escopo" : "Atualização automática";
 
   return <>
     <section className="sems-dashboard-map" data-testid="mvp-overview-panel">
@@ -167,9 +192,9 @@ function Overview() {
             <p><img src={assets.dashboard.gridIncome} alt="" /><span>Receita da rede</span><strong>—</strong></p>
             <p><img src={assets.dashboard.dischargedEnergy} alt="" /><span>Energia descarregada</span><strong>—</strong></p>
           </div>
-          {canReadCommercial ? <aside className="sems-chargegrid-summary" data-testid="dashboard-chargegrid-summary"><div><span>Camada ChargeGrid</span><strong>{commercialPlants.length} usina(s) comercial(is)</strong></div><dl><div><dt>{canReadFinance ? "Receita do período" : "Qualidade comercial"}</dt><dd>{canReadFinance ? money(revenue) : `${operatingPercent}%`}</dd></div><div><dt>Sessões</dt><dd>{sessions.length}</dd></div><div><dt>Disponibilidade</dt><dd>{operatingPercent}%</dd></div><div><dt>Carregadores publicados</dt><dd>{commercialChargers.length}</dd></div></dl></aside> : null}
+          {canReadCommercial ? <aside className="sems-chargegrid-summary" data-testid="dashboard-chargegrid-summary"><div><span>{dashboardStatusLabel}</span><strong>{dashboardEstablishmentName}</strong></div><dl><div><dt>{canReadFinance ? "Receita líquida capturada" : "Sessões"}</dt><dd>{canReadFinance ? metricLabel(dashboardSummary?.financial.netCapturedCents, (value) => money(value / 100)) : metricLabel(dashboardSummary?.counts.sessionsCreatedInPeriod, (value) => String(value))}</dd></div><div><dt>Sessões no período</dt><dd>{metricLabel(dashboardSummary?.counts.sessionsCreatedInPeriod, (value) => String(value))}</dd></div><div><dt>Disponibilidade</dt><dd>{availabilityPercent === null ? "Indisponível" : `${number(availabilityPercent)}%`}</dd></div><div><dt>Carregadores publicados</dt><dd>{chargerCount === null ? "Indisponível" : String(chargerCount)}</dd></div></dl></aside> : null}
         </article>
-        <article className="sems-dashboard-card sems-monitor-card"><header><div className="sems-card-heading"><img src={assets.dashboard.curve} alt="" /><div><h2>Monitoramento</h2><span>{chartMode === "energy" ? "Energia das usinas no escopo técnico" : "Indicador agregado da camada ChargeGrid"}</span></div></div><div>{(["day", "week", "month"] as DashboardPeriod[]).map((period) => <button className={chartPeriod === period ? "is-active" : ""} type="button" key={period} onClick={() => setChartPeriod(period)}>{period === "day" ? "Dia" : period === "week" ? "Semana" : "Mês"}</button>)}</div></header>{showCommercialChart ? <nav className="sems-chart-mode-tabs" aria-label="Indicador do monitoramento">{(["energy", "revenue", "demand", "utilization"] as DashboardChartMode[]).map((mode) => <button className={chartMode === mode ? "is-active" : ""} key={mode} type="button" onClick={() => { setChartMode(mode); setHoveredPoint(null); }}>{mode === "energy" ? "Monitoramento de energia" : mode === "revenue" ? "Receita ChargeGrid" : mode === "demand" ? "Demanda ChargeGrid" : "Utilização ChargeGrid"}</button>)}</nav> : null}<div className="sems-monitor-legend">{chartSeries.map((series) => <span key={series.label}><i style={{ background: series.color }} />{series.label}</span>)}</div><div className="sems-monitor-chart" aria-label="Gráfico de monitoramento agregado"><span className="chart-grid" /><svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label={`Gráfico ${chartMode}`}><defs><linearGradient id="energy-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ff323a" stopOpacity=".3" /><stop offset="1" stopColor="#ff323a" stopOpacity="0" /></linearGradient></defs>{chartSeries.map((series, index) => { const path = chartPath(series.values, chartMax); return path ? <path className={index === 0 ? "chart-energy" : "chart-sessions"} key={series.label} style={{ stroke: series.color }} d={path} /> : null; })}</svg>{activePoint >= 0 && chartSeries.some((series) => series.values[activePoint] !== null) ? <aside className="sems-monitor-tooltip" style={{ "--tooltip-position": `${(activePoint / Math.max(dashboardPeriodLabels[chartPeriod].length - 1, 1)) * 100}%` } as CSSProperties}><strong>{activeChartLabel}</strong>{chartSeries.map((series) => <span key={series.label}><i style={{ background: series.color }} />{series.label}<b>{formatChartValue(series.values[activePoint], series)}</b></span>)}</aside> : <p className="sems-monitor-empty">Sem telemetria disponível para este indicador.</p>}<div className="sems-chart-hover-targets">{dashboardPeriodLabels[chartPeriod].map((label, index) => <button key={label} type="button" data-testid={`dashboard-chart-point-${index}`} aria-label={`Exibir dados de ${label}`} onFocus={() => setHoveredPoint(index)} onMouseEnter={() => setHoveredPoint(index)} onClick={() => setHoveredPoint(index)} />)}</div><div className="chart-axis">{dashboardPeriodLabels[chartPeriod].map((label) => <span key={label}>{label}</span>)}</div></div></article>
+        <article className="sems-dashboard-card sems-monitor-card"><header><div className="sems-card-heading"><img src={assets.dashboard.curve} alt="" /><div><h2>Monitoramento</h2><span>{dashboardEstablishmentName} · {periodLabels[chartPeriod]} · {dashboardStatusLabel}</span></div></div><div>{(["day", "week", "month"] as DashboardPeriod[]).map((period) => <button className={chartPeriod === period ? "is-active" : ""} type="button" key={period} onClick={() => setChartPeriod(period)}>{period === "day" ? "24h" : period === "week" ? "7 dias" : "30 dias"}</button>)}</div></header>{showCommercialChart ? <nav className="sems-chart-mode-tabs" aria-label="Indicador do monitoramento">{(["energy", "revenue", "demand", "utilization"] as DashboardChartMode[]).map((mode) => <button className={chartMode === mode ? "is-active" : ""} key={mode} type="button" onClick={() => setChartMode(mode)}>{mode === "energy" ? "Monitoramento de energia" : mode === "revenue" ? "Receita ChargeGrid" : mode === "demand" ? "Demanda ChargeGrid" : "Utilização ChargeGrid"}</button>)}</nav> : null}<div className="sems-monitor-legend" data-testid="dashboard-summary-metrics">{chartSeries.map((series) => <span key={series.label}><i style={{ background: series.color }} />{series.label}<strong>{series.displayValue}</strong></span>)}</div><div className="sems-monitor-chart" aria-label="Resumo de monitoramento agregado"><p className="sems-monitor-empty" data-testid="dashboard-chart-empty">{dashboardSummary ? "A série temporal não está disponível; os valores medidos/derivados deste período estão na legenda." : dashboardStatus === "LOADING" ? "Carregando dados do ChargeGrid…" : dashboardError ?? "O resumo não está disponível para este escopo."}</p></div></article>
       </div>
     </section>
   </>;
@@ -314,7 +339,7 @@ export function AdminDashboardPage() {
 
   const content = (() => {
     switch (tab) {
-      case "overview": return <Overview />;
+      case "overview": return <Overview requestedEstablishmentId={establishmentId || undefined} />;
       case "clients": return <ClientsPage />;
       case "new-client": return <Navigate to="/mvp/clients" replace />;
       case "client": return <ClientDetail client={state.clients.find((item) => item.id === query.get("client"))} />;

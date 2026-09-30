@@ -1,6 +1,6 @@
 # CG-DASH-02 — conectar cards existentes do Dashboard
 
-**Classificação:** PEQUENO AJUSTE NO FRONT · **Status:** PLANNED · **Tamanho:** MÉDIO · **Risco:** MÉDIO.
+**Classificação:** PEQUENO AJUSTE NO FRONT · **Status:** DONE · **Tamanho:** MÉDIO · **Risco:** MÉDIO.
 
 ## Objetivo e escopo
 
@@ -25,6 +25,7 @@ Depende de DASH-01. `AdminDashboardPage.tsx` ainda possui dados de apresentaçã
 - Tendência só aparece se API fornecer série comparável real; caso contrário, esconder/rotular indisponível.
 - Receita usa líquido capturado; demanda diferencia atual, pico e limite; utilização informa período/base do cálculo.
 - Polling observa, nunca avança energia.
+- A janela selecionada alimenta `GET /commercial/dashboard-summary`; filtros já existentes ficam acessíveis no card.
 
 ## Critérios de aceite
 
@@ -32,12 +33,16 @@ Depende de DASH-01. `AdminDashboardPage.tsx` ainda possui dados de apresentaçã
 - Valor exibido coincide com payload e relatório do mesmo período.
 - Nenhum import de fixture alimenta os quatro cards no cenário Aurora.
 - Layout existente permanece reconhecível e PWA intocada.
+- E2E focal controla o payload S4-C2, verifica valor renderizado e confirma a janela de 24h após selecionar o filtro.
 
-## Testes, documentação e commit
+## Implementação e validação
 
-Unit do mapper e um E2E focal do Dashboard com API controlada; não rodar todos os E2E. Atualizar CURRENT_STATE/SDD. Commit: `feat(admin): connect dashboard cards to canonical aggregates`.
+`AdminDashboardPage` consulta o endpoint S4-C2 em polling cancelável de 2s e preserva os valores do último payload em caso de falha, sinalizando stale. Os valores comerciais/energéticos dos cards existentes vêm do payload; como a API ainda não fornece série temporal, a área do gráfico declara essa ausência em vez de desenhar uma curva inventada. A pequena correção CSS apenas reexibe os filtros de período que já existiam no JSX e estavam ocultos.
+
+Typecheck, lint e E2E focal do Dashboard passaram. Vitest e `vite build` do workspace não iniciaram neste ambiente porque o esbuild recebeu `Acesso negado` ao resolver as configurações em caminho acima do workspace; a janela do período foi verificada pelo E2E e o Vite do servidor usado por ele serviu a aplicação.
+
+Commit: `feat(admin): connect dashboard cards to canonical aggregates`.
 
 ## Condição de parada
 
 Se o ajuste exigir nova composição visual, marcar HUMAN FRONTEND GATE e pedir referência antes de editar layout.
-
