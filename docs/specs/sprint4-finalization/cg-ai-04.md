@@ -12,7 +12,7 @@ Persistir forecast, scheduler, Decision Engine, UI ou nova infraestrutura de ser
 
 ## Dependências e estado atual
 
-Depende do modelo Ridge offline promovido em AI-03B: `ml/forecasting/data/lag_calendar_ridge_model.json`. A promoção ocorreu somente no benchmark `SIMULATED_COMPOSITE`; validar schema, paridade e limites antes de qualquer uso no runtime. A métrica de teste é mista e deve permanecer visível na avaliação de risco.
+Depende do benchmark offline promovido mais recentemente em AI-03C: `ml/forecasting/data/forecast_cg_ai_03c_model.json` (Ridge Delta). O incumbent `lag_calendar_ridge_model.json` permanece preservado como comparador/histórico. A promoção ocorreu somente em benchmark `SIMULATED_COMPOSITE`; AI-04 deve validar o campo `targetTransform=DELTA_FROM_ORIGIN`, reconstruir `max(0, atual + delta)` e preservar métricas/limites antes de qualquer uso no runtime. O modelo não está aprovado para Aurora real.
 
 ## Arquivos relevantes
 

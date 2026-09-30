@@ -41,3 +41,11 @@ Ambos são candidatos simples e explicáveis, sem dependências externas. A segu
 Comandos, fontes e geração estão em [`ml/forecasting/README.md`](../../ml/forecasting/README.md); resultados fixados em [`model-card.md`](model-card.md) e `ml/forecasting/data/forecast_evaluation.json`. A ausência de co-localização, timezone harmonizado, forma real da potência das sessões e planta Aurora impede extrapolar erro, limiar ou benefício. Um futuro Decision Engine deve consumir sua política e telemetria atuais, nunca este limiar de benchmark como configuração de produção.
 
 Na segunda rodada, o bloco de teste só foi derivado após Ridge vencer a regra de validação; em caso de reprovação, o executor não deveria ler/calcular métricas desse holdout.
+
+## CG-AI-03C — comparação controlada de variantes
+
+CG-AI-03C reutiliza o mesmo dataset, target, exemplos rolling-origin, partições temporais, limiar de risco e métricas acima. Compara o artefato Ridge CG-AI-03B sem re-treino, Ridge com lags/estatísticas temporais, Ridge com componentes energéticos medidos na origem e seus lags, Ridge com target delta (`pico futuro - gridImportKw na origem`) e um Gradient Boosting determinístico de 24 stumps de regressão. Persistência e sazonal ingênuo permanecem referências.
+
+Todos os recursos são observáveis no instante da origem ou anteriores. Nenhuma feature usa componentes/targets do horizonte futuro. Estatísticas de padronização Ridge são ajustadas somente no treino. Não se altera o conjunto de origens para acomodar os lags: falta de histórico necessário interrompe a execução. Para Delta, reconstrói-se o pico como `max(0, gridImportKw na origem + delta previsto)` e aplicam-se as métricas originais sem alterar limiar ou target.
+
+A seleção filtra candidatos novos que não melhorem estritamente MAE e RMSE contra o incumbent ou cujo F1 caia mais de 0,02; entre os elegíveis, ordena por MAE ascendente, RMSE ascendente e F1 descendente. O holdout só é aberto depois de congelado o vencedor. Resultado e artefato são `SIMULATED_COMPOSITE`, sem uso operacional. A implementação e a avaliação desta rodada estão descritas no model card e em `ml/forecasting/data/forecast_third_candidate_evaluation.json`.

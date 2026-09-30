@@ -69,4 +69,13 @@ Every row declares `datasetClass=SIMULATED_COMPOSITE` and the origin of each com
 
 ### CG-AI-03 forecast
 
-The benchmark target is the maximum `gridImportKw` in the **next 60 minutes** (four 15-minute steps), using only values available at each forecast origin. The original AR(1) failed validation; one fixed Ridge candidate using lags/calendar passed validation and was evaluated once on the holdout. It remains an offline `SIMULATED_COMPOSITE` artifact, not integrated into runtime. See [evaluation protocol](../../docs/ai/evaluation-protocol.md) and [model card](../../docs/ai/model-card.md) for metrics and limits.
+The benchmark target is the maximum `gridImportKw` in the **next 60 minutes** (four 15-minute steps), using only values available at each forecast origin. The original AR(1) failed validation; Ridge lags/calendar passed in CG-AI-03B. CG-AI-03C made one controlled follow-up and selected a Ridge Delta variant on validation; see its committed result/model artifacts and the [evaluation protocol](../../docs/ai/evaluation-protocol.md) and [model card](../../docs/ai/model-card.md). Both Ridge models remain offline `SIMULATED_COMPOSITE` artifacts, not runtime integrations.
+
+Reproduce CG-AI-03C (Python standard library only):
+
+```bash
+py ml/forecasting/src/evaluate_ridge_variants.py
+py -m unittest discover -s ml/forecasting/tests -p test_evaluate_ridge_variants.py
+```
+
+The evaluator fits on train, ranks candidates on validation, and reads test labels only if a new candidate passes the frozen promotion gate. It writes `forecast_third_candidate_evaluation.json`; a promoted model additionally writes `forecast_cg_ai_03c_model.json` and `forecast_cg_ai_03c_test.csv`.

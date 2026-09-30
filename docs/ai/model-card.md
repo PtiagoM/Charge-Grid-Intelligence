@@ -61,3 +61,34 @@ O artefato e resultados dessa rodada estão em `ml/forecasting/data/lag_calendar
 - Cobertura PV parcial causa exclusão de janelas; o holdout é temporal, mas as fontes são compostas e podem ter padrões sazonais específicos.
 - O limiar de risco não deve ser configurado no backend/Decision Engine. Uma integração futura precisa de previsão calibrada/validada com dados representativos e aplicar política energética vigente separadamente.
 - Sem confidence score: nenhum intervalo probabilístico foi calibrado.
+
+## Terceira rodada controlada — CG-AI-03C
+
+Foi feita uma única rodada, mantendo os exemplos rolling-origin e os blocos cronológicos congelados (14.397 treino, 4.892 validação, 4.595 teste), horizonte de 60 minutos, limiar de pico de 117,524661 kW e Ridge CG-AI-03B como incumbent sem re-treino. O holdout só foi calculado depois que `RIDGE_DELTA` passou a seleção pela validação. Não houve tuning, mudança de dataset ou instalação de dependências.
+
+Foram avaliados: Ridge incumbent; Ridge temporal com lags de 30 min/2 h/4 h, média/mínimo/máximo da última hora e variação em uma hora; Ridge com building load, EV e PV observados na origem e lags de 15/60 min; Ridge Delta com as features temporais, prevendo `pico_futuro - gridImportKw_atual`; e um Gradient Boosting determinístico de 24 stumps (profundidade 1, learning rate 0,1) com features do incumbent e componentes energéticos na origem/lag 60 min. Todas as features estão disponíveis na origem ou antes; nenhuma componente no horizonte futuro foi usada. A padronização Ridge foi ajustada somente no treino; os alvos de Delta foram reconstruídos como `max(0, atual + delta previsto)`.
+
+### Validação (seleção exclusiva)
+
+| Método | MAE kW | RMSE kW | F1 pico | FP | FN |
+|---|---:|---:|---:|---:|---:|
+| Ridge incumbent | 5,6370 | 8,5421 | 0,8883 | 64 | 73 |
+| Ridge + temporal | 5,5426 | 8,4872 | 0,8828 | 73 | 72 |
+| Ridge + componentes | **5,0035** | **7,9113** | 0,8644 | 123 | 54 |
+| Ridge Delta (selecionado) | 5,3062 | 8,4259 | 0,8821 | 74 | 72 |
+| Gradient Boosting stumps | 9,1004 | 14,7196 | 0,8518 | 29 | 138 |
+| Persistência | 5,7964 | 10,4715 | 0,8344 | 33 | 152 |
+
+Promoção exigiu, contra o incumbent, MAE e RMSE estritamente menores e F1 não mais que 0,02 abaixo; candidatos elegíveis foram ordenados por MAE, RMSE e F1. Ridge + componentes teve o menor erro numérico, mas caiu 0,0240 em F1, excedendo o limite de 0,02, com mais falsos positivos (123). Ridge Delta foi selecionado: MAE melhorou 5,87%, RMSE 1,36%, enquanto F1 caiu 0,0063; FP subiram de 64 para 74 e FN caíram de 73 para 72. Isso representa ganho moderado, não evidência de significância estatística ou garantia operacional.
+
+### Holdout (aberto após congelar Ridge Delta)
+
+| Método | MAE kW | RMSE kW | F1 pico | FP | FN |
+|---|---:|---:|---:|---:|---:|
+| Persistência | 5,3225 | 9,7665 | 0,8144 | 30 | 140 |
+| Ridge incumbent | 5,6262 | 8,4319 | 0,8349 | 62 | 101 |
+| Ridge Delta selecionado | **4,6151** | **8,1457** | **0,8461** | 53 | 98 |
+
+No holdout, Delta melhora o incumbent em MAE (18,0%), RMSE (3,4%) e F1 (+0,0112); em relação à persistência, melhora MAE (13,3%), RMSE (16,6%) e F1 (+0,0317). O limiar não foi reajustado. F1 é medida de detecção, não “acurácia”. O teste é uma única janela temporal composta e não demonstra desempenho fora dela.
+
+O resultado completo está em `ml/forecasting/data/forecast_third_candidate_evaluation.json`, as previsões do holdout em `forecast_cg_ai_03c_test.csv` e o artefato reprodutível em `forecast_cg_ai_03c_model.json`. O modelo promovido é apenas um benchmark `SIMULATED_COMPOSITE`, offline, sem integração ao Node/API/Decision Engine; o modelo CG-AI-03B permanece preservado como histórico/incumbent de comparação.
