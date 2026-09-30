@@ -1,4 +1,4 @@
-import { CommercialSessionStatus, PaymentStatus, QueueStatus, type CommercialDashboardSummary, type CommercialEnergyView, type CommercialInsight, type CommercialInsights, type CommercialOperationalReport, type CommercialSnapshot } from "@chargegrid/shared";
+import { CommercialSessionStatus, PaymentStatus, QueueStatus, type CommercialDashboardSummary, type CommercialEnergyView, type CommercialInsight, type CommercialInsights, type CommercialOperationalReport, type CommercialSnapshot, type LabScenarioId } from "@chargegrid/shared";
 import type { AdminState, Charger, ChargerTelemetry, Client, CommercialPlantLink, EnergyPolicy, EnergySnapshot, Establishment, FinancialEvent, Incident, IncidentEvent, Location, PaymentTransaction, QueueEntry, Recommendation, Session, SessionEvent, TariffPolicy } from "../domain/admin";
 
 const apiUrl = (import.meta.env.VITE_CHARGEGRID_API_URL || "http://localhost:3333").replace(/\/$/, "");
@@ -118,6 +118,23 @@ export async function configurePlantTelemetry(input: { plantId: string; online: 
   const response = await fetch(`${apiUrl}/commercial/plants/${encodeURIComponent(input.plantId)}/hardware`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) });
   const payload = await response.json().catch(() => ({})) as CommercialSnapshot & { message?: string };
   if (!response.ok) throw new Error(payload.message || "A API não confirmou o cenário energético.");
+  return payload;
+}
+
+export async function fetchPlantEnergyView(plantId: string, signal?: AbortSignal) {
+  const response = await fetch(`${apiUrl}/commercial/plants/${encodeURIComponent(plantId)}/energy`, { signal });
+  if (!response.ok) throw new Error("A API ChargeGrid não respondeu à telemetria da planta.");
+  return response.json() as Promise<CommercialEnergyView>;
+}
+
+export async function applyPlantScenario(plantId: string, scenarioId: LabScenarioId) {
+  const response = await fetch(`${apiUrl}/commercial/plants/${encodeURIComponent(plantId)}/hardware`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ scenarioId })
+  });
+  const payload = await response.json().catch(() => ({})) as CommercialSnapshot & { message?: string };
+  if (!response.ok) throw new Error(payload.message || "A API não aplicou o cenário de hardware.");
   return payload;
 }
 
