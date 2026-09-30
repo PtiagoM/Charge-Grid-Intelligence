@@ -3,9 +3,9 @@
 ## Planejamento final da Sprint 4 — 29/09/2026
 
 - A ordem canônica está em [`docs/specs/SPRINT4_EXECUTION_ORDER.md`](specs/SPRINT4_EXECUTION_ORDER.md): primeiro concluir o pacote original `sprint4` em M5–M7; depois iniciar `sprint4-finalization`.
-- Estado de execução: M0–M4 e M5-U1 concluídos; `S4-M5-U2A` é a próxima unidade. Nenhuma unidade `CG-*` está liberada antes de `S4-M7-U2/G7`.
+- Estado de execução: M0–M4, M5-U1 e M5-U2A concluídos; `S4-M5-U2B` é a próxima unidade. Nenhuma unidade `CG-*` está liberada antes de `S4-M7-U2/G7`.
 - O pacote [`docs/specs/sprint4-finalization`](specs/sprint4-finalization/spec.md) contém a extensão S4-C2 aprovada, mas permanece planejado até o fechamento da baseline S4-C1.
-- Esta etapa produziu somente documentação: nenhuma feature, migration, tela, treino ou alteração de banco foi executada.
+- M5-U2A adicionou injeção de provider apenas no harness de teste e prova E2E de autorização controlada, operação/sessões e persistência; PWA, Stripe normal e schema não foram alterados.
 - A PWA permanece considerada finalizada; bateria segue fora do escopo obrigatório; previsão segue a cadeia treino offline Python → artefato versionado → inferência Node → regras → Decision Engine.
 - A base implementada está no histórico de `feature/admin-sprint3-integration`; a branch local histórica `feature/admin-sprint4@c8cc21c` não representa M1–M4. A reconciliação segura do histórico será `CG-F0-01`, somente depois de G7.
 
@@ -34,7 +34,7 @@ O registro de implementação, evidências e limitações da Sprint fica em [`SP
 
 ### Sprint 4 — Marco 1 concluído (26/09/2026)
 
-> Checkpoint histórico. Referências abaixo a “próximo marco” ou trabalho ainda pendente descrevem o estado de 26/09 e não substituem a ordem canônica atual (`S4-M5-U2A`).
+> Checkpoint histórico. Referências abaixo a “próximo marco” ou trabalho ainda pendente descrevem o estado de 26/09 e não substituem a ordem canônica atual (`S4-M5-U2B`).
 
 - A base compartilhada agora possui ledger de migrations e aplica `202609260004_s4_foundation.sql` uma única vez; bancos comerciais legados são baselined sem reexecutar o UPSERT destrutivo das migrations antigas.
 - Aurora segue sendo o único catálogo operacional completo: `plant_aurora_001`, seis UUIDs estáveis, códigos/QR e vaga B02 foram preservados. A API publica o catálogo sanitizado em `/commercial/catalog` e resolve UUID/código/QR em `/commercial/chargers/resolve/:identifier`.

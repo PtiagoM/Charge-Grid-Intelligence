@@ -3,7 +3,9 @@ import express from "express";
 import { createPaymentRouter, stripeWebhook } from "./payments/routes.js";
 import { createCommercialRouter } from "./commercial/routes.js";
 
-export function createApp() {
+type PaymentProviderFactory = NonNullable<Parameters<typeof createPaymentRouter>[0]>["provider"];
+
+export function createApp(options: { paymentProvider?: PaymentProviderFactory } = {}) {
   const app = express();
 
   app.disable("x-powered-by");
@@ -17,7 +19,7 @@ export function createApp() {
     response.status(200).json({ status: "ok", service: "chargegrid-api" });
   });
 
-app.use("/payments", createPaymentRouter());
+app.use("/payments", createPaymentRouter({ provider: options.paymentProvider }));
 app.use("/commercial", createCommercialRouter());
   app.use((error: unknown, request: express.Request, response: express.Response, next: express.NextFunction) => {
     if (error instanceof SyntaxError && "body" in error) {

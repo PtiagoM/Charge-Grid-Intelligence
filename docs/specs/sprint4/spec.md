@@ -1,6 +1,6 @@
 # Sprint 4 — Especificação executável do protótipo final
 
-Estado em 29/09/2026: **M0–M4 concluídos; M5-U1 concluído; M5-U2A é a próxima unidade**. A implementação está na linha local derivada de `feature/admin-sprint3-integration`; a documentação de execução está em `docs/sprint4-final-sdds`. Plano superior: [Sprint 4](../../SPRINT4_FINAL_EXECUTION_PLAN.md); inventário: [matriz](../../SPRINT4_BEHAVIOR_MATRIX.md). Não sincronizar nem publicar sem respeitar o workflow.
+Estado em 29/09/2026: **M0–M4, M5-U1 e M5-U2A concluídos; M5-U2B é a próxima unidade**. A implementação está na linha local derivada de `feature/admin-sprint3-integration`; a documentação de execução está em `docs/sprint4-final-sdds`. Plano superior: [Sprint 4](../../SPRINT4_FINAL_EXECUTION_PLAN.md); inventário: [matriz](../../SPRINT4_BEHAVIOR_MATRIX.md). Não sincronizar nem publicar sem respeitar o workflow.
 
 M0 congelou `S4-C1`; M1–M4 implementaram a operação compartilhada, PWA, Admin, energia, demanda e insights determinísticos. M5-U1 criou o ambiente E2E isolado. O registro atualizado de gates está em [acceptance](acceptance.md) e a precedência entre este pacote e o pacote posterior está na [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
 
@@ -19,7 +19,7 @@ Finalizar uma única operação Aurora, observada pelo motorista/visitante na PW
 
 Modelo de instrução para um executor futuro:
 
-> Execute somente `S4-M5-U2A` seguindo `docs/specs/SPRINT4_EXECUTION_ORDER.md`, `docs/specs/sprint4/spec.md` e `m5-integration.md`. Confira dependências, implemente nos arquivos permitidos, rode a validação indicada e atualize a evidência. Não altere regras congeladas nem inicie a próxima unidade. Se houver incompatibilidade real de contrato, registre o conflito e pare apenas a unidade afetada.
+> Execute somente `S4-M5-U2B` seguindo `docs/specs/SPRINT4_EXECUTION_ORDER.md`, `docs/specs/sprint4/spec.md` e `m5-integration.md`. Confira dependências, implemente nos arquivos permitidos, rode a validação indicada e atualize a evidência. Não altere regras congeladas nem inicie a próxima unidade. Se houver incompatibilidade real de contrato, registre o conflito e pare apenas a unidade afetada.
 
 O responsável deve autorizar a execução da unidade; este documento fixa o escopo. Campos/rotas novos continuam sendo requisitos da unidade correspondente, não descrição enganosa do código atual.
 

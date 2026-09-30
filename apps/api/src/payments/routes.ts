@@ -9,6 +9,8 @@ function provider() {
   return new StripePaymentProvider();
 }
 
+type PaymentProvider = Pick<StripePaymentProvider, "createIntent" | "retrieve" | "capture" | "refund">;
+
 function validAmount(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value >= 0.5 && value <= 1000;
 }
@@ -34,8 +36,9 @@ function errorResponse(response: Response, error: unknown) {
   return response.status(502).json({ code: "PAYMENT_PROVIDER_ERROR", message });
 }
 
-export function createPaymentRouter() {
+export function createPaymentRouter(options: { provider?: () => PaymentProvider } = {}) {
   const router = Router();
+  const getProvider = options.provider ?? provider;
 
   router.get("/config", (_request, response) => {
     response.json({ provider: "stripe", mode: "test", configured: stripeIsConfigured() });
@@ -60,7 +63,7 @@ export function createPaymentRouter() {
         authorizedCents: Math.round(body.amount * 100)
       });
       reserved = true;
-      const result = await provider().createIntent({
+      const result = await getProvider().createIntent({
         sessionId: session.id,
         method,
         amount: body.amount,
@@ -83,7 +86,7 @@ export function createPaymentRouter() {
       const commercialRepository = getCommercialRepository();
       const sessionId = await commercialRepository.sessionIdForPaymentIntent(request.params.paymentIntentId);
       await commercialRepository.sessionForAccess(sessionId, await accessFor(request));
-      const payment = await provider().retrieve(request.params.paymentIntentId);
+      const payment = await getProvider().retrieve(request.params.paymentIntentId);
       const session = await commercialRepository.recordPayment(payment);
       return response.json({ ...payment, session });
     } catch (error) {
@@ -101,7 +104,7 @@ export function createPaymentRouter() {
       if (currentSession.status !== CommercialSessionStatus.ENERGY_FINISHED) throw new CommercialConflictError("Finalize a entrega de energia antes de capturar o pagamento.");
       await commercialRepository.assertReadyForCapture(body.sessionId);
       const amount = currentSession.totalCostCents / 100;
-      const capture = await provider().capture({
+      const capture = await getProvider().capture({
         paymentIntentId: request.params.paymentIntentId,
         sessionId: body.sessionId,
         amount,
@@ -125,7 +128,7 @@ export function createPaymentRouter() {
       await commercialRepository.assertReadyForCapture(body.sessionId);
       const refundCents = Math.max(0, currentSession.authorizedCents - currentSession.totalCostCents);
       if (refundCents === 0) return response.json({ status: PaymentStatus.PAID, amount: 0, session: await commercialRepository.completeRefund({ sessionId: body.sessionId, providerStatus: "no_refund_due", refundedCents: 0 }) });
-      const refund = await provider().refund({
+      const refund = await getProvider().refund({
         paymentIntentId: request.params.paymentIntentId,
         sessionId: body.sessionId,
         amount: refundCents / 100,

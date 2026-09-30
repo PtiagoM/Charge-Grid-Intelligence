@@ -5,7 +5,7 @@
 **Linha de integração:** `develop/admin-web`  
 **Escopo:** frontend Admin, fixtures, estados locais, navegação, UI/UX e testes proporcionais. Backend, RLS, emissão segura de código e integrações produtivas permanecem fora desta rodada.
 
-> Para continuar a Sprint 4, use [`../specs/SPRINT4_EXECUTION_ORDER.md`](../specs/SPRINT4_EXECUTION_ORDER.md). O próximo passo atual é `S4-M5-U2A`; este documento preserva apenas a rodada histórica do Admin.
+> Para continuar a Sprint 4, use [`../specs/SPRINT4_EXECUTION_ORDER.md`](../specs/SPRINT4_EXECUTION_ORDER.md). O próximo passo atual é `S4-M5-U2B`; este documento preserva apenas a rodada histórica do Admin.
 
 ## Objetivo
 

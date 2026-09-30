@@ -68,4 +68,4 @@ Decisão técnica incompatível com o plano: abrir entrada aqui com motivo/impac
 
 ## Transição aprovada em 29/09/2026
 
-Este pacote deve concluir M5–M7/G7 antes da extensão `sprint4-finalization`. A próxima unidade é `S4-M5-U2A`, seguida por U2B, U2C e U3. Depois de G7, `CG-F0-01` inicia S4-C2. A [ordem canônica](../SPRINT4_EXECUTION_ORDER.md) prevalece sobre indicações históricas de próximo passo.
+Este pacote deve concluir M5–M7/G7 antes da extensão `sprint4-finalization`. U2A foi concluída; a próxima unidade é `S4-M5-U2B`, seguida por U2C e U3. A autorização controlada do harness não substitui o Stripe sandbox real exigido em U3. Depois de G7, `CG-F0-01` inicia S4-C2. A [ordem canônica](../SPRINT4_EXECUTION_ORDER.md) prevalece sobre indicações históricas de próximo passo.

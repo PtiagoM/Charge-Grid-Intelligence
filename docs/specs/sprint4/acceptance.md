@@ -118,7 +118,7 @@ Preencher somente após execução real. Uma linha pode apontar para relatório 
 | G2 PWA | CONCLUÍDO — 26/09/2026 | checkpoints M2, build/typecheck, validação visual e encerramento manual após `124d255`/`6223d76` |
 | G3 Admin | CONCLUÍDO — 26/09/2026 | checkpoints M3, testes/build e validação manual do responsável |
 | G4 energia | CONCLUÍDO — 27/09/2026 | checkpoints M4, testes focais e registro `dfab16d`; integração ampla permanece responsabilidade de G5 |
-| G5 integração | EM ANDAMENTO | M5-U1 concluído em `11692ff`; E01–E06 pertencem a M5-U2A/B/C e G-M1–G-M4 a M5-U3 |
+| G5 integração | EM ANDAMENTO | M5-U1 (`11692ff`) e fatia U2A passaram: PWA QR/checkout observa disponibilidade; API com provider determinístico exclusivo de teste grava uma autorização; Operação atualiza por polling sem reload e Sessões mostra o mesmo registro; reinício da API preserva os dados. Stripe Payment Element real e encerramento/liquidação permanecem em M5-U3/U2C. |
 | G6 estabilidade | PENDENTE | SW/restart/falhas/visual, V-GLOBAL/V-E2E, G-M5 |
 | G7 entrega | PENDENTE | G-M6, README/diagramas/resultados, estadoGit, checklistfinal |
 

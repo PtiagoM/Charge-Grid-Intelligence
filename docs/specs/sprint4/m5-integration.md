@@ -1,6 +1,6 @@
 # M5 — Prova da operação única
 
-**Estado em 29/09/2026:** U1 concluída; **U2A é a próxima unidade obrigatória**; U2B/U2C/U3 pendentes. Objetivo: integrar interfaces já corretas contra C1, não descobrir domínio no E2E. Entrada G2/G3/G4 concluída. Ler acceptance.md, C1–C9 e a [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
+**Estado em 29/09/2026:** U1 e U2A concluídas; **U2B é a próxima unidade obrigatória**; U2C/U3 pendentes. Objetivo: integrar interfaces já corretas contra C1, não descobrir domínio no E2E. Entrada G2/G3/G4 concluída. Ler acceptance.md, C1–C9 e a [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
 
 ## S4-M5-U1 — Ambiente E2E isolado
 
@@ -25,7 +25,7 @@
 
 | Caso | Passos | Asserts indispensáveis |
 |---|---|---|
-| E01 comércio | Mapa/listaAurora→code→quote→checkout→pagamento controlado→labCONNECT→energia→stop→retirada→settle | 1sessão/1PI; ambas ordens CONNECT/pagamento; Operação/Sessões/Financeiro iguais; sem `/demo` |
+| E01 comércio | Mapa/listaAurora→code→quote→checkout→pagamento controlado→labCONNECT→energia→stop→retirada→settle | 1sessão/1PI; ambas ordens CONNECT/pagamento; Operação/Sessões/Financeiro iguais; sem `/demo`. U2A prova autorização/connect/CHARGING; U2C fecha stop/retirada/settle; U3 prova Payment Element/Stripe real. |
 | E02 persistência | Recarregar PWA/Admin; fechar UIs; reiniciar API mesmo DB | IDs/quote/histórico preservados; nenhum consumo de downtime inventado; reconsulta não regride |
 | E03 fila | Seis conectados→driverfila→liberar→CALLED→checkout ou expirar | Mesma posição/assignment; próxima chamada servidor; guest negado |
 | E04 energia | SinaisPV/base→segundoStart negado→corte→retomada | Reason/amostra/comando/efeito corretos; sem idle na suspensão; mesma tarifa aceita |
@@ -40,7 +40,9 @@
 - **Escopo:** E01 e E02 somente; criar/ajustar specs do fluxo comercial normal e restart no harness isolado.
 - **Invariantes:** uma sessão/PI, IDs canônicos, sem `/demo`, sem downtime cobrado e sem tocar banco pessoal/Stripe real.
 - **Teste:** executar somente os specs E01/E02 e testes API diretamente afetados.
-- **Aceite:** comércio completo controlado e restart preservam os mesmos registros; falha volta para a unidade dona, não recebe stub de frontend.
+- **Aceite:** a PWA normal resolve AURORA-01 e exibe checkout; quote e PaymentIntent controlados percorrem a API compartilhada; CONNECT inicia a mesma sessão persistida; Operação atualiza por polling sem reload e Sessões reflete a sessão; reinício da API e reload preservam IDs, estado e pagamento. O harness injeta provider determinístico no servidor de teste; nenhum PaymentIntent real é criado.
+- **Limite comprovado:** o E2E não confirma Payment Element nem Stripe. O harness não recebe publishable/secret keys. Essa evidência permanece obrigatória em M5-U3; o fluxo normal da PWA não foi alterado.
+- **Evidência:** `npm run test:e2e:sprint4 -- tests/integration/sprint4-commercial-persistence.spec.ts` passou; `npm run test --workspace @chargegrid/api -- src/app.test.ts --testTimeout=15000` passou (8 testes); build da API e ESLint focado passaram. O limite de 5 s padrão do Vitest foi curto para inicialização fria do catálogo PGlite, por isso o teste focal foi executado com limite proporcional maior.
 - **Commit:** `test(integration): prove commercial journey and persistence`.
 
 ### S4-M5-U2B — Fila e configuração
@@ -51,12 +53,12 @@
 - **Aceite:** posição/expiração/configuração persistem e nenhum gráfico/receita fixture reaparece.
 - **Commit:** `test(integration): prove queue and configuration journeys`.
 
-### S4-M5-U2C — Energia e falhas
+### S4-M5-U2C — Energia, encerramento e falhas
 
-- **Depende:** U2B; **escopo:** E04 e E05 somente.
+- **Depende:** U2B; **escopo:** encerramento/retirada/liquidação controlados do E01, E04 e E05.
 - **Invariantes:** política usa amostra persistida; suspensão não gera idle; falha não produz sucesso, energia ou acesso indevido.
-- **Teste:** specs E04/E05 e regressões focais de demand/provider/settlement.
-- **Aceite:** reason/amostra/comando/efeito são rastreáveis e uma jornada elegível funciona após recuperação.
+- **Teste:** conclusão controlada E01, specs E04/E05 e regressões focais de demand/provider/settlement.
+- **Aceite:** stop, desconexão e liquidação concluem o mesmo registro; reason/amostra/comando/efeito são rastreáveis e uma jornada elegível funciona após recuperação.
 - **Saída de U2:** consolidar E01–E06 sem rerodar specs não afetados; atualizar acceptance. Commit documental somente se necessário para evidência agregada.
 
 ## S4-M5-U3 — Gates reais e evidência visual

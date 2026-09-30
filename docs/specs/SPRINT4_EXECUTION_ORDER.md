@@ -22,8 +22,8 @@ Documento histórico ou backlog antigo não altera esta ordem. Em conflito sobre
 | M3 / G3 | CONCLUÍDO | Admin integrado e validado pelo responsável |
 | M4 / G4 | CONCLUÍDO | energia, demanda, oferta e insights determinísticos implementados |
 | M5-U1 | CONCLUÍDO | ambiente Playwright isolado no commit `11692ff` |
-| M5-U2A | **PRÓXIMA UNIDADE** | E01 comércio e E02 persistência |
-| M5-U2B | PENDENTE | E03 fila e E06 configuração |
+| M5-U2A | CONCLUÍDA | PWA QR/checkout, autorização API controlada, Admin atualiza por polling sem reload; API reiniciada preserva sessão e pagamento |
+| M5-U2B | **PRÓXIMA UNIDADE** | E03 fila e E06 configuração |
 | M5-U2C | PENDENTE | E04 energia e E05 falhas |
 | M5-U3 | PENDENTE | gates reais e evidência visual |
 | M6-U1/U2 | PENDENTE | hardening baseado somente em falhas de M5 |
@@ -34,7 +34,7 @@ Documento histórico ou backlog antigo não altera esta ordem. Em conflito sobre
 ## Sequência sem ambiguidade
 
 ```text
-S4-M5-U2A
+S4-M5-U2A concluída
 → S4-M5-U2B
 → S4-M5-U2C
 → S4-M5-U3
