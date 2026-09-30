@@ -1,14 +1,14 @@
-# ChargeGrid Intelligence
+# ChargeGrid Intelligence — Sprint 4
 
-Protótipo funcional da Sprint 3 que integra a jornada do motorista à operação comercial de recarga incorporada ao Admin SEMS+.
+Baseline funcional integrada do ChargeGrid Intelligence, continuação da [Sprint 2 — Dashboard Comercial ChargeGrid](https://github.com/PtiagoM/Dashboard_Comercial-ChargeGrid) e da Sprint 3. A Sprint 2 definiu produto e experiência; a Sprint 3 provou a primeira vertical comercial; a Sprint 4 consolida operação persistente, energia simulada e automação explicável. O registro histórico da Sprint 3 continua em [`docs/SPRINT3.md`](docs/SPRINT3.md).
 
 O motorista descobre o Hub Solar Aurora, escolhe ou identifica um carregador, autoriza um pagamento Stripe em modo de teste e acompanha a recarga. A API mantém uma única sessão comercial persistida; Operação, Sessões, Fila e Resumo financeiro do Admin observam os mesmos registros. Somente a fronteira física GoodWe/HCA G2 é simulada.
 
-Esta entrega dá continuidade à [Sprint 2 — Dashboard Comercial ChargeGrid](https://github.com/PtiagoM/Dashboard_Comercial-ChargeGrid), que definiu a proposta, a arquitetura e a experiência administrativa. A Sprint 3 concentra-se na implementação funcional e na integração executável entre os componentes.
+Esta baseline não é um produto de produção. Ela prioriza comportamento coerente e demonstrável, separando integração real, sandbox e simulação. A ordem vigente e o que ainda falta para concluir as etapas estão em [`docs/specs/SPRINT4_EXECUTION_ORDER.md`](docs/specs/SPRINT4_EXECUTION_ORDER.md).
 
-## Entrega acadêmica
+## Equipe e continuidade
 
-**Sprint 3 — Prototipagem Funcional e Integração**
+Esta entrega consolida a Sprint 4, em continuidade ao [Dashboard Comercial ChargeGrid (Sprint 2)](https://github.com/PtiagoM/Dashboard_Comercial-ChargeGrid) e à prototipagem integrada da [Sprint 3](docs/SPRINT3.md).
 
 | Equipe | RM |
 | --- | --- |
@@ -18,9 +18,9 @@ Esta entrega dá continuidade à [Sprint 2 — Dashboard Comercial ChargeGrid](h
 | Lourenço Borges da Silva | 569515 |
 | Davi Teodoro Novais | 571022 |
 
-O objetivo é demonstrar um sistema operacional, com partes reais e simuladas claramente identificadas, no qual descoberta, pagamento, automação do carregador, medição energética e gestão comercial atuam sobre uma única sessão persistida.
+O objetivo é consolidar um protótipo operacional, com partes reais e simuladas claramente identificadas, no qual descoberta, pagamento, automação do carregador, medição energética e gestão comercial atuam sobre uma única sessão persistida.
 
-> Leia primeiro [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md). O recorte executável, as evidências e o roteiro da Sprint estão em [`docs/SPRINT3.md`](docs/SPRINT3.md).
+> Leia [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) para o estado do repositório; [`docs/specs/sprint4/acceptance.md`](docs/specs/sprint4/acceptance.md) contém contratos, vetores e gates executados. Este README descreve a baseline S4-C1, não o pacote futuro `sprint4-finalization` (S4-C2).
 
 ## Arquitetura executável
 
@@ -33,7 +33,7 @@ flowchart LR
     Stripe --> API
     Admin[Admin SEMS+ / ChargeGrid] --> API
     Lab[Laboratório de hardware] --> API
-    API --> DB[(PostgreSQL Supabase ou PGlite)]
+    API --> DB[(PGlite persistente oficial; PostgreSQL opcional)]
     API --> Provider[MockGoodWeProvider]
     DB --> API
     API --> PWA
@@ -44,7 +44,7 @@ flowchart LR
 - Polling de aproximadamente dois segundos apenas consulta; energia e custo avançam no relógio da API.
 - O laboratório `/admin` emite eventos físicos sobre os carregadores persistidos. Conectar um veículo a uma sessão autorizada dispara `StartCharge` automaticamente; ele não cria pagamento, receita ou sessão fictícia.
 - O botão **Reiniciar dados de teste** limpa sessões, pagamentos, fila, atribuições e telemetria do Aurora sem recriar o catálogo.
-- A API usa o PostgreSQL remoto quando `CHARGEGRID_DATABASE_URL` está configurado e mantém PGlite persistente em `.local/commercial-db` como fallback. Neste ambiente, a aplicação remota das migrations está bloqueada por falta de autenticação da Supabase CLI.
+- O runtime mínimo oficial é um único processo Node da API usando PGlite persistente em `.local/commercial-db`; PostgreSQL/Supabase remoto é opcional. A configuração remota e suas migrations estão preparadas, mas não são pré-requisito nem estão comprovadas como aplicadas neste ambiente.
 
 ### Fluxo funcional integrado
 
@@ -86,19 +86,22 @@ sequenceDiagram
 - fila persistida, uma entrada ativa por motorista, chamada FIFO por estabelecimento e atribuição temporária de dez minutos;
 - atualização automática e recuperação após reload/reinício da API;
 - estados de falha/offline e recuperação emitidos pelo laboratório GoodWe simulado.
+- telemetria simulada da planta, cálculo coerente de fluxo/importação/exportação, admissão por demanda e insights determinísticos com evidências persistidas na API.
+
+O dashboard agregado SEMS+ não é a fonte desses dados comerciais: seus gráficos/estimativas legados ainda não representam uma série integrada validada. Essa extensão e a previsão ficam planejadas para S4-C2, depois do Gate G7.
 
 ## Integrações e limites
 
 | Camada | Classificação | Estado |
 | --- | --- | --- |
-| Driver PWA, Admin e API | Real no protótipo | React/Vite + Express, integrados pelo contrato compartilhado |
+| Driver PWA, Admin e API | Real no protótipo | React/Vite + Express; regras comerciais e de energia no backend |
 | Stripe | Real em sandbox | PaymentIntent, Payment Element, autorização e captura de cartão validados |
-| Supabase Auth | Real quando configurado | Cadastro/login da PWA; fallback local somente para desenvolvimento |
+| Supabase Auth | Real quando configurado | Identidade remota do motorista; sem configuração, o fallback local é somente de desenvolvimento |
 | Google Maps | Real quando configurado | Fluxo e SDK preservados; exige `VITE_GOOGLE_MAPS_API_KEY` válida |
-| Banco comercial | Real, com fallback local | PostgreSQL remoto por `CHARGEGRID_DATABASE_URL`; PGlite persistente quando a URL não está disponível; não usa JSON |
-| Supabase PostgreSQL remoto | Preparado, não aplicado | Projeto alcançável, mas sem tabelas comerciais; falta login/token da CLI para `db push` |
+| Banco comercial | Real no protótipo | PGlite/PostgreSQL local persistente é o runtime oficial; não usa JSON. Um processo Node contínuo é necessário para relógio e lifecycle |
+| Supabase PostgreSQL remoto | Opcional, preparado | Aplicação das migrations remotas não validada neste ambiente; não é dependência de execução local |
 | GoodWe/HCA G2 | Simulado | Laboratório e `MockGoodWeProvider` substituem somente hardware/telemetria |
-| Stripe live, GoodWe OpenAPI e HCA G2 físico | Conceitual | Fora do escopo e não apresentados como produtivos |
+| Stripe live, GoodWe OpenAPI, HCA G2 físico, bateria e previsão ML | Conceitual/fora do escopo S4-C1 | Não estão implementados nem são apresentados como produtivos |
 
 ## Justificativa técnica
 
@@ -106,19 +109,24 @@ sequenceDiagram
 | --- | --- |
 | Dois frontends React sobre uma API Express | Preserva as jornadas específicas de motorista e estabelecimento sem duplicar a regra comercial |
 | Contratos TypeScript compartilhados | Mantém PWA, API e Admin alinhados nos mesmos estados, IDs e formatos |
-| PostgreSQL/Supabase com fallback PGlite | Usa modelo relacional real e persistente, mas mantém a demonstração executável sem depender da infraestrutura remota |
+| PGlite persistente + processo Node contínuo | Mantém banco relacional e relógio de domínio reproduzíveis sem exigir credenciais/cloud; PostgreSQL remoto pode substituir o adapter quando configurado |
 | Stripe Payment Element em modo teste | Demonstra autorização e captura reais sem movimentar dinheiro nem simular aprovação financeira |
 | Polling de 2 segundos | Entrega atualização automática estável para o protótipo, sem introduzir a complexidade de Realtime |
 | `MockGoodWeProvider` | Substitui somente o hardware indisponível e mantém a fronteira preparada para um provider GoodWe futuro |
 
-## Resultados e dados funcionais
+## Resultados quantitativos reproduzíveis
 
-- seis carregadores persistidos (`AURORA-01` a `AURORA-06`) compartilham os mesmos IDs entre mapa, QR, PWA, API, Admin e laboratório;
-- sessões exibem estado, potência instantânea, energia em kWh, tarifa, custo e pagamento relacionado;
-- a energia é calculada no backend por `energia = potência × tempo`; o custo deriva da tarifa aceita e respeita o limite autorizado;
-- a sessão de validação `CG-868A92DC` registrou 21,05 kWh, R$ 40,00 e um PaymentIntent Stripe test capturado, aparecendo nas mesmas telas de Operação, Sessões e Resumo financeiro;
-- a fila persiste uma única entrada ativa por motorista e chama o primeiro elegível quando o laboratório libera um carregador;
-- eventos `OFFLINE`, `FAULT` e `RECOVER` permitem demonstrar exceções sem criar sessões ou receitas artificiais.
+Os números abaixo vêm dos vetores e testes do backend (`S4-M4-U1`, `V08` e `V04`), não de telemetria física. A frequência amostrada é de 1 segundo; a consulta não avança o relógio nem interpola intervalos sem amostra.
+
+| Entrada simulada | Intervalo | Resultado calculado/persistido | Evidência |
+| --- | --- | --- | --- |
+| PV 20 kW; carga-base 10 kW; EV 7 kW | 10 min confirmados | fluxo instantâneo: importação 0 kW/exportação 3 kW; EV 1.166,667 Wh; solar→EV 1.166,667 Wh; exportação 500 Wh | `repository.test.ts`, “persists balanced plant telemetry…” e `V08` |
+| EV 5,5 kW; tarifa congelada 190 c/kWh | 1 h de carga confirmada | 5.500 Wh; custo 1.045 centavos (R$ 10,45); Stop confirmado zera potência | `repository.test.ts`, “applies simulated hardware events…” |
+| PV 0 kW; base 8 kW; dois EV de 7 kW; limite 20 kW | admissão/corte | projeção sem controle 22 kW; bloqueio/corte determinístico pode reduzir carga observada para 15 kW, conforme prioridade e resposta do provider mock | `V08`; cenário analítico, não economia de fatura medida |
+
+As asserções de telemetria usam `plant_aurora_001`, carregador/sessão persistidos no repositório em memória de teste, relógio injetado e timestamps de `2026-09-26T12:00:00Z` a `12:10:00Z`. Os dados da instalação local continuam no PGlite do usuário e não são incorporados a estes resultados. Uma validação manual anterior registrou sessão/captura Stripe test em [`docs/SPRINT3.md`](docs/SPRINT3.md); é evidência histórica separada dos vetores simulados.
+
+Metodologia ambiental: não são publicados CO₂ evitado, equivalência de árvores, economia financeira ou bateria/SOC como resultados medidos. A baseline não possui fator ambiental/contrafactual certificado nem bateria. Valores apresentados em cenários de laboratório devem ser identificados como simulação.
 
 ## Estrutura
 
@@ -152,7 +160,7 @@ npm install
 cp .env.example .env
 ```
 
-Preencha localmente, sem versionar segredos:
+Para o protótipo local, PGlite persiste sem credenciais ou variáveis obrigatórias adicionais. Preencha somente integrações usadas na demonstração, sempre localmente e sem versionar segredos:
 
 - `VITE_CHARGEGRID_API_URL=http://localhost:3333`
 - `VITE_GOOGLE_MAPS_API_KEY`
@@ -160,10 +168,13 @@ Preencha localmente, sem versionar segredos:
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET` quando webhooks forem exercitados
 - `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` para Auth remoto
-- `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` somente no servidor, quando necessários
-- `CHARGEGRID_DATABASE_URL` para tornar o PostgreSQL/Supabase remoto a autoridade comercial; sem ela, a API usa PGlite
+- `SUPABASE_URL` e `SUPABASE_ANON_KEY` no servidor para validar tokens remotos (ou as equivalentes `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` já usadas pela PWA); `SUPABASE_SERVICE_ROLE_KEY` não é necessária para o runtime local e não deve ir ao browser
+- `PORT` (padrão `3333`), `CHARGEGRID_ALLOWED_ORIGINS` (possui defaults localhost) e, opcionalmente, `CHARGEGRID_DATABASE_PATH` para escolher outra pasta PGlite
+- `CHARGEGRID_DATABASE_URL` somente se optar pelo PostgreSQL remoto, com schema/migrations aplicados
+- `VITE_CHARGEGRID_HARDWARE_LAB_ENABLED=true` para expor o laboratório em preview; em desenvolvimento Vite ele já fica disponível. A API usa `CHARGEGRID_HARDWARE_LAB_ENABLED=true` para habilitá-lo em produção
+- `STRIPE_WEBHOOK_SECRET` apenas para exercitar webhooks; não é necessário para todos os percursos locais
 
-Para provisionar o schema remoto após autenticar a CLI:
+O seed remoto é idempotente. O comando abaixo só é necessário se o grupo optar por configurar PostgreSQL/Supabase remoto; não faz parte do início local:
 
 ```bash
 npx supabase login
@@ -217,7 +228,7 @@ Na PWA, crie uma conta de motorista ou use uma conta Supabase Auth já cadastrad
 7. Encerre a energia na PWA, desconecte o veículo no laboratório e confirme a retirada/liquidação na PWA.
 8. Confira a sessão concluída, o carregador disponível e o pagamento capturado no Resumo financeiro.
 
-A jornada de fila e o roteiro cronometrado de até cinco minutos estão em [`docs/SPRINT3.md`](docs/SPRINT3.md).
+A jornada de fila é complementar. O roteiro atualizado de até cinco minutos e as evidências da Sprint 3 ficam em [`docs/SPRINT3.md`](docs/SPRINT3.md); a ordem de execução Sprint 4 está em [`docs/specs/SPRINT4_EXECUTION_ORDER.md`](docs/specs/SPRINT4_EXECUTION_ORDER.md).
 
 ## Qualidade
 
@@ -226,24 +237,26 @@ npm run lint
 npm run typecheck
 npm test
 npm run build
-npm run test:e2e:sprint3
+npm run test:e2e:sprint4
 ```
 
-`npm run test:e2e` mantém a regressão ampla do Admin. O E2E Sprint 3 protege QR/código, falha física, fila PWA ↔ API ↔ Admin, polling e reload. A confirmação Stripe real foi validada manualmente porque depende do sandbox externo.
+O harness Sprint 4 usa banco e portas isolados; ele verifica contratos e jornadas com providers determinísticos de teste, não valida Stripe externo. A confirmação/captura real em sandbox e o mapa dependem das chaves externas e são gates manuais. A suíte ampla Admin pode ser executada com `npm run test:e2e` no gate final.
 
 ## Limitações conhecidas
 
 - Google Maps exige chave válida, cota e restrições de origem compatíveis com o endereço usado na gravação;
-- as migrations remotas ainda precisam ser aplicadas com uma Supabase CLI autenticada e a API precisa de `CHARGEGRID_DATABASE_URL`; o fallback local persiste entre reload e reinício;
+- no estado documentado, migrations remotas não foram aplicadas; usar PGlite local como runtime oficial, ou preparar o remoto antes de optar por ele;
 - Pix autoriza no Stripe test, mas o encerramento persistido após reembolso ainda não possui a mesma validação ponta a ponta do cartão;
-- não há GoodWe OpenAPI, HCA G2 físico, Stripe live, push remoto, RLS/IAM corporativo completo ou operação multi-instância;
+- captura de cartão abaixo de R$ 0,50 permanece limitação conhecida e fora do escopo; o cenário demonstrativo deve consumir pelo menos R$ 0,50;
+- não há GoodWe OpenAPI, HCA G2 físico, Stripe live, bateria, previsão ML, push remoto, RLS/IAM corporativo completo ou operação multi-instância;
+- cards agregados do Dashboard e estimativas ambientais legadas SEMS+ não são métricas validadas da operação compartilhada S4-C1; previsão e integração canônica dos cards pertencem a S4-C2;
 - o build do Admin mantém um aviso não bloqueante de chunk acima de 500 kB.
 
 ## Relação com energia e automação
 
 O protótipo relaciona operação comercial e eficiência energética sem inventar integração física: a telemetria simulada define conexão, potência, falha e entrega; a API transforma potência e tempo em energia, deriva o custo pela tarifa aceita e mantém o teto autorizado. Essa fronteira permite substituir o mock por GoodWe real futuramente sem duplicar regras na PWA ou no Admin.
 
-Na disciplina, a implementação evidencia:
+Na disciplina, a implementação evidencia integração de energia e operação com limites explícitos — não certificação ambiental nem controle industrial. Ela demonstra:
 
 - **energia renovável e eficiência:** potência, tempo, energia entregue e custo são relacionados por medições coerentes e por um limite financeiro;
 - **automação inteligente:** autorização financeira e conexão física válidas disparam `StartCharge` automaticamente;
@@ -251,6 +264,13 @@ Na disciplina, a implementação evidencia:
 - **coleta e visualização:** telemetria e eventos persistidos aparecem automaticamente nas interfaces do motorista e do estabelecimento;
 - **decisão operacional:** disponibilidade, falha, ocupação e fila alteram o comportamento comercial usando o mesmo estado compartilhado.
 
-## Material da apresentação
+## Roteiro de demonstração (até 5 minutos)
 
-O [documento da Sprint 3](docs/SPRINT3.md) contém o roteiro técnico cronometrado de até cinco minutos, a matriz real/sandbox/simulado, o checklist dos requisitos e as evidências de validação. O vídeo deve demonstrar a jornada normal do produto, sem utilizar uma aplicação paralela de demonstração.
+1. **0:00–0:30 — Problema e arquitetura:** explique a relação entre recarga comercial, energia da planta e controle de demanda; mostre PWA/Admin, API, PGlite e provider GoodWe simulado.
+2. **0:30–1:30 — Descoberta e pagamento:** na PWA normal, encontre o Hub Solar Aurora no Maps, escolha `AURORA-01` e autorize o pagamento no Stripe test.
+3. **1:30–2:20 — Operação integrada:** mostre a mesma sessão aguardando conexão em Operação/Sessões do Admin; no laboratório, conecte o veículo e observe o início automático.
+4. **2:20–3:30 — Energia e automação:** ajuste o cenário simulado de PV/carga-base e explique fluxo, demanda, admissão e motivo da decisão usando os valores visíveis na API/Admin.
+5. **3:30–4:20 — Encerramento:** encerre a sessão, confira energia/custo, recibo e o estado financeiro compartilhado; deixe claro que o hardware é simulado e o pagamento é sandbox.
+6. **4:20–5:00 — Resultados e limites:** apresente os vetores quantitativos reproduzíveis desta página e diferencie cálculo simulado de medição física; não alegue bateria, CO₂ evitado ou economia de fatura.
+
+A fila pode ser demonstrada como fluxo complementar se houver tempo; a atribuição de dez minutos não deve ser apresentada como reserva antecipada. O registro histórico da Sprint 3 está em [`docs/SPRINT3.md`](docs/SPRINT3.md). O vídeo da Sprint 4 deve usar a jornada normal, sem aplicação paralela.

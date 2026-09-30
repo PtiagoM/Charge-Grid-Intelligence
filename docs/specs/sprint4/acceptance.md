@@ -1,6 +1,6 @@
 # Aceite executável e registro de evidências
 
-Estado em 30/09/2026: **G0–G5 concluídos; G6–G7 pendentes**. U3 foi confirmado manualmente pelo responsável para a jornada real Maps/Stripe/recarga/liquidação; a evidência é a confirmação registrada, sem IDs ou capturas anexados. Os vetores abaixo continuam sendo critérios executáveis; ver [contrato](contracts.md) e [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
+Estado em 30/09/2026: **G0–G6 concluídos; G7 pendente**. U3 foi confirmado manualmente pelo responsável para a jornada real Maps/Stripe/recarga/liquidação e G6 para recuperação do checkout/Stop; as confirmações não incluem IDs ou capturas anexados. O E2E Sprint 4 passou 7/7 após o harness receber banco temporário novo por execução. Os vetores abaixo continuam sendo critérios executáveis; ver [contrato](contracts.md) e [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
 
 ## Vetores comuns de contrato
 
@@ -119,7 +119,7 @@ Preencher somente após execução real. Uma linha pode apontar para relatório 
 | G3 Admin | CONCLUÍDO — 26/09/2026 | checkpoints M3, testes/build e validação manual do responsável |
 | G4 energia | CONCLUÍDO — 27/09/2026 | checkpoints M4, testes focais e registro `dfab16d`; integração ampla permanece responsabilidade de G5 |
 | G5 integração | CONCLUÍDO — 30/09/2026 | M5-U1 (`11692ff`) e U2A–U2C: sessão/persistência, fila/checkout atribuído, tarifas/relatórios, energia/stop/retirada/liquidação controlados e recuperação de falha. U3: responsável confirmou Maps real, Payment Element Stripe test, operação compartilhada, consumo ≥R$ 0,50, liquidação e reload. Os testes automatizados usam providers determinísticos somente nos cenários isolados; U3 não usa stub. Referências detalhadas e capturas não foram fornecidas. |
-| G6 estabilidade | PENDENTE | SW/restart/falhas/visual, V-GLOBAL/V-E2E, G-M5 |
+| G6 estabilidade | CONCLUÍDO — 30/09/2026 | G-M5 confirmado manualmente pelo responsável; M6-U1/U2 e validações automatizadas registradas em CURRENT_STATE e na ordem canônica. Não implica nova validação de hardware físico/Stripe live. |
 | G7 entrega | PENDENTE | G-M6, README/diagramas/resultados, estadoGit, checklistfinal |
 
 Formato da evidência de unidade: `S4-Mx-Uy | commit/build | ambiente/DBteste | comandos + exit/resultados | IDs/vetores | limites/nãoexecutado | próximoID`. Não gravar segredo, clientSecret, bearer, email ou foto do usuário. Screenshots sanitizados; pasta output local não é publicação automática.

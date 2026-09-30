@@ -1,6 +1,6 @@
 # Sprint 4 — Matriz de comportamento do ChargeGrid
 
-**Data:** 24/09/2026. **Base examinada:** `a767f79`, branch `feature/admin-sprint3-integration`. **Status:** análise e proposta para aprovação; não é declaração de implementação.
+**Inventário inicial:** 24/09/2026, código em `a767f79` na branch `feature/admin-sprint3-integration`. Esta matriz descreve a auditoria de origem, não o estado pós-M0–M7. Para status atual e evidências de implementação, consulte [`CURRENT_STATE.md`](CURRENT_STATE.md) e a [ordem canônica da Sprint 4](specs/SPRINT4_EXECUTION_ORDER.md).
 
 **Escopo aprovado posteriormente:** D1–D4 e recorte adicional, conforme seção 13 do plano, prevalecem sobre propostas anteriores. Aurora é a única vertical obrigatória; outros locais visíveis não podem oferecer operação falsa. O núcleo é operação comercial, motorista, energia da planta, demanda, automação explicável e integração. Esta matriz inventaria o produto inteiro, mas **não exige implementar todas as linhas**. Autenticação administrativa nova, grants multi-organização, helpdesk, IV, bateria, expansão comercial, offline avançado e cloud não são pré-requisitos: sem suporte suficiente, desabilitar ou identificar como indisponível/conceitual.
 

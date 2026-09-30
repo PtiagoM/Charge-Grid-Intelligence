@@ -299,9 +299,10 @@ describe("CommercialRepository", () => {
     expect(measurement).toMatchObject({ pvKw: 20, buildingLoadKw: 10, evLoadKw: 7, gridImportKw: 0, gridExportKw: 3 });
     expect(measurement?.evWh).toBeCloseTo(1166.667, 3);
     expect(measurement?.solarToEvWh).toBeCloseTo(1166.667, 3);
+    expect(measurement?.gridExportWh).toBeCloseTo(500, 3);
     expect((await repository.plantEnergySeries("plant_aurora_001"))).toHaveLength(beforeRead.length);
     const report = await repository.operationalReport({ establishmentId: "est_aurora_001", from: "2026-09-26T11:00:00.000Z", to: "2026-09-26T13:00:00.000Z" });
-    expect(report.energy).toMatchObject({ evWh: expect.closeTo(1166.667, 3), solarToEvWh: expect.closeTo(1166.667, 3), gridImportWh: 0 });
+    expect(report.energy).toMatchObject({ evWh: expect.closeTo(1166.667, 3), solarToEvWh: expect.closeTo(1166.667, 3), gridImportWh: 0, gridExportWh: expect.closeTo(500, 3) });
     const fullReport = await repository.operationalReport({ establishmentId: "est_aurora_001", from: "2020-01-01T00:00:00.000Z", to: "2100-01-01T00:00:00.000Z" });
     expect(fullReport.sessions).toContainEqual(expect.objectContaining({ id, publicCode: expect.stringMatching(/^CG-/), chargerCode: "AURORA-01", energyWh: expect.any(Number) }));
     expect(fullReport.chargers).toMatchObject({ total: 6, charging: 1 });

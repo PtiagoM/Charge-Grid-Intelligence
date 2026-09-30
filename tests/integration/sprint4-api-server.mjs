@@ -1,10 +1,13 @@
 import { spawn } from "node:child_process";
 import { createServer } from "node:http";
+import { mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const env = { ...process.env, NODE_ENV: "test", PORT: "3433", CHARGEGRID_DATABASE_PATH: resolve(root, ".tmp/sprint4-e2e-db"), CHARGEGRID_ALLOWED_ORIGINS: "http://127.0.0.1:5273,http://127.0.0.1:5274" };
+const databasePath = await mkdtemp(resolve(tmpdir(), "chargegrid-sprint4-e2e-"));
+const env = { ...process.env, NODE_ENV: "test", PORT: "3433", CHARGEGRID_DATABASE_PATH: databasePath, CHARGEGRID_ALLOWED_ORIGINS: "http://127.0.0.1:5273,http://127.0.0.1:5274" };
 delete env.CHARGEGRID_DATABASE_URL;
 delete env.STRIPE_SECRET_KEY;
 delete env.STRIPE_WEBHOOK_SECRET;

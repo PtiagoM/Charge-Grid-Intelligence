@@ -68,4 +68,4 @@ Decisão técnica incompatível com o plano: abrir entrada aqui com motivo/impac
 
 ## Transição aprovada em 29/09/2026
 
-Este pacote deve concluir M5–M7/G7 antes da extensão `sprint4-finalization`. U2A–U3 foram concluídas; o responsável confirmou manualmente o fluxo Maps/Stripe test/recarga/liquidação da U3 em 30/09/2026. M6-U2 foi implementada e aguarda confirmação manual de G6; a [ordem canônica](../SPRINT4_EXECUTION_ORDER.md) prevalece sobre indicações históricas de próximo passo. A confirmação U3 não representa Stripe live nem hardware físico. Depois de G7, `CG-F0-01` inicia S4-C2.
+Este pacote deve concluir M5–M7/G7 antes da extensão `sprint4-finalization`. U2A–U3 foram concluídas; o responsável confirmou manualmente o fluxo Maps/Stripe test/recarga/liquidação da U3 e a validação de estabilidade G6 em 30/09/2026. M7-U1 foi concluída; a [ordem canônica](../SPRINT4_EXECUTION_ORDER.md) define M7-U2/G7 como próximo passo. A confirmação manual não representa Stripe live nem hardware físico. Depois de G7, `CG-F0-01` inicia S4-C2.

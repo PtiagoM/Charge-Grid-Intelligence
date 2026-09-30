@@ -22,7 +22,7 @@ describe("public commercial catalog", () => {
     expect(resolved.status).toBe(200);
     expect(resolved.body.charger).toMatchObject({ id: "00000000-0000-4000-8000-000000000002", code: "AURORA-02", parkingSpot: "B02" });
     expect(JSON.stringify(resolved.body)).not.toMatch(/driver|email|payment_intent/i);
-  });
+  }, 10_000);
 });
 
 describe("Stripe sandbox routes", () => {

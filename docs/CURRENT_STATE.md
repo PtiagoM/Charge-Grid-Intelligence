@@ -2,9 +2,9 @@
 
 ## Execução Sprint 4 — atualização 30/09/2026
 
-- `S4-M6-U2` implementada, aguardando validação manual do responsável para fechar G6: erros recuperáveis ao confirmar pagamento não deixam o checkout preso; autorização já confirmada permite tentar novamente o vínculo da sessão; botão de encerramento fica bloqueado durante a chamada à API.
-- Validação focal de U2: `npm run typecheck`, ESLint nos dois componentes alterados, build PWA e E01/E02 Playwright passaram. Tentativa inicial do E2E em sandbox não iniciou servidores; repetição autorizada com acesso a loopback passou. Build requer acesso de leitura aos diretórios ancestrais para Vite/esbuild. Não foram reexecutados fluxos reais Maps/Stripe/hardware.
-- Próximo passo: validar manualmente recuperação do checkout e encerramento durante requisição; após confirmação, fechar G6 e iniciar `S4-M7-U1`. `sprint4-finalization` continua bloqueado até G7.
+- `S4-M6-U2` e G6 concluídos: o responsável validou manualmente recuperação do checkout após falha recuperável e bloqueio de ações repetidas durante Stop. U2 também passou typecheck, lint focal, build PWA e E01/E02.
+- `S4-M7-U1` concluída nesta branch: README, estado atual, ordem/gates e evidências atualizados; o harness E2E agora usa banco PGlite temporário exclusivo por execução para não herdar tarifas de rodadas anteriores nem tocar no banco pessoal. E2E Sprint 4: 7/7; `npm test`: 117/117; lint, typecheck e builds Admin/PWA/API passaram. Os testes quantitativos agora também afirmam os 500 Wh exportados no vetor de telemetria.
+- Próxima unidade: `S4-M7-U2`, reprodução em checkout limpo e fechamento G7. `sprint4-finalization` continua bloqueado até G7.
 - `S4-M6-U1` concluída: polling comercial não sobreposto e cancelável, Service Worker atualizado com cache network-only para rotas comerciais, reload das abas na ativação e indicação de leitura indisponível/stale no Admin e na PWA.
 - Validação: `npm run typecheck`, build Admin/PWA, 79 testes unitários Admin, E02 de persistência/restart, smoke E2E do Service Worker e E2E de API indisponível→stale→recuperada passaram. Não foi repetida a suíte E05/API, pois nenhum código da API/provider foi alterado nesta unidade.
 - Estado anterior preservado para rastreabilidade; o próximo gate vigente está descrito acima.
@@ -12,7 +12,7 @@
 ## Planejamento final da Sprint 4 — atualizado em 30/09/2026
 
 - A ordem canônica está em [`docs/specs/SPRINT4_EXECUTION_ORDER.md`](specs/SPRINT4_EXECUTION_ORDER.md): primeiro concluir o pacote original `sprint4` em M5–M7; depois iniciar `sprint4-finalization`.
-- Estado de execução em 30/09/2026: M0–M5 e M6-U1 concluídos; M6-U2 implementada aguardando G6 manual. U3 foi confirmado manualmente pelo responsável; detalhes de IDs/capturas não foram arquivados. Nenhuma unidade `CG-*` está liberada antes de `S4-M7-U2/G7`.
+- Estado de execução em 30/09/2026: M0–M6 concluídos; M7-U1 concluída; M7-U2/G7 pendentes. U3 e G6 foram confirmados manualmente pelo responsável; detalhes de IDs/capturas não foram arquivados. Nenhuma unidade `CG-*` está liberada antes de `S4-M7-U2/G7`.
 - O pacote [`docs/specs/sprint4-finalization`](specs/sprint4-finalization/spec.md) contém a extensão S4-C2 aprovada, mas permanece planejado até o fechamento da baseline S4-C1.
 - M5-U2A adicionou injeção de provider apenas no harness de teste e prova E2E de autorização controlada, operação/sessões e persistência; PWA, Stripe normal e schema não foram alterados.
 - M5-U2B provou fila autenticada, atribuição temporária e checkout elegível, além de tarifa versionada, cotação nova, histórico e CSV vindo da API; identidade/payment providers determinísticos existem somente no harness.

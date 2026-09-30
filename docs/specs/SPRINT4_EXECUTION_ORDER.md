@@ -27,8 +27,9 @@ Documento histórico ou backlog antigo não altera esta ordem. Em conflito sobre
 | M5-U2C | CONCLUÍDA | E01 stop/retirada/liquidação controlados, E04 energia e E05 falha de comando + recuperação; API 21 testes focais |
 | M5-U3 | CONCLUÍDA | validação manual do responsável: Maps real, Stripe test, recarga >R$0,50, liquidação e reload; sem IDs/capturas arquivados |
 | M6-U1 | CONCLUÍDA | polling não sobreposto/cancelável, stale sinalizado e recuperado, APIs comerciais fora do cache; E02 e smoke E2E de Service Worker aprovados |
-| M6-U2 | IMPLEMENTADA; G6 MANUAL PENDENTE | checkout libera retry de vinculação após confirmação Stripe/API, erros de confirmação de rede não deixam botão preso, e Stop bloqueia acionamentos repetidos; build/typecheck/lint e E01/E02 passaram |
-| M7-U1/U2 | PENDENTE | documentação/reprodução da baseline S4-C1 |
+| M6-U2 / G6 | CONCLUÍDO — 30/09/2026 | comportamento implementado e validação manual do responsável confirmada; E01/E02, typecheck, lint focal e build PWA passaram |
+| M7-U1 | CONCLUÍDO — 30/09/2026 | README/estado/ordem/evidências atualizados; harness E2E isolado por diretório temporário; Sprint 4 E2E 7/7, testes, typecheck e build aprovados |
+| M7-U2 / G7 | PRÓXIMA UNIDADE / PENDENTE | reprodução em checkout limpo, revisão final e checklist de entrega; ainda não executada |
 
 `G1–G4 concluído` permitiu entrar em M5. M5/G5 está concluído: U2A–U2C têm evidência automatizada focal e U3 foi confirmado manualmente pelo responsável. A evidência manual não contém IDs/capturas arquivados; isso não deve ser ampliado para alegações sobre hardware físico ou Stripe live.
 
@@ -39,8 +40,8 @@ S4-M5-U2A concluída
 → S4-M5-U2B concluída
 → S4-M5-U2C concluída
 → S4-M5-U3 concluída
-→ S4-M6-U2
-→ S4-M7-U1
+→ S4-M6-U2 / G6 concluídos
+→ S4-M7-U1 concluída
 → S4-M7-U2 / G7
 → CG-F0-01
 → restante de sprint4-finalization
