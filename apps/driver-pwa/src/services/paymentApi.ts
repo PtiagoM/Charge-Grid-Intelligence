@@ -26,14 +26,17 @@ async function apiRequest<T>(path: string, init?: RequestInit, sessionToken?: st
   try {
     const headers = new Headers(init?.headers);
     const accessToken = await currentDriverAccessToken();
+    if (init?.signal?.aborted) throw new DOMException("Request cancelled.", "AbortError");
     if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
     if (sessionToken) headers.set("X-Session-Token", sessionToken);
-    const response = await fetch(`${apiBaseUrl()}${path}`, { ...init, headers, signal: controller.signal });
+    const signal = init?.signal ? AbortSignal.any([init.signal, controller.signal]) : controller.signal;
+    const response = await fetch(`${apiBaseUrl()}${path}`, { ...init, headers, signal });
     const payload = await response.json().catch(() => ({})) as T & ApiErrorBody;
     if (!response.ok) throw new Error(payload.message || "O gateway de pagamento não respondeu como esperado.");
     return payload;
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
+      if (init?.signal?.aborted) throw error;
       throw new Error("A API de pagamento não respondeu. Confirme que a API ChargeGrid está acessível nesta rede.");
     }
     throw error;
@@ -91,28 +94,28 @@ export function getPaymentStatus(paymentIntentId: string, sessionToken?: string)
   return apiRequest<{ paymentIntentId: string; status: string; providerStatus: string; amount: number; capturableAmount: number; receivedAmount: number; session: CommercialSessionRecord }>(`/payments/${encodeURIComponent(paymentIntentId)}`, undefined, sessionToken);
 }
 
-export function getCommercialSession(sessionId: string) {
-  return apiRequest<CommercialSessionRecord>(`/commercial/sessions/${encodeURIComponent(sessionId)}`, undefined, guestSessionToken(sessionId));
+export function getCommercialSession(sessionId: string, signal?: AbortSignal) {
+  return apiRequest<CommercialSessionRecord>(`/commercial/sessions/${encodeURIComponent(sessionId)}`, { signal }, guestSessionToken(sessionId));
 }
 
-export function getCommercialSessions(sessionIdForGuestToken?: string) {
-  return apiRequest<{ sessions: CommercialSessionRecord[] }>("/commercial/sessions", undefined, sessionIdForGuestToken ? guestSessionToken(sessionIdForGuestToken) : undefined);
+export function getCommercialSessions(sessionIdForGuestToken?: string, signal?: AbortSignal) {
+  return apiRequest<{ sessions: CommercialSessionRecord[] }>("/commercial/sessions", { signal }, sessionIdForGuestToken ? guestSessionToken(sessionIdForGuestToken) : undefined);
 }
 
 export function stopCommercialSession(sessionId: string) {
   return apiRequest<CommercialSessionRecord>(`/commercial/sessions/${encodeURIComponent(sessionId)}/stop`, { method: "POST" }, guestSessionToken(sessionId));
 }
 
-export function getCommercialCatalog() {
-  return apiRequest<CommercialCatalog>("/commercial/catalog");
+export function getCommercialCatalog(signal?: AbortSignal) {
+  return apiRequest<CommercialCatalog>("/commercial/catalog", { signal });
 }
 
 export function resolveCommercialCharger(identifier: string) {
   return apiRequest<CommercialChargerResolution>(`/commercial/chargers/resolve/${encodeURIComponent(identifier)}`);
 }
 
-export function getCommercialQueue(driverId: string) {
-  return apiRequest<{ entry: CommercialQueueRecord | null }>(`/commercial/queue/driver/${encodeURIComponent(driverId)}`);
+export function getCommercialQueue(driverId: string, signal?: AbortSignal) {
+  return apiRequest<{ entry: CommercialQueueRecord | null }>(`/commercial/queue/driver/${encodeURIComponent(driverId)}`, { signal });
 }
 
 export function joinCommercialQueue(input: { establishmentId: string }) {

@@ -53,7 +53,7 @@ function formatCountdown(seconds: number) {
 }
 
 export function SessionPage() {
-  const { session, receipts, dismissCompletedSession, finishEnergy, applyIdleFee, settleSession } = useDriverApp();
+  const { session, receipts, sessionSyncError, dismissCompletedSession, finishEnergy, applyIdleFee, settleSession } = useDriverApp();
   const [settling, setSettling] = useState(false);
   const [settlementError, setSettlementError] = useState("");
   const [clockNow, setClockNow] = useState(Date.now);
@@ -118,6 +118,7 @@ export function SessionPage() {
   }
 
   return <>
+    {session.backendManaged && sessionSyncError ? <p className="form-error" role="status">Sem atualização da API. Os dados abaixo são a última leitura; nenhuma ação local inicia a recarga. {sessionSyncError}</p> : null}
     <PageIntro eyebrow={`${session.chargerName} · vaga ${session.parkingSpot}`} title={graceNeedsUrgency ? "Retire seu veículo agora" : presentation.title}><p>{graceNeedsUrgency ? "A tolerância terminou e a cobrança de ociosidade pode começar." : presentation.detail}</p></PageIntro>
     <InfoNotice>{session.backendManaged ? "Sessão compartilhada com a operação ChargeGrid. O pagamento usa Stripe em teste e o início depende da confirmação do carregador." : "Esta sessão não está vinculada à operação comercial atual."}</InfoNotice>
     <section className={`session-hero state-${heroTone}`} aria-live="polite">

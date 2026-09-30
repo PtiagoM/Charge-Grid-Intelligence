@@ -17,6 +17,7 @@ function readState(): AdminState {
 interface AdminContextValue {
   state: AdminState;
   account: Account | null;
+  commercialSync: { status: "LOADING" | "SYNCED" | "STALE" | "UNAVAILABLE"; lastUpdatedAt: string | null; error: string | null };
   login: (email: string, password: string) => Account | null;
   logout: () => void;
   publishTariff: (input: { establishmentId: string; energyCentsPerKwh: number; idleCentsPerMinute: number; reason: string }) => Promise<FinancialActionResult>;
@@ -40,6 +41,7 @@ const AdminContext = createContext<AdminContextValue | null>(null);
 
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AdminState>(readState);
+  const [commercialSync, setCommercialSync] = useState<AdminContextValue["commercialSync"]>({ status: "LOADING", lastUpdatedAt: null, error: null });
 
   useEffect(() => browserAdminStateRepository.save(state), [state]);
 
@@ -47,18 +49,33 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const accountId = account?.id;
 
   useEffect(() => {
-    if (!accountId) return;
+    if (!accountId) {
+      setCommercialSync({ status: "UNAVAILABLE", lastUpdatedAt: null, error: null });
+      return;
+    }
     let active = true;
+    let timer = 0;
     let controller: AbortController | undefined;
     const refresh = async () => {
-      controller?.abort();
       controller = new AbortController();
-      const { snapshot, insights, energyViews } = await fetchCommercialProjection(controller.signal);
-      if (active) setState((current) => mergeCommercialSnapshot(current, snapshot, insights, energyViews));
+      try {
+        const { snapshot, insights, energyViews } = await fetchCommercialProjection(controller.signal);
+        if (active) {
+          setState((current) => mergeCommercialSnapshot(current, snapshot, insights, energyViews));
+          setCommercialSync({ status: "SYNCED", lastUpdatedAt: new Date().toISOString(), error: null });
+        }
+      } catch (error) {
+        if (active && !controller.signal.aborted) setCommercialSync((current) => ({
+          ...current,
+          status: current.lastUpdatedAt ? "STALE" : "UNAVAILABLE",
+          error: error instanceof Error ? error.message : "A API ChargeGrid está indisponível."
+        }));
+      } finally {
+        if (active) timer = window.setTimeout(() => void refresh(), 2000);
+      }
     };
-    void refresh().catch(() => undefined);
-    const timer = window.setInterval(() => void refresh().catch(() => undefined), 2000);
-    return () => { active = false; controller?.abort(); window.clearInterval(timer); };
+    void refresh();
+    return () => { active = false; window.clearTimeout(timer); controller?.abort(); };
   }, [accountId]);
 
   const login = useCallback((email: string, password: string) => {
@@ -213,7 +230,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     return publication.result;
   }, [state]);
 
-  const value = useMemo(() => ({ state, account, login, logout, publishTariff, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, requestReport: runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding }), [state, account, login, logout, publishTariff, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding]);
+  const value = useMemo(() => ({ state, account, commercialSync, login, logout, publishTariff, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, requestReport: runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding }), [state, account, commercialSync, login, logout, publishTariff, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding]);
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
 }
 

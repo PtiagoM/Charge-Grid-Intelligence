@@ -6120,3 +6120,4 @@ body.layout-auth {
     grid-column: 1 / -1;
   }
 }
+.api-sync-warning { align-self: center; margin-right: 12px; color: var(--danger, #a33); font-size: 12px; }

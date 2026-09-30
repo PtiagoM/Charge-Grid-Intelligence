@@ -144,6 +144,8 @@ interface DriverAppContextValue extends PersistedState {
   profile: DriverProfile | null;
   isCommercialDriver: boolean;
   isOnline: boolean;
+  sessionSyncError: string;
+  queueSyncError: string;
   register(input: RegisterInput): Promise<AuthResult>;
   login(email: string, password: string): Promise<AuthResult>;
   logout(): void;
@@ -254,6 +256,8 @@ async function hashPassword(value: string) {
 export function DriverAppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<PersistedState>(readStoredState);
   const [isOnline, setIsOnline] = useState(() => navigator.onLine);
+  const [sessionSyncError, setSessionSyncError] = useState("");
+  const [queueSyncError, setQueueSyncError] = useState("");
   const lastBrowserNotificationId = useRef(state.notifications[0]?.id);
 
   useEffect(() => {
@@ -341,6 +345,8 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     void signOutDriver();
+    setSessionSyncError("");
+    setQueueSyncError("");
     setState((current) => ({ ...current, account: null, isAuthenticated: false, session: null, queue: null, receipts: [], notifications: [] }));
   }, []);
 
@@ -499,7 +505,7 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
       queue: driverQueue(entry),
       notifications: [notification("Você entrou na fila", `Acompanhe sua posição em ${entry.establishmentName}.`, "/queue"), ...current.notifications]
     }));
-  }, [state.account?.profile, state.isAuthenticated, state.session]);
+  }, [state.account?.authProvider, state.account?.profile, state.isAuthenticated, state.session]);
 
   const leaveQueue = useCallback(async () => {
     const entry = state.queue;
@@ -545,64 +551,86 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const driverId = state.account?.profile.id;
     if (!state.isAuthenticated || state.account?.authProvider !== "supabase" || !driverId) return;
-    let active = true;
-    void getCommercialSessions().then(({ sessions }) => {
+    const controller = new AbortController();
+    void getCommercialSessions(undefined, controller.signal).then(({ sessions }) => {
       const current = sessions.find((session) => isCommerciallyActive(session.status));
-      if (!active || !current) return;
-      setState((saved) => saved.account?.profile.id !== driverId ? saved : { ...saved, session: driverSession(current) });
+      if (controller.signal.aborted || !current) return;
+      setState((saved) => saved.account?.profile.id !== driverId || (saved.session?.backendManaged && isCommerciallyActive(saved.session.status))
+        ? saved
+        : { ...saved, session: driverSession(current) });
     }).catch(() => undefined);
-    return () => { active = false; };
+    return () => controller.abort();
   }, [state.account?.authProvider, state.account?.profile.id, state.isAuthenticated]);
 
   useEffect(() => {
     const sessionId = state.session?.backendManaged ? state.session.paymentSessionId : undefined;
-    if (!sessionId) return;
+    if (!sessionId || state.session?.status === CommercialSessionStatus.COMPLETED) { setSessionSyncError(""); return; }
     let active = true;
+    let timer = 0;
+    let controller: AbortController | undefined;
     const refresh = async () => {
-      const remote = await getCommercialSession(sessionId);
-      if (!active) return;
-      setState((current) => !current.session || current.session.paymentSessionId !== remote.id ? current : {
-        ...current,
-        session: driverSession(remote)
-      });
+      controller = new AbortController();
+      try {
+        const remote = await getCommercialSession(sessionId, controller.signal);
+        if (!active) return;
+        setSessionSyncError("");
+        setState((current) => !current.session || current.session.paymentSessionId !== remote.id ? current : {
+          ...current,
+          session: driverSession(remote)
+        });
+      } catch (error) {
+        if (active && !controller.signal.aborted) setSessionSyncError(error instanceof Error ? error.message : "A sessão não está sincronizada com a API.");
+      } finally {
+        if (active) timer = window.setTimeout(() => void refresh(), 2000);
+      }
     };
-    void refresh().catch(() => undefined);
-    const timer = window.setInterval(() => void refresh().catch(() => undefined), 2000);
-    return () => { active = false; window.clearInterval(timer); };
-  }, [state.session?.backendManaged, state.session?.paymentSessionId]);
+    void refresh();
+    return () => { active = false; window.clearTimeout(timer); controller?.abort(); };
+  }, [state.session?.backendManaged, state.session?.paymentSessionId, state.session?.status]);
 
   useEffect(() => {
     const driverId = state.account?.profile.id;
     if (!state.isAuthenticated || state.account?.authProvider !== "supabase" || !driverId) return;
     let active = true;
+    let timer = 0;
+    let controller: AbortController | undefined;
     const refresh = async () => {
-      const { entry } = await getCommercialQueue(driverId);
-      if (!active) return;
-      setState((current) => {
-        if (!entry) return current.queue ? { ...current, queue: null } : current;
-        const nextQueue = driverQueue(entry);
-        const called = entry.status === QueueStatus.CALLED && current.queue?.status !== QueueStatus.CALLED;
-        return {
-          ...current,
-          queue: nextQueue,
-          selectedEstablishmentId: entry.chargerCode ? entry.establishmentId : current.selectedEstablishmentId,
-          selectedChargerId: entry.chargerCode ?? current.selectedChargerId,
-          notifications: called
-            ? [notification("Sua vez", `Dirija-se à vaga ${entry.parkingSpot ?? "indicada"} em até 10 minutos.`, "/queue"), ...current.notifications]
-            : current.notifications
-        };
-      });
+      controller = new AbortController();
+      try {
+        const { entry } = await getCommercialQueue(driverId, controller.signal);
+        if (!active) return;
+        setQueueSyncError("");
+        setState((current) => {
+          if (!entry) return current.queue ? { ...current, queue: null } : current;
+          const nextQueue = driverQueue(entry);
+          const called = entry.status === QueueStatus.CALLED && current.queue?.status !== QueueStatus.CALLED;
+          return {
+            ...current,
+            queue: nextQueue,
+            selectedEstablishmentId: entry.chargerCode ? entry.establishmentId : current.selectedEstablishmentId,
+            selectedChargerId: entry.chargerCode ?? current.selectedChargerId,
+            notifications: called
+              ? [notification("Sua vez", `Dirija-se à vaga ${entry.parkingSpot ?? "indicada"} em até 10 minutos.`, "/queue"), ...current.notifications]
+              : current.notifications
+          };
+        });
+      } catch (error) {
+        if (active && !controller.signal.aborted) setQueueSyncError(error instanceof Error ? error.message : "Sua fila não está sincronizada com a API.");
+      } finally {
+        if (active) timer = window.setTimeout(() => void refresh(), 2000);
+      }
     };
-    void refresh().catch(() => undefined);
-    const timer = window.setInterval(() => void refresh().catch(() => undefined), 2000);
-    return () => { active = false; window.clearInterval(timer); };
-  }, [state.account?.profile.id, state.isAuthenticated]);
+    void refresh();
+    return () => { active = false; window.clearTimeout(timer); controller?.abort(); };
+  }, [state.account?.authProvider, state.account?.profile.id, state.isAuthenticated]);
 
   const value = useMemo<DriverAppContextValue>(() => ({
     ...state,
     profile: state.account?.profile ?? null,
     isCommercialDriver: state.isAuthenticated && state.account?.authProvider === "supabase",
     isOnline,
+    sessionSyncError,
+    queueSyncError,
     register,
     login,
     logout,
@@ -621,7 +649,7 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
     leaveQueue,
     markNotificationsRead,
     addNotification
-  }), [addNotification, applyIdleFee, authorizeSession, clearLocalData, dismissCompletedSession, finishEnergy, getQueueJoinPreview, isOnline, joinQueue, leaveQueue, login, logout, markNotificationsRead, register, selectChargingPoint, setSessionStatus, setTheme, settleSession, state, tickSession]);
+  }), [addNotification, applyIdleFee, authorizeSession, clearLocalData, dismissCompletedSession, finishEnergy, getQueueJoinPreview, isOnline, joinQueue, leaveQueue, login, logout, markNotificationsRead, queueSyncError, register, selectChargingPoint, sessionSyncError, setSessionStatus, setTheme, settleSession, state, tickSession]);
 
   return <DriverAppContext.Provider value={value}>{children}</DriverAppContext.Provider>;
 }

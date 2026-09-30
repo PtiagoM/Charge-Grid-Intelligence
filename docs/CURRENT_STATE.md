@@ -1,9 +1,15 @@
 # ChargeGrid Intelligence — fonte única de verdade
 
+## Execução Sprint 4 — atualização 30/09/2026
+
+- `S4-M6-U1` concluída: polling comercial não sobreposto e cancelável, Service Worker atualizado com cache network-only para rotas comerciais, reload das abas na ativação e indicação de leitura indisponível/stale no Admin e na PWA.
+- Validação: `npm run typecheck`, build Admin/PWA, 79 testes unitários Admin, E02 de persistência/restart e E2E focal do Service Worker passaram. Não foi repetida a suíte E05/API, pois nenhum código da API/provider foi alterado nesta unidade.
+- Próxima unidade: `S4-M6-U2`; nenhum trabalho do pacote `sprint4-finalization` está liberado antes de G7.
+
 ## Planejamento final da Sprint 4 — atualizado em 30/09/2026
 
 - A ordem canônica está em [`docs/specs/SPRINT4_EXECUTION_ORDER.md`](specs/SPRINT4_EXECUTION_ORDER.md): primeiro concluir o pacote original `sprint4` em M5–M7; depois iniciar `sprint4-finalization`.
-- Estado de execução em 30/09/2026: M0–M4 e M5-U1/U2A/U2B/U2C/U3 concluídos; `S4-M6-U1` é a próxima unidade. U3 foi confirmado manualmente pelo responsável; detalhes de IDs/capturas não foram arquivados. Nenhuma unidade `CG-*` está liberada antes de `S4-M7-U2/G7`.
+- Estado de execução em 30/09/2026: M0–M5 e M6-U1 concluídos; `S4-M6-U2` é a próxima unidade. U3 foi confirmado manualmente pelo responsável; detalhes de IDs/capturas não foram arquivados. Nenhuma unidade `CG-*` está liberada antes de `S4-M7-U2/G7`.
 - O pacote [`docs/specs/sprint4-finalization`](specs/sprint4-finalization/spec.md) contém a extensão S4-C2 aprovada, mas permanece planejado até o fechamento da baseline S4-C1.
 - M5-U2A adicionou injeção de provider apenas no harness de teste e prova E2E de autorização controlada, operação/sessões e persistência; PWA, Stripe normal e schema não foram alterados.
 - M5-U2B provou fila autenticada, atribuição temporária e checkout elegível, além de tarifa versionada, cotação nova, histórico e CSV vindo da API; identidade/payment providers determinísticos existem somente no harness.
@@ -12,7 +18,7 @@
 - A PWA permanece considerada finalizada; bateria segue fora do escopo obrigatório; previsão segue a cadeia treino offline Python → artefato versionado → inferência Node → regras → Decision Engine.
 - A base implementada está no histórico de `feature/admin-sprint3-integration`; a branch local histórica `feature/admin-sprint4@c8cc21c` não representa M1–M4. A reconciliação segura do histórico será `CG-F0-01`, somente depois de G7.
 
-**Atualizado em:** 29 de setembro de 2026  
+**Atualizado em:** 30 de setembro de 2026  
 **Escopo:** GoodWe, produto, negócio, operação, arquitetura, implementação, histórico e decisões vigentes  
 **Status:** documento canônico para continuidade do projeto
 
@@ -37,7 +43,7 @@ O registro de implementação, evidências e limitações da Sprint fica em [`SP
 
 ### Sprint 4 — Marco 1 concluído (26/09/2026)
 
-> Checkpoint histórico. Referências abaixo a “próximo marco” ou trabalho ainda pendente descrevem o estado de 26/09 e não substituem a ordem canônica atual (`S4-M6-U1`).
+> Checkpoint histórico. Referências abaixo a “próximo marco” ou trabalho ainda pendente descrevem o estado de 26/09 e não substituem a ordem canônica atual (`S4-M6-U2`).
 
 - A base compartilhada agora possui ledger de migrations e aplica `202609260004_s4_foundation.sql` uma única vez; bancos comerciais legados são baselined sem reexecutar o UPSERT destrutivo das migrations antigas.
 - Aurora segue sendo o único catálogo operacional completo: `plant_aurora_001`, seis UUIDs estáveis, códigos/QR e vaga B02 foram preservados. A API publica o catálogo sanitizado em `/commercial/catalog` e resolve UUID/código/QR em `/commercial/chargers/resolve/:identifier`.

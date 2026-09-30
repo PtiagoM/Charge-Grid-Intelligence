@@ -21,17 +21,21 @@ export function HistoryPage() {
   useEffect(() => {
     if (!isCommercialDriver) return;
     let active = true;
+    let timer = 0;
+    let controller: AbortController | undefined;
     const refresh = async () => {
+      controller = new AbortController();
       try {
-        const result = await getCommercialSessions();
+        const result = await getCommercialSessions(undefined, controller.signal);
         if (active) { setSessions(result.sessions); setError(""); }
       } catch (caught) {
-        if (active) setError(caught instanceof Error ? caught.message : "Não foi possível consultar seu histórico.");
+        if (active && !controller.signal.aborted) setError(caught instanceof Error ? caught.message : "Não foi possível consultar seu histórico.");
+      } finally {
+        if (active) timer = window.setTimeout(() => void refresh(), 2000);
       }
     };
     void refresh();
-    const timer = window.setInterval(() => void refresh(), 2000);
-    return () => { active = false; window.clearInterval(timer); };
+    return () => { active = false; window.clearTimeout(timer); controller?.abort(); };
   }, [isCommercialDriver]);
 
   if (!isCommercialDriver) return <AuthGate title="Seu histórico fica na conta" copy="Entre com sua conta de motorista para manter sessões, veículos e pagamentos organizados." />;

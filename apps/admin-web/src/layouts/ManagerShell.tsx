@@ -55,7 +55,7 @@ const roleLabels = {
 } as const;
 
 export function ManagerShell({ children }: { children: ReactNode }) {
-  const { account, state } = useAdminState();
+  const { account, state, commercialSync } = useAdminState();
   const location = useLocation();
   const activeRoute = location.pathname === "/admin" ? "admin" : location.pathname.split("/")[2] ?? "overview";
   const activeContextRoute = activeRoute === "session" ? "sessions" : activeRoute === "financial-session" ? "finance" : activeRoute;
@@ -87,7 +87,7 @@ export function ManagerShell({ children }: { children: ReactNode }) {
       {account && hasAdminCapability(account, "organization:view") ? <footer className="sidebar-footer"><NavLink to="/mvp/access" className={organizationRoutes.has(activeRoute) ? "sidebar-item is-active" : "sidebar-item"}><img src={assets.icons.setting} alt="" /><span className="sidebar-tooltip">Gestão da organização</span></NavLink></footer> : null}
     </aside>
     <main className="main-area">
-      <header className="topbar" data-testid="topbar"><div className="topbar-spacer" /><div className="topbar-actions">
+      <header className="topbar" data-testid="topbar"><div className="topbar-spacer" />{commercialSync.status !== "SYNCED" ? <span className="api-sync-warning" role="status" title={commercialSync.error ?? undefined}>{commercialSync.status === "STALE" ? `API indisponível · última leitura ${new Intl.DateTimeFormat("pt-BR", { timeStyle: "short" }).format(new Date(commercialSync.lastUpdatedAt!))}` : commercialSync.status === "LOADING" ? "Sincronizando dados comerciais…" : "API indisponível · dados comerciais não confirmados"}</span> : null}<div className="topbar-actions">
         {hardwareLabEnabled && canUseHardwareLab(account) ? <NavLink className="ghost-button" to="/admin">Laboratório de hardware</NavLink> : null}
         <a className="topbar-icon-button" href="#/mvp/incidents" aria-label="Alarmes"><img src={assets.icons.alarms} alt="" /></a>
         {account ? <details className="topbar-account-menu"><summary><span className="profile-name">{account.displayName}</span><img className="avatar" src={assets.avatar} alt="" /></summary><div><strong>{account.displayName}</strong><span>{account.semsAccountType === "DISTRIBUTOR_INSTALLER" ? "Distribuidor / Instalador" : "Proprietário"}</span><span>{account.role ? roleLabels[account.role] : "Somente SEMS+"}</span>{hasAdminCapability(account, "organization:view") ? <a href="#/mvp/access">Configurações da organização</a> : null}<a href="#/logout">Sair do sistema</a></div></details> : null}

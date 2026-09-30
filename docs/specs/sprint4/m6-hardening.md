@@ -1,6 +1,8 @@
 # M6 — Estabilidade proporcional ao protótipo
 
-**Estado:** próxima unidade elegível após U3/G5 confirmado em 30/09/2026. Objetivo: corrigir somente falhas demonstradas de coerência/persistência/UX da baseline S4-C1. MÉDIO. Não inventar suite enterprise. Ler C4–C7/C9, achados concretos de M5 e a [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
+**Atualização 30/09/2026:** S4-M6-U1 concluída. Polls de sessão/fila/catálogo/histórico e projeção Admin agora aguardam cada resposta, podem ser abortados e não sobrescrevem leituras com respostas concorrentes. Falha da API preserva a última leitura e a identifica como desatualizada; ações continuam dependentes da API. O SW v6 remove caches antigos, não intercepta `/api/commercial`, `/api/payments` ou suas rotas sem `/api`, e solicita reload das abas na ativação. Typecheck, builds dos frontends, 79 testes Admin, E02 e smoke E2E com SW ativo passaram. Sem alteração de API e sem reexecução de E05.
+
+**Estado:** S4-M6-U1 concluída; próxima unidade elegível: S4-M6-U2. Objetivo do marco: corrigir somente falhas demonstradas de coerência/persistência/UX da baseline S4-C1. MÉDIO. Não inventar suite enterprise. Ler C4–C7/C9, achados concretos de M5 e a [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
 
 ## S4-M6-U1 — Retomada, polling e SW
 
