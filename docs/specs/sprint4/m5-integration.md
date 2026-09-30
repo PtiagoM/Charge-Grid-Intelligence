@@ -1,6 +1,6 @@
 # M5 — Prova da operação única
 
-**Estado em 30/09/2026:** U1 e U2A–U2C concluídas; **U3 é a próxima unidade obrigatória**. Objetivo: integrar interfaces já corretas contra C1, não descobrir domínio no E2E. Entrada G2/G3/G4 concluída. Ler acceptance.md, C1–C9 e a [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
+**Estado em 30/09/2026:** U1 e U2A–U3 concluídas; M5/G5 fechado. Próxima unidade: `S4-M6-U1`. Objetivo: integrar interfaces já corretas contra C1, não descobrir domínio no E2E. Entrada G2/G3/G4 concluída. Ler acceptance.md, C1–C9 e a [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
 
 ## S4-M5-U1 — Ambiente E2E isolado
 
@@ -68,5 +68,10 @@
 - **Registro:** data/build/ambiente, IDs de sessão/code, intervalos/Wh/centavos, referência Stripe test sem segredo, capturas sanitizadas e console. Interrupção por cota/credencial registra gate não validado, não “passou mock”.
 - **Aceite:** evidência visual demonstra fluxo contínuo e efeito energético; banco/PI correspondem à UI; reload sem perda.
 - **Saída/G5:** E01–E06 e gates reais centrais comprovados; limites documentados. Commit de evidência/docs somente sem arquivos sensíveis.
+
+- **Estado:** concluída em 30/09/2026 por validação manual do responsável.
+- **Resultado reportado:** Maps real → Hub Solar Aurora/AURORA-01 → Payment Element Stripe em teste → conexão pelo laboratório → sessão compartilhada entre PWA/Admin → consumo acima de R$ 0,50 → Stop, desconexão, liquidação e reload sem regressão.
+- **Evidência registrada:** confirmação explícita do responsável nesta sessão. IDs de sessão/PaymentIntent, medições e capturas sanitizadas não foram fornecidos nem copiados para o repositório; não são inventados aqui.
+- **Limites:** confirma o cenário testado e não valida hardware GoodWe físico nem ambiente Stripe live.
 
 Risco: gate real depende de Auth/Maps/Stripe remotos, mesmo com banco local. Isso não exige Supabase SQL nem cloud. Se indisponível, continuar preparação/teste local e marcar exclusivamente a evidência externa pendente.

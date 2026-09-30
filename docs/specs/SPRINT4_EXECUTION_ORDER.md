@@ -25,11 +25,12 @@ Documento histórico ou backlog antigo não altera esta ordem. Em conflito sobre
 | M5-U2A | CONCLUÍDA | PWA QR/checkout, autorização API controlada, Admin atualiza por polling sem reload; API reiniciada preserva sessão e pagamento |
 | M5-U2B | CONCLUÍDA | E03 fila e E06 configuração; E2E confirma atribuição+checkout, tarifa afeta novas quotes, sessão congelada, Admin mostra histórico e exporta CSV da API |
 | M5-U2C | CONCLUÍDA | E01 stop/retirada/liquidação controlados, E04 energia e E05 falha de comando + recuperação; API 21 testes focais |
-| M5-U3 | **PRÓXIMA UNIDADE** | gates reais e evidência visual |
-| M6-U1/U2 | PENDENTE | hardening baseado somente em falhas de M5 |
+| M5-U3 | CONCLUÍDA | validação manual do responsável: Maps real, Stripe test, recarga >R$0,50, liquidação e reload; sem IDs/capturas arquivados |
+| M6-U1 | **PRÓXIMA UNIDADE** | retomada, polling e service worker |
+| M6-U2 | PENDENTE | falhas essenciais e usabilidade final baseada nos achados |
 | M7-U1/U2 | PENDENTE | documentação/reprodução da baseline S4-C1 |
 
-`G1–G4 concluído` significa que os checkpoints implementados permitem entrar em M5. M5 ainda deve consolidar a evidência integrada e real; não reinterpretar o status como aprovação antecipada de E01–E06 ou dos gates externos.
+`G1–G4 concluído` permitiu entrar em M5. M5/G5 está concluído: U2A–U2C têm evidência automatizada focal e U3 foi confirmado manualmente pelo responsável. A evidência manual não contém IDs/capturas arquivados; isso não deve ser ampliado para alegações sobre hardware físico ou Stripe live.
 
 ## Sequência sem ambiguidade
 
@@ -37,7 +38,7 @@ Documento histórico ou backlog antigo não altera esta ordem. Em conflito sobre
 S4-M5-U2A concluída
 → S4-M5-U2B concluída
 → S4-M5-U2C concluída
-→ S4-M5-U3
+→ S4-M5-U3 concluída
 → S4-M6-U1
 → S4-M6-U2
 → S4-M7-U1

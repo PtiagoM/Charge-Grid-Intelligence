@@ -3,11 +3,12 @@
 ## Planejamento final da Sprint 4 — atualizado em 30/09/2026
 
 - A ordem canônica está em [`docs/specs/SPRINT4_EXECUTION_ORDER.md`](specs/SPRINT4_EXECUTION_ORDER.md): primeiro concluir o pacote original `sprint4` em M5–M7; depois iniciar `sprint4-finalization`.
-- Estado de execução em 30/09/2026: M0–M4 e M5-U1/U2A/U2B/U2C concluídos; `S4-M5-U3` é a próxima unidade. Nenhuma unidade `CG-*` está liberada antes de `S4-M7-U2/G7`.
+- Estado de execução em 30/09/2026: M0–M4 e M5-U1/U2A/U2B/U2C/U3 concluídos; `S4-M6-U1` é a próxima unidade. U3 foi confirmado manualmente pelo responsável; detalhes de IDs/capturas não foram arquivados. Nenhuma unidade `CG-*` está liberada antes de `S4-M7-U2/G7`.
 - O pacote [`docs/specs/sprint4-finalization`](specs/sprint4-finalization/spec.md) contém a extensão S4-C2 aprovada, mas permanece planejado até o fechamento da baseline S4-C1.
 - M5-U2A adicionou injeção de provider apenas no harness de teste e prova E2E de autorização controlada, operação/sessões e persistência; PWA, Stripe normal e schema não foram alterados.
 - M5-U2B provou fila autenticada, atribuição temporária e checkout elegível, além de tarifa versionada, cotação nova, histórico e CSV vindo da API; identidade/payment providers determinísticos existem somente no harness.
-- M5-U2C cobriu energia, Stop/retirada/liquidação controlados e a recuperação após falha do comando de parada; Stripe sandbox real permanece no U3.
+- M5-U2C cobriu energia, Stop/retirada/liquidação controlados e a recuperação após falha do comando de parada; a confirmação Stripe sandbox real foi registrada em U3.
+- M5-U3: responsável confirmou Maps real, Payment Element Stripe test, sessão compartilhada, energia acima do mínimo de captura, liquidação e reload; confirmação sem referências de sessão/PaymentIntent ou capturas anexadas.
 - A PWA permanece considerada finalizada; bateria segue fora do escopo obrigatório; previsão segue a cadeia treino offline Python → artefato versionado → inferência Node → regras → Decision Engine.
 - A base implementada está no histórico de `feature/admin-sprint3-integration`; a branch local histórica `feature/admin-sprint4@c8cc21c` não representa M1–M4. A reconciliação segura do histórico será `CG-F0-01`, somente depois de G7.
 
@@ -36,7 +37,7 @@ O registro de implementação, evidências e limitações da Sprint fica em [`SP
 
 ### Sprint 4 — Marco 1 concluído (26/09/2026)
 
-> Checkpoint histórico. Referências abaixo a “próximo marco” ou trabalho ainda pendente descrevem o estado de 26/09 e não substituem a ordem canônica atual (`S4-M5-U3`).
+> Checkpoint histórico. Referências abaixo a “próximo marco” ou trabalho ainda pendente descrevem o estado de 26/09 e não substituem a ordem canônica atual (`S4-M6-U1`).
 
 - A base compartilhada agora possui ledger de migrations e aplica `202609260004_s4_foundation.sql` uma única vez; bancos comerciais legados são baselined sem reexecutar o UPSERT destrutivo das migrations antigas.
 - Aurora segue sendo o único catálogo operacional completo: `plant_aurora_001`, seis UUIDs estáveis, códigos/QR e vaga B02 foram preservados. A API publica o catálogo sanitizado em `/commercial/catalog` e resolve UUID/código/QR em `/commercial/chargers/resolve/:identifier`.

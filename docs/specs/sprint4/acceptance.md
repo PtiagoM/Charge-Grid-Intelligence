@@ -1,6 +1,6 @@
 # Aceite executável e registro de evidências
 
-Estado em 30/09/2026: **G0–G4 concluídos; M5-U1/U2A/U2B/U2C concluídos; G5 aguarda U3 real; G6–G7 pendentes**. Os vetores abaixo continuam sendo critérios executáveis; somente evidências registradas aprovam cada gate. Ver [contrato](contracts.md) e [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
+Estado em 30/09/2026: **G0–G5 concluídos; G6–G7 pendentes**. U3 foi confirmado manualmente pelo responsável para a jornada real Maps/Stripe/recarga/liquidação; a evidência é a confirmação registrada, sem IDs ou capturas anexados. Os vetores abaixo continuam sendo critérios executáveis; ver [contrato](contracts.md) e [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
 
 ## Vetores comuns de contrato
 
@@ -118,7 +118,7 @@ Preencher somente após execução real. Uma linha pode apontar para relatório 
 | G2 PWA | CONCLUÍDO — 26/09/2026 | checkpoints M2, build/typecheck, validação visual e encerramento manual após `124d255`/`6223d76` |
 | G3 Admin | CONCLUÍDO — 26/09/2026 | checkpoints M3, testes/build e validação manual do responsável |
 | G4 energia | CONCLUÍDO — 27/09/2026 | checkpoints M4, testes focais e registro `dfab16d`; integração ampla permanece responsabilidade de G5 |
-| G5 integração | EM ANDAMENTO | M5-U1 (`11692ff`) e U2A–U2C passaram: sessão/persistência, fila/checkout atribuído, tarifa versionada/relatórios, energia/stop/retirada/liquidação controlados e falha de Stop seguida de recuperação. Harness usa providers determinísticos exclusivos de teste. Payment Element/Stripe sandbox real e evidência visual permanecem em M5-U3. |
+| G5 integração | CONCLUÍDO — 30/09/2026 | M5-U1 (`11692ff`) e U2A–U2C: sessão/persistência, fila/checkout atribuído, tarifas/relatórios, energia/stop/retirada/liquidação controlados e recuperação de falha. U3: responsável confirmou Maps real, Payment Element Stripe test, operação compartilhada, consumo ≥R$ 0,50, liquidação e reload. Os testes automatizados usam providers determinísticos somente nos cenários isolados; U3 não usa stub. Referências detalhadas e capturas não foram fornecidas. |
 | G6 estabilidade | PENDENTE | SW/restart/falhas/visual, V-GLOBAL/V-E2E, G-M5 |
 | G7 entrega | PENDENTE | G-M6, README/diagramas/resultados, estadoGit, checklistfinal |
 

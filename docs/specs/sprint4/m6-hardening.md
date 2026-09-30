@@ -1,6 +1,6 @@
 # M6 — Estabilidade proporcional ao protótipo
 
-**Estado:** pendente; iniciar somente após M5-U3/G5. Objetivo: corrigir somente falhas demonstradas de coerência/persistência/UX da baseline S4-C1. MÉDIO. Não inventar suite enterprise. Ler C4–C7/C9, achados concretos de M5 e a [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
+**Estado:** próxima unidade elegível após U3/G5 confirmado em 30/09/2026. Objetivo: corrigir somente falhas demonstradas de coerência/persistência/UX da baseline S4-C1. MÉDIO. Não inventar suite enterprise. Ler C4–C7/C9, achados concretos de M5 e a [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
 
 ## S4-M6-U1 — Retomada, polling e SW
 
