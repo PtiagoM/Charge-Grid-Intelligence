@@ -7,7 +7,7 @@ Leia primeiro `docs/CURRENT_STATE.md`. Uma spec descreve comportamento implement
 | Spec | Estado | Escopo |
 | --- | --- | --- |
 | [`driver-pwa-mobile`](driver-pwa-mobile/spec.md) | implementada, com dependências externas | visitante, motorista, mapa, Supabase Auth, Stripe sandbox, fila, sessão e notificações |
-| [`sprint4`](sprint4/spec.md) | em execução; M0–M6 e M7-U1 concluídos; M7-U2/G7 pendentes | baseline S4-C1; próxima unidade: reprodução e fechamento M7-U2/G7 |
+| [`sprint4`](sprint4/spec.md) | concluído; M0–M7/G0–G7 | baseline S4-C1 validada; continuidade em [`sprint4-finalization`](sprint4-finalization/spec.md), CG-F0-01 parado antes do merge por autorização |
 | [`sprint4-finalization`](sprint4-finalization/spec.md) | planejada; bloqueada até G7 do pacote anterior | extensão S4-C2: Dashboard, previsão, Decision Engine, laboratório, integração, estabilidade e entrega |
 
 Antes de executar, ler a [ordem canônica da Sprint 4](SPRINT4_EXECUTION_ORDER.md). Primeiro concluir `sprint4` M5–M7; somente então iniciar `sprint4-finalization`. As specs históricas e o backlog abaixo não ampliam o escopo aprovado: autenticação administrativa nova, grants multi-organização, helpdesk, IV/bateria, expansão, offline avançado e cloud não são pré-requisitos. Nenhuma spec equivale a evidência de implementação.

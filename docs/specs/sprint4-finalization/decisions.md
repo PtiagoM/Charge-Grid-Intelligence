@@ -25,10 +25,10 @@ Este arquivo complementa, sem substituir, [decisions S4-C1](../sprint4/decisions
 3. **Dataset/horizonte final:** CG-AI-01 apresenta evidência e recomendação. Se nenhum candidato atender licença, granularidade e variáveis mínimas, a unidade deve parar antes de gerar sintético integral.
 4. **Fatores ambientais/econômicos:** CG-DASH-03 pode escolher apenas fonte pública citável e aplicável ao Brasil/cenário. Sem fonte suficiente, mantém indisponível.
 
-## Governança Git verificada em 29/09/2026
+## Governança Git verificada em 30/09/2026
 
 - A linha implementada até M4 está localmente em `feature/admin-sprint3-integration`, HEAD `90afa87`.
-- O remoto homônimo está em `7d5c6de`; o local está 39 commits à frente e 2 atrás por commits de README.
+- Após atualizar `origin/feature/admin-sprint3-integration`, a branch de trabalho `test-sprint4-m5-u2a` está 50 commits à frente e 2 atrás, com base comum `a767f79`. Os dois commits remotos alteram somente o README para adicionar o link do vídeo; o merge aguarda autorização explícita conforme `cg-f0-01.md`.
 - `feature/admin-sprint4` existe apenas localmente em `c8cc21c` e é histórica; não é base da finalização.
 - Não há PR aberto/fechado das duas branches no GitHub.
 - Este pacote nasce em `docs/sprint4-final-sdds`. Reconciliação/branch final pertence a CG-F0-01 e exige autorização para merge/rebase/push conforme workflow.

@@ -1,6 +1,6 @@
 # Aceite executável e registro de evidências
 
-Estado em 30/09/2026: **G0–G6 concluídos; G7 pendente**. U3 foi confirmado manualmente pelo responsável para a jornada real Maps/Stripe/recarga/liquidação e G6 para recuperação do checkout/Stop; as confirmações não incluem IDs ou capturas anexados. O E2E Sprint 4 passou 7/7 após o harness receber banco temporário novo por execução. Os vetores abaixo continuam sendo critérios executáveis; ver [contrato](contracts.md) e [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
+Estado em 30/09/2026: **G0–G7 concluídos**. U3, G6 e o ensaio final de entrega foram confirmados manualmente pelo responsável para a jornada Maps/Stripe test/recarga/liquidação, estabilidade e execução do README; as confirmações não incluem IDs ou capturas anexados. O E2E Sprint 4 passou 7/7 após o harness receber banco temporário novo por execução. Os vetores abaixo continuam sendo critérios executáveis; ver [contrato](contracts.md) e [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
 
 ## Vetores comuns de contrato
 
@@ -120,6 +120,6 @@ Preencher somente após execução real. Uma linha pode apontar para relatório 
 | G4 energia | CONCLUÍDO — 27/09/2026 | checkpoints M4, testes focais e registro `dfab16d`; integração ampla permanece responsabilidade de G5 |
 | G5 integração | CONCLUÍDO — 30/09/2026 | M5-U1 (`11692ff`) e U2A–U2C: sessão/persistência, fila/checkout atribuído, tarifas/relatórios, energia/stop/retirada/liquidação controlados e recuperação de falha. U3: responsável confirmou Maps real, Payment Element Stripe test, operação compartilhada, consumo ≥R$ 0,50, liquidação e reload. Os testes automatizados usam providers determinísticos somente nos cenários isolados; U3 não usa stub. Referências detalhadas e capturas não foram fornecidas. |
 | G6 estabilidade | CONCLUÍDO — 30/09/2026 | G-M5 confirmado manualmente pelo responsável; M6-U1/U2 e validações automatizadas registradas em CURRENT_STATE e na ordem canônica. Não implica nova validação de hardware físico/Stripe live. |
-| G7 entrega | PARCIAL — ENSAIO MANUAL PENDENTE | README/diagramas/resultados e gates automatizados atualizados; falta ensaio contínuo do responsável com Maps/Stripe test configurados e confirmação do roteiro/limitações. `npm ci` relatou 3 vulnerabilidades (2 moderadas, 1 alta); nenhuma correção de dependência aplicada. |
+| G7 entrega | CONCLUÍDO — 30/09/2026 | Responsável confirmou ensaio final após atualização do README; reprodução limpa, gates automatizados, limitações e vulnerabilidades observadas registrados. `npm ci` relatou 3 vulnerabilidades (2 moderadas, 1 alta), não corrigidas nesta unidade. |
 
 Formato da evidência de unidade: `S4-Mx-Uy | commit/build | ambiente/DBteste | comandos + exit/resultados | IDs/vetores | limites/nãoexecutado | próximoID`. Não gravar segredo, clientSecret, bearer, email ou foto do usuário. Screenshots sanitizados; pasta output local não é publicação automática.

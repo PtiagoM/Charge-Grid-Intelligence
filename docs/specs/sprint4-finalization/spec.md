@@ -1,10 +1,10 @@
 # Sprint 4 — pacote final de execução
 
-Status: **PLANEJADO E BLOQUEADO ATÉ G7 DO PACOTE ANTERIOR**. Este pacote transforma o plano mestre aprovado em unidades executáveis. Ele não registra implementação nova e não substitui M5–M7 de `docs/specs/sprint4`.
+Status: **LIBERADO APÓS G7; CG-F0-01 EM ANDAMENTO, AGUARDANDO AUTORIZAÇÃO PARA MERGE**. Este pacote transforma o plano mestre aprovado em unidades executáveis. Ele não substitui M5–M7 de `docs/specs/sprint4`.
 
 ## Como usar
 
-1. Ler a [ordem canônica](../SPRINT4_EXECUTION_ORDER.md). Se `S4-M7-U2/G7` não estiver concluído, parar e executar o pacote anterior.
+1. Ler a [ordem canônica](../SPRINT4_EXECUTION_ORDER.md). G7 foi concluído; continuar somente CG-F0-01 até sua condição de parada.
 2. Depois de G7, ler [CURRENT_STATE](../../CURRENT_STATE.md), o [contrato S4-C1](../sprint4/contracts.md) e as [decisões deste pacote](decisions.md).
 3. Executar somente uma unidade marcada `READY` e suas dependências concluídas.
 4. Não decidir arquitetura, produto ou interface fora do SDD. Divergência exige parar e registrar decisão.
@@ -29,7 +29,7 @@ Status: **PLANEJADO E BLOQUEADO ATÉ G7 DO PACOTE ANTERIOR**. Este pacote transf
 
 | ID | SDD | Dependências | Tamanho | Risco | Frontend Gate | Testes | Status |
 |---|---|---|---|---|---|---|---|
-| CG-F0-01 | [Base Git e evidências](cg-f0-01.md) | S4-G7 | PEQUENO | MÉDIO | BACKEND ONLY | Git/docs | PLANNED |
+| CG-F0-01 | [Base Git e evidências](cg-f0-01.md) | S4-G7 | PEQUENO | MÉDIO | BACKEND ONLY | Git/docs | IN PROGRESS — MERGE AGUARDA AUTORIZAÇÃO |
 | CG-F0-02 | [Contrato final S4-C2](cg-f0-02.md) | F0-01 | MÉDIO | ALTO | BACKEND ONLY | contrato | PLANNED |
 | CG-DASH-01 | [Agregados temporais canônicos](cg-dash-01.md) | F0-02 | MÉDIO | ALTO | BACKEND ONLY | unit/integration | PLANNED |
 | CG-DASH-02 | [Cards do Dashboard](cg-dash-02.md) | DASH-01 | MÉDIO | MÉDIO | PEQUENO AJUSTE NO FRONT | unit/E2E focal | PLANNED |

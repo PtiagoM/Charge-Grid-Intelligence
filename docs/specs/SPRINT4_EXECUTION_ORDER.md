@@ -30,7 +30,8 @@ Documento histórico ou backlog antigo não altera esta ordem. Em conflito sobre
 | M6-U2 / G6 | CONCLUÍDO — 30/09/2026 | comportamento implementado e validação manual do responsável confirmada; E01/E02, typecheck, lint focal e build PWA passaram |
 | M7-U1 | CONCLUÍDO — 30/09/2026 | README/estado/ordem/evidências atualizados; harness E2E isolado por diretório temporário; Sprint 4 E2E 7/7, testes, typecheck e build aprovados |
 | M7-U2 | VALIDAÇÃO AUTOMATIZADA CONCLUÍDA — 30/09/2026 | checkout de arquivos versionados + `npm ci`, lint, typecheck, testes 117/117, builds e E2E 7/7; API oficial/PGlite respondeu health isolada na porta 4333 |
-| G7 / ensaio manual M7-U2 | PENDENTE | responsável deve ensaiar README com Maps e Stripe test configurados, sessão acima de R$ 0,50, continuidade/reload e roteiro/limitações; `npm ci` reportou 3 vulnerabilidades transientes, não corrigidas |
+| G7 / ensaio manual M7-U2 | CONCLUÍDO — 30/09/2026 | responsável confirmou o ensaio após atualização do README; npm ci, gates automatizados, roteiro e limitações registrados. `npm ci` reportou 3 vulnerabilidades (2 moderadas, 1 alta), sem correção aplicada |
+| CG-F0-01 | EM ANDAMENTO — AUTORIZAÇÃO DE MERGE PENDENTE | após fetch, branch atual `test-sprint4-m5-u2a` está 50 à frente/2 atrás de `origin/feature/admin-sprint3-integration`; commits remotos só adicionam o link do vídeo ao README. Nenhum merge/push foi feito. |
 
 `G1–G4 concluído` permitiu entrar em M5. M5/G5 está concluído: U2A–U2C têm evidência automatizada focal e U3 foi confirmado manualmente pelo responsável. A evidência manual não contém IDs/capturas arquivados; isso não deve ser ampliado para alegações sobre hardware físico ou Stripe live.
 
@@ -44,12 +45,12 @@ S4-M5-U2A concluída
 → S4-M6-U2 / G6 concluídos
 → S4-M7-U1 concluída
 → S4-M7-U2 automatizada
-→ ensaio manual / G7
-→ CG-F0-01
+→ ensaio manual / G7 concluído
+→ CG-F0-01 (parar antes do merge até autorização explícita)
 → restante de sprint4-finalization
 ```
 
-O pacote novo inteiro permanece `PLANNED` até G7. Um executor não deve começar `CG-F0-01`, dataset, Dashboard, previsão ou novos cenários antes disso.
+G7 está concluído e libera `CG-F0-01`. As demais unidades continuam `PLANNED`; não iniciar F0-02, dataset, Dashboard, previsão ou novos cenários enquanto F0-01 não reconciliar a base. O merge dos dois commits remotos permanece sujeito a autorização explícita.
 
 ## Por que existem dois gates de integração/estabilidade/entrega
 
