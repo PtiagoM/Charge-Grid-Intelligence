@@ -1,6 +1,6 @@
 # M5 — Prova da operação única
 
-**Estado em 29/09/2026:** U1 e U2A concluídas; **U2B é a próxima unidade obrigatória**; U2C/U3 pendentes. Objetivo: integrar interfaces já corretas contra C1, não descobrir domínio no E2E. Entrada G2/G3/G4 concluída. Ler acceptance.md, C1–C9 e a [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
+**Estado em 29/09/2026:** U1, U2A e U2B concluídas; **U2C é a próxima unidade obrigatória**; U3 pendente. Objetivo: integrar interfaces já corretas contra C1, não descobrir domínio no E2E. Entrada G2/G3/G4 concluída. Ler acceptance.md, C1–C9 e a [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
 
 ## S4-M5-U1 — Ambiente E2E isolado
 
@@ -47,10 +47,10 @@
 
 ### S4-M5-U2B — Fila e configuração
 
-- **Depende:** U2A; **escopo:** E03 e E06 somente.
-- **Invariantes:** fila autenticada/assignment servidor; tarifa/publicação só afetam novas jornadas; CSV e UI reconciliam com a mesma fonte.
-- **Teste:** specs E03/E06 e testes focais de fila/tarifa/relatório afetados.
-- **Aceite:** posição/expiração/configuração persistem e nenhum gráfico/receita fixture reaparece.
+- **Estado:** concluída em 29/09/2026; escopo E03/E06 somente.
+- **Resultado:** assignment `CALLED` vigente permite cotação/checkout somente ao motorista atribuído; visitante não autenticado segue negado. Publicação de tarifa via Admin/API preserva histórico, altera novas cotações e não reinterpreta a quote/sessão aceita. CSV da Central de relatórios contém o registro persistido.
+- **Harness:** verifier de identidade e provider financeiro determinísticos são injetados somente no servidor de teste isolado. Não usa Supabase Auth nem Stripe real; o Payment Element/Stripe test real permanece em U3.
+- **Validação:** `npm run test:e2e:sprint4 -- tests/integration/sprint4-queue-configuration.spec.ts` (2 testes); `npm run test --workspace @chargegrid/api -- src/commercial/repository.test.ts src/commercial/routes.test.ts --testTimeout=20000` (21 testes); build da API e ESLint focado passaram.
 - **Commit:** `test(integration): prove queue and configuration journeys`.
 
 ### S4-M5-U2C — Energia, encerramento e falhas

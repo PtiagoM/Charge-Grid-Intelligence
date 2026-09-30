@@ -2,10 +2,11 @@ import cors from "cors";
 import express from "express";
 import { createPaymentRouter, stripeWebhook } from "./payments/routes.js";
 import { createCommercialRouter } from "./commercial/routes.js";
+import type { DriverVerifier } from "./commercial/driver-auth.js";
 
 type PaymentProviderFactory = NonNullable<Parameters<typeof createPaymentRouter>[0]>["provider"];
 
-export function createApp(options: { paymentProvider?: PaymentProviderFactory } = {}) {
+export function createApp(options: { paymentProvider?: PaymentProviderFactory; verifyDriver?: DriverVerifier } = {}) {
   const app = express();
 
   app.disable("x-powered-by");
@@ -19,8 +20,8 @@ export function createApp(options: { paymentProvider?: PaymentProviderFactory } 
     response.status(200).json({ status: "ok", service: "chargegrid-api" });
   });
 
-app.use("/payments", createPaymentRouter({ provider: options.paymentProvider }));
-app.use("/commercial", createCommercialRouter());
+app.use("/payments", createPaymentRouter({ provider: options.paymentProvider, verifyDriver: options.verifyDriver }));
+app.use("/commercial", createCommercialRouter({ verifyDriver: options.verifyDriver }));
   app.use((error: unknown, request: express.Request, response: express.Response, next: express.NextFunction) => {
     if (error instanceof SyntaxError && "body" in error) {
       const detail = { code: "INVALID_JSON", message: "Envie um objeto JSON válido." };

@@ -674,7 +674,9 @@ export class CommercialRepository {
         where id = $1 and establishment_id = $2 and published = true`, [input.chargerId, input.establishmentId]);
       const selected = charger.rows[0];
       if (!selected) throw new CommercialNotFoundError("Carregador comercial não encontrado.");
-      if (selected.physical_status !== "AVAILABLE" || selected.commercial_status !== "AVAILABLE_TO_START") {
+      const assignment = "driverId" in input.access ? await tx.query<{ id: string }>(`select id from commercial_queue_entries
+        where driver_id = $1 and charger_id = $2 and status = 'CALLED' and assignment_expires_at > now()`, [input.access.driverId, selected.id]) : { rows: [] };
+      if ((selected.physical_status !== "AVAILABLE" || selected.commercial_status !== "AVAILABLE_TO_START") && !assignment.rows[0]) {
         throw new CommercialConflictError("Este carregador não está disponível para iniciar.");
       }
       const tariff = await tx.query<{ id: string; energy_cents_per_kwh: number; idle_grace_minutes: number; idle_cents_per_minute: number; idle_max_minutes: number; idle_enabled: boolean }>(`

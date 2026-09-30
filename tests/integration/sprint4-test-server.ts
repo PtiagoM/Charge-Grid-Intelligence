@@ -1,11 +1,16 @@
 import { createApp } from "../../apps/api/src/app.js";
+import { DriverAuthenticationError, type DriverVerifier } from "../../apps/api/src/commercial/driver-auth.js";
 import { closeCommercialRepository, startCommercialClock } from "../../apps/api/src/commercial/repository.js";
 import { sprint4TestPaymentProvider } from "./sprint4-test-payment-provider.js";
 
 const port = Number(process.env.PORT ?? 3433);
-const app = createApp({ paymentProvider: () => sprint4TestPaymentProvider });
+const verifyTestDriver: DriverVerifier = async (token) => {
+  if (token !== "sprint4-test-driver-token") throw new DriverAuthenticationError("Credencial de teste invÃ¡lida.");
+  return { id: "driver_sprint4_test_001", fullName: "Motorista Sprint 4", email: "motorista@sprint4.test", vehicleName: "EV de teste" };
+};
+const app = createApp({ paymentProvider: () => sprint4TestPaymentProvider, verifyDriver: verifyTestDriver });
 const clock = startCommercialClock();
-app.get("/test-harness", (_request, response) => response.json({ isolated: true, paymentProvider: "deterministic-test-only" }));
+app.get("/test-harness", (_request, response) => response.json({ isolated: true, paymentProvider: "deterministic-test-only", identityProvider: "deterministic-test-only" }));
 const server = app.listen(port, "127.0.0.1");
 let closing = false;
 

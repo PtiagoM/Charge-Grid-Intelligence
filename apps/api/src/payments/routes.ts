@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { PaymentConfigurationError, StripePaymentProvider, stripeIsConfigured, type StripePaymentMethod } from "./stripe-payment-provider.js";
 import { CommercialConflictError, CommercialNotFoundError, getCommercialRepository } from "../commercial/repository.js";
-import { DriverAuthenticationError, DriverAuthenticationUnavailableError, guestToken, requireDriver } from "../commercial/driver-auth.js";
+import { DriverAuthenticationError, DriverAuthenticationUnavailableError, guestToken, requireDriver, type DriverVerifier } from "../commercial/driver-auth.js";
 import type { CommercialSessionAccess } from "../commercial/repository.js";
 import { CommercialSessionStatus, PaymentStatus } from "@chargegrid/shared";
 
@@ -19,11 +19,11 @@ function validUuid(value: unknown): value is string {
   return typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
-async function accessFor(request: Request): Promise<CommercialSessionAccess> {
-  if (request.header("authorization")) return { driverId: (await requireDriver(request)).id };
+async function accessFor(request: Request, verifyDriver?: DriverVerifier): Promise<CommercialSessionAccess> {
+  if (request.header("authorization")) return { driverId: (await requireDriver(request, verifyDriver)).id };
   const token = guestToken(request);
   if (token) return { guestToken: token };
-  return { driverId: (await requireDriver(request)).id };
+  return { driverId: (await requireDriver(request, verifyDriver)).id };
 }
 
 function errorResponse(response: Response, error: unknown) {
@@ -36,7 +36,7 @@ function errorResponse(response: Response, error: unknown) {
   return response.status(502).json({ code: "PAYMENT_PROVIDER_ERROR", message });
 }
 
-export function createPaymentRouter(options: { provider?: () => PaymentProvider } = {}) {
+export function createPaymentRouter(options: { provider?: () => PaymentProvider; verifyDriver?: DriverVerifier } = {}) {
   const router = Router();
   const getProvider = options.provider ?? provider;
 
@@ -58,7 +58,7 @@ export function createPaymentRouter(options: { provider?: () => PaymentProvider 
       const session = await commercialRepository.reserveQuotedSession({
         id: body.sessionId,
         quoteId: body.quoteId,
-        access: await accessFor(request),
+        access: await accessFor(request, options.verifyDriver),
         method,
         authorizedCents: Math.round(body.amount * 100)
       });
@@ -85,7 +85,7 @@ export function createPaymentRouter(options: { provider?: () => PaymentProvider 
     try {
       const commercialRepository = getCommercialRepository();
       const sessionId = await commercialRepository.sessionIdForPaymentIntent(request.params.paymentIntentId);
-      await commercialRepository.sessionForAccess(sessionId, await accessFor(request));
+      await commercialRepository.sessionForAccess(sessionId, await accessFor(request, options.verifyDriver));
       const payment = await getProvider().retrieve(request.params.paymentIntentId);
       const session = await commercialRepository.recordPayment(payment);
       return response.json({ ...payment, session });
@@ -100,7 +100,7 @@ export function createPaymentRouter(options: { provider?: () => PaymentProvider 
     try {
       const commercialRepository = getCommercialRepository();
       if (await commercialRepository.sessionIdForPaymentIntent(request.params.paymentIntentId) !== body.sessionId) throw new CommercialNotFoundError("Pagamento não vinculado à sessão.");
-      const currentSession = await commercialRepository.sessionForAccess(body.sessionId, await accessFor(request));
+      const currentSession = await commercialRepository.sessionForAccess(body.sessionId, await accessFor(request, options.verifyDriver));
       if (currentSession.status !== CommercialSessionStatus.ENERGY_FINISHED) throw new CommercialConflictError("Finalize a entrega de energia antes de capturar o pagamento.");
       await commercialRepository.assertReadyForCapture(body.sessionId);
       const amount = currentSession.totalCostCents / 100;
@@ -123,7 +123,7 @@ export function createPaymentRouter(options: { provider?: () => PaymentProvider 
     try {
       const commercialRepository = getCommercialRepository();
       if (await commercialRepository.sessionIdForPaymentIntent(request.params.paymentIntentId) !== body.sessionId) throw new CommercialNotFoundError("Pagamento não vinculado à sessão.");
-      const currentSession = await commercialRepository.sessionForAccess(body.sessionId, await accessFor(request));
+      const currentSession = await commercialRepository.sessionForAccess(body.sessionId, await accessFor(request, options.verifyDriver));
       if (currentSession.status !== CommercialSessionStatus.ENERGY_FINISHED) throw new CommercialConflictError("Finalize a entrega de energia antes de devolver o saldo.");
       await commercialRepository.assertReadyForCapture(body.sessionId);
       const refundCents = Math.max(0, currentSession.authorizedCents - currentSession.totalCostCents);
