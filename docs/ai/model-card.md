@@ -92,3 +92,9 @@ Promoção exigiu, contra o incumbent, MAE e RMSE estritamente menores e F1 não
 No holdout, Delta melhora o incumbent em MAE (18,0%), RMSE (3,4%) e F1 (+0,0112); em relação à persistência, melhora MAE (13,3%), RMSE (16,6%) e F1 (+0,0317). O limiar não foi reajustado. F1 é medida de detecção, não “acurácia”. O teste é uma única janela temporal composta e não demonstra desempenho fora dela.
 
 O resultado completo está em `ml/forecasting/data/forecast_third_candidate_evaluation.json`, as previsões do holdout em `forecast_cg_ai_03c_test.csv` e o artefato reprodutível em `forecast_cg_ai_03c_model.json`. O modelo promovido é apenas um benchmark `SIMULATED_COMPOSITE`, offline, sem integração ao Node/API/Decision Engine; o modelo CG-AI-03B permanece preservado como histórico/incumbent de comparação.
+
+## Integração de inferência — CG-AI-04
+
+A API Node carrega exclusivamente `forecast_cg_ai_03c_model.json`, valida SHA-256 e schema, agrega amostras de telemetria de cada intervalo de 15 min por média aritmética e reproduz as 17 features, padronização e reconstrução Delta do pipeline Python. Vetor dourado confirma paridade numérica. O `ForecastRecord` expira em no máximo 30 min após a última entrada; modelo/telemetria insuficiente, stale, inválido ou expirado gera estado `UNAVAILABLE` e, quando possível, fallback de persistência separado do valor previsto por IA.
+
+Esta unidade não cria endpoint nem persistência (CG-AI-05), não chama hardware e não transforma limiar do benchmark em política. Como os timestamps de treino são wall-clock sem timezone conhecido, a inferência usa campos UTC do contrato; essa diferença semântica e a classe `SIMULATED_COMPOSITE` impedem tratar o resultado como previsão operacional Aurora.

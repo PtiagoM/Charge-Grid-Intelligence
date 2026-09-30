@@ -1,4 +1,5 @@
 {
+  "benchmarkRiskThresholdKw": 117.524661,
   "candidate": "RIDGE_DELTA",
   "datasetClass": "SIMULATED_COMPOSITE",
   "featureNames": [
@@ -84,5 +85,13 @@
   },
   "modelVersion": "cg-ai-03c-ridge_delta-1h-v1",
   "operationalUse": false,
-  "targetTransform": "DELTA_FROM_ORIGIN"
+  "targetTransform": "DELTA_FROM_ORIGIN",
+  "testMetrics": {
+    "baselineMaeKw": 5.322525316213276,
+    "baselineRmseKw": 9.76649057375682,
+    "maeKw": 4.615088231729316,
+    "rmseKw": 8.145712441908895,
+    "testFrom": "2019-10-20 00:15:00",
+    "testTo": "2019-12-16 09:00:00"
+  }
 }

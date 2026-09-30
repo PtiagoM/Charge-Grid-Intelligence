@@ -459,6 +459,16 @@ export interface CommercialDashboardSummary {
 export interface ForecastPoint {
   at: string;
   predictedGridImportKw: number;
+  riskThresholdKw: number;
+  riskState: "NORMAL" | "PREDICTED_PEAK";
+}
+
+export interface ForecastFallback {
+  method: "PERSISTENCE";
+  at: string;
+  predictedGridImportKw: number;
+  riskThresholdKw: number | null;
+  riskState: "NORMAL" | "PREDICTED_PEAK" | "UNAVAILABLE";
 }
 
 export interface ForecastTestMetrics {
@@ -475,12 +485,14 @@ interface ForecastRecordBase {
   id: string;
   plantId: string;
   generatedAt: string;
+  expiresAt: string;
   inputFrom: string;
   inputTo: string;
   horizonMinutes: number;
   stepMinutes: number;
   modelVersion: string;
   provenance: DataProvenance;
+  fallback: ForecastFallback | null;
 }
 
 export type ForecastQuality =

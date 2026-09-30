@@ -289,6 +289,15 @@ def evaluate(dataset_path: Path, output_dir: Path) -> Path:
             "modelVersion": f"cg-ai-03c-{selected.lower()}-1h-v1", "candidate": selected,
             "featureNames": list(TEMPORAL_FEATURE_NAMES if variant == "temporal" else COMPONENT_FEATURE_NAMES if variant == "components" else GB_FEATURE_NAMES),
             "horizonMinutes": HORIZON_MINUTES, "datasetClass": "SIMULATED_COMPOSITE", "operationalUse": False,
+            "benchmarkRiskThresholdKw": threshold,
+            "testMetrics": {
+                "maeKw": result["testMetrics"][selected]["maeKw"],
+                "rmseKw": result["testMetrics"][selected]["rmseKw"],
+                "baselineMaeKw": result["testMetrics"]["PERSISTENCE"]["maeKw"],
+                "baselineRmseKw": result["testMetrics"]["PERSISTENCE"]["rmseKw"],
+                "testFrom": result["testSplit"]["first"],
+                "testTo": result["testSplit"]["last"],
+            },
             "model": model, "targetTransform": "DELTA_FROM_ORIGIN" if kind == "ridge_delta" else "DIRECT",
         }
         (output_dir / "forecast_cg_ai_03c_model.json").write_text(json.dumps(model_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")

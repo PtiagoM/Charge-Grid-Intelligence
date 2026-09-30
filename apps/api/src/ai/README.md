@@ -1,3 +1,9 @@
-# AI integration stub
+# Forecast inference (CG-AI-04)
 
-A IA será um serviço externo Python/FastAPI integrado por HTTP. A spec `ai-prediction-contract` definirá payload, timeout e fallback; sua indisponibilidade nunca bloqueará a operação central.
+`forecast.ts` loads only `ml/forecasting/data/forecast_cg_ai_03c_model.json`, validates its pinned SHA-256/schema, resamples raw telemetry into 15-minute mean-power samples, and reproduces the Python Ridge Delta features and transform in Node. It returns the S4-C2 `ForecastRecord`; it does not persist or expose it over HTTP (CG-AI-05), and it never calls a GoodWe command.
+
+At least 96 consecutive complete quarter-hours are required. Raw telemetry is averaged over each completed quarter-hour; the still-open interval is discarded. Each bin needs at least 15 readings, edge coverage and no gap over 60 seconds. A result expires no later than 30 minutes after `inputTo`. Missing/invalid model, insufficient/gapped/stale input, or expired result is unavailable; if a current reading exists, `fallback` is a clearly separated persistence estimate, not an AI forecast. The risk threshold is the model's offline training benchmark threshold, not plant policy and not a control signal.
+
+Training timestamps were naive wall-clock labels with unavailable source timezone. The API uses UTC fields from its ISO timestamps without conversion to reproduce the numeric calendar encoding; that does not establish calendar-semantic parity for Aurora. Model and input data remain `SIMULATED`/`SIMULATED_COMPOSITE`; operational use is prohibited pending representative data and policy review.
+
+Focal checks: `npm run test --workspace @chargegrid/api -- src/ai/forecast.test.ts`; the test compares a feature/prediction vector exported from the Python pipeline and exercises available, missing-model, insufficient-history and expiration behavior. The current `plantEnergySeries` endpoint limits history to 3,600 one-second samples; CG-AI-05 must request/aggregate at least 24 hours for an available forecast.

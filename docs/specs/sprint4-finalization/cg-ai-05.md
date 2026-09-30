@@ -20,7 +20,9 @@ Migration nova, `apps/api/src/ai/`, commercial repository/clock/routes, shared c
 
 ## Banco e API
 
-Criar `commercial_forecasts` persistindo `ForecastRecord` S4-C2: ID, plantId, modelVersion, generatedAt, inputFrom/inputTo, horizon/step, provenance, quality, unavailableReason, `ForecastTestMetrics` snapshot e points JSON validado. Registro `UNAVAILABLE` tem `points:null` e `metrics:null`; disponível exige pontos/metrics. Índice por `(plant_id, generated_at desc)`; retenção simples documentada, sem job distribuído.
+Criar `commercial_forecasts` persistindo `ForecastRecord` S4-C2: ID, plantId, modelVersion, generatedAt/expiresAt, inputFrom/inputTo, horizon/step, provenance, quality, unavailableReason, `ForecastTestMetrics` snapshot, points e eventual fallback JSON validado. Registro `UNAVAILABLE` tem `points:null` e `metrics:null`; fallback de persistência permanece separado da previsão do modelo. Disponível exige pontos/metrics. Índice por `(plant_id, generated_at desc)`; retenção simples documentada, sem job distribuído.
+
+O clock atual persiste telemetria a cada ~1 s, mas `plantEnergySeries` limita a leitura às últimas 3.600 linhas (~1 h), menos que as 96 janelas de 15 min exigidas por AI-04. AI-05 precisa ler/consultar pelo menos 24 h de histórico (preferir agregação SQL por janela de 15 min, evitando retornar ~86 mil amostras à aplicação) e chamar inferência somente com cobertura contígua.
 
 Criar `GET /commercial/plants/:plantId/forecast` para último registro. O clock Node tenta inferência no intervalo definido pelo contrato apenas quando existem amostras suficientes; GET apenas lê. Mesmo input/modelVersion usa chave idempotente e não duplica linha.
 
