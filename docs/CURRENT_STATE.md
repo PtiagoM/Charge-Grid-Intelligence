@@ -1,6 +1,13 @@
 # ChargeGrid Intelligence — fonte única de verdade
 
-**Atualizado em:** 27 de setembro de 2026  
+## Planejamento final da Sprint 4 — 29/09/2026
+
+- O trabalho restante pós-M4 foi decomposto no pacote executável [`docs/specs/sprint4-finalization`](specs/sprint4-finalization/spec.md).
+- Esta etapa produziu somente documentação: nenhuma feature, migration, tela, treino ou alteração de banco foi executada.
+- A PWA permanece considerada finalizada; bateria segue fora do escopo obrigatório; previsão segue a cadeia treino offline Python → artefato versionado → inferência Node → regras → Decision Engine.
+- A base implementada está no histórico de `feature/admin-sprint3-integration`; a branch local histórica `feature/admin-sprint4@c8cc21c` não representa M1–M4. A reconciliação segura do histórico é a primeira unidade `CG-F0-01`.
+
+**Atualizado em:** 29 de setembro de 2026  
 **Escopo:** GoodWe, produto, negócio, operação, arquitetura, implementação, histórico e decisões vigentes  
 **Status:** documento canônico para continuidade do projeto
 

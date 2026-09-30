@@ -6,10 +6,13 @@ Leia primeiro `docs/CURRENT_STATE.md`. Uma spec descreve comportamento implement
 
 | Spec | Estado | Escopo |
 | --- | --- | --- |
+| [`sprint4-finalization`](sprint4-finalization/spec.md) | planejada; somente SDDs nesta etapa | unidades finais pós-M4: Dashboard, previsão, Decision Engine, laboratório, integração, estabilidade e entrega |
 | [`driver-pwa-mobile`](driver-pwa-mobile/spec.md) | implementada, com dependências externas | visitante, motorista, mapa, Supabase Auth, Stripe sandbox, fila, sessão e notificações |
 | [`sprint4`](sprint4/spec.md) | especificação executável; código não implementado nesta etapa | contrato comum, decisões, aceites e unidades dos Marcos 0–7; Aurora e núcleo final aprovado |
 
 Para executar a Sprint 4, começar por `sprint4/spec.md`. As specs históricas e o backlog abaixo não ampliam o escopo aprovado: autenticação administrativa nova, grants multi-organização, helpdesk, IV/bateria, expansão, offline avançado e cloud não são pré-requisitos. D1–D4 prevalecem; nenhuma spec equivale a evidência de implementação.
+
+> O pacote `sprint4` preserva o contrato e o histórico executado até M4. O pacote `sprint4-finalization` é a fila vigente do trabalho restante e prevalece para novas execuções.
 
 ## Fluxo para novas features
 
