@@ -3,7 +3,7 @@
 ## Execução Sprint 4 — atualização 30/09/2026
 
 - `S4-M6-U1` concluída: polling comercial não sobreposto e cancelável, Service Worker atualizado com cache network-only para rotas comerciais, reload das abas na ativação e indicação de leitura indisponível/stale no Admin e na PWA.
-- Validação: `npm run typecheck`, build Admin/PWA, 79 testes unitários Admin, E02 de persistência/restart e E2E focal do Service Worker passaram. Não foi repetida a suíte E05/API, pois nenhum código da API/provider foi alterado nesta unidade.
+- Validação: `npm run typecheck`, build Admin/PWA, 79 testes unitários Admin, E02 de persistência/restart, smoke E2E do Service Worker e E2E de API indisponível→stale→recuperada passaram. Não foi repetida a suíte E05/API, pois nenhum código da API/provider foi alterado nesta unidade.
 - Próxima unidade: `S4-M6-U2`; nenhum trabalho do pacote `sprint4-finalization` está liberado antes de G7.
 
 ## Planejamento final da Sprint 4 — atualizado em 30/09/2026

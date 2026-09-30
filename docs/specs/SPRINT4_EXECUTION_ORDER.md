@@ -26,7 +26,7 @@ Documento histórico ou backlog antigo não altera esta ordem. Em conflito sobre
 | M5-U2B | CONCLUÍDA | E03 fila e E06 configuração; E2E confirma atribuição+checkout, tarifa afeta novas quotes, sessão congelada, Admin mostra histórico e exporta CSV da API |
 | M5-U2C | CONCLUÍDA | E01 stop/retirada/liquidação controlados, E04 energia e E05 falha de comando + recuperação; API 21 testes focais |
 | M5-U3 | CONCLUÍDA | validação manual do responsável: Maps real, Stripe test, recarga >R$0,50, liquidação e reload; sem IDs/capturas arquivados |
-| M6-U1 | CONCLUÍDA | polling não sobreposto/cancelável, stale sinalizado, APIs comerciais fora do cache; E02 e smoke E2E de Service Worker aprovados |
+| M6-U1 | CONCLUÍDA | polling não sobreposto/cancelável, stale sinalizado e recuperado, APIs comerciais fora do cache; E02 e smoke E2E de Service Worker aprovados |
 | M6-U2 | PENDENTE | falhas essenciais e usabilidade final baseada nos achados |
 | M7-U1/U2 | PENDENTE | documentação/reprodução da baseline S4-C1 |
 
