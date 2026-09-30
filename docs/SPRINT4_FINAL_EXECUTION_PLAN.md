@@ -2,11 +2,11 @@
 
 **ChargeGrid Intelligence — Sprint 4: solução final integrada e inovadora GoodWe.**
 
-**Data:** 24/09/2026; atualização de execução: 29/09/2026. **Status:** plano original aprovado; M0–M4, M5-U1, M5-U2A e M5-U2B concluídos. A execução vigente segue a [ordem canônica](specs/SPRINT4_EXECUTION_ORDER.md): terminar M5–M7 deste plano antes de iniciar `sprint4-finalization`.
+**Data:** 24/09/2026; atualização de execução: 30/09/2026. **Status:** plano original aprovado; M0–M4 e M5-U1/U2A/U2B/U2C concluídos. A execução vigente segue a [ordem canônica](specs/SPRINT4_EXECUTION_ORDER.md): terminar M5–M7 deste plano antes de iniciar `sprint4-finalization`.
 
 **Atualização de escopo aprovada:** D1–D4 e o recorte adicional do responsável, registrados na seção 13, substituem as propostas anteriores correspondentes. O núcleo obrigatório é **operação comercial completa + experiência do motorista + energia da planta + controle de demanda + automação explicável + integração final**, no Aurora. Aprovação dessas decisões não é autorização para implementar os marcos. Os achados e resultados abaixo continuam retratando o código auditado, não as mudanças planejadas.
 
-**Desdobramento SDD:** [especificações executáveis](specs/sprint4/spec.md), com contrato comum, decisões técnicas, unidades M0–M7 e critérios verificáveis. G0–G4 estão concluídos; M5-U1 isolou o ambiente E2E; U2A validou sessão e persistência; U2B validou fila, tarifa versionada, nova cotação e CSV integrado. A próxima unidade é `S4-M5-U2C`; G5–G7 permanecem abertos. Payment Element com Stripe sandbox real continua no gate M5-U3.
+**Desdobramento SDD:** [especificações executáveis](specs/sprint4/spec.md), com contrato comum, decisões técnicas, unidades M0–M7 e critérios verificáveis. G0–G4 estão concluídos; M5-U1 isolou o ambiente E2E; U2A validou sessão e persistência; U2B validou fila, tarifas e CSV; U2C validou energia, encerramento controlado e recuperação de falha. A próxima unidade é `S4-M5-U3`; G5–G7 permanecem abertos. Payment Element com Stripe sandbox real continua no gate M5-U3.
 
 **Conclusão:** a Sprint 3 entregou uma vertical comercial real e persistente para o Aurora. O projeto ainda não é um produto final integrado: boa parte do Admin continua usando regras e registros locais; a PWA mistura catálogo remoto com fixtures e guarda histórico/comprovantes no navegador; energia, demanda e inteligência ainda não controlam essa mesma operação. A Sprint 4 deve conectar e corrigir essas capacidades, não redesenhar as telas nem reconstruir a stack.
 
@@ -605,4 +605,4 @@ Não pedir cobertura percentual. Cada regra crítica tem pelo menos um teste de 
 - [ ] Repositório organizado em checkpoints; publicação/PR conforme autorização; screenshots revisados para dados pessoais.
 - [ ] Apresentação final mostra problema → arquitetura → jornada → automação energética → resultado, distinguindo real/sandbox/simulado/conceitual.
 
-**Prioridade final:** 60 pontos — funcionamento/inovação demonstrados por G1–G5; 25 pontos — justificativa GoodWe, método energético, sustentabilidade e limites técnicos; 15 pontos — execução reproduzível, testes, organização e documentação. U2A e U2B estão concluídas; o próximo passo elegível é `S4-M5-U2C`, depois M5-U3, M6-U1/U2 e M7-U1/U2. Somente após G7 começa `CG-F0-01` do pacote `sprint4-finalization`.
+**Prioridade final:** 60 pontos — funcionamento/inovação demonstrados por G1–G5; 25 pontos — justificativa GoodWe, método energético, sustentabilidade e limites técnicos; 15 pontos — execução reproduzível, testes, organização e documentação. U2A, U2B e U2C estão concluídas; o próximo passo elegível é `S4-M5-U3`, depois M6-U1/U2 e M7-U1/U2. Somente após G7 começa `CG-F0-01` do pacote `sprint4-finalization`.

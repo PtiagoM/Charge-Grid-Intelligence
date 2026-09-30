@@ -1,6 +1,6 @@
 # Ordem canônica de execução da Sprint 4
 
-**Atualizado em:** 29/09/2026  
+**Atualizado em:** 30/09/2026  
 **Função:** eliminar concorrência entre o pacote original `sprint4` e a extensão `sprint4-finalization`.
 
 ## Regra de precedência
@@ -24,8 +24,8 @@ Documento histórico ou backlog antigo não altera esta ordem. Em conflito sobre
 | M5-U1 | CONCLUÍDO | ambiente Playwright isolado no commit `11692ff` |
 | M5-U2A | CONCLUÍDA | PWA QR/checkout, autorização API controlada, Admin atualiza por polling sem reload; API reiniciada preserva sessão e pagamento |
 | M5-U2B | CONCLUÍDA | E03 fila e E06 configuração; E2E confirma atribuição+checkout, tarifa afeta novas quotes, sessão congelada, Admin mostra histórico e exporta CSV da API |
-| M5-U2C | **PRÓXIMA UNIDADE** | E01 stop/retirada/liquidação, E04 energia e E05 falhas |
-| M5-U3 | PENDENTE | gates reais e evidência visual |
+| M5-U2C | CONCLUÍDA | E01 stop/retirada/liquidação controlados, E04 energia e E05 falha de comando + recuperação; API 21 testes focais |
+| M5-U3 | **PRÓXIMA UNIDADE** | gates reais e evidência visual |
 | M6-U1/U2 | PENDENTE | hardening baseado somente em falhas de M5 |
 | M7-U1/U2 | PENDENTE | documentação/reprodução da baseline S4-C1 |
 
@@ -36,7 +36,7 @@ Documento histórico ou backlog antigo não altera esta ordem. Em conflito sobre
 ```text
 S4-M5-U2A concluída
 → S4-M5-U2B concluída
-→ S4-M5-U2C
+→ S4-M5-U2C concluída
 → S4-M5-U3
 → S4-M6-U1
 → S4-M6-U2

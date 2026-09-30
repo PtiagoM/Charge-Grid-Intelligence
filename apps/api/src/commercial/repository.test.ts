@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { MockGoodWeProvider } from "../goodwe/mock-goodwe-provider.js";
 import { CommercialConflictError, CommercialNotFoundError, CommercialRepository } from "./repository.js";
 
 describe("CommercialRepository", () => {
@@ -183,6 +184,37 @@ describe("CommercialRepository", () => {
     await repository.completeCapture({ sessionId: id, status: PaymentStatus.PAID, providerStatus: "succeeded", capturedCents: 1330 });
     expect(await repository.session(id)).toMatchObject({ status: CommercialSessionStatus.COMPLETED, payment: { status: PaymentStatus.PAID, capturedCents: 1330 } });
     expect((await repository.snapshot("est_aurora_001")).establishments[0]?.chargers[0]).toMatchObject({ physicalStatus: "AVAILABLE", commercialStatus: "AVAILABLE_TO_START" });
+  }, 20_000);
+
+  it("keeps a failed stop active and accepts a new session after hardware recovery", async () => {
+    class StopFailureProvider extends MockGoodWeProvider {
+      async stopCharge(chargerId: string) {
+        return { commandId: "failed-stop", type: "STOP_CHARGE" as const, chargerId, status: "FAILED" as const, requestedAt: new Date().toISOString() };
+      }
+    }
+    const repository = new CommercialRepository("memory://", new StopFailureProvider());
+    repositories.push(repository);
+    const failedId = "31000000-0000-4000-8000-000000000003";
+    const recoveredId = "32000000-0000-4000-8000-000000000003";
+
+    await repository.reserveSession({ id: failedId, establishmentId: "est_aurora_001", chargerCode: "AURORA-01", driverName: "Motorista Teste", method: "CARD", authorizedCents: 2500 });
+    await repository.attachPayment(failedId, "pi_test_stop_failure", "requires_capture");
+    await repository.recordPayment({ sessionId: failedId, paymentIntentId: "pi_test_stop_failure", status: PaymentStatus.AUTHORIZED, providerStatus: "requires_capture", receivedAmount: 0 });
+    await repository.hardwareEvent("AURORA-01", "CONNECT");
+
+    await expect(repository.stopSession(failedId)).rejects.toBeInstanceOf(CommercialConflictError);
+    expect(await repository.session(failedId)).toMatchObject({ status: CommercialSessionStatus.CHARGING, currentPowerKw: 7 });
+    expect((await repository.snapshot("est_aurora_001")).establishments[0]?.chargers[0]).toMatchObject({ physicalStatus: "CHARGING", currentSessionId: failedId });
+
+    await repository.hardwareEvent("AURORA-01", "FAULT");
+    expect(await repository.session(failedId)).toMatchObject({ status: CommercialSessionStatus.FAULTED });
+    await repository.hardwareEvent("AURORA-01", "RECOVER");
+    await repository.reserveSession({ id: recoveredId, establishmentId: "est_aurora_001", chargerCode: "AURORA-01", driverName: "Motorista Recuperado", method: "CARD", authorizedCents: 2500 });
+    await repository.attachPayment(recoveredId, "pi_test_after_recovery", "requires_capture");
+    await repository.recordPayment({ sessionId: recoveredId, paymentIntentId: "pi_test_after_recovery", status: PaymentStatus.AUTHORIZED, providerStatus: "requires_capture", receivedAmount: 0 });
+    await repository.hardwareEvent("AURORA-01", "CONNECT");
+
+    expect(await repository.session(recoveredId)).toMatchObject({ status: CommercialSessionStatus.CHARGING, currentPowerKw: 7 });
   }, 20_000);
 
   it("caps measured energy at the authorized financial limit", async () => {

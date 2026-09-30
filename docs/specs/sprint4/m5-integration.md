@@ -1,6 +1,6 @@
 # M5 — Prova da operação única
 
-**Estado em 29/09/2026:** U1, U2A e U2B concluídas; **U2C é a próxima unidade obrigatória**; U3 pendente. Objetivo: integrar interfaces já corretas contra C1, não descobrir domínio no E2E. Entrada G2/G3/G4 concluída. Ler acceptance.md, C1–C9 e a [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
+**Estado em 30/09/2026:** U1 e U2A–U2C concluídas; **U3 é a próxima unidade obrigatória**. Objetivo: integrar interfaces já corretas contra C1, não descobrir domínio no E2E. Entrada G2/G3/G4 concluída. Ler acceptance.md, C1–C9 e a [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
 
 ## S4-M5-U1 — Ambiente E2E isolado
 
@@ -55,11 +55,11 @@
 
 ### S4-M5-U2C — Energia, encerramento e falhas
 
-- **Depende:** U2B; **escopo:** encerramento/retirada/liquidação controlados do E01, E04 e E05.
-- **Invariantes:** política usa amostra persistida; suspensão não gera idle; falha não produz sucesso, energia ou acesso indevido.
-- **Teste:** conclusão controlada E01, specs E04/E05 e regressões focais de demand/provider/settlement.
-- **Aceite:** stop, desconexão e liquidação concluem o mesmo registro; reason/amostra/comando/efeito são rastreáveis e uma jornada elegível funciona após recuperação.
-- **Saída de U2:** consolidar E01–E06 sem rerodar specs não afetados; atualizar acceptance. Commit documental somente se necessário para evidência agregada.
+- **Estado:** concluída em 30/09/2026; escopo controlado E01, E04 e E05.
+- **Resultado:** o teste de ciclo controlado confirma avanço de energia pelo relógio do backend, teto financeiro, Stop, bloqueio de liquidação antes da retirada, desconexão, captura persistida e liberação do carregador. Novo teste injeta falha no comando Stop e confirma que sessão/carregador permanecem CHARGING; depois simula FAULT/RECOVER e confirma que uma nova sessão pode iniciar no mesmo equipamento.
+- **Validação:** `npm run test --workspace @chargegrid/api -- src/commercial/repository.test.ts --testTimeout=20000` (21 testes); ESLint focado no teste e build da API passaram.
+- **Limite:** provedor de pagamento desta validação é controlado/local. Stripe Payment Element real permanece no U3; não é evidência de captura Stripe sandbox.
+- **Commit:** registrado no histórico Git desta unidade.
 
 ## S4-M5-U3 — Gates reais e evidência visual
 

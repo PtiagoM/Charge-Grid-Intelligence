@@ -1,6 +1,6 @@
 # Aceite executável e registro de evidências
 
-Estado em 29/09/2026: **G0–G4 concluídos; G5 em andamento com M5-U1/U2A/U2B concluídos; G6–G7 pendentes**. Os vetores abaixo continuam sendo critérios executáveis; somente evidências registradas aprovam cada gate. Ver [contrato](contracts.md) e [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
+Estado em 30/09/2026: **G0–G4 concluídos; M5-U1/U2A/U2B/U2C concluídos; G5 aguarda U3 real; G6–G7 pendentes**. Os vetores abaixo continuam sendo critérios executáveis; somente evidências registradas aprovam cada gate. Ver [contrato](contracts.md) e [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
 
 ## Vetores comuns de contrato
 
@@ -118,7 +118,7 @@ Preencher somente após execução real. Uma linha pode apontar para relatório 
 | G2 PWA | CONCLUÍDO — 26/09/2026 | checkpoints M2, build/typecheck, validação visual e encerramento manual após `124d255`/`6223d76` |
 | G3 Admin | CONCLUÍDO — 26/09/2026 | checkpoints M3, testes/build e validação manual do responsável |
 | G4 energia | CONCLUÍDO — 27/09/2026 | checkpoints M4, testes focais e registro `dfab16d`; integração ampla permanece responsabilidade de G5 |
-| G5 integração | EM ANDAMENTO | M5-U1 (`11692ff`), U2A e U2B passaram: fluxo comercial/persistência; fila autenticada com chamada e checkout atribuído; tarifa versionada afeta apenas novas quotes; Admin mostra histórico e CSV derivado da API. Harness usa providers determinísticos exclusivos de teste. Stripe Payment Element real e encerramento/liquidação permanecem em M5-U3/U2C. |
+| G5 integração | EM ANDAMENTO | M5-U1 (`11692ff`) e U2A–U2C passaram: sessão/persistência, fila/checkout atribuído, tarifa versionada/relatórios, energia/stop/retirada/liquidação controlados e falha de Stop seguida de recuperação. Harness usa providers determinísticos exclusivos de teste. Payment Element/Stripe sandbox real e evidência visual permanecem em M5-U3. |
 | G6 estabilidade | PENDENTE | SW/restart/falhas/visual, V-GLOBAL/V-E2E, G-M5 |
 | G7 entrega | PENDENTE | G-M6, README/diagramas/resultados, estadoGit, checklistfinal |
 
