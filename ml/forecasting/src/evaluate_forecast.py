@@ -29,10 +29,12 @@ def load_rows(path: Path) -> dict[datetime, dict[str, str]]:
     return by_time
 
 
-def examples(by_time: dict[datetime, dict[str, str]]) -> list[dict[str, float | str | datetime]]:
+def examples(by_time: dict[datetime, dict[str, str]], splits: set[str] | None = None) -> list[dict[str, float | str | datetime]]:
     result = []
     for now, row in sorted(by_time.items()):
         split = row["temporal_split"]
+        if splits is not None and split not in splits:
+            continue
         previous = [by_time.get(now - STEP), by_time.get(now - timedelta(hours=1))]
         future = [by_time.get(now + STEP * offset) for offset in range(1, HORIZON_STEPS + 1)]
         prior_day_future = [by_time.get(now - timedelta(days=1) + STEP * offset) for offset in range(1, HORIZON_STEPS + 1)]
@@ -114,18 +116,18 @@ def regression_metrics(rows: list[dict[str, float | str | datetime]], prediction
     }
 
 
-def select_forecast(validation_metrics: dict[str, dict]) -> tuple[str, bool]:
+def select_forecast(validation_metrics: dict[str, dict], candidate_name: str = "AR1") -> tuple[str, bool]:
     """Select on validation only; require regression gain and bounded risk loss."""
     baseline_names = ("PERSISTENCE", "SEASONAL_NAIVE_24H")
     baseline_name = min(baseline_names, key=lambda name: (validation_metrics[name]["maeKw"], name != "PERSISTENCE"))
-    candidate = validation_metrics["AR1"]
+    candidate = validation_metrics[candidate_name]
     baseline = validation_metrics[baseline_name]
     promoted = (
         candidate["maeKw"] < baseline["maeKw"]
         and candidate["rmseKw"] < baseline["rmseKw"]
         and candidate["peakDetection"]["f1"] >= baseline["peakDetection"]["f1"] - MAX_VALIDATION_F1_DEGRADATION
     )
-    return ("AR1", True) if promoted else (baseline_name, False)
+    return (candidate_name, True) if promoted else (baseline_name, False)
 
 
 def evaluate(dataset_path: Path, output_dir: Path) -> Path:

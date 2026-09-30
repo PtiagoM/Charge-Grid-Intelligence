@@ -36,10 +36,10 @@ Status: **G7, CG-F0-01, CG-F0-02, CG-DASH-01, CG-DASH-02, CG-DASH-03, CG-LAB-01 
 | CG-DASH-03 | [Sustentabilidade e economia](cg-dash-03.md) | DASH-01 | MÉDIO | ALTO | PEQUENO AJUSTE NO FRONT | E2E focal | DONE |
 | CG-AI-01 | [Due diligence de datasets](cg-ai-01.md) | F0-02 | MÉDIO | ALTO | BACKEND ONLY | validação documental | DONE — benchmark SIMULATED_COMPOSITE aprovado |
 | CG-AI-02 | [Pipeline reproduzível](cg-ai-02.md) | AI-01 + decisão dataset | MÉDIO | ALTO | BACKEND ONLY | pipeline focal | DONE — dataset validado, sem treino |
-| CG-AI-03 | [Treino e seleção — pai](cg-ai-03.md) | AI-02 | GRANDE | ALTO | BACKEND ONLY | executar A/B | DONE — baseline retido; candidato AR(1) não promovido |
+| CG-AI-03 | [Treino e seleção — pai](cg-ai-03.md) | AI-02 | GRANDE | ALTO | BACKEND ONLY | executar A/B | DONE — Ridge lags/calendário promovida offline |
 | CG-AI-03A | [Baselines e protocolo](cg-ai-03a.md) | AI-02 | MÉDIO | ALTO | BACKEND ONLY | avaliação temporal focal | DONE |
-| CG-AI-03B | [Modelo e model card](cg-ai-03b.md) | AI-03A | MÉDIO | ALTO | BACKEND ONLY | seletor focal | DONE — sem modelo promovido |
-| CG-AI-04 | [Artefato e paridade Node](cg-ai-04.md) | modelo promovido AI-03B | MÉDIO | ALTO | BACKEND ONLY | parity/contract | BLOCKED — nenhum modelo promovido |
+| CG-AI-03B | [Modelo e model card](cg-ai-03b.md) | AI-03A | MÉDIO | ALTO | BACKEND ONLY | avaliação focal | DONE — Ridge lags/calendário promovida offline |
+| CG-AI-04 | [Artefato e paridade Node](cg-ai-04.md) | AI-03B | MÉDIO | ALTO | BACKEND ONLY | parity/contract | PLANNED |
 | CG-AI-05 | [Persistência e API de previsão](cg-ai-05.md) | AI-04, F0-02 | MÉDIO | ALTO | BACKEND ONLY | integration | PLANNED |
 | CG-DEC-01 | [Previsão no Decision Engine](cg-dec-01.md) | AI-05 | MÉDIO | ALTO | BACKEND ONLY | unit/integration | PLANNED |
 | CG-LAB-01 | [Perfis energéticos reproduzíveis](cg-lab-01.md) | F0-02 | MÉDIO | MÉDIO | BACKEND ONLY | integration | DONE |
@@ -56,4 +56,4 @@ Status: **G7, CG-F0-01, CG-F0-02, CG-DASH-01, CG-DASH-02, CG-DASH-03, CG-LAB-01 
 
 `S4-M7-U2/G7 → F0-01 → F0-02 → {DASH-01, AI-01, LAB-01} → DASH-02/DASH-03 → AI-02 → AI-03A → AI-03B → AI-04 → AI-05 → DEC-01 → {LAB-02, UI-01, OPS-01} → INT-01A → INT-01B → STAB-01 → DEL-01`.
 
-AI e laboratório podem avançar em paralelo depois de F0-02. CG-AI-01 aprovou somente o benchmark não operacional `SIMULATED_COMPOSITE`; CG-AI-02 construiu a série inicial; CG-AI-03 ampliou a série para avaliação temporal e reteve o baseline de persistência. CG-AI-04 está bloqueado até existir modelo promovido ou decisão explícita de portar o baseline benchmark. CG-LAB-01 foi concluído sem UI. Nenhum executor antecipa UI bloqueada por gate humano. As evidências de M5–M7 são baseline reutilizável; unidades `CG-INT/STAB/DEL` repetem apenas fluxos afetados pelos deltas S4-C2.
+AI e laboratório podem avançar em paralelo depois de F0-02. CG-AI-01 aprovou somente o benchmark não operacional `SIMULATED_COMPOSITE`; CG-AI-02 construiu a série inicial; CG-AI-03 e a segunda rodada do CG-AI-03B selecionaram Ridge com lags/calendário pelo gate de validação. CG-AI-04 está planejado para avaliar artefato/paridade Node, sem implicar uso operacional. CG-LAB-01 foi concluído sem UI. Nenhum executor antecipa UI bloqueada por gate humano. As evidências de M5–M7 são baseline reutilizável; unidades `CG-INT/STAB/DEL` repetem apenas fluxos afetados pelos deltas S4-C2.

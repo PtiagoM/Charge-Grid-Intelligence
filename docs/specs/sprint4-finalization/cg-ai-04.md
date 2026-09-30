@@ -1,6 +1,6 @@
 # CG-AI-04 — artefato versionado e paridade Node
 
-**Classificação:** BACKEND ONLY · **Status:** BLOCKED · **Tamanho:** MÉDIO · **Risco:** ALTO.
+**Classificação:** BACKEND ONLY · **Status:** PLANNED · **Tamanho:** MÉDIO · **Risco:** ALTO.
 
 ## Objetivo e escopo
 
@@ -12,7 +12,7 @@ Persistir forecast, scheduler, Decision Engine, UI ou nova infraestrutura de ser
 
 ## Dependências e estado atual
 
-Depende de modelo promovido em AI-03B. **Bloqueio atual:** AI-03 reteve `PERSISTENCE` e não produziu artefato aprovado; o candidato AR(1) não passou os critérios da validação. Não inventar nem portar um modelo. Retomar apenas após dados/decisão que justifiquem promover uma previsão ou uma decisão explícita de que o baseline benchmark será objeto do contrato.
+Depende do modelo Ridge offline promovido em AI-03B: `ml/forecasting/data/lag_calendar_ridge_model.json`. A promoção ocorreu somente no benchmark `SIMULATED_COMPOSITE`; validar schema, paridade e limites antes de qualquer uso no runtime. A métrica de teste é mista e deve permanecer visível na avaliação de risco.
 
 ## Arquivos relevantes
 

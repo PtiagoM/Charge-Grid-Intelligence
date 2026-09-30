@@ -40,6 +40,7 @@ For CG-AI-03, generate a separate temporal series from the same EULP/EV/metadata
 py ml/forecasting/src/fetch_pvdaq.py
 py ml/forecasting/src/prepare_forecasting.py
 py ml/forecasting/src/evaluate_forecast.py
+py ml/forecasting/src/evaluate_lag_calendar.py
 py -m unittest discover -s ml/forecasting/tests -v
 ```
 
@@ -68,4 +69,4 @@ Every row declares `datasetClass=SIMULATED_COMPOSITE` and the origin of each com
 
 ### CG-AI-03 forecast
 
-The benchmark target is the maximum `gridImportKw` in the **next 60 minutes** (four 15-minute steps), using only values available at each forecast origin. The persistence baseline was selected on chronological validation; the trained AR(1) candidate did not pass the promotion rule. See [evaluation protocol](../../docs/ai/evaluation-protocol.md) and [model card](../../docs/ai/model-card.md) for splits, metrics, risk threshold, structured signal and limits. No model is integrated into runtime.
+The benchmark target is the maximum `gridImportKw` in the **next 60 minutes** (four 15-minute steps), using only values available at each forecast origin. The original AR(1) failed validation; one fixed Ridge candidate using lags/calendar passed validation and was evaluated once on the holdout. It remains an offline `SIMULATED_COMPOSITE` artifact, not integrated into runtime. See [evaluation protocol](../../docs/ai/evaluation-protocol.md) and [model card](../../docs/ai/model-card.md) for metrics and limits.

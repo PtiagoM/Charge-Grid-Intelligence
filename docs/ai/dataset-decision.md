@@ -22,4 +22,4 @@ ACN-Data foi investigado por ser a fonte preferida de sessões EV, mas o endpoin
 
 ## Próxima condição
 
-CG-AI-03 está concluído usando série ampliada separada `forecasting_series.csv`; o dataset AI-02 original permanece inalterado. Consulte [protocolo de avaliação](evaluation-protocol.md) e [model card](model-card.md). Nenhum modelo foi promovido para runtime.
+CG-AI-03 está concluído usando série ampliada separada `forecasting_series.csv`; o dataset AI-02 original permanece inalterado. Ridge foi promovida somente para benchmark offline, sem integração/runtime. Consulte [protocolo de avaliação](evaluation-protocol.md) e [model card](model-card.md).

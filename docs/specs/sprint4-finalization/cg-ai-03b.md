@@ -36,7 +36,7 @@ Depende de AI-03A. Dataset, features, splits, métricas e regra de sucesso já e
 
 ## Resultado desta unidade
 
-Foi ajustado um candidato AR(1) univariado treinado somente em pares consecutivos do bloco de treino. A seleção escolheu `PERSISTENCE` porque o candidato não melhorou o MAE de validação. O conjunto de teste foi calculado após a escolha e não participa de seleção ou promoção. Não foi promovido nem exportado modelo; a avaliação é exclusivamente do benchmark `SIMULATED_COMPOSITE`.
+Na rodada original, AR(1) não passou o gate e `PERSISTENCE` foi retido. Em uma única segunda rodada controlada, Ridge multivariada com lags e calendário passou o gate exclusivamente na validação e foi promovida para avaliação offline. O teste foi aberto somente após congelar a seleção; seu resultado é misto (MAE pior que persistência, RMSE/F1 melhores). Artefato e detalhes estão em `docs/ai/model-card.md`. O modelo permanece `SIMULATED_COMPOSITE`, não operacional.
 
 ## Testes, documentação e commit
 

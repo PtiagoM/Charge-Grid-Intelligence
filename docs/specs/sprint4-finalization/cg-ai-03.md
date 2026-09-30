@@ -31,7 +31,7 @@ Não executar treino/teste ou criar commit para o pai; cada subunidade registra 
 
 ## Resultado
 
-CG-AI-03A e CG-AI-03B concluídos em conjunto: benchmark temporal `SIMULATED_COMPOSITE`, baselines determinísticos, candidato AR(1), seleção apenas por validação e holdout temporal. O baseline persistence foi retido; nenhum modelo promovido ou integrado em runtime. Métricas e limitações em [`model-card.md`](../../ai/model-card.md).
+CG-AI-03A e CG-AI-03B concluídos: benchmark temporal `SIMULATED_COMPOSITE`, comparação de baselines e duas rodadas controladas com seleção pela validação. AR(1) foi rejeitado; Ridge com lags/calendário passou o gate de validação e foi avaliado no holdout, com resultado misto. O artefato é offline e ainda não integrado ao runtime. Métricas e limitações em [`model-card.md`](../../ai/model-card.md).
 
 ## Critérios de aceite
 

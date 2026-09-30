@@ -4,11 +4,11 @@
 
 - **Uso:** benchmark acadêmico de previsão temporal; não operacional.
 - **Classe dos dados:** `SIMULATED_COMPOSITE`.
-- **Resultado selecionado:** baseline `PERSISTENCE`; candidato AR(1) treinado, não promovido.
+- **Resultado selecionado:** `LINEAR_LAGS_CALENDAR`, regressão Ridge múltipla padronizada; promovida pelo gate de validação, ainda não integrada ao runtime.
 - **Target:** máximo de `gridImportKw` nos próximos 60 min (quatro passos de 15 min).
-- **Features do candidato:** `gridImportKw` observado no instante de previsão; para passos posteriores, somente a predição recursiva anterior. Nenhuma carga, EV ou FV do mesmo instante futuro é usada.
+- **Features do Ridge selecionado:** `gridImportKw` atual, lags de 15 e 60 min, pico do bloco correspondente do dia anterior e pares seno/cosseno de hora, dia da semana e dia do ano. O AR(1) da rodada inicial usou apenas `gridImportKw` na origem.
 - **Limiar:** 117,524661 kW, percentil 90 dos picos futuros do bloco de treino. É limiar de cauda do composto, não política ou limite de Aurora.
-- **Artefato de inferência:** nenhum modelo AR(1) exportado, pois não passou o gate de promoção. O sinal CSV/JSON é evidência offline do baseline, não API ou integração Node.
+- **Artefato de inferência:** `ml/forecasting/data/lag_calendar_ridge_model.json`, reproduzível offline. Ainda não é API nem integração Node.
 
 ## Proveniência e composição
 
@@ -24,11 +24,11 @@ Foram incorporados 253 arquivos-dia PVDAQ; 250 têm 96 intervalos observados e t
 
 ## Protocolo
 
-Datas inteiras em ordem: treino 60% (151 dias; 14.397 origens válidas), validação 20% (51 dias; 4.892 origens) e teste final 20% (51 dias; 4.595 origens). Gaps e janelas futuras que cruzam partições são descartados. Candidato ajustado somente em treino; método escolhido por MAE de validação. AR(1) só é promovido com MAE e RMSE menores que o baseline de menor MAE e F1 não mais de 0,02 inferior. Teste não participa da seleção. Detalhes no [`protocolo`](evaluation-protocol.md).
+Datas inteiras em ordem: treino 60% (151 dias; 14.397 origens válidas), validação 20% (51 dias; 4.892 origens) e teste final 20% (51 dias; 4.595 origens). Gaps e janelas futuras que cruzam partições são descartados. Candidato ajustado somente em treino; método escolhido por MAE de validação. A promoção requer que MAE e RMSE sejam ambos menores que o baseline de menor MAE e que F1 não caia mais de 0,02. Teste não participa da seleção. Detalhes no [`protocolo`](evaluation-protocol.md).
 
-Execução registrada com Python 3.14.7 e somente biblioteca padrão; regressão OLS fechada, sem aleatoriedade e sem seed.
+Primeira rodada registrada com Python 3.14.7 e somente biblioteca padrão; OLS/Ridge fechado, sem aleatoriedade ou seed.
 
-## Resultados
+## Resultados — primeira rodada (CG-AI-03)
 
 | Método | Val MAE kW | Val RMSE kW | Val F1 pico | Test MAE kW | Test RMSE kW | Test F1 pico |
 |---|---:|---:|---:|---:|---:|---:|
@@ -36,9 +36,22 @@ Execução registrada com Python 3.14.7 e somente biblioteca padrão; regressão
 | AR(1), não promovido | 5,9255 | 10,4123 | 0,8286 | 5,2640 | 9,6474 | 0,8076 |
 | Sazonal ingênuo 24 h | 18,7167 | 31,9229 | 0,5559 | 16,5949 | 28,1970 | 0,5603 |
 
-Os erros test do AR(1) são descritivos do candidato pré-definido; não mudam a decisão tomada na validação. Na validação, AR(1) piorou MAE versus persistência, apesar de RMSE levemente menor, e teve F1 inferior; por isso o baseline é retido. O baseline de persistência produziu F1 de 0,8144 no holdout sob o limiar derivado do treino. Isso caracteriza somente este composto e seu limiar.
+Na primeira rodada, AR(1) piorou MAE de validação e teve F1 inferior; por isso persistência foi retida. O teste dessa rodada foi registrado antes da segunda experiência controlada.
 
 O JSON completo contém precision/recall, confusões, coeficientes e limites; o CSV de previsões contém um registro estruturado por origem do holdout. Ambos têm `datasetClass=SIMULATED_COMPOSITE`.
+
+## Segunda rodada controlada — CG-AI-03B
+
+Único candidato novo: regressão linear múltipla Ridge, com features padronizadas usando estatísticas do treino e penalização fixa `alpha=1.0` (sem tuning). Target direto: máximo de `gridImportKw` na próxima hora. Features disponíveis na origem: `gridImportKw` atual, lags de 15 e 60 minutos, máximo do bloco da próxima hora do dia anterior, seno/cosseno da hora, dia da semana e dia do ano. Não usa qualquer componente/target do horizonte futuro. Python 3.14.7, biblioteca padrão, cálculo determinístico.
+
+| Método | Val MAE kW | Val RMSE kW | Val F1 pico | Test MAE kW | Test RMSE kW | Test F1 pico |
+|---|---:|---:|---:|---:|---:|---:|
+| Ridge lags+calendário (promovida) | 5,6370 | 8,5421 | 0,8883 | 5,6262 | 8,4319 | 0,8349 |
+| Persistência | 5,7964 | 10,4715 | 0,8344 | 5,3225 | 9,7665 | 0,8144 |
+
+Na validação, Ridge passou os gates: MAE e RMSE menores que persistência; F1 aumentou. Após congelar a seleção, o teste foi avaliado uma vez. No holdout, Ridge melhora RMSE e F1, mas seu MAE é 0,3037 kW pior; isso não altera a seleção por validação e indica generalização mista. Para pico, recall sobe e precision cai (FP: 62 versus 30); a detecção captura mais positivos, com mais falsos alarmes.
+
+O artefato e resultados dessa rodada estão em `ml/forecasting/data/lag_calendar_ridge_model.json`, `forecast_second_candidate_evaluation.json` e `forecast_second_candidate_test.csv`. A avaliação não estima o quarto de hora exato do pico — somente o máximo horário — e não é telemetria Aurora.
 
 ## Limitações e uso proibido
 

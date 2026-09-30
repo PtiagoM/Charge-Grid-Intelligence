@@ -21,19 +21,23 @@ Na origem `t`, estimar o pico de importação da rede durante os quatro interval
 
 1. `PERSISTENCE`: repetir `gridImportKw(t)` como estimativa do pico da próxima hora. Baseline determinístico principal.
 2. `SEASONAL_NAIVE_24H`: usar o pico observado no mesmo bloco de quatro intervalos do dia anterior.
-3. `AR1`: regressão linear de um passo, `gridImportKw(t+15m) ~ gridImportKw(t)`, ajustada em treino e aplicada recursivamente quatro vezes. Uma única feature observada na origem; previsões recursivas alimentam os próximos passos.
+3. `AR1` (primeira rodada): regressão linear de um passo, `gridImportKw(t+15m) ~ gridImportKw(t)`, ajustada em treino e aplicada recursivamente quatro vezes. Foi rejeitada na validação.
+4. `LINEAR_LAGS_CALENDAR` (única segunda rodada): Ridge multivariada com target direto igual ao pico dos quatro passos seguintes. Features: `gridImportKw` atual, lags 15m/60m, pico do bloco correspondente no dia anterior e pares seno/cosseno para hora, dia da semana e dia do ano. Padronização usa médias/desvios do treino; penalização fixa `alpha=1.0`; sem tuning ou aleatoriedade.
 
-O AR(1) é candidato simples e explicável adequado para testar se a relação temporal acrescenta valor. Não se treina rede neural nem se faz tuning amplo com este tamanho/proveniência.
+Ambos são candidatos simples e explicáveis, sem dependências externas. A segunda rodada foi limitada a um único Ridge porque calendários e lags podem explicar ciclos ausentes no AR(1); não houve busca de hiperparâmetros nem outros algoritmos.
 
 ## Seleção, limiar e métricas
 
-- Seleção somente na validação. Comparar AR(1) com baseline de menor MAE (persistência em empate). Promover AR(1) apenas se melhorar **MAE e RMSE** e seu F1 de pico não cair mais de 0,02; caso contrário, reter o baseline.
+- Seleção somente na validação. Comparar cada candidato com o baseline de menor MAE (persistência em empate). Promover apenas se melhorar **MAE e RMSE** e F1 de pico não cair mais de 0,02; caso contrário, reter o baseline.
 - Definir risco do benchmark como pico futuro maior ou igual ao percentil 90 dos picos de horizonte no treino. O limiar resultante de 117,524661 kW é exclusivo deste composto; não é limite contratual, alarme ou política operacional Aurora.
 - Regressão: MAE e RMSE em kW contra o pico máximo observado na hora seguinte.
 - Evento de pico: target e previsão maiores ou iguais ao limiar; reportar precision, recall, F1 e contagens TP/FP/FN.
 - O timestamp previsto é o intervalo do máximo previsto; em empate usar o primeiro intervalo futuro.
+- Para Ridge direto, só se prevê o valor máximo agregado por hora, não em qual dos quatro intervalos ele ocorre; não fabricar timestamp exato do pico.
 - Resultado estruturado de benchmark: `target`, `statistic`, `horizonMinutes`, `predictedPeakAtLocal`, `predictedPeakGridImportKw`, `riskThresholdKw`, `riskState` (`NORMAL`/`PREDICTED_PEAK`), `datasetClass` e `forecastMethod`.
 
 ## Reprodução e limitações
 
 Comandos, fontes e geração estão em [`ml/forecasting/README.md`](../../ml/forecasting/README.md); resultados fixados em [`model-card.md`](model-card.md) e `ml/forecasting/data/forecast_evaluation.json`. A ausência de co-localização, timezone harmonizado, forma real da potência das sessões e planta Aurora impede extrapolar erro, limiar ou benefício. Um futuro Decision Engine deve consumir sua política e telemetria atuais, nunca este limiar de benchmark como configuração de produção.
+
+Na segunda rodada, o bloco de teste só foi derivado após Ridge vencer a regra de validação; em caso de reprovação, o executor não deveria ler/calcular métricas desse holdout.
