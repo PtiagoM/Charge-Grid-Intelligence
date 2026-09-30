@@ -1,6 +1,6 @@
 # Sprint 4 — pacote final de execução
 
-Status: **G7, CG-F0-01, CG-F0-02, CG-DASH-01, CG-DASH-02, CG-DASH-03 E CG-LAB-01 CONCLUÍDOS; CG-AI-01 DOCUMENTADO E AGUARDANDO DECISÃO DE PRODUTO**. Este pacote transforma o plano mestre aprovado em unidades executáveis. Ele não substitui M5–M7 de `docs/specs/sprint4`.
+Status: **G7, CG-F0-01, CG-F0-02, CG-DASH-01, CG-DASH-02, CG-DASH-03, CG-LAB-01, CG-AI-01 E CG-AI-02 CONCLUÍDOS**. Este pacote transforma o plano mestre aprovado em unidades executáveis. Ele não substitui M5–M7 de `docs/specs/sprint4`.
 
 ## Como usar
 
@@ -34,8 +34,8 @@ Status: **G7, CG-F0-01, CG-F0-02, CG-DASH-01, CG-DASH-02, CG-DASH-03 E CG-LAB-01
 | CG-DASH-01 | [Agregados temporais canônicos](cg-dash-01.md) | F0-02 | MÉDIO | ALTO | BACKEND ONLY | unit/integration | DONE |
 | CG-DASH-02 | [Cards do Dashboard](cg-dash-02.md) | DASH-01 | MÉDIO | MÉDIO | PEQUENO AJUSTE NO FRONT | E2E focal | DONE |
 | CG-DASH-03 | [Sustentabilidade e economia](cg-dash-03.md) | DASH-01 | MÉDIO | ALTO | PEQUENO AJUSTE NO FRONT | E2E focal | DONE |
-| CG-AI-01 | [Due diligence de datasets](cg-ai-01.md) | F0-02 | MÉDIO | ALTO | BACKEND ONLY | validação documental | WAITING_FOR_PRODUCT_DECISION |
-| CG-AI-02 | [Pipeline reproduzível](cg-ai-02.md) | AI-01 + decisão dataset | MÉDIO | ALTO | BACKEND ONLY | pipeline | PLANNED |
+| CG-AI-01 | [Due diligence de datasets](cg-ai-01.md) | F0-02 | MÉDIO | ALTO | BACKEND ONLY | validação documental | DONE — benchmark SIMULATED_COMPOSITE aprovado |
+| CG-AI-02 | [Pipeline reproduzível](cg-ai-02.md) | AI-01 + decisão dataset | MÉDIO | ALTO | BACKEND ONLY | pipeline focal | DONE — dataset validado, sem treino |
 | CG-AI-03 | [Treino e seleção — pai](cg-ai-03.md) | AI-02 | GRANDE | ALTO | BACKEND ONLY | executar A/B | PLANNED |
 | CG-AI-03A | [Baselines e protocolo](cg-ai-03a.md) | AI-02 | MÉDIO | ALTO | BACKEND ONLY | treino offline | PLANNED |
 | CG-AI-03B | [Modelo e model card](cg-ai-03b.md) | AI-03A | MÉDIO | ALTO | BACKEND ONLY | treino offline | PLANNED |
@@ -56,4 +56,4 @@ Status: **G7, CG-F0-01, CG-F0-02, CG-DASH-01, CG-DASH-02, CG-DASH-03 E CG-LAB-01
 
 `S4-M7-U2/G7 → F0-01 → F0-02 → {DASH-01, AI-01, LAB-01} → DASH-02/DASH-03 → AI-02 → AI-03A → AI-03B → AI-04 → AI-05 → DEC-01 → {LAB-02, UI-01, OPS-01} → INT-01A → INT-01B → STAB-01 → DEL-01`.
 
-AI e laboratório podem avançar em paralelo depois de F0-02. CG-AI-01 foi concluído documentalmente e aguarda decisão explícita antes de qualquer download, síntese ou treino; CG-LAB-01 foi concluído sem UI. Nenhum executor antecipa UI bloqueada por gate humano. As evidências de M5–M7 são baseline reutilizável; unidades `CG-INT/STAB/DEL` repetem apenas fluxos afetados pelos deltas S4-C2.
+AI e laboratório podem avançar em paralelo depois de F0-02. CG-AI-01 aprovou somente o benchmark não operacional `SIMULATED_COMPOSITE`; CG-AI-02 amostrou fontes, construiu e validou o dataset, sem treinar modelo. A próxima unidade AI elegível é AI-03A após leitura de sua SDD; este commit não a inicia. CG-LAB-01 foi concluído sem UI. Nenhum executor antecipa UI bloqueada por gate humano. As evidências de M5–M7 são baseline reutilizável; unidades `CG-INT/STAB/DEL` repetem apenas fluxos afetados pelos deltas S4-C2.

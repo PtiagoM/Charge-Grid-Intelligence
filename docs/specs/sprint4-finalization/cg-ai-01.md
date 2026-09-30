@@ -1,6 +1,6 @@
 # CG-AI-01 — due diligence e seleção de datasets
 
-**Classificação:** BACKEND ONLY · **Status:** WAITING_FOR_PRODUCT_DECISION · **Tamanho:** MÉDIO · **Risco:** ALTO.
+**Classificação:** BACKEND ONLY · **Status:** DONE · **Tamanho:** MÉDIO · **Risco:** ALTO.
 
 ## Objetivo e escopo
 
@@ -26,17 +26,15 @@ Uma combinação só é elegível se unidades, frequência e relógio puderem se
 
 `dataset-decision.md` deve congelar target `gridImportKw` (kW), resolução, horizonte, features disponíveis, regra de combinação, parte simulada complementar e limitações. Um proxy que não represente diretamente a importação da planta não é intercambiável para a regra operacional; se nenhum dataset sustentar o target, parar e registrar a evidência para decisão explícita antes de treinar ou gerar substituto.
 
-## Resultado e condição de parada
+## Resultado
 
-A avaliação comparou fontes de carga, PV, EV e referência brasileira. Nenhuma representa diretamente o target integrado do Aurora; a combinação entre locais produziria somente um composto simulado. A recomendação e opções estão em `docs/ai/dataset-decision.md`.
-
-Não baixar/amostrar dados, congelar resolução/horizonte, gerar sintético ou iniciar AI-02 até o usuário escolher explicitamente uma alternativa. O target semântico continua `gridImportKw`; isso não autoriza previsão operacional.
+A avaliação comparou fontes de carga, PV, EV e referência brasileira. Nenhuma representa diretamente o target integrado do Aurora. O responsável aprovou explicitamente `SIMULATED_COMPOSITE` apenas para o benchmark não operacional CG-AI-02; a decisão está registrada em `docs/ai/dataset-decision.md`. Amostras, qualidade e limites foram validados nessa unidade. Essa aprovação não autoriza previsão operacional nem treino.
 
 ## Critérios de aceite
 
 - Matriz compara ao menos uma fonte de carga, uma solar e uma EV, ou justifica ausência.
 - Proveniência, termos, granularidade, variáveis e incompatibilidades estão registrados para fontes reais.
-- A ausência de fonte elegível para o target foi demonstrada e o gate de decisão foi registrado.
+- A ausência de fonte elegível para o target foi demonstrada; a decisão explícita limita o composto à validação acadêmica do pipeline.
 - Não foi afirmado que fontes de locais diferentes formam medição integrada Aurora.
 
 ## Testes, documentação e commit
@@ -45,4 +43,4 @@ Verificar links e termos públicos; nenhuma amostra foi baixada porque isso depe
 
 ## Próximo passo condicionado
 
-Após decisão explícita, atualizar `dataset-decision.md` e só então mudar AI-02 para `READY`, se os termos e dados autorizados satisfizerem sua SDD.
+AI-01 e AI-02 concluídos. CG-AI-03 continua independente e não foi iniciado; horizonte, protocolo e treino seguem sujeitos à sua SDD e aos seus gates.

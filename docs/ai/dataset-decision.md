@@ -1,27 +1,25 @@
 # CG-AI-01 — decisão de dados e gate de treino
 
-**Status:** `WAITING_FOR_PRODUCT_DECISION`  
-**Target semântico congelado:** `gridImportKw`, importação de rede na planta em kW.  
-**Resolução/horizonte de treino:** ainda não congelados: não há série de rótulos elegível que os justifique.
+**Status:** `APPROVED_SIMULATED_COMPOSITE` para benchmark e validação do pipeline.  
+**Target semântico:** `gridImportKw`, importação de rede na planta em kW.  
+**Resolução do composto:** 15 minutos. Isto define apenas o dataset do CG-AI-02.  
+**Horizonte/modelo/treino:** não decididos nem autorizados por esta decisão.
 
-## Decisão técnica desta unidade
+## Decisão aprovada
 
-Não selecionar uma fonte como rótulo operacional e não iniciar pipeline/treino. Nenhum candidato verificado mede `gridImportKw` de um local comercial integrado com carga da planta, geração FV e carregadores EV. A combinação de datasets de instalações distintas só formaria um cenário sintético, nunca uma medição Aurora. A análise e limitações estão em [dataset-evaluation.md](dataset-evaluation.md).
+O benchmark usa amostras reais independentes de edifício, carga EV e FV para montar um cenário explicitamente `SIMULATED_COMPOSITE`. Não é telemetria Aurora, não representa uma instalação física sincronizada e não pode ser usado como entrada operacional do ChargeGrid.
 
-Isso não altera o Decision Engine determinístico já existente: suas decisões continuam baseadas na telemetria e regras atuais. A previsão deve permanecer indisponível até existir um modelo com avaliação honesta, sem confiança inventada.
+Fontes incorporadas, transformações, schema, hashes, qualidade e limitações estão no [`README do benchmark`](../../ml/forecasting/README.md), [`manifesto`](../../ml/forecasting/data/simulated_composite.manifest.json), [`quality report`](../../ml/forecasting/data/quality-report.json) e [`avaliação de fontes`](dataset-evaluation.md).
 
-## Recomendação para a próxima decisão
+ACN-Data foi investigado por ser a fonte preferida de sessões EV, mas o endpoint da API respondeu HTTP 401 sem token; nenhum token estava configurado. Para concluir o recorte aprovado, foi usado o conjunto público NREL Workplace Charging Data, explicitamente identificado como substituto.
 
-**Recomendado:** autorizar apenas um benchmark acadêmico/prova do pipeline em `SIMULATED_COMPOSITE`, explicitamente não operacional e não representativo de Aurora, caso a meta da Sprint exija demonstrar o caminho IA → previsão → regra. Os componentes poderiam vir de amostras reais licenciadas de edifício/PV/EV, alinhadas e combinadas por regra física documentada; a série composta, o alvo derivado e qualquer complemento continuariam rotulados simulados. Antes disso, é necessário confirmar licenças específicas das amostras e definir a regra de alinhamento.
+## Limites da decisão
 
-Alternativa mais conservadora: não treinar modelo nesta Sprint, manter forecast como indisponível e concluir o projeto com automação determinística; isso preserva fidelidade, mas reduz a demonstração de IA preditiva.
+- O target é uma derivação física simplificada `max(0, cargaPredial + EV - FV)`, sem bateria, perdas, curtailment, exportação líquida ou sincronização de local.
+- A frequência de 15 minutos e os splits no benchmark não congelam frequência/horizonte de previsão.
+- Nenhuma métrica de acurácia, confiança ou benefício operacional pode ser alegada antes de CG-AI-03 e validação apropriada; mesmo um bom resultado nesse composto não validaria operação Aurora.
+- O Decision Engine atual continua baseado em telemetria e regras determinísticas existentes.
 
-## Decisão solicitada
+## Próxima condição
 
-Escolher uma opção antes de CG-AI-02:
-
-1. **Benchmark simulado (recomendado):** permitir pipeline/avaliação de um composto claramente simulado, sem uso operacional nem alegação de dados do Aurora.
-2. **Sem modelo nesta Sprint:** manter previsão indisponível e não executar AI-02 a AI-05; continuar as unidades independentes do laboratório e entrega.
-3. **Fornecer telemetria real local:** se houver export de medição Aurora (importação da rede e timestamps, idealmente PV/carga/EV separados), avaliar retenção/licença/qualidade e então decidir resolução/horizonte.
-
-Até a resposta, **não** baixar ou versionar datasets, gerar dados sintéticos, definir horizonte, treinar, criar artefato nem expor previsão na API/UI. AI-02 permanece `PLANNED`; CG-LAB-01 segue independente e elegível.
+CG-AI-02 está concluído. Antes de qualquer treino, CG-AI-03 deve propor protocolo, baseline, target temporal e horizonte explícitos e confirmar que este conjunto minúsculo é inadequado como validação de desempenho. Não treinar sobre ele para alegar generalização ou prontidão operacional.
