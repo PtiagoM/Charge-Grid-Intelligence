@@ -49,4 +49,4 @@ Atualizar decisão AI-01, avaliação de fontes, este SDD, índice mestre e `CUR
 
 ## Condição de parada
 
-Concluída nesta unidade. Parar antes de CG-AI-03: nenhuma seleção de horizonte/modelo, treino, inferência, API ou uso operacional está autorizada por este benchmark.
+Concluída nesta unidade. O treino/avaliação temporal foi tratado separadamente em CG-AI-03 usando série ampliada. AI-02 continua sem alegação de capacidade preditiva própria; nenhuma previsão operacional, inferência, API ou uso de produção foi autorizada por este benchmark.

@@ -1,6 +1,6 @@
 # CG-AI-03 — treino e seleção do modelo (unidade-pai)
 
-**Classificação:** BACKEND ONLY · **Status:** PLANNED · **Tamanho:** GRANDE · **Risco:** ALTO.
+**Classificação:** BACKEND ONLY · **Status:** DONE · **Tamanho:** GRANDE · **Risco:** ALTO.
 
 ## Objetivo
 
@@ -28,6 +28,10 @@ Não criar código ou commit com o ID-pai. Não antecipar inferência Node, API,
 ## Testes, documentação e commit
 
 Não executar treino/teste ou criar commit para o pai; cada subunidade registra sua evidência.
+
+## Resultado
+
+CG-AI-03A e CG-AI-03B concluídos em conjunto: benchmark temporal `SIMULATED_COMPOSITE`, baselines determinísticos, candidato AR(1), seleção apenas por validação e holdout temporal. O baseline persistence foi retido; nenhum modelo promovido ou integrado em runtime. Métricas e limitações em [`model-card.md`](../../ai/model-card.md).
 
 ## Critérios de aceite
 

@@ -1,0 +1,4368 @@
+{
+  "classification": "SIMULATED_COMPOSITE",
+  "coverage": {
+    "2019-04-01": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-02": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-03": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-04": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-05": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-06": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-07": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-08": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-09": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-10": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-11": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-12": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-13": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-14": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-15": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-16": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-17": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-18": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-19": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-20": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-21": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-22": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-23": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-24": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-25": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-26": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-27": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-28": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-29": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-04-30": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-01": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-02": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-03": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-04": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-05": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-06": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-07": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-08": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-09": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-10": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-11": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-12": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-13": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-14": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-15": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-16": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-17": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-18": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-19": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-20": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-21": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-22": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-23": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-24": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-25": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-26": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-27": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-28": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-29": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-30": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-05-31": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-01": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-02": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-03": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-04": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-05": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-06": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-07": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-08": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-09": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-10": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-11": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-12": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-13": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-14": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-15": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-16": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-17": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-18": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-19": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-20": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-21": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-22": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-23": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-24": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-25": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-26": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-27": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-28": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-29": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-06-30": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-01": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-02": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-03": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-04": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-05": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-06": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-07": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-08": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-09": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-10": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-11": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-12": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-13": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-14": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-15": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-16": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-17": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-18": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-19": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-20": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-21": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-22": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-23": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-24": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-25": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-26": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-27": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-28": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-29": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-30": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-07-31": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-01": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-02": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-03": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-04": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-05": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-06": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-07": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-08": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-09": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-10": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-11": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-12": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-13": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-14": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-15": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-16": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-17": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-18": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-19": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-20": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-21": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-22": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-23": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-24": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-25": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-26": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-27": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-28": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-29": {
+      "expected": 96,
+      "observed": 96,
+      "split": "train"
+    },
+    "2019-08-30": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-08-31": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-01": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-02": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-03": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-04": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-05": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-06": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-07": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-08": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-09": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-10": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-11": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-12": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-13": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-14": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-15": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-16": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-17": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-18": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-19": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-20": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-21": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-22": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-23": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-24": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-25": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-26": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-27": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-28": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-29": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-09-30": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-10-01": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-10-02": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-10-03": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-10-04": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-10-05": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-10-06": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-10-07": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-10-08": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-10-09": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-10-10": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-10-11": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-10-12": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-10-13": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-10-14": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-10-15": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-10-16": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-10-17": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-10-18": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-10-19": {
+      "expected": 96,
+      "observed": 96,
+      "split": "validation"
+    },
+    "2019-10-20": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-10-21": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-10-22": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-10-23": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-10-24": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-10-25": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-10-26": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-10-27": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-10-28": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-10-29": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-10-30": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-10-31": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-01": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-02": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-03": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-04": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-05": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-06": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-07": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-08": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-09": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-10": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-11": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-12": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-13": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-14": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-15": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-16": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-17": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-18": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-19": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-20": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-21": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-22": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-23": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-24": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-25": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-26": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-27": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-28": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-29": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-11-30": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-12-01": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-12-02": {
+      "expected": 96,
+      "observed": 46,
+      "split": "test"
+    },
+    "2019-12-10": {
+      "expected": 96,
+      "observed": 4,
+      "split": "test"
+    },
+    "2019-12-11": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-12-12": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-12-13": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-12-14": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-12-15": {
+      "expected": 96,
+      "observed": 96,
+      "split": "test"
+    },
+    "2019-12-16": {
+      "expected": 96,
+      "observed": 40,
+      "split": "test"
+    }
+  },
+  "duplicates": {
+    "outputTimestamps": 0
+  },
+  "eulp": {
+    "medianResolutionMinutes": 15,
+    "rows": 35040,
+    "timezone": "unspecified naive wall-clock",
+    "validIntervals": 35040
+  },
+  "ev": {
+    "allocation": "uniform average session power over measured start/end",
+    "rows": 40979,
+    "sessionsUsed": 6968,
+    "timezone": "naive local source timestamps"
+  },
+  "gridImportKwRange": [
+    0.0,
+    196.131486
+  ],
+  "limitations": [
+    "Composite is not a co-located or contemporaneous site measurement and is never Aurora telemetry.",
+    "EULP is modeled, NREL EV power is estimated from session energy, and PVDAQ is scaled to a hypothetical 75 kWp array.",
+    "Intervals without observed PVDAQ values are omitted and become time-series gaps; forecast windows crossing gaps are excluded.",
+    "Forecast evaluation on this composite cannot establish performance on an operating Aurora plant."
+  ],
+  "missingness": {
+    "evRowsInvalidOrNonpositive": 306,
+    "evRowsMissingRequiredFields": {
+      "end_date_time": 26391,
+      "energy_charged": 487,
+      "start_date_time": 26391
+    },
+    "outputNullCells": 0
+  },
+  "operationalUse": false,
+  "pvdaq": {
+    "files": 253,
+    "filesByDay": {
+      "2019-04-01": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 728,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-02": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 750,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-03": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 724,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-04": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 726,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-05": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 735,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-06": {
+        "aboveDcNameplateRows": 5,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 718,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-07": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 689,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-08": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 711,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-09": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 714,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-10": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 926,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-11": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 816,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-12": {
+        "aboveDcNameplateRows": 1,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 731,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-13": {
+        "aboveDcNameplateRows": 22,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 929,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-14": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 671,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-15": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 737,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-16": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 730,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-17": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 709,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-18": {
+        "aboveDcNameplateRows": 7,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 713,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-19": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 715,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-20": {
+        "aboveDcNameplateRows": 1,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 731,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-21": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 698,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-22": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 792,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-23": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 694,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-24": {
+        "aboveDcNameplateRows": 5,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 700,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-25": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 719,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-26": {
+        "aboveDcNameplateRows": 1,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 675,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-27": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 688,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-28": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 705,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-29": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 840,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-04-30": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 870,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-01": {
+        "aboveDcNameplateRows": 1,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 746,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-02": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 659,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-03": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 667,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-04": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 652,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-05": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 653,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-06": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 686,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-07": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 816,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-08": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 833,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-09": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 807,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-10": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 658,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-11": {
+        "aboveDcNameplateRows": 1,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 667,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-12": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 659,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-13": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 685,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-14": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 651,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-15": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 655,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-16": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 628,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-17": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 678,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-18": {
+        "aboveDcNameplateRows": 2,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 612,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-19": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 653,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-20": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 791,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-21": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 807,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-22": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 697,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-23": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 754,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-24": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 654,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-25": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 633,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-26": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 659,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-27": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 653,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-28": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 666,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-29": {
+        "aboveDcNameplateRows": 3,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 636,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-30": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 633,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-05-31": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 631,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-01": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 648,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-02": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 653,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-03": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 655,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-04": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 627,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-05": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 745,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-06": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 654,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-07": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 652,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-08": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 681,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-09": {
+        "aboveDcNameplateRows": 8,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 669,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-10": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 612,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-11": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 605,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-12": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 620,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-13": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 629,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-14": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 598,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-15": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 634,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-16": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 625,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-17": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 712,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-18": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 645,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-19": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 670,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-20": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 635,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-21": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 806,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-22": {
+        "aboveDcNameplateRows": 2,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 776,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-23": {
+        "aboveDcNameplateRows": 4,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 619,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-24": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 616,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-25": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 607,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-26": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 602,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-27": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 616,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-28": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 651,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-29": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 659,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-06-30": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 633,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-01": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 615,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-02": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 640,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-03": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 610,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-04": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 610,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-05": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 664,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-06": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 630,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-07": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 628,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-08": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 652,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-09": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 628,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-10": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 620,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-11": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 632,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-12": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 641,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-13": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 706,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-14": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 639,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-15": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 706,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-16": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 645,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-17": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 636,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-18": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 651,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-19": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 655,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-20": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 769,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-21": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 659,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-22": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 687,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-23": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 713,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-24": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 665,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-25": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 670,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-26": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 660,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-27": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 658,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-28": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 654,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-29": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 655,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-30": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 773,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-07-31": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 682,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-01": {
+        "aboveDcNameplateRows": 1,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 672,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-02": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 636,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-03": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 653,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-04": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 707,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-05": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 709,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-06": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 681,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-07": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 667,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-08": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 679,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-09": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 690,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-10": {
+        "aboveDcNameplateRows": 2,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 672,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-11": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 709,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-12": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 687,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-13": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 665,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-14": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 678,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-15": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 663,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-16": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 697,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-17": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 677,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-18": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 688,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-19": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 693,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-20": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 719,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-21": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 801,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-22": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 716,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-23": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 703,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-24": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 697,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-25": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 691,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-26": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 711,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-27": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 703,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-28": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 723,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-29": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 691,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-30": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 727,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-08-31": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 710,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-01": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 723,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-02": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 734,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-03": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 750,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-04": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 722,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-05": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 746,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-06": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 829,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-07": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 739,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-08": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 857,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-09": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 724,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-10": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 770,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-11": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 764,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-12": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 748,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-13": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 751,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-14": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 751,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-15": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 763,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-16": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 777,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-17": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 779,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-18": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 755,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-19": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 789,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-20": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 783,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-21": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 807,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-22": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 757,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-23": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 767,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-24": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 760,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-25": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 763,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-26": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 765,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-27": {
+        "aboveDcNameplateRows": 1,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 771,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-28": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 769,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-29": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 771,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-09-30": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 769,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-01": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 933,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-02": {
+        "aboveDcNameplateRows": 5,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 826,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-03": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 822,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-04": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 782,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-05": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 777,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-06": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 807,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-07": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 788,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-08": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 793,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-09": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 805,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-10": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 1430,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-11": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 877,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-12": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 798,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-13": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 800,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-14": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 804,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-15": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 806,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-16": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 806,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-17": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 802,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-18": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 811,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-19": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 812,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-20": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 826,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-21": {
+        "aboveDcNameplateRows": 1,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 823,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-22": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 805,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-23": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 963,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-24": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 930,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-25": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 826,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-26": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 827,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-27": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 1235,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-28": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 1109,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-29": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 1101,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-30": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 1028,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-10-31": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 831,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-01": {
+        "aboveDcNameplateRows": 7,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 865,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-02": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 844,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-03": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 829,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-04": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 849,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-05": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 852,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-06": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 962,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-07": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 886,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-08": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 858,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-09": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 859,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-10": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 862,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-11": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 1027,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-12": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 866,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-13": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 869,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-14": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 862,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-15": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 878,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-16": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 896,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-17": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 875,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-18": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 865,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-19": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 861,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-20": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 1015,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-21": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 1335,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-22": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 1126,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-23": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 887,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-24": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 873,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-25": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 1023,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-26": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 1094,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-27": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 913,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-28": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 910,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-29": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 952,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-11-30": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 912,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-12-01": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 899,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-12-02": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 443,
+        "observedIntervals15m": 46,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 680,
+        "unit": "W"
+      },
+      "2019-12-10": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 60,
+        "observedIntervals15m": 4,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 60,
+        "unit": "W"
+      },
+      "2019-12-11": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 895,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-12-12": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 909,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-12-13": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 906,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-12-14": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 965,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-12-15": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 971,
+        "observedIntervals15m": 96,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 1440,
+        "unit": "W"
+      },
+      "2019-12-16": {
+        "aboveDcNameplateRows": 0,
+        "columns": 16,
+        "expectedIntervals15m": 96,
+        "metric": "ac_power__423",
+        "missingMetricRows": 0,
+        "negativeRowsClipped": 520,
+        "observedIntervals15m": 40,
+        "resolutionMedianMinutes": 1.0,
+        "rows": 600,
+        "unit": "W"
+      }
+    },
+    "timezone": "measured_on local time"
+  },
+  "rows": 24090,
+  "schema": [
+    "timestamp_local",
+    "temporal_split",
+    "buildingLoadKw",
+    "evChargingKw",
+    "pvGenerationKw",
+    "gridImportKw",
+    "datasetClass",
+    "buildingOrigin",
+    "evOrigin",
+    "pvOrigin",
+    "targetOrigin"
+  ],
+  "sourceDays": 253,
+  "sourceManifest": "forecasting_series.manifest.json",
+  "splitDays": {
+    "test": 51,
+    "train": 151,
+    "validation": 51
+  }
+}

@@ -1,0 +1,167 @@
+{
+  "baselines": [
+    "PERSISTENCE: current gridImportKw",
+    "SEASONAL_NAIVE_24H: prior day's next-hour peak"
+  ],
+  "datasetClass": "SIMULATED_COMPOSITE",
+  "environment": {
+    "dependencies": "Python standard library only",
+    "pythonVersion": "3.14.7",
+    "randomness": "none; closed-form deterministic ordinary least squares"
+  },
+  "features": [
+    "gridImportKw at forecast origin; recursively predicted values are fed forward"
+  ],
+  "horizonMinutes": 60,
+  "limitations": [
+    "Prediction estimates a future one-hour maximum from lagged composite grid import; component values at the target timestamp are never features.",
+    "Training series is simulated composite: modeled EULP load, uniform-power EV session estimates, independent PVDAQ generation scaled to hypothetical 75 kWp.",
+    "The benchmark threshold is a train-derived tail threshold, not the API's persisted site demand limit; future Decision Engine must apply its current policy.",
+    "Temporal holdout tests generalization only within this source-composite construction; it does not validate Aurora operations."
+  ],
+  "modelCandidate": {
+    "currentGridImportCoefficient": 0.9818853821596817,
+    "fitOn": "one-step pairs within train only",
+    "intercept": 1.175782219431028,
+    "type": "AR(1) linear regression"
+  },
+  "riskThreshold": {
+    "method": "90th percentile of training future-hour peaks only",
+    "scope": "benchmark anomaly threshold; not Aurora contract policy or operational threshold",
+    "valueKw": 117.524661
+  },
+  "selection": {
+    "forecastMethodUsedForTest": "PERSISTENCE",
+    "modelPromoted": false,
+    "riskF1MaxDegradation": 0.02,
+    "rule": "promote AR1 only if validation MAE and RMSE beat the lowest-MAE baseline and validation peak F1 is no more than 0.02 lower; otherwise retain the lowest-MAE baseline (persistence wins ties)",
+    "selectedOnValidation": "PERSISTENCE"
+  },
+  "split": {
+    "test": {
+      "first": "2019-10-20 00:15:00",
+      "last": "2019-12-16 09:00:00",
+      "n": 4595
+    },
+    "train": {
+      "first": "2019-04-02 00:00:00",
+      "last": "2019-08-29 23:00:00",
+      "n": 14397
+    },
+    "validation": {
+      "first": "2019-08-30 00:15:00",
+      "last": "2019-10-19 23:00:00",
+      "n": 4892
+    }
+  },
+  "status": "BASELINE_RETAINED",
+  "structuredSignal": {
+    "fields": [
+      "predictedPeakAtLocal",
+      "predictedPeakGridImportKw",
+      "riskThresholdKw",
+      "riskState",
+      "datasetClass",
+      "forecastMethod"
+    ],
+    "horizonMinutes": 60,
+    "operationalUse": false,
+    "riskRule": "predictedPeakGridImportKw >= supplied riskThresholdKw",
+    "riskStateValues": [
+      "NORMAL",
+      "PREDICTED_PEAK"
+    ],
+    "statistic": "maximum over forecast horizon",
+    "target": "gridImportKw"
+  },
+  "target": "gridImportKw at each next 15-minute step; report maximum and offset over the next 60 minutes",
+  "testMetrics": {
+    "AR1": {
+      "maeKw": 5.263972503430163,
+      "n": 4595,
+      "peakDetection": {
+        "f1": 0.8075639599555061,
+        "falseNegatives": 150,
+        "falsePositives": 23,
+        "precision": 0.9404145077720207,
+        "recall": 0.7076023391812866,
+        "thresholdKw": 117.524661,
+        "truePositives": 363
+      },
+      "rmseKw": 9.647399067631858
+    },
+    "PERSISTENCE": {
+      "maeKw": 5.322525316213276,
+      "n": 4595,
+      "peakDetection": {
+        "f1": 0.8144104803493449,
+        "falseNegatives": 140,
+        "falsePositives": 30,
+        "precision": 0.9255583126550868,
+        "recall": 0.7270955165692008,
+        "thresholdKw": 117.524661,
+        "truePositives": 373
+      },
+      "rmseKw": 9.76649057375682
+    },
+    "SEASONAL_NAIVE_24H": {
+      "maeKw": 16.594939599347118,
+      "n": 4595,
+      "peakDetection": {
+        "f1": 0.560303893637227,
+        "falseNegatives": 218,
+        "falsePositives": 245,
+        "precision": 0.5462962962962963,
+        "recall": 0.5750487329434698,
+        "thresholdKw": 117.524661,
+        "truePositives": 295
+      },
+      "rmseKw": 28.19697571825051
+    }
+  },
+  "testMetricsOpenedOnceAfterSelection": true,
+  "validationMetrics": {
+    "AR1": {
+      "maeKw": 5.925544703307486,
+      "n": 4892,
+      "peakDetection": {
+        "f1": 0.828649138712602,
+        "falseNegatives": 161,
+        "falsePositives": 28,
+        "precision": 0.9422680412371134,
+        "recall": 0.7394822006472492,
+        "thresholdKw": 117.524661,
+        "truePositives": 457
+      },
+      "rmseKw": 10.412298868413334
+    },
+    "PERSISTENCE": {
+      "maeKw": 5.796446362837285,
+      "n": 4892,
+      "peakDetection": {
+        "f1": 0.8343777976723367,
+        "falseNegatives": 152,
+        "falsePositives": 33,
+        "precision": 0.9338677354709419,
+        "recall": 0.7540453074433657,
+        "thresholdKw": 117.524661,
+        "truePositives": 466
+      },
+      "rmseKw": 10.471495200066137
+    },
+    "SEASONAL_NAIVE_24H": {
+      "maeKw": 18.716676913327884,
+      "n": 4892,
+      "peakDetection": {
+        "f1": 0.5559055118110235,
+        "falseNegatives": 265,
+        "falsePositives": 299,
+        "precision": 0.5414110429447853,
+        "recall": 0.5711974110032363,
+        "thresholdKw": 117.524661,
+        "truePositives": 353
+      },
+      "rmseKw": 31.922922451585357
+    }
+  }
+}

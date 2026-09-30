@@ -43,4 +43,4 @@ Verificar links e termos públicos; nenhuma amostra foi baixada porque isso depe
 
 ## Próximo passo condicionado
 
-AI-01 e AI-02 concluídos. CG-AI-03 continua independente e não foi iniciado; horizonte, protocolo e treino seguem sujeitos à sua SDD e aos seus gates.
+AI-01 e AI-02 concluídos. CG-AI-03 posteriormente definiu um horizonte de 60 minutos apenas para benchmark, comparou baselines e candidato em split temporal e não promoveu o AR(1). Isso não altera o escopo operacional aprovado por AI-01.
