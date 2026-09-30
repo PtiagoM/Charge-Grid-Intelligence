@@ -25,7 +25,7 @@ Este arquivo complementa, sem substituir, [decisions S4-C1](../sprint4/decisions
 
 1. **Visual do laboratório:** referência necessária antes de CG-LAB-02.
 2. **Visual da previsão em Energia:** referência necessária antes de CG-UI-01.
-3. **Dataset/horizonte final:** CG-AI-01 avaliou fontes públicas; nenhuma mede diretamente o target integrado `gridImportKw` de Aurora. A decisão para benchmark composto simulado, não treinar nesta Sprint ou avaliar telemetria local está pendente em [`docs/ai/dataset-decision.md`](../../ai/dataset-decision.md). AI-02 permanece bloqueado até decisão explícita; CG-LAB-01 pode continuar.
+3. **Dataset/horizonte final:** CG-AI-01 avaliou fontes públicas; nenhuma mede diretamente o target integrado `gridImportKw` de Aurora. A decisão para benchmark composto simulado, não treinar nesta Sprint ou avaliar telemetria local está pendente em [`docs/ai/dataset-decision.md`](../../ai/dataset-decision.md). AI-02 permanece bloqueado até decisão explícita; CG-LAB-01 foi concluído sem depender desse gate.
 4. **Fatores ambientais/econômicos:** CG-DASH-03 pode escolher apenas fonte pública citável e aplicável ao Brasil/cenário. Sem fonte suficiente, mantém indisponível.
 
 ## Governança Git verificada em 30/09/2026
