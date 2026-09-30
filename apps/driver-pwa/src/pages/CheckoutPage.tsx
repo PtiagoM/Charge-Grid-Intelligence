@@ -1,7 +1,7 @@
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js/pure";
 import { ChargerCommercialStatus, CommercialSessionStatus, QueueStatus } from "@chargegrid/shared";
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useDriverApp, type DriverMode, type PaymentMethod } from "../app/DriverAppContext";
 import { AppIcon } from "../components/AppIcon";
@@ -39,53 +39,99 @@ function readPendingPayment(): PendingPayment | null {
 function StripeConfirmationForm({
   pending,
   initialWaiting,
+  onPaymentAuthorized,
   onAuthorized
 }: {
   pending: PendingPayment;
   initialWaiting: boolean;
-  onAuthorized(): void;
+  onPaymentAuthorized(): void;
+  onAuthorized(): Promise<void>;
 }) {
   const stripe = useStripe();
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
   const [waiting, setWaiting] = useState(initialWaiting);
   const [error, setError] = useState("");
+  const [authorized, setAuthorized] = useState(false);
+  const [linking, setLinking] = useState(false);
+  const linkingRef = useRef(false);
+
+  const linkSession = useCallback(async () => {
+    if (linkingRef.current) return;
+    linkingRef.current = true;
+    setAuthorized(true);
+    onPaymentAuthorized();
+    setWaiting(true);
+    setLinking(true);
+    setError("");
+    try {
+      await onAuthorized();
+    } catch (caught) {
+      setWaiting(false);
+      setError(caught instanceof Error ? caught.message : "Pagamento confirmado, mas não foi possível vincular a sessão. Tente novamente.");
+    } finally {
+      linkingRef.current = false;
+      setLinking(false);
+    }
+  }, [onAuthorized, onPaymentAuthorized]);
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      void getPaymentStatus(pending.paymentIntentId, pending.guestToken).then((payment) => {
+    let active = true;
+    let timer: number | undefined;
+    async function pollPayment() {
+      try {
+        const payment = await getPaymentStatus(pending.paymentIntentId, pending.guestToken);
+        if (!active) return;
         if (payment.status === "PAID" || payment.status === "AUTHORIZED") {
-          window.clearInterval(timer);
-          onAuthorized();
-        } else if (payment.status === "FAILED") {
+          await linkSession();
+          return;
+        }
+        if (payment.status === "FAILED") {
           setWaiting(false);
           setError("Pagamento não confirmado. Revise o meio de pagamento antes de tentar novamente.");
+          return;
         }
-      }).catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Não foi possível consultar o pagamento."));
-    }, 2500);
-    return () => window.clearInterval(timer);
-  }, [onAuthorized, pending.guestToken, pending.paymentIntentId]);
+      } catch (caught) {
+        if (active) setError(caught instanceof Error ? caught.message : "Não foi possível consultar o pagamento.");
+      }
+      if (active) timer = window.setTimeout(() => void pollPayment(), 2500);
+    }
+    timer = window.setTimeout(() => void pollPayment(), 2500);
+    return () => {
+      active = false;
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, [linkSession, pending.guestToken, pending.paymentIntentId]);
 
   async function confirm(event: FormEvent) {
     event.preventDefault();
-    if (!stripe || !elements) return;
+    if (!stripe || !elements || submitting || linking) return;
+    if (authorized) {
+      await linkSession();
+      return;
+    }
     setSubmitting(true);
     setError("");
-    const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      confirmParams: { return_url: `${window.location.origin}/checkout?payment_return=1` },
-      redirect: "if_required"
-    });
-    setSubmitting(false);
-    if (stripeError) {
-      setError(stripeError.message ?? "A Stripe não conseguiu confirmar este pagamento.");
-      return;
+    try {
+      const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        confirmParams: { return_url: `${window.location.origin}/checkout?payment_return=1` },
+        redirect: "if_required"
+      });
+      if (stripeError) {
+        setError(stripeError.message ?? "A Stripe não conseguiu confirmar este pagamento.");
+        return;
+      }
+      if (paymentIntent?.status === "requires_capture" || paymentIntent?.status === "succeeded") {
+        await linkSession();
+        return;
+      }
+      setWaiting(true);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Não foi possível confirmar o pagamento. Verifique a conexão e tente novamente.");
+    } finally {
+      setSubmitting(false);
     }
-    if (paymentIntent?.status === "requires_capture" || paymentIntent?.status === "succeeded") {
-      onAuthorized();
-      return;
-    }
-    setWaiting(true);
   }
 
   return <form className="stripe-payment-form" onSubmit={confirm}>
@@ -94,7 +140,7 @@ function StripeConfirmationForm({
     {pending.method === "CARD" ? <p className="test-payment-help">Cartão de teste: 4242 4242 4242 4242 · validade futura · CVC com 3 dígitos.</p> : <p className="test-payment-help">A Stripe exibirá o QR e o código Pix disponíveis para esta transação de teste.</p>}
     {error ? <p className="form-error" role="alert">{error}</p> : null}
     {waiting ? <p className="payment-waiting" role="status"><span className="spinner" /> Aguardando confirmação do pagamento…</p> : null}
-    <PrimaryButton type="submit" disabled={!stripe || submitting || waiting}>{submitting ? "Confirmando…" : waiting ? "Aguardando pagamento" : pending.method === "CARD" ? "Autorizar limite" : "Gerar e pagar Pix"}</PrimaryButton>
+    <PrimaryButton type="submit" disabled={!stripe || submitting || linking || waiting}>{submitting ? "Confirmando…" : linking ? "Vinculando sessão…" : waiting ? "Aguardando pagamento" : authorized ? "Tentar novamente" : pending.method === "CARD" ? "Autorizar limite" : "Gerar e pagar Pix"}</PrimaryButton>
   </form>;
 }
 
@@ -124,6 +170,7 @@ export function CheckoutPage() {
   const [error, setError] = useState("");
   const [preparing, setPreparing] = useState(false);
   const [pending, setPending] = useState<PendingPayment | null>(null);
+  const [paymentAuthorized, setPaymentAuthorized] = useState(false);
 
   const completeAuthorization = useCallback(async (payment: PendingPayment) => {
     const confirmed = await getPaymentStatus(payment.paymentIntentId, payment.guestToken);
@@ -140,6 +187,10 @@ export function CheckoutPage() {
     sessionStorage.removeItem(PENDING_PAYMENT_KEY);
     navigate("/session", { replace: true });
   }, [authorizeSession, navigate]);
+  const completePendingAuthorization = useCallback(() => pending
+    ? completeAuthorization(pending)
+    : Promise.reject(new Error("A referência do pagamento não está disponível para vincular a sessão.")), [completeAuthorization, pending]);
+  const markPaymentAuthorized = useCallback(() => setPaymentAuthorized(true), []);
 
   useEffect(() => {
     if (session && session.status !== CommercialSessionStatus.COMPLETED) return;
@@ -152,7 +203,10 @@ export function CheckoutPage() {
     }
     setPending(stored);
     void getPaymentStatus(stored.paymentIntentId, stored.guestToken).then((payment) => {
-      if (payment.status === "PAID" || payment.status === "AUTHORIZED") void completeAuthorization(stored).catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Não foi possível vincular a sessão."));
+    if (payment.status === "PAID" || payment.status === "AUTHORIZED") {
+      setPaymentAuthorized(true);
+      void completeAuthorization(stored).catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Não foi possível vincular a sessão."));
+    }
     }).catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Não foi possível consultar o pagamento."));
   }, [completeAuthorization, searchParams, session]);
 
@@ -212,10 +266,11 @@ export function CheckoutPage() {
       <StripeConfirmationForm
         pending={pending}
         initialWaiting={searchParams.has("payment_return")}
-        onAuthorized={() => { void completeAuthorization(pending).catch((caught: unknown) => setError(caught instanceof Error ? caught.message : "Não foi possível vincular a sessão.")); }}
+        onPaymentAuthorized={markPaymentAuthorized}
+        onAuthorized={completePendingAuthorization}
       />
     </Elements>
-    <button type="button" className="text-link button-link" onClick={() => { sessionStorage.removeItem(PENDING_PAYMENT_KEY); setPending(null); }}>Alterar limite ou meio de pagamento</button>
+    {!paymentAuthorized ? <button type="button" className="text-link button-link" onClick={() => { sessionStorage.removeItem(PENDING_PAYMENT_KEY); setPending(null); setPaymentAuthorized(false); }}>Alterar limite ou meio de pagamento</button> : null}
   </>;
 
   const tariff = plant.tariffFrom?.amount ?? 0;

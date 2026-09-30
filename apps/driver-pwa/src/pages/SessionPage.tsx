@@ -55,6 +55,7 @@ function formatCountdown(seconds: number) {
 export function SessionPage() {
   const { session, receipts, sessionSyncError, dismissCompletedSession, finishEnergy, applyIdleFee, settleSession } = useDriverApp();
   const [settling, setSettling] = useState(false);
+  const [stopping, setStopping] = useState(false);
   const [settlementError, setSettlementError] = useState("");
   const [clockNow, setClockNow] = useState(Date.now);
 
@@ -107,13 +108,16 @@ export function SessionPage() {
   }
 
   async function stopEnergy() {
-    if (!session) return;
+    if (!session || stopping) return;
     if (!session.backendManaged) return finishEnergy();
+    setStopping(true);
     setSettlementError("");
     try {
       await stopCommercialSession(session.paymentSessionId);
     } catch (caught) {
       setSettlementError(caught instanceof Error ? caught.message : "Não foi possível encerrar a recarga.");
+    } finally {
+      setStopping(false);
     }
   }
 
@@ -130,7 +134,7 @@ export function SessionPage() {
 
     <section className="mobile-card timeline-card"><h2>Linha do tempo da sessão</h2><ol className="session-timeline"><li className="is-complete"><span><AppIcon name="check" size={15} /></span><div><strong>Pagamento garantido</strong><small>{session.paymentMethod === "PIX" ? "Pix confirmado pela Stripe" : "Limite reservado no cartão"}</small></div></li><li className={session.status === CommercialSessionStatus.AUTHORIZED || session.status === CommercialSessionStatus.WAITING_START ? "is-current" : "is-complete"}><span /><div><strong>Início assíncrono</strong><small>Energia só aparece após confirmação</small></div></li><li className={session.status === CommercialSessionStatus.CHARGING ? "is-current" : session.energyKwh > 0 ? "is-complete" : ""}><span /><div><strong>Energia</strong><small>Somente medições confirmadas</small></div></li><li className={[CommercialSessionStatus.ENERGY_FINISHED, CommercialSessionStatus.IDLE_GRACE_PERIOD, CommercialSessionStatus.IDLE_FEE].includes(session.status) ? "is-current" : session.status === CommercialSessionStatus.COMPLETED ? "is-complete" : ""}><span /><div><strong>Retirada do veículo</strong><small>Tolerância e ociosidade</small></div></li><li className={session.status === CommercialSessionStatus.SETTLING ? "is-current" : session.status === CommercialSessionStatus.COMPLETED ? "is-complete" : ""}><span /><div><strong>Liquidação</strong><small>Captura ou devolução pela Stripe</small></div></li></ol></section>
 
-    {session.status === CommercialSessionStatus.CHARGING ? <PrimaryButton onClick={() => void stopEnergy()}>Encerrar recarga</PrimaryButton> : null}
+    {session.status === CommercialSessionStatus.CHARGING ? <PrimaryButton onClick={() => void stopEnergy()} disabled={stopping}>{stopping ? "Encerrando recarga…" : "Encerrar recarga"}</PrimaryButton> : null}
     {session.status === CommercialSessionStatus.ENERGY_FINISHED ? <><PrimaryButton onClick={beginSettlement} disabled={settling || !readyToSettle}>{settling ? "Liquidando com a Stripe…" : readyToSettle ? "Liquidar pagamento" : "Aguardando desconexão do veículo"}</PrimaryButton>{session.backendManaged && !readyToSettle ? <p className="field-help">A desconexão é confirmada pelo carregador antes da liquidação.</p> : null}</> : null}
     {session.status === CommercialSessionStatus.IDLE_GRACE_PERIOD ? <><PrimaryButton onClick={beginSettlement} disabled={settling || !readyToSettle}>{settling ? "Liquidando com a Stripe…" : readyToSettle ? "Liquidar pagamento" : "Aguardando desconexão do veículo"}</PrimaryButton><SecondaryButton disabled={!graceExpired || session.backendManaged} onClick={applyIdleFee}>Registrar permanência após tolerância</SecondaryButton></> : null}
     {session.status === CommercialSessionStatus.IDLE_FEE ? <PrimaryButton onClick={beginSettlement} disabled={settling || !readyToSettle}>{settling ? "Liquidando com a Stripe…" : readyToSettle ? "Liquidar pagamento" : "Aguardando desconexão do veículo"}</PrimaryButton> : null}

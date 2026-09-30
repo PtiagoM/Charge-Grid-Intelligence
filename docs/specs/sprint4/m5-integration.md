@@ -1,6 +1,6 @@
 # M5 — Prova da operação única
 
-**Estado em 30/09/2026:** U1 e U2A–U3 concluídas; M5/G5 fechado. Próxima unidade: `S4-M6-U1`. Objetivo: integrar interfaces já corretas contra C1, não descobrir domínio no E2E. Entrada G2/G3/G4 concluída. Ler acceptance.md, C1–C9 e a [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
+**Estado em 30/09/2026:** U1 e U2A–U3 concluídas; M5/G5 fechado. M6-U1 concluída e M6-U2 implementada, aguardando G6 manual. Objetivo: integrar interfaces já corretas contra C1, não descobrir domínio no E2E. Entrada G2/G3/G4 concluída. Ler acceptance.md, C1–C9 e a [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
 
 ## S4-M5-U1 — Ambiente E2E isolado
 
