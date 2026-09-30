@@ -1,6 +1,6 @@
 # CG-DASH-03 — sustentabilidade e economia verificáveis
 
-**Classificação:** PEQUENO AJUSTE NO FRONT · **Status:** PLANNED · **Tamanho:** MÉDIO · **Risco:** ALTO.
+**Classificação:** PEQUENO AJUSTE NO FRONT · **Status:** DONE · **Tamanho:** MÉDIO · **Risco:** ALTO.
 
 ## Objetivo e escopo
 
@@ -35,9 +35,10 @@ Depende de DASH-01. Existem helpers/fixtures de sustentabilidade, mas a entrega 
 
 ## Testes, documentação e commit
 
-Unit pequeno para fórmula/unidades e integration do payload; E2E só se estado visual mudar. Criar metodologia versionada e atualizar README técnico. Commit: `feat(dashboard): derive sustainability metrics transparently`.
+Não foi encontrada uma base temporal suficiente para habilitar emissões ou economia monetária sem inventar fator: o endpoint agrega energia solar→EV por janela, a planilha MCTI 2026 não foi inspecionada/versionada e não há custo de importação/compensação registrado. Portanto, conforme a condição de parada, os impactos são explicitamente indisponíveis. Os cards existentes agora exibem solar→EV, energia EV e exportação somente a partir do payload, usando a janela selecionada; métricas sem entrada/método permanecem indisponíveis. Foram removidos os multiplicadores ambientais e o cálculo fixo de receita que vinham de estado agregado local, além do seletor artificial de semana/ano.
+
+E2E focal verifica energia solar→EV/EV, ausência de cálculo de CO₂/economia e os agregados controlados; typecheck e lint passam. Atualizados README e metodologia com fontes, unidade, limitações e fórmula candidata. Commit: `feat(dashboard): derive sustainability metrics transparently`.
 
 ## Condição de parada
 
-Sem fonte aplicável e citável, implementar apenas o estado indisponível e registrar a limitação; não escolher fator arbitrário.
-
+Se a fonte/fator ou a compatibilidade temporal mudar, abrir unidade própria para versionar a planilha e os buckets mensais antes de calcular impactos; não escolher fator arbitrário dentro desta unidade.

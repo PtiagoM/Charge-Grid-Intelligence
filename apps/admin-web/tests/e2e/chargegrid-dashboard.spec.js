@@ -51,6 +51,13 @@ test('proprietário comercial recebe visão agregada de energia e da camada Char
   const dayRequest = summaryRequests.at(-1);
   expect(dayRequest?.searchParams.get('establishmentId')).toBeTruthy();
   expect(Date.parse(dayRequest.searchParams.get('to')) - Date.parse(dayRequest.searchParams.get('from'))).toBe(24 * 60 * 60 * 1000);
+  await expect(page.getByTestId('dashboard-environment-card')).toContainText('Solar para recarga');
+  await expect(page.getByTestId('dashboard-environment-card')).toContainText('4,00 kWh');
+  await expect(page.getByTestId('dashboard-environment-card')).toContainText('CO₂ evitado (estimativa)');
+  await expect(page.getByTestId('dashboard-environment-card')).toContainText('Indisponível');
+  await expect(page.getByTestId('dashboard-economy-metrics')).toContainText('0,00 kWh');
+  await expect(page.getByTestId('dashboard-economy-metrics')).toContainText('12,00 kWh');
+  await expect(page.getByTestId('dashboard-economy-metrics')).toContainText('Economia estimada na conta');
 });
 
 test('Central GoodWe mantém mapa agregado e mostra a prévia comercial somente ao selecionar uma usina', async ({ page }) => {

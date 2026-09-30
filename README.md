@@ -23,7 +23,7 @@ Esta entrega consolida a Sprint 4, em continuidade ao [Dashboard Comercial Charg
 
 O objetivo é consolidar um protótipo operacional, com partes reais e simuladas claramente identificadas, no qual descoberta, pagamento, automação do carregador, medição energética e gestão comercial atuam sobre uma única sessão persistida.
 
-> Leia [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) para o estado do repositório; [`docs/specs/sprint4/acceptance.md`](docs/specs/sprint4/acceptance.md) contém contratos, vetores e gates executados. Este README descreve a baseline S4-C1, não o pacote futuro `sprint4-finalization` (S4-C2).
+> Leia [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) para o estado do repositório; [`docs/specs/sprint4/acceptance.md`](docs/specs/sprint4/acceptance.md) contém contratos, vetores e gates executados. Esta baseline inclui o adendo de contrato S4-C2 e as unidades concluídas do pacote [`sprint4-finalization`](docs/specs/sprint4-finalization/spec.md).
 
 ## Arquitetura executável
 
@@ -91,7 +91,7 @@ sequenceDiagram
 - estados de falha/offline e recuperação emitidos pelo laboratório GoodWe simulado.
 - telemetria simulada da planta, cálculo coerente de fluxo/importação/exportação, admissão por demanda e insights determinísticos com evidências persistidas na API.
 
-O dashboard agregado SEMS+ não é a fonte desses dados comerciais: seus gráficos/estimativas legados ainda não representam uma série integrada validada. Essa extensão e a previsão ficam planejadas para S4-C2, depois do Gate G7.
+Os cards Monitoramento, Receita, Demanda e Utilização do Dashboard consultam `GET /commercial/dashboard-summary` com período UTC explícito. A série temporal não é fornecida: o card apresenta os agregados disponíveis e informa essa limitação, sem desenhar tendência sintética. Contribuições ambientais e Economia mostram energia persistida no período; CO₂, equivalências ambientais e economia de fatura ficam indisponíveis até haver fatores temporais e baseline tarifária documentados.
 
 ## Integrações e limites
 
@@ -129,7 +129,7 @@ Os números abaixo vêm dos vetores e testes do backend (`S4-M4-U1`, `V08` e `V0
 
 As asserções de telemetria usam `plant_aurora_001`, carregador/sessão persistidos no repositório em memória de teste, relógio injetado e timestamps de `2026-09-26T12:00:00Z` a `12:10:00Z`. Os dados da instalação local continuam no PGlite do usuário e não são incorporados a estes resultados. Uma validação manual anterior registrou sessão/captura Stripe test em [`docs/SPRINT3.md`](docs/SPRINT3.md); é evidência histórica separada dos vetores simulados.
 
-Metodologia ambiental: não são publicados CO₂ evitado, equivalência de árvores, economia financeira ou bateria/SOC como resultados medidos. A baseline não possui fator ambiental/contrafactual certificado nem bateria. Valores apresentados em cenários de laboratório devem ser identificados como simulação.
+Metodologia ambiental: a energia solar destinada a EV e a energia entregue/exportada são agregados persistidos da API. Não são publicados CO₂ evitado, equivalência de árvores, economia financeira ou bateria/SOC como resultados medidos; consulte [`docs/dashboard-sustainability-methodology.md`](docs/dashboard-sustainability-methodology.md) para fontes, fórmula candidata e dados ainda ausentes. Valores apresentados em cenários de laboratório devem ser identificados como simulação.
 
 ## Estrutura
 
@@ -252,7 +252,7 @@ O harness Sprint 4 usa banco e portas isolados; ele verifica contratos e jornada
 - Pix autoriza no Stripe test, mas o encerramento persistido após reembolso ainda não possui a mesma validação ponta a ponta do cartão;
 - captura de cartão abaixo de R$ 0,50 permanece limitação conhecida e fora do escopo; o cenário demonstrativo deve consumir pelo menos R$ 0,50;
 - não há GoodWe OpenAPI, HCA G2 físico, Stripe live, bateria, previsão ML, push remoto, RLS/IAM corporativo completo ou operação multi-instância;
-- cards agregados do Dashboard e estimativas ambientais legadas SEMS+ não são métricas validadas da operação compartilhada S4-C1; previsão e integração canônica dos cards pertencem a S4-C2;
+- cards comerciais do Dashboard usam o agregado compartilhado S4-C2; não há série temporal e impactos ambientais/econômicos sem método permanecem indisponíveis;
 - o build do Admin mantém um aviso não bloqueante de chunk acima de 500 kB.
 
 ## Relação com energia e automação

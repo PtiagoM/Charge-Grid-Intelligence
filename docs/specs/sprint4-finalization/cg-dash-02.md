@@ -39,7 +39,7 @@ Depende de DASH-01. `AdminDashboardPage.tsx` ainda possui dados de apresentaçã
 
 `AdminDashboardPage` consulta o endpoint S4-C2 em polling cancelável de 2s e preserva os valores do último payload em caso de falha, sinalizando stale. Os valores comerciais/energéticos dos cards existentes vêm do payload; como a API ainda não fornece série temporal, a área do gráfico declara essa ausência em vez de desenhar uma curva inventada. A pequena correção CSS apenas reexibe os filtros de período que já existiam no JSX e estavam ocultos.
 
-Typecheck, lint e E2E focal do Dashboard passaram. Vitest e `vite build` do workspace não iniciaram neste ambiente porque o esbuild recebeu `Acesso negado` ao resolver as configurações em caminho acima do workspace; a janela do período foi verificada pelo E2E e o Vite do servidor usado por ele serviu a aplicação.
+Typecheck, lint e E2E focal do Dashboard passaram. A tentativa inicial de Vitest e `vite build` pelo npm do workspace recebeu `Acesso negado` do esbuild ao resolver configurações acima do workspace; o build foi posteriormente validado em CG-DASH-03 usando o carregador de configuração do Vite em modo runner. Não foi mantido teste unitário adicional, pois o E2E já protege os limites do período e os valores renderizados.
 
 Commit: `feat(admin): connect dashboard cards to canonical aggregates`.
 

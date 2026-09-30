@@ -59,7 +59,6 @@ function Overview({ requestedEstablishmentId }: { requestedEstablishmentId?: str
   const [summaryExpanded, setSummaryExpanded] = useState(false);
   const [chartMode, setChartMode] = useState<DashboardChartMode>("energy");
   const [chartPeriod, setChartPeriod] = useState<DashboardPeriod>("week");
-  const [economyPeriodOffset, setEconomyPeriodOffset] = useState(0);
   const technicalScope = new Set(technicalAccessibleEstablishmentIds(account));
   const commercialScope = new Set(commercialAccessibleEstablishmentIds(state, account).filter((id) => technicalScope.has(id)));
   const canReadCommercial = Boolean(account && hasAdminCapability(account, "commercial:read") && commercialScope.size);
@@ -117,8 +116,6 @@ function Overview({ requestedEstablishmentId }: { requestedEstablishmentId?: str
     .map((item) => plantCatalog.find((plant) => plant.id === item.goodwePlantId)?.capacityKwp)
     .filter((value) => value !== 0));
   const energySnapshots = state.energy.filter((item) => technicalScope.has(item.establishmentId));
-  const generatedEnergy = optionalSum(energySnapshots.map((item) => item.periodSolarKwh));
-  const chargedEnergy = optionalSum(energySnapshots.map((item) => item.periodBatteryKwh));
   const unavailable = chargers.filter((item) => item.status === "offline" || item.status === "fault").length;
   const solarPower = optionalSum(energySnapshots.map((item) => item.solarPowerKw));
   const gridPower = optionalSum(energySnapshots.map((item) => item.gridPowerKw));
@@ -129,7 +126,6 @@ function Overview({ requestedEstablishmentId }: { requestedEstablishmentId?: str
   const availableChargerCount = metricValue(dashboardSummary?.counts.availableChargersAtGeneration);
   const availabilityPercent = chargerCount !== null && chargerCount > 0 && availableChargerCount !== null ? availableChargerCount / chargerCount * 100 : null;
   const periodLabels: Record<DashboardPeriod, string> = { day: "24 horas", week: "7 dias", month: "30 dias" };
-  const technicalValue = generatedEnergy === null ? null : generatedEnergy * 0.74;
   const stationStates = [
     ["Em operação", locations.filter((location) => chargers.some((charger) => charger.locationId === location.id && charger.status !== "offline")).length],
     ["Aguardando", 0],
@@ -165,7 +161,7 @@ function Overview({ requestedEstablishmentId }: { requestedEstablishmentId?: str
       <article className="sems-station-summary world-station-summary" data-testid="mvp-overview-kpis">
         <div className="station-row station-row-main"><div className="station-map-illustration" aria-hidden="true"><span /><i /><b /><em /></div><div className="station-value"><p><strong>{locations.length}</strong><button type="button" aria-label="Expandir resumo das usinas" aria-expanded={summaryExpanded} onClick={() => setSummaryExpanded((value) => !value)}>⌄</button></p><span>Usinas monitoradas <small>?</small></span></div></div>
         <div className="station-row"><div className="station-solar-illustration" aria-hidden="true"><span /><span /><span /></div><div className="station-value"><p><strong>{totalPower === null ? "—" : number(totalPower)}</strong>{totalPower === null ? null : <small>kWp</small>}</p><span>Capacidade FV</span></div></div>
-        <div className="station-row"><div className="station-storage-illustration" aria-hidden="true"><span /><span /><span /></div><div className="station-value"><p><strong>{number(chargedEnergy ?? 0)}</strong><small>kWh</small></p><span>Energia armazenada</span></div></div>
+        <div className="station-row"><div className="station-storage-illustration" aria-hidden="true"><span /><span /><span /></div><div className="station-value"><p><strong>—</strong></p><span>Bateria indisponível</span></div></div>
         {summaryExpanded ? <div className="station-state-list" data-testid="dashboard-station-state-list">{stationStates.map(([label, value]) => <p key={label}><span>{label}</span><strong>{value}</strong></p>)}</div> : null}
       </article>
     </section>
@@ -173,24 +169,23 @@ function Overview({ requestedEstablishmentId }: { requestedEstablishmentId?: str
       <div className="sems-operator-column">
         <article className="sems-dashboard-card sems-power-card"><header><div className="sems-card-heading"><img src={assets.dashboard.power} alt="" /><div><h2>Potência</h2><span>Tempo real</span></div></div></header><div className="sems-power-gauge" style={{ "--gauge-value": `${Math.min(100, Math.round((currentPower / Math.max(totalPower ?? currentPower, 1)) * 100)) * 1.8}deg` } as CSSProperties}><div><strong>{solarPower === null && gridPower === null ? "—" : number(currentPower)}</strong><span>kW</span></div></div><footer><span><i className="is-red" />Solar {solarPower === null ? "Sem telemetria" : `${number(solarPower)} kW`}</span><span><i />Rede {gridPower === null ? "Sem telemetria" : `${number(gridPower)} kW`}</span></footer></article>
         <article className="sems-dashboard-card sems-alarm-card"><header><div className="sems-card-heading"><img src={assets.dashboard.alarm} alt="" /><h2>Alarmes</h2></div><a href="#/mvp/incidents">Detalhes ›</a></header><div className="sems-alarm-body"><div className="sems-alarm-donut" style={{ "--alarm-share": `${Math.min(100, alarmTotal * 12)}%` } as CSSProperties}><strong>{alarmTotal}</strong><span>Total</span></div><ul><li><i className="is-critical" /><span>Falha</span><strong>{unavailable}</strong></li><li><i className="is-warning" /><span>Aviso</span><strong>{openIncidents}</strong></li></ul></div></article>
-        <article className="sems-dashboard-card sems-environment-card"><header><h2>Contribuições ambientais</h2><span>Desde o início da operação</span></header><div><p><img src={assets.dashboard.co2} alt="" /><span>CO₂ evitado</span><strong>{generatedEnergy === null ? "—" : `${number(generatedEnergy * 0.081)} t`}</strong></p><p><img src={assets.dashboard.tree} alt="" /><span>Árvores equivalentes</span><strong>{generatedEnergy === null ? "—" : Math.round(generatedEnergy * 0.42)}</strong></p><p><img src={assets.dashboard.generatedEnergy} alt="" /><span>Carvão padrão evitado</span><strong>{generatedEnergy === null ? "—" : `${number(generatedEnergy * 0.033)} t`}</strong></p></div></article>
+        <article className="sems-dashboard-card sems-environment-card" data-testid="dashboard-environment-card"><header><h2>Contribuições ambientais</h2><span>{periodLabels[chartPeriod]} · energia medida; impactos indisponíveis sem fatores versionados</span></header><div><p><img src={assets.dashboard.generatedEnergy} alt="" /><span>Solar para recarga</span><strong>{metricLabel(dashboardSummary?.energy.solarToEvWh, (value) => `${number(value / 1000)} kWh`)}</strong></p><p><img src={assets.dashboard.co2} alt="" /><span>CO₂ evitado (estimativa)</span><strong title="Fator temporal do MCTI ainda não está incorporado">Indisponível</strong></p><p><img src={assets.dashboard.tree} alt="" /><span>Equivalência ambiental</span><strong title="Não há metodologia versionada para esta equivalência">Não calculada</strong></p></div></article>
       </div>
       <div className="sems-operator-main">
         <article className="sems-dashboard-card sems-economy-card">
           <header>
-            <div><h2>Economia</h2><span>Produção e benefícios energéticos acumulados</span></div>
+            <div><h2>Economia</h2><span>{periodLabels[chartPeriod]} · métricas medidas; economia estimada indisponível sem baseline tarifária</span></div>
             <div className="sems-economy-period">
-              <div><button type="button" aria-label="Período anterior" onClick={() => setEconomyPeriodOffset((value) => value - 1)}>‹</button><strong>{35 + economyPeriodOffset}/2026</strong><button type="button" aria-label="Próximo período" onClick={() => setEconomyPeriodOffset((value) => value + 1)}>›</button></div>
-              <select aria-label="Período da economia" value={chartPeriod} onChange={(event) => setChartPeriod(event.target.value as DashboardPeriod)}><option value="day">Dia</option><option value="week">Semana</option><option value="month">Mês</option></select>
+              <select aria-label="Período da economia" value={chartPeriod} onChange={(event) => setChartPeriod(event.target.value as DashboardPeriod)}><option value="day">24 horas</option><option value="week">7 dias</option><option value="month">30 dias</option></select>
             </div>
           </header>
-          <div className="sems-economy-metrics">
-            <p><img src={assets.dashboard.generatedEnergy} alt="" /><span>Geração de energia</span><strong>{generatedEnergy === null ? "—" : <>{number(generatedEnergy)} <small>kWh</small></>}</strong></p>
-            <p><img src={assets.dashboard.gridFeedIn} alt="" /><span>Energia exportada</span><strong>—</strong></p>
-            <p><img src={assets.dashboard.chargingEnergy} alt="" /><span>Energia carregada</span><strong>{chargedEnergy === null ? "—" : <>{number(chargedEnergy)} <small>kWh</small></>}</strong></p>
-            <p><img src={assets.dashboard.generationIncome} alt="" /><span>Receita de geração</span><strong>{technicalValue === null ? "—" : money(technicalValue)}</strong></p>
-            <p><img src={assets.dashboard.gridIncome} alt="" /><span>Receita da rede</span><strong>—</strong></p>
-            <p><img src={assets.dashboard.dischargedEnergy} alt="" /><span>Energia descarregada</span><strong>—</strong></p>
+          <div className="sems-economy-metrics" data-testid="dashboard-economy-metrics">
+            <p><img src={assets.dashboard.generatedEnergy} alt="" /><span>Geração fotovoltaica no período</span><strong title="A API ainda não expõe energia fotovoltaica total no período">Indisponível</strong></p>
+            <p><img src={assets.dashboard.gridFeedIn} alt="" /><span>Energia exportada</span><strong>{metricLabel(dashboardSummary?.energy.gridExportWh, (value) => `${number(value / 1000)} kWh`)}</strong></p>
+            <p><img src={assets.dashboard.chargingEnergy} alt="" /><span>Energia entregue a EV</span><strong>{metricLabel(dashboardSummary?.energy.evWh, (value) => `${number(value / 1000)} kWh`)}</strong></p>
+            <p><img src={assets.dashboard.generationIncome} alt="" /><span>Economia estimada na conta</span><strong title="Sem tarifa de importação evitada documentada">Indisponível</strong></p>
+            <p><img src={assets.dashboard.gridIncome} alt="" /><span>Receita por exportação</span><strong title="Sem tarifa de injeção documentada">Indisponível</strong></p>
+            <p><img src={assets.dashboard.dischargedEnergy} alt="" /><span>Descarga da bateria</span><strong title="Bateria/SOC não está instrumentada no escopo atual">Indisponível</strong></p>
           </div>
           {canReadCommercial ? <aside className="sems-chargegrid-summary" data-testid="dashboard-chargegrid-summary"><div><span>{dashboardStatusLabel}</span><strong>{dashboardEstablishmentName}</strong></div><dl><div><dt>{canReadFinance ? "Receita líquida capturada" : "Sessões"}</dt><dd>{canReadFinance ? metricLabel(dashboardSummary?.financial.netCapturedCents, (value) => money(value / 100)) : metricLabel(dashboardSummary?.counts.sessionsCreatedInPeriod, (value) => String(value))}</dd></div><div><dt>Sessões no período</dt><dd>{metricLabel(dashboardSummary?.counts.sessionsCreatedInPeriod, (value) => String(value))}</dd></div><div><dt>Disponibilidade</dt><dd>{availabilityPercent === null ? "Indisponível" : `${number(availabilityPercent)}%`}</dd></div><div><dt>Carregadores publicados</dt><dd>{chargerCount === null ? "Indisponível" : String(chargerCount)}</dd></div></dl></aside> : null}
         </article>
