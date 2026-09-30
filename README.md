@@ -6,6 +6,9 @@ O motorista descobre o Hub Solar Aurora, escolhe ou identifica um carregador, au
 
 Esta baseline não é um produto de produção. Ela prioriza comportamento coerente e demonstrável, separando integração real, sandbox e simulação. A ordem vigente e o que ainda falta para concluir as etapas estão em [`docs/specs/SPRINT4_EXECUTION_ORDER.md`](docs/specs/SPRINT4_EXECUTION_ORDER.md).
 
+## Link do vídeo técnico de apresentação
+Link: https://youtu.be/uPUDfY_bTtw
+
 ## Equipe e continuidade
 
 Esta entrega consolida a Sprint 4, em continuidade ao [Dashboard Comercial ChargeGrid (Sprint 2)](https://github.com/PtiagoM/Dashboard_Comercial-ChargeGrid) e à prototipagem integrada da [Sprint 3](docs/SPRINT3.md).
