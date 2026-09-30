@@ -1,6 +1,6 @@
 # Sprint 4 — Especificação executável do protótipo final
 
-Estado em 30/09/2026: **M0–M7/G0–G7 concluídos**. A implementação está na branch local `test-sprint4-m5-u2a`; o nome não foi renomeado para preservar o histórico, embora já contenha os checkpoints de M5. Plano superior: [Sprint 4](../../SPRINT4_FINAL_EXECUTION_PLAN.md); inventário: [matriz](../../SPRINT4_BEHAVIOR_MATRIX.md). Não sincronizar nem publicar sem respeitar o workflow.
+Estado em 30/09/2026: **M0–M7/G0–G7 concluídos**. O merge local da baseline terminou em `8355c23`; a linha de execução seguinte está na branch `feature/sprint4-finalization`, criada em `461e9c5`. Plano superior: [Sprint 4](../../SPRINT4_FINAL_EXECUTION_PLAN.md); inventário: [matriz](../../SPRINT4_BEHAVIOR_MATRIX.md). Não publicar sem respeitar o workflow.
 
 M0 congelou `S4-C1`; M1–M4 implementaram a operação compartilhada, PWA, Admin, energia, demanda e insights determinísticos. M5-U1 criou o ambiente E2E isolado. O registro atualizado de gates está em [acceptance](acceptance.md) e a precedência entre este pacote e o pacote posterior está na [ordem canônica](../SPRINT4_EXECUTION_ORDER.md).
 

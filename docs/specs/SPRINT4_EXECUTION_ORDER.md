@@ -31,7 +31,7 @@ Documento histórico ou backlog antigo não altera esta ordem. Em conflito sobre
 | M7-U1 | CONCLUÍDO — 30/09/2026 | README/estado/ordem/evidências atualizados; harness E2E isolado por diretório temporário; Sprint 4 E2E 7/7, testes, typecheck e build aprovados |
 | M7-U2 | VALIDAÇÃO AUTOMATIZADA CONCLUÍDA — 30/09/2026 | checkout de arquivos versionados + `npm ci`, lint, typecheck, testes 117/117, builds e E2E 7/7; API oficial/PGlite respondeu health isolada na porta 4333 |
 | G7 / ensaio manual M7-U2 | CONCLUÍDO — 30/09/2026 | responsável confirmou o ensaio após atualização do README; npm ci, gates automatizados, roteiro e limitações registrados. `npm ci` reportou 3 vulnerabilidades (2 moderadas, 1 alta), sem correção aplicada |
-| CG-F0-01 | CONCLUÍDO — 30/09/2026 | merge normal em `8355c23`; os dois commits do vídeo foram incorporados no README da Sprint 4. A branch remota congelada permaneceu em `7d5c6de`; sem push. |
+| CG-F0-01 | CONCLUÍDO — 30/09/2026 | merge normal em `8355c23`; os dois commits do vídeo foram incorporados no README da Sprint 4. A branch remota congelada permaneceu em `7d5c6de`; sem push. Execução S4-C2 segue em `feature/sprint4-finalization` (`461e9c5`). |
 | CG-F0-02 | PRÓXIMA UNIDADE | congelar contrato S4-C2 após a reconciliação; demais unidades continuam bloqueadas pela dependência F0-02 |
 
 `G1–G4 concluído` permitiu entrar em M5. M5/G5 está concluído: U2A–U2C têm evidência automatizada focal e U3 foi confirmado manualmente pelo responsável. A evidência manual não contém IDs/capturas arquivados; isso não deve ser ampliado para alegações sobre hardware físico ou Stripe live.
