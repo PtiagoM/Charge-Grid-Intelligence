@@ -2,7 +2,7 @@
 
 **ChargeGrid Intelligence — Sprint 4: solução final integrada e inovadora GoodWe.**
 
-**Data:** 24/09/2026; atualização de execução: 30/09/2026. **Status:** pacote original M0–M7/G0–G7 concluído; continuidade agora segue CG-F0-01, conforme [ordem canônica](specs/SPRINT4_EXECUTION_ORDER.md). A reconciliação por merge está pendente de autorização explícita.
+**Data:** 24/09/2026; atualização de execução: 30/09/2026. **Status:** pacote original M0–M7/G0–G7 e CG-F0-01 concluídos; continuidade segue CG-F0-02, conforme [ordem canônica](specs/SPRINT4_EXECUTION_ORDER.md). A referência da Sprint 3 foi preservada sem push.
 
 **Atualização de escopo aprovada:** D1–D4 e o recorte adicional do responsável, registrados na seção 13, substituem as propostas anteriores correspondentes. O núcleo obrigatório é **operação comercial completa + experiência do motorista + energia da planta + controle de demanda + automação explicável + integração final**, no Aurora. Aprovação dessas decisões não é autorização para implementar os marcos. Os achados e resultados abaixo continuam retratando o código auditado, não as mudanças planejadas.
 

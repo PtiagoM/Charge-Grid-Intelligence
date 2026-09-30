@@ -28,7 +28,7 @@ Este arquivo complementa, sem substituir, [decisions S4-C1](../sprint4/decisions
 ## Governança Git verificada em 30/09/2026
 
 - A linha implementada até M4 está localmente em `feature/admin-sprint3-integration`, HEAD `90afa87`.
-- Após atualizar `origin/feature/admin-sprint3-integration`, a branch de trabalho `test-sprint4-m5-u2a` está 50 commits à frente e 2 atrás, com base comum `a767f79`. Os dois commits remotos alteram somente o README para adicionar o link do vídeo; o merge aguarda autorização explícita conforme `cg-f0-01.md`.
+- Após atualizar `origin/feature/admin-sprint3-integration`, a branch de trabalho estava 50 commits à frente e 2 atrás, com base comum `a767f79`. Merge normal local `8355c23` incorporou somente os dois commits do link do vídeo; a ref da branch remota permaneceu em `7d5c6de` e não houve push.
 - `feature/admin-sprint4` existe apenas localmente em `c8cc21c` e é histórica; não é base da finalização.
 - Não há PR aberto/fechado das duas branches no GitHub.
 - Este pacote nasce em `docs/sprint4-final-sdds`. Reconciliação/branch final pertence a CG-F0-01 e exige autorização para merge/rebase/push conforme workflow.
