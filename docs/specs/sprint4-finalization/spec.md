@@ -1,6 +1,6 @@
 # Sprint 4 — pacote final de execução
 
-Status: **G7, CG-F0-01, CG-F0-02, CG-DASH-01, CG-DASH-02 E CG-DASH-03 CONCLUÍDOS; CG-AI-01 DOCUMENTADO E AGUARDANDO DECISÃO DE PRODUTO; CG-LAB-01 É A PRÓXIMA UNIDADE ELEGÍVEL**. Este pacote transforma o plano mestre aprovado em unidades executáveis. Ele não substitui M5–M7 de `docs/specs/sprint4`.
+Status: **G7, CG-F0-01, CG-F0-02, CG-DASH-01, CG-DASH-02, CG-DASH-03 E CG-LAB-01 CONCLUÍDOS; CG-AI-01 DOCUMENTADO E AGUARDANDO DECISÃO DE PRODUTO**. Este pacote transforma o plano mestre aprovado em unidades executáveis. Ele não substitui M5–M7 de `docs/specs/sprint4`.
 
 ## Como usar
 
@@ -42,7 +42,7 @@ Status: **G7, CG-F0-01, CG-F0-02, CG-DASH-01, CG-DASH-02 E CG-DASH-03 CONCLUÍDO
 | CG-AI-04 | [Artefato e paridade Node](cg-ai-04.md) | AI-03B | MÉDIO | ALTO | BACKEND ONLY | parity/contract | PLANNED |
 | CG-AI-05 | [Persistência e API de previsão](cg-ai-05.md) | AI-04, F0-02 | MÉDIO | ALTO | BACKEND ONLY | integration | PLANNED |
 | CG-DEC-01 | [Previsão no Decision Engine](cg-dec-01.md) | AI-05 | MÉDIO | ALTO | BACKEND ONLY | unit/integration | PLANNED |
-| CG-LAB-01 | [Perfis energéticos reproduzíveis](cg-lab-01.md) | F0-02 | MÉDIO | MÉDIO | BACKEND ONLY | integration | READY |
+| CG-LAB-01 | [Perfis energéticos reproduzíveis](cg-lab-01.md) | F0-02 | MÉDIO | MÉDIO | BACKEND ONLY | integration | DONE |
 | CG-LAB-02 | [Controles de cenário](cg-lab-02.md) | LAB-01 | MÉDIO | MÉDIO | HUMAN FRONTEND GATE | E2E/manual | PLANNED |
 | CG-UI-01 | [Apresentação da previsão](cg-ui-01.md) | AI-05 | MÉDIO | MÉDIO | HUMAN FRONTEND GATE | component/E2E/manual | PLANNED |
 | CG-OPS-01 | [Alarmes e recomendações preditivas](cg-ops-01.md) | DEC-01 | MÉDIO | ALTO | PEQUENO AJUSTE NO FRONT | unit/integration/E2E focal | PLANNED |
@@ -56,4 +56,4 @@ Status: **G7, CG-F0-01, CG-F0-02, CG-DASH-01, CG-DASH-02 E CG-DASH-03 CONCLUÍDO
 
 `S4-M7-U2/G7 → F0-01 → F0-02 → {DASH-01, AI-01, LAB-01} → DASH-02/DASH-03 → AI-02 → AI-03A → AI-03B → AI-04 → AI-05 → DEC-01 → {LAB-02, UI-01, OPS-01} → INT-01A → INT-01B → STAB-01 → DEL-01`.
 
-AI e laboratório podem avançar em paralelo depois de F0-02. CG-AI-01 foi concluído documentalmente e aguarda decisão explícita antes de qualquer download, síntese ou treino; CG-LAB-01 segue independente e elegível. Nenhum executor antecipa UI bloqueada por gate humano. As evidências de M5–M7 são baseline reutilizável; unidades `CG-INT/STAB/DEL` repetem apenas fluxos afetados pelos deltas S4-C2.
+AI e laboratório podem avançar em paralelo depois de F0-02. CG-AI-01 foi concluído documentalmente e aguarda decisão explícita antes de qualquer download, síntese ou treino; CG-LAB-01 foi concluído sem UI. Nenhum executor antecipa UI bloqueada por gate humano. As evidências de M5–M7 são baseline reutilizável; unidades `CG-INT/STAB/DEL` repetem apenas fluxos afetados pelos deltas S4-C2.

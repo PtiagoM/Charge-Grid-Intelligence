@@ -313,6 +313,47 @@ describe("CommercialRepository", () => {
     expect((await repository.plantEnergySeries("plant_aurora_001"))).toHaveLength(beforeRead.length);
   }, 20_000);
 
+  it("persists reproducible lab profiles and a clearly simulated history prefix", async () => {
+    const repository = new CommercialRepository("memory://");
+    repositories.push(repository);
+    const appliedAt = new Date("2026-09-30T12:00:00.000Z");
+    const profile = await repository.configurePlantScenario({ plantId: "plant_aurora_001", scenarioId: "DEMAND_RAMP", seed: 7, now: appliedAt });
+    await repository.advancePlantTelemetry(appliedAt);
+    const view = await repository.plantEnergyView("plant_aurora_001");
+    const series = await repository.plantEnergySeries("plant_aurora_001");
+
+    expect(profile).toMatchObject({ scenarioId: "DEMAND_RAMP", version: 1, seed: 7, stepSeconds: 60, appliedAt: appliedAt.toISOString() });
+    expect(view.simulation).toEqual(profile);
+    expect(series).toHaveLength(97);
+    expect(series[0]?.observedAt).toBe(new Date(appliedAt.getTime() - 96 * 60_000).toISOString());
+    expect(series.every((sample) => sample.source === "SIMULATED")).toBe(true);
+    expect(view.snapshot?.gridImportKw).toBeGreaterThan(20);
+    expect(await repository.snapshot("est_aurora_001")).toMatchObject({ sessions: [], queue: [] });
+
+    const repeated = await repository.configurePlantScenario({ plantId: "plant_aurora_001", scenarioId: "DEMAND_RAMP", seed: 7, now: new Date(appliedAt.getTime() + 60_000) });
+    expect(repeated.appliedAt).toBe(appliedAt.toISOString());
+    await repository.configurePlantTelemetry({ plantId: "plant_aurora_001", online: true, pvKw: 20, buildingLoadKw: 10 });
+    expect((await repository.plantEnergyView("plant_aurora_001")).simulation).toBeNull();
+  }, 20_000);
+
+  it("restores the selected lab scenario after a persistent repository restart", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "chargegrid-lab-profile-"));
+    let repository: CommercialRepository | undefined;
+    try {
+      const appliedAt = new Date("2026-09-30T12:00:00.000Z");
+      repository = new CommercialRepository(dataDir);
+      await repository.configurePlantScenario({ plantId: "plant_aurora_001", scenarioId: "RECOVERY", seed: 2, now: appliedAt });
+      await repository.close();
+      repository = new CommercialRepository(dataDir);
+      const view = await repository.plantEnergyView("plant_aurora_001");
+      expect(view.simulation).toMatchObject({ scenarioId: "RECOVERY", version: 1, seed: 2, appliedAt: appliedAt.toISOString() });
+      expect(view.snapshot).toMatchObject({ source: "SIMULATED", quality: "FRESH" });
+    } finally {
+      if (repository) await repository.close();
+      await rm(dataDir, { recursive: true, force: true });
+    }
+  }, 30_000);
+
   it("builds a read-only S4-C2 dashboard summary from the same report and shared records", async () => {
     const repository = new CommercialRepository("memory://");
     repositories.push(repository);

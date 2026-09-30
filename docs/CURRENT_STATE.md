@@ -2,6 +2,7 @@
 
 ## Execução Sprint 4 — atualização 30/09/2026
 
+- CG-AI-01 foi concluído documentalmente em `ffc598c`: nenhuma fonte pública avaliada mede diretamente a importação integrada do Aurora; treino aguarda decisão explícita em `docs/ai/dataset-decision.md`. CG-LAB-01 foi implementado em seguida: cinco cenários GoodWe simulados determinísticos, persistidos pela API normal, com prefixo SIMULATED de 96 minutos. Unit focal, rota nova, repository focal e builds shared/API passaram. A próxima unidade independente é CG-LAB-02, ainda dependente de referência visual humana.
 - `S4-M6-U2` e G6 concluídos: o responsável validou manualmente recuperação do checkout após falha recuperável e bloqueio de ações repetidas durante Stop. U2 também passou typecheck, lint focal, build PWA e E01/E02.
 - `S4-M7-U1` concluída nesta branch: README, estado atual, ordem/gates e evidências atualizados; o harness E2E agora usa banco PGlite temporário exclusivo por execução para não herdar tarifas de rodadas anteriores nem tocar no banco pessoal. E2E Sprint 4: 7/7; `npm test`: 117/117; lint, typecheck e builds Admin/PWA/API passaram. Os testes quantitativos agora também afirmam os 500 Wh exportados no vetor de telemetria.
 - `S4-M7-U2` — validação automatizada em checkout limpo concluída: `npm ci`, lint, typecheck, `npm test` (117/117), builds Admin/PWA/API e E2E Sprint 4 (7/7) passaram; API oficial iniciou com PGlite isolado e respondeu `/health` na porta 4333. A porta padrão 3333 estava ocupada por processo preexistente e foi preservada. `npm ci` reportou 3 vulnerabilidades transientes (2 moderadas, 1 alta); não foi executado `npm audit fix`.
@@ -13,7 +14,7 @@
 ## Planejamento final da Sprint 4 — atualizado em 30/09/2026
 
 - A ordem canônica está em [`docs/specs/SPRINT4_EXECUTION_ORDER.md`](specs/SPRINT4_EXECUTION_ORDER.md): primeiro concluir o pacote original `sprint4` em M5–M7; depois iniciar `sprint4-finalization`.
-- Estado de execução em 30/09/2026: M0–M7/G0–G7, `CG-F0-01`, `CG-F0-02` e `CG-DASH-01` a `CG-DASH-03` concluídos. As próximas unidades elegíveis são `CG-AI-01` e `CG-LAB-01`; demais unidades seguem planejadas.
+- Estado de execução em 30/09/2026: M0–M7/G0–G7, `CG-F0-01`, `CG-F0-02`, `CG-DASH-01` a `CG-DASH-03` e `CG-LAB-01` concluídos. `CG-AI-01` aguarda decisão explícita registrada em `docs/ai/dataset-decision.md`; `CG-LAB-02` exige referência visual humana antes de adicionar controles.
 - O pacote [`docs/specs/sprint4-finalization`](specs/sprint4-finalization/spec.md) contém a extensão S4-C2 e contratos congelados; Admin visual, pesquisa/treino IA e novos cenários do laboratório ainda não foram alterados.
 - M5-U2A adicionou injeção de provider apenas no harness de teste e prova E2E de autorização controlada, operação/sessões e persistência; PWA, Stripe normal e schema não foram alterados.
 - M5-U2B provou fila autenticada, atribuição temporária e checkout elegível, além de tarifa versionada, cotação nova, histórico e CSV vindo da API; identidade/payment providers determinísticos existem somente no harness.

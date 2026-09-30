@@ -32,7 +32,7 @@ Documento histórico ou backlog antigo não altera esta ordem. Em conflito sobre
 | M7-U2 | VALIDAÇÃO AUTOMATIZADA CONCLUÍDA — 30/09/2026 | checkout de arquivos versionados + `npm ci`, lint, typecheck, testes 117/117, builds e E2E 7/7; API oficial/PGlite respondeu health isolada na porta 4333 |
 | G7 / ensaio manual M7-U2 | CONCLUÍDO — 30/09/2026 | responsável confirmou o ensaio após atualização do README; npm ci, gates automatizados, roteiro e limitações registrados. `npm ci` reportou 3 vulnerabilidades (2 moderadas, 1 alta), sem correção aplicada |
 | CG-F0-01 | CONCLUÍDO — 30/09/2026 | merge normal em `8355c23`; os dois commits do vídeo foram incorporados no README da Sprint 4. A branch remota congelada permaneceu em `7d5c6de`; sem push. Execução S4-C2 segue em `feature/sprint4-finalization` (`461e9c5`). |
-| CG-F0-02 | PRÓXIMA UNIDADE | congelar contrato S4-C2 após a reconciliação; demais unidades continuam bloqueadas pela dependência F0-02 |
+| CG-F0-02 | CONCLUÍDO | contrato S4-C2 congelado em `7cabb99`; DASH-01..03 e LAB-01 executados posteriormente em `feature/sprint4-finalization` |
 
 `G1–G4 concluído` permitiu entrar em M5. M5/G5 está concluído: U2A–U2C têm evidência automatizada focal e U3 foi confirmado manualmente pelo responsável. A evidência manual não contém IDs/capturas arquivados; isso não deve ser ampliado para alegações sobre hardware físico ou Stripe live.
 
@@ -52,7 +52,7 @@ S4-M5-U2A concluída
 → restante de sprint4-finalization
 ```
 
-G7 e F0-01 estão concluídos. A branch remota da entrega Sprint 3 continua congelada; o merge ocorreu somente na linha local de execução Sprint 4 e não foi publicado. A próxima unidade elegível é F0-02; nenhuma implementação de Dashboard/IA/cenários começa antes de seu contrato.
+G7, F0-01 e F0-02 estão concluídos. DASH-01..03 e LAB-01 também foram executados depois do contrato S4-C2; AI-01 avaliou fontes e aguarda decisão explícita antes de qualquer dado composto/treino. LAB-02 aguarda referência visual humana para seus controles. A branch remota da entrega Sprint 3 continua congelada; não houve alteração, push ou publicação nela.
 
 ## Por que existem dois gates de integração/estabilidade/entrega
 

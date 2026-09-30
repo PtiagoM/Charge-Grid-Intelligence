@@ -63,4 +63,19 @@ describe("commercial ownership routes", () => {
     expect((await request(app).get("/dashboard-summary?establishmentId=est_aurora_001&from=2020-01-01&to=2020-02-02")).status).toBe(400);
     expect((await request(app).get(`/dashboard-summary${query.replace("est_aurora_001", "unknown")}`)).status).toBe(404);
   }, 20_000);
+
+  it("applies a persisted hardware energy scenario through the commercial API", async () => {
+    const repository = new CommercialRepository("memory://");
+    repositories.push(repository);
+    const app = express();
+    app.use(express.json());
+    app.use(createCommercialRouter({ repository, verifyDriver }));
+
+    const applied = await request(app).post("/plants/plant_aurora_001/hardware").send({ scenarioId: "SOLAR_SURPLUS", seed: 4 });
+    const energy = await request(app).get("/plants/plant_aurora_001/energy");
+    expect(applied.status).toBe(200);
+    expect(energy.status).toBe(200);
+    expect(energy.body.simulation).toMatchObject({ scenarioId: "SOLAR_SURPLUS", version: 1, seed: 4, stepSeconds: 60 });
+    expect(energy.body.snapshot).toMatchObject({ source: "SIMULATED", pvKw: 30, buildingLoadKw: 8 });
+  }, 20_000);
 });

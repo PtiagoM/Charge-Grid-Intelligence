@@ -1,5 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { Router } from "express";
+import type { LabScenarioId } from "@chargegrid/shared";
+import { LAB_SCENARIOS } from "../goodwe/energy-scenarios.js";
 import { DriverAuthenticationError, DriverAuthenticationUnavailableError, guestToken, requireDriver, type DriverVerifier } from "./driver-auth.js";
 import { CommercialConflictError, CommercialNotFoundError, getCommercialRepository, type CommercialRepository, type CommercialSessionAccess } from "./repository.js";
 
@@ -159,12 +161,16 @@ export function createCommercialRouter(options: { repository?: CommercialReposit
     }
   });
   router.post("/plants/:plantId/hardware", async (request, response) => {
-    const { online, pvKw, buildingLoadKw } = request.body ?? {};
-    if (typeof online !== "boolean" || ![pvKw, buildingLoadKw].every((value) => typeof value === "number" && Number.isFinite(value) && value >= 0)) {
-      return response.status(400).json({ code: "INVALID_PLANT_HARDWARE_INPUT", message: "Informe provider, solar e carga-base simulados válidos." });
+    const { online, pvKw, buildingLoadKw, scenarioId, seed = 1 } = request.body ?? {};
+    const applyingScenario = scenarioId !== undefined;
+    if (applyingScenario
+      ? !LAB_SCENARIOS.includes(scenarioId as LabScenarioId) || !Number.isInteger(seed) || seed < 0
+      : typeof online !== "boolean" || ![pvKw, buildingLoadKw].every((value) => typeof value === "number" && Number.isFinite(value) && value >= 0)) {
+      return response.status(400).json({ code: "INVALID_PLANT_HARDWARE_INPUT", message: "Informe um cenário de laboratório válido ou sinais simulados válidos." });
     }
     try {
-      await repository.configurePlantTelemetry({ plantId: request.params.plantId, online, pvKw, buildingLoadKw });
+      if (applyingScenario) await repository.configurePlantScenario({ plantId: request.params.plantId, scenarioId: scenarioId as LabScenarioId, seed });
+      else await repository.configurePlantTelemetry({ plantId: request.params.plantId, online, pvKw, buildingLoadKw });
       await repository.advancePlantTelemetry();
       return response.json(await repository.snapshot());
     } catch (error) {

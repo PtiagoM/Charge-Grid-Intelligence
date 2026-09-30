@@ -4,9 +4,10 @@ import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
-import { ChargerCommercialStatus, ChargerTechnicalStatus, CommercialAvailability, CommercialSessionStatus, PaymentStatus, PlantEnergyStatus, QueueStatus, type CommercialCatalog, type CommercialChargerRecord, type CommercialChargerResolution, type CommercialDashboardMetric, type CommercialDashboardSummary, type CommercialEnergyView, type CommercialEstablishmentRecord, type CommercialFinancialSummary, type CommercialInsight, type CommercialInsights, type CommercialOperationalReport, type CommercialOpeningHoursInterval, type CommercialPublicChargerRecord, type CommercialPublicEstablishmentRecord, type CommercialQueueRecord, type CommercialQuote, type CommercialSessionRecord, type CommercialSnapshot, type CommercialTariffVersion, type DataProvenance, type PlantEnergySnapshot } from "@chargegrid/shared";
+import { ChargerCommercialStatus, ChargerTechnicalStatus, CommercialAvailability, CommercialSessionStatus, PaymentStatus, PlantEnergyStatus, QueueStatus, type CommercialCatalog, type CommercialChargerRecord, type CommercialChargerResolution, type CommercialDashboardMetric, type CommercialDashboardSummary, type CommercialEnergyView, type CommercialEstablishmentRecord, type CommercialFinancialSummary, type CommercialInsight, type CommercialInsights, type CommercialOperationalReport, type CommercialOpeningHoursInterval, type CommercialPublicChargerRecord, type CommercialPublicEstablishmentRecord, type CommercialQueueRecord, type CommercialQuote, type CommercialSessionRecord, type CommercialSnapshot, type CommercialTariffVersion, type DataProvenance, type LabScenarioId, type PlantEnergySnapshot, type PlantSimulationProfile } from "@chargegrid/shared";
 import pg from "pg";
 import { MockGoodWeProvider, type GoodWeProvider } from "../goodwe/index.js";
+import { historicalSignals, LAB_SCENARIOS, signalsForScenario } from "../goodwe/energy-scenarios.js";
 
 const { Pool } = pg;
 
@@ -374,11 +375,15 @@ function tariffVersionRecord(row: TariffVersionRow): CommercialTariffVersion {
   };
 }
 
-function providerConfig(value: unknown) {
+function providerConfig(value: unknown): { online: boolean; pvKw: number; buildingLoadKw: number; simulation: PlantSimulationProfile | null } {
   const parsed = typeof value === "string" ? JSON.parse(value) : value;
   const config = typeof parsed === "object" && parsed !== null ? parsed as Record<string, unknown> : {};
   const numeric = (key: "pvKw" | "buildingLoadKw") => typeof config[key] === "number" && Number.isFinite(config[key]) && config[key] >= 0 ? config[key] : 0;
-  return { online: config.online === true, pvKw: numeric("pvKw"), buildingLoadKw: numeric("buildingLoadKw") };
+  const rawSimulation = typeof config.simulation === "object" && config.simulation !== null ? config.simulation as Record<string, unknown> : null;
+  const simulation = rawSimulation && LAB_SCENARIOS.includes(rawSimulation.scenarioId as LabScenarioId) && rawSimulation.version === 1 && Number.isInteger(rawSimulation.seed) && typeof rawSimulation.appliedAt === "string"
+    ? { scenarioId: rawSimulation.scenarioId as LabScenarioId, version: 1 as const, seed: rawSimulation.seed as number, stepSeconds: 60 as const, appliedAt: rawSimulation.appliedAt }
+    : null;
+  return { online: config.online === true, pvKw: numeric("pvKw"), buildingLoadKw: numeric("buildingLoadKw"), simulation };
 }
 
 function energyPolicy(value: unknown) {
@@ -980,6 +985,39 @@ export class CommercialRepository {
     return this.plantEnergy(input.plantId);
   }
 
+  async configurePlantScenario(input: { plantId: string; scenarioId: LabScenarioId; seed: number; now?: Date }) {
+    await this.ready;
+    if (!LAB_SCENARIOS.includes(input.scenarioId) || !Number.isInteger(input.seed) || input.seed < 0) throw new CommercialConflictError("Cenário ou seed de laboratório inválido.");
+    const result = await this.db.query<PlantRow>("select id, establishment_id, provider_config from commercial_plants where id = $1", [input.plantId]);
+    const plant = result.rows[0];
+    if (!plant) throw new CommercialNotFoundError("Planta comercial não encontrada.");
+    const now = input.now ?? new Date();
+    const current = providerConfig(plant.provider_config);
+    if (current.simulation?.scenarioId === input.scenarioId && current.simulation.seed === input.seed) return current.simulation;
+    const profile: PlantSimulationProfile = { scenarioId: input.scenarioId, version: 1, seed: input.seed, stepSeconds: 60, appliedAt: now.toISOString() };
+    const signals = signalsForScenario(profile, now);
+    await this.db.query("update commercial_plants set provider_config = $2::jsonb, updated_at = now() where id = $1", [input.plantId, JSON.stringify({ ...signals, simulation: profile })]);
+    this.plantTickedAt.delete(input.plantId);
+
+    if (signals.online) {
+      for (let index = -96; index < 0; index += 1) {
+        const observedAt = new Date(now.getTime() + index * profile.stepSeconds * 1000);
+        const historical = historicalSignals(profile, index);
+        const gridImportKw = Math.max(0, historical.buildingLoadKw - historical.pvKw);
+        const gridExportKw = Math.max(0, historical.pvKw - historical.buildingLoadKw);
+        await this.db.query(`insert into commercial_energy_samples (
+          id, plant_id, observed_at, source, quality, pv_kw, building_load_kw, ev_load_kw, grid_import_kw, grid_export_kw,
+          ev_wh, grid_import_wh, grid_export_wh, solar_to_ev_wh
+        ) values ($1, $2, $3, 'SIMULATED', 'FRESH', $4, $5, 0, $6, $7, 0, $8, $9, 0)
+        on conflict (plant_id, observed_at) do nothing`, [
+          randomUUID(), input.plantId, observedAt.toISOString(), historical.pvKw, historical.buildingLoadKw,
+          gridImportKw, gridExportKw, gridImportKw * profile.stepSeconds / 3.6, gridExportKw * profile.stepSeconds / 3.6
+        ]);
+      }
+    }
+    return profile;
+  }
+
   async plantEnergy(plantId: string): Promise<PlantEnergySnapshot | null> {
     await this.ready;
     const plant = await this.db.query<PlantRow>("select id, establishment_id, provider_config from commercial_plants where id = $1", [plantId]);
@@ -1037,7 +1075,8 @@ export class CommercialRepository {
         plantId, policyVersion: "demand-v1", sampleId: snapshot?.id ?? null, state, quality,
         enabled: policy.demandControlEnabled, canAdmit, reasonCode, projectedImportKw,
         candidateSessionIds: candidates.rows.map((item) => item.id), observedAt: snapshot?.observedAt ?? new Date().toISOString()
-      }
+      },
+      simulation: providerConfig(plant.provider_config).simulation
     };
   }
 
@@ -1045,7 +1084,9 @@ export class CommercialRepository {
     await this.ready;
     const plants = await this.db.query<PlantRow>("select id, establishment_id, provider_config from commercial_plants");
     for (const plant of plants.rows) {
-      const telemetry = await this.goodWeProvider.getPlantTelemetry(plant.id, providerConfig(plant.provider_config));
+      const config = providerConfig(plant.provider_config);
+      const signals = config.simulation ? signalsForScenario(config.simulation, now) : config;
+      const telemetry = await this.goodWeProvider.getPlantTelemetry(plant.id, signals);
       if (!telemetry) {
         this.plantTickedAt.delete(plant.id);
         continue;

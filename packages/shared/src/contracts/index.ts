@@ -84,6 +84,15 @@ export interface CommercialEnergyView {
   snapshot: PlantEnergySnapshot | null;
   policy: CommercialEnergyPolicy;
   decision: CommercialEnergyDecision;
+  simulation: PlantSimulationProfile | null;
+}
+
+export interface PlantSimulationProfile {
+  scenarioId: LabScenarioId;
+  version: 1;
+  seed: number;
+  stepSeconds: 60;
+  appliedAt: string;
 }
 
 export interface CommercialInsight {
