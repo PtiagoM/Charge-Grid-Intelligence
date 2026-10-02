@@ -505,6 +505,12 @@ export type ForecastRecord = ForecastRecordBase &
     | { quality: Extract<ForecastQuality, { availability: "UNAVAILABLE" }>; metrics: null; points: null }
   );
 
+export interface PlantForecastResponse {
+  forecast: ForecastRecord | null;
+  availability: ForecastQuality["availability"];
+  unavailableReason: string | null;
+}
+
 export interface DemandDecisionEvidence {
   contractVersion: "S4-C2";
   forecastId: string;

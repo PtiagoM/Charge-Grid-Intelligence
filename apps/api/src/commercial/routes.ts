@@ -160,6 +160,13 @@ export function createCommercialRouter(options: { repository?: CommercialReposit
       return response.status(errorStatus(error)).json({ code: "PLANT_ENERGY_READ_FAILED", message: error instanceof Error ? error.message : "Não foi possível consultar a telemetria da planta." });
     }
   });
+  router.get("/plants/:plantId/forecast", async (request, response) => {
+    try {
+      return response.json(await repository.plantForecast(request.params.plantId));
+    } catch (error) {
+      return response.status(errorStatus(error)).json({ code: "PLANT_FORECAST_READ_FAILED", message: error instanceof Error ? error.message : "Não foi possível consultar a previsão da planta." });
+    }
+  });
   router.post("/plants/:plantId/hardware", async (request, response) => {
     const { online, pvKw, buildingLoadKw, scenarioId, seed = 1 } = request.body ?? {};
     const applyingScenario = scenarioId !== undefined;

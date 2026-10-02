@@ -538,6 +538,40 @@ describe("CommercialRepository", () => {
     expect((await repository.catalog()).establishments[0]?.chargers).toHaveLength(6);
   }, 20_000);
 
+  it("persists one forecast per input window and serves it after the repository restarts", async () => {
+    const dataDir = await mkdtemp(join(tmpdir(), "chargegrid-ai05-"));
+    let repository: CommercialRepository | undefined;
+    try {
+      repository = new CommercialRepository(dataDir);
+      const now = new Date("2026-10-02T12:15:00.000Z");
+      await repository.configurePlantTelemetry({ plantId: "plant_aurora_001", online: true, pvKw: 0, buildingLoadKw: 80 });
+      const database = (repository as unknown as { db: { query(sql: string, params?: unknown[]): Promise<{ rows: Array<{ count: number }> }> } }).db;
+      await database.query(`insert into commercial_energy_samples (
+          id, plant_id, observed_at, source, quality, pv_kw, building_load_kw, ev_load_kw, grid_import_kw, grid_export_kw,
+          ev_wh, grid_import_wh, grid_export_wh, solar_to_ev_wh
+        ) select md5(sample_at::text)::uuid, 'plant_aurora_001', sample_at, 'SIMULATED', 'FRESH', 0, 80, 0, 80, 0, 0, 0, 0, 0
+          from generate_series($1::timestamptz, $2::timestamptz, interval '1 minute') as samples(sample_at)`, [
+        new Date(now.getTime() - 26 * 60 * 60_000 + 30_000).toISOString(), new Date(now.getTime() - 30_000).toISOString()
+      ]);
+
+      await repository.advancePlantForecasts(now);
+      const first = await repository.plantForecast("plant_aurora_001", now);
+      expect(first).toMatchObject({ availability: "AVAILABLE", forecast: { quality: { availability: "AVAILABLE" }, provenance: "SIMULATED" } });
+      await repository.advancePlantForecasts(now);
+      expect((await database.query("select count(*)::int as count from commercial_forecasts")).rows[0]?.count).toBe(1);
+
+      await repository.close();
+      repository = new CommercialRepository(dataDir);
+      await repository.advancePlantForecasts(now);
+      expect(await repository.plantForecast("plant_aurora_001", now)).toEqual(first);
+      const reopenedDatabase = (repository as unknown as { db: { query(sql: string, params?: unknown[]): Promise<{ rows: Array<{ count: number }> }> } }).db;
+      expect((await reopenedDatabase.query("select count(*)::int as count from commercial_forecasts")).rows[0]?.count).toBe(1);
+    } finally {
+      await repository?.close();
+      await rm(dataDir, { recursive: true, force: true });
+    }
+  }, 30_000);
+
   it("baselines legacy data once and preserves tariff and publication across persistent restarts", async () => {
     const dataDir = await mkdtemp(join(tmpdir(), "chargegrid-s4-"));
     let repository: CommercialRepository | undefined;
@@ -563,7 +597,7 @@ describe("CommercialRepository", () => {
       repository = undefined;
 
       const inspection = new PGlite(dataDir);
-      expect((await inspection.query<{ count: number }>("select count(*)::int as count from chargegrid_schema_migrations")).rows[0]?.count).toBe(9);
+      expect((await inspection.query<{ count: number }>("select count(*)::int as count from chargegrid_schema_migrations")).rows[0]?.count).toBe(10);
       await inspection.close();
     } finally {
       if (repository) await repository.close();

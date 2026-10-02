@@ -78,4 +78,17 @@ describe("commercial ownership routes", () => {
     expect(energy.body.simulation).toMatchObject({ scenarioId: "SOLAR_SURPLUS", version: 1, seed: 4, stepSeconds: 60 });
     expect(energy.body.snapshot).toMatchObject({ source: "SIMULATED", pvKw: 30, buildingLoadKw: 8 });
   }, 20_000);
+
+  it("reports an unavailable forecast instead of inventing a value before the first persisted prediction", async () => {
+    const repository = new CommercialRepository("memory://");
+    repositories.push(repository);
+    const app = express();
+    app.use(express.json());
+    app.use(createCommercialRouter({ repository, verifyDriver }));
+
+    const response = await request(app).get("/plants/plant_aurora_001/forecast");
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ forecast: null, availability: "UNAVAILABLE", unavailableReason: "FORECAST_NOT_GENERATED" });
+    expect((await request(app).get("/plants/unknown/forecast")).status).toBe(404);
+  }, 20_000);
 });

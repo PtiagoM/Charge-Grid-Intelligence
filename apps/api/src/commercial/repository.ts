@@ -4,8 +4,9 @@ import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
-import { ChargerCommercialStatus, ChargerTechnicalStatus, CommercialAvailability, CommercialSessionStatus, PaymentStatus, PlantEnergyStatus, QueueStatus, type CommercialCatalog, type CommercialChargerRecord, type CommercialChargerResolution, type CommercialDashboardMetric, type CommercialDashboardSummary, type CommercialEnergyView, type CommercialEstablishmentRecord, type CommercialFinancialSummary, type CommercialInsight, type CommercialInsights, type CommercialOperationalReport, type CommercialOpeningHoursInterval, type CommercialPublicChargerRecord, type CommercialPublicEstablishmentRecord, type CommercialQueueRecord, type CommercialQuote, type CommercialSessionRecord, type CommercialSnapshot, type CommercialTariffVersion, type DataProvenance, type LabScenarioId, type PlantEnergySnapshot, type PlantSimulationProfile } from "@chargegrid/shared";
+import { ChargerCommercialStatus, ChargerTechnicalStatus, CommercialAvailability, CommercialSessionStatus, PaymentStatus, PlantEnergyStatus, QueueStatus, type CommercialCatalog, type CommercialChargerRecord, type CommercialChargerResolution, type CommercialDashboardMetric, type CommercialDashboardSummary, type CommercialEnergyView, type CommercialEstablishmentRecord, type CommercialFinancialSummary, type CommercialInsight, type CommercialInsights, type CommercialOperationalReport, type CommercialOpeningHoursInterval, type CommercialPublicChargerRecord, type CommercialPublicEstablishmentRecord, type CommercialQueueRecord, type CommercialQuote, type CommercialSessionRecord, type CommercialSnapshot, type CommercialTariffVersion, type DataProvenance, type ForecastRecord, type LabScenarioId, type PlantEnergySnapshot, type PlantForecastResponse, type PlantSimulationProfile } from "@chargegrid/shared";
 import pg from "pg";
+import { expirePlantForecast, generatePlantForecast } from "../ai/forecast.js";
 import { MockGoodWeProvider, type GoodWeProvider } from "../goodwe/index.js";
 import { historicalSignals, LAB_SCENARIOS, signalsForScenario } from "../goodwe/energy-scenarios.js";
 
@@ -231,7 +232,8 @@ const migrations = [
   { name: "202609260006_energy_telemetry", url: new URL("../../../../supabase/migrations/202609260006_energy_telemetry.sql", import.meta.url) },
   { name: "202609270007_demand_policy", url: new URL("../../../../supabase/migrations/202609270007_demand_policy.sql", import.meta.url) },
   { name: "202609270008_commercial_insights", url: new URL("../../../../supabase/migrations/202609270008_commercial_insights.sql", import.meta.url) },
-  { name: "202609270009_insight_lifecycle", url: new URL("../../../../supabase/migrations/202609270009_insight_lifecycle.sql", import.meta.url) }
+  { name: "202609270009_insight_lifecycle", url: new URL("../../../../supabase/migrations/202609270009_insight_lifecycle.sql", import.meta.url) },
+  { name: "202610020010_demand_forecasts", url: new URL("../../../../supabase/migrations/202610020010_demand_forecasts.sql", import.meta.url) }
 ] as const;
 const legacyMigrationNames = new Set(migrations.slice(0, 3).map((migration) => migration.name));
 const defaultDataDir = process.env.CHARGEGRID_DATABASE_PATH ?? (process.env.NODE_ENV === "test" ? "memory://" : fileURLToPath(new URL("../../../../.local/commercial-db", import.meta.url)));
@@ -631,6 +633,7 @@ export class CommercialRepository {
   private readonly plantTickedAt = new Map<string, number>();
   private readonly demandRecoveredAt = new Map<string, number>();
   private readonly admittedPowerByPlant = new Map<string, number>();
+  private forecastTickedAt = 0;
 
   constructor(dataDir?: string, private readonly goodWeProvider: GoodWeProvider = new MockGoodWeProvider()) {
     const remoteUrl = process.env.CHARGEGRID_DATABASE_URL?.trim();
@@ -1032,6 +1035,47 @@ export class CommercialRepository {
     await this.ready;
     const rows = await this.db.query<EnergySampleRow>("select * from commercial_energy_samples where plant_id = $1 order by observed_at desc limit 3600", [plantId]);
     return rows.rows.reverse().map(energySampleRecord);
+  }
+
+  async advancePlantForecasts(now = new Date()) {
+    await this.ready;
+    const forecastPeriodMs = 15 * 60_000;
+    const inputTo = Math.floor(now.getTime() / forecastPeriodMs) * forecastPeriodMs;
+    if (this.forecastTickedAt === inputTo) return;
+    // ponytail: one attempt per 15-minute input window; a transient miss retries in the next window, without a job queue.
+    this.forecastTickedAt = inputTo;
+    const plants = await this.db.query<PlantRow>("select id, establishment_id, provider_config from commercial_plants");
+    for (const plant of plants.rows) {
+      if (!providerConfig(plant.provider_config).online) continue;
+      const latest = await this.db.query<{ input_to: Date | string }>("select input_to from commercial_forecasts where plant_id = $1 order by input_to desc limit 1", [plant.id]);
+      if (latest.rows[0] && Date.parse(String(latest.rows[0].input_to)) >= inputTo) continue;
+      const samples = await this.db.query<{ observed_at: Date | string; grid_import_kw: number; quality: "FRESH" | "STALE" | "UNKNOWN" }>(`select date_trunc('minute', observed_at) + interval '1 minute' as observed_at,
+          avg(grid_import_kw)::float8 as grid_import_kw,
+          case when bool_and(quality = 'FRESH') then 'FRESH' else 'STALE' end as quality
+        from commercial_energy_samples
+        where plant_id = $1 and observed_at >= $2 and observed_at < date_trunc('minute', $3::timestamptz)
+        group by date_trunc('minute', observed_at)
+        order by date_trunc('minute', observed_at)`, [plant.id, new Date(now.getTime() - 26 * 60 * 60_000).toISOString(), now.toISOString()]);
+      const forecast = await generatePlantForecast(plant.id, samples.rows.map((sample) => ({
+        observedAt: iso(sample.observed_at)!, gridImportKw: Number(sample.grid_import_kw), quality: sample.quality, source: "SIMULATED" as const
+      })), now);
+      if (forecast.quality.availability !== "AVAILABLE") continue;
+      await this.db.query(`insert into commercial_forecasts (id, plant_id, model_version, input_to, generated_at, expires_at, record)
+        values ($1, $2, $3, $4, $5, $6, $7::jsonb) on conflict (plant_id, model_version, input_to) do nothing`, [
+        forecast.id, forecast.plantId, forecast.modelVersion, forecast.inputTo, forecast.generatedAt, forecast.expiresAt, JSON.stringify(forecast)
+      ]);
+    }
+  }
+
+  async plantForecast(plantId: string, now = new Date()): Promise<PlantForecastResponse> {
+    await this.ready;
+    const plant = await this.db.query<{ id: string }>("select id from commercial_plants where id = $1", [plantId]);
+    if (!plant.rows[0]) throw new CommercialNotFoundError("Planta comercial não encontrada.");
+    const rows = await this.db.query<{ record: ForecastRecord | string }>("select record from commercial_forecasts where plant_id = $1 order by generated_at desc limit 1", [plantId]);
+    if (!rows.rows[0]) return { forecast: null, availability: "UNAVAILABLE" as const, unavailableReason: "FORECAST_NOT_GENERATED" };
+    let forecast = typeof rows.rows[0].record === "string" ? JSON.parse(rows.rows[0].record) as ForecastRecord : rows.rows[0].record;
+    if (Date.parse(forecast.expiresAt) <= now.getTime()) forecast = expirePlantForecast(forecast, await this.plantEnergy(plantId), now);
+    return { forecast, availability: forecast.quality.availability, unavailableReason: forecast.quality.unavailableReason };
   }
 
   async plantEnergyView(plantId: string): Promise<CommercialEnergyView> {
@@ -1688,8 +1732,10 @@ export function startCommercialClock() {
     pending = pending.then(async () => {
       if (stopped) return;
       const repository = getCommercialRepository();
-      await repository.advanceEnergy();
-      await repository.advancePlantTelemetry();
+      const now = new Date();
+      await repository.advanceEnergy(now);
+      await repository.advancePlantTelemetry(now);
+      await repository.advancePlantForecasts(now);
     }).catch((error) => console.error(JSON.stringify({ level: "error", service: "chargegrid-api", message: "Commercial energy clock failed", error: error instanceof Error ? error.message : String(error) })));
   };
   const timer = setInterval(tick, 1000);
