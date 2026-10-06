@@ -7,6 +7,8 @@ export interface SimulatedPlantSignals {
 }
 
 export const LAB_SCENARIOS = LAB_SCENARIO_IDS;
+// 97 quarter-hours include one alignment bucket before the model's rolling 24-hour window.
+export const FORECAST_WARMUP_MINUTES = 97 * 15;
 
 export function signalsForScenario(profile: PlantSimulationProfile, observedAt: Date): SimulatedPlantSignals {
   const step = Math.floor((observedAt.getTime() - Date.parse(profile.appliedAt)) / (profile.stepSeconds * 1000));

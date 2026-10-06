@@ -1,6 +1,6 @@
 # CG-INT-01A — prova integrada automatizada
 
-**Classificação:** BACKEND ONLY · **Status:** PLANNED · **Tamanho:** MÉDIO · **Risco:** ALTO.
+**Classificação:** BACKEND ONLY · **Status:** CONCLUÍDO · **Tamanho:** MÉDIO · **Risco:** ALTO.
 
 ## Objetivo e escopo
 
@@ -16,7 +16,7 @@ Depende de DASH-03, LAB-01, DEC-01 e OPS-01. LAB-02/UI-01 não são necessários
 
 ## Arquivos relevantes
 
-`playwright.sprint4.config.ts`, `tests/e2e/sprint4/`, testes API/commercial e helpers de DB isolado existentes.
+`playwright.sprint4.config.ts`, `tests/integration/sprint4-*.spec.ts`, testes API/commercial e helpers de DB isolado existentes.
 
 ## Cenários mínimos
 
@@ -37,8 +37,18 @@ PWA entra apenas como smoke dos fluxos já finalizados quando contrato compartil
 
 ## Testes, documentação e commit
 
-Executar apenas testes focais novos e regressões diretamente afetadas. Registrar comandos/IDs/resultados. Commit: `test(integration): prove final energy intelligence flow`.
+Executar apenas testes focais novos e regressões diretamente afetadas. Registrar comandos/IDs/resultados. Commit local consolidado: `feat(sprint4): integrate predictive demand decisions and energy view`.
 
 ## Condição de parada
 
 Parar e devolver à unidade dona se o teste revelar divergência de contrato ou source of truth; não adicionar stub ao frontend.
+
+## Bloqueio encontrado e resolvido — 06/10/2026
+
+O cenário de laboratório semeava 96 amostras de 1 minuto, enquanto `generatePlantForecast` exige 96 buckets completos de 15 minutos. A janela agora prepara 1.455 amostras simuladas, incluindo um bucket adicional para alinhamento; reaplicação idempotente preenche lacunas, e o reset remove forecasts derivados. Cenários online também habilitam a política de demanda persistida, permitindo que o Decision Engine aplique o veto de admissão.
+
+Não inserir forecasts artificiais nem relaxar critérios do modelo. A regressão LAB-01 confirma `DEMAND_RAMP → forecast disponível → evidência crítica e admissão bloqueada` a partir dos dados do próprio laboratório. O cenário estável foi também confirmado da API à apresentação no Admin; os gates restantes de demonstração manual e evidências pertencem à CG-INT-01B.
+
+Validação da integração: `rtk npm run test:e2e:sprint4 -- tests/integration/sprint4-environment.spec.ts` — 3/3 passaram, incluindo `DEMAND_RAMP` da API até a tela Energia e demanda do Admin, comparando valor escalar, proveniência, horizonte e decisão de admissão. `rtk npm exec -- eslint tests/integration/sprint4-environment.spec.ts` passou. Testes focais da API executados serialmente — 6 arquivos, 36 testes — e build da API passaram; execução paralela de PGlite excedeu memória, por isso a validação foi serial.
+
+O cenário mantém o motivo prioritário do Decision Engine (telemetria medida pode produzir `DEMAND_ALERT`) separado do resultado preditivo (`PREDICTED_CRITICAL`); a admissão bloqueada e a evidência vinculada ao mesmo forecast são as invariantes verificadas. Nenhum pagamento ou sessão é criado pelo laboratório. Gate automatizado concluído; o gate visual/manual e registro das evidências reais/sandbox/simuladas pertencem à CG-INT-01B.

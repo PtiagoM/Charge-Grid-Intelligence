@@ -1,6 +1,6 @@
 # CG-OPS-01 — alarmes e recomendações preditivas
 
-**Classificação:** PEQUENO AJUSTE NO FRONT · **Status:** PLANNED · **Tamanho:** MÉDIO · **Risco:** ALTO.
+**Classificação:** PEQUENO AJUSTE NO FRONT · **Status:** CONCLUÍDO · **Tamanho:** MÉDIO · **Risco:** ALTO.
 
 ## Objetivo e escopo
 
@@ -31,14 +31,13 @@ API commercial insights/decisions, shared contracts, `apps/admin-web/src/feature
 
 - Uma condição gera uma ocorrência correlacionada.
 - Reload preserva estado/decisão.
-- Origem e simulação/realidade são visíveis.
+- Origem e simulação/realidade são visíveis; sem calibração estatística de confiança, a UI mostra confiança indisponível.
 - Ação automática efetiva, quando houver, aponta para decisão backend separada.
 
 ## Testes, documentação e commit
 
-Unit de dedup/lifecycle, integration forecast→insight→decision e E2E focal das páginas existentes. Atualizar matriz de origem. Commit: `feat(operations): surface predictive decisions with evidence`.
+Testes focais cobrem PREDICTED_ALERT→PREDICTED_CRITICAL→PREDICTED_NORMAL, deduplicação por polling, correlação forecast/alerta/recomendação e supersessão persistida; a projeção Admin confirma origem simulada, ligação ao incidente e confiança indisponível. Typecheck, build API/Admin e lint focal passaram. Não foi necessário E2E nesta unidade: rotas e navegação não mudaram, e o mapeamento utiliza os cards existentes. Atualizar matriz de origem fica registrado junto à documentação de estado. Commit: `feat(sprint4): integrate predictive demand decisions and energy view`.
 
 ## Condição de parada
 
 Se campos novos exigirem refatoração visual significativa, converter essa parte em HUMAN FRONTEND GATE antes de editar layout.
-

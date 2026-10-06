@@ -74,8 +74,14 @@ export interface CommercialEnergyDecision {
   quality: "FRESH" | "STALE" | "UNKNOWN";
   enabled: boolean;
   canAdmit: boolean;
-  reasonCode: "ENERGY_POLICY_DISABLED" | "TELEMETRY_UNAVAILABLE" | "DEMAND_ALERT" | "PROJECTED_LIMIT" | "ADMISSION_ALLOWED";
+  reasonCode: "ENERGY_POLICY_DISABLED" | "TELEMETRY_UNAVAILABLE" | "DEMAND_ALERT" | "PROJECTED_LIMIT" | "PREDICTED_ALERT" | "PREDICTED_CRITICAL" | "ADMISSION_ALLOWED";
   projectedImportKw: number | null;
+  forecastDecision: {
+    availability: "AVAILABLE" | "UNAVAILABLE";
+    outcome: DemandDecisionEvidence["outcome"] | null;
+    evidence: DemandDecisionEvidence | null;
+    unavailableReason: string | null;
+  };
   candidateSessionIds: string[];
   observedAt: string;
 }

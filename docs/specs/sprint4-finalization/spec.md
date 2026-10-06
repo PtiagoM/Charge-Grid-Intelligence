@@ -1,6 +1,6 @@
 # Sprint 4 — pacote final de execução
 
-Status: **G7, CG-F0-01, CG-F0-02, CG-DASH-01, CG-DASH-02, CG-DASH-03, CG-LAB-01 e CG-AI-01 a CG-AI-05 CONCLUÍDOS**. Este pacote transforma o plano mestre aprovado em unidades executáveis. Ele não substitui M5–M7 de `docs/specs/sprint4`.
+Status: **G7, CG-F0-01, CG-F0-02, CG-DASH-01 a CG-DASH-03, CG-LAB-01/02, CG-AI-01 a CG-AI-05, CG-DEC-01, CG-OPS-01, CG-UI-01 e CG-INT-01A CONCLUÍDOS**. Este pacote transforma o plano mestre aprovado em unidades executáveis. Ele não substitui M5–M7 de `docs/specs/sprint4`.
 
 ## Como usar
 
@@ -42,13 +42,13 @@ Status: **G7, CG-F0-01, CG-F0-02, CG-DASH-01, CG-DASH-02, CG-DASH-03, CG-LAB-01 
 | CG-AI-03C | [Comparação controlada de variantes](cg-ai-03c.md) | AI-03B | MÉDIO | MÉDIO | BACKEND ONLY | validação focal + teste somente após promoção | DONE — Ridge Delta promovida offline |
 | CG-AI-04 | [Artefato e paridade Node](cg-ai-04.md) | AI-03C | MÉDIO | ALTO | BACKEND ONLY | parity/fallback | DONE — inferência offline Node, sem rota/persistência |
 | CG-AI-05 | [Persistência e API de previsão](cg-ai-05.md) | AI-04, F0-02 | MÉDIO | ALTO | BACKEND ONLY | integration/restart | DONE |
-| CG-DEC-01 | [Previsão no Decision Engine](cg-dec-01.md) | AI-05 | MÉDIO | ALTO | BACKEND ONLY | unit/integration | PLANNED |
+| CG-DEC-01 | [Previsão no Decision Engine](cg-dec-01.md) | AI-05 | MÉDIO | ALTO | BACKEND ONLY | unit/integration | DONE |
 | CG-LAB-01 | [Perfis energéticos reproduzíveis](cg-lab-01.md) | F0-02 | MÉDIO | MÉDIO | BACKEND ONLY | integration | DONE |
-| CG-LAB-02 | [Controles de cenário](cg-lab-02.md) | LAB-01 | MÉDIO | MÉDIO | HUMAN FRONTEND GATE | E2E/manual | PLANNED |
-| CG-UI-01 | [Apresentação da previsão](cg-ui-01.md) | AI-05 | MÉDIO | MÉDIO | HUMAN FRONTEND GATE | component/E2E/manual | PLANNED |
-| CG-OPS-01 | [Alarmes e recomendações preditivas](cg-ops-01.md) | DEC-01 | MÉDIO | ALTO | PEQUENO AJUSTE NO FRONT | unit/integration/E2E focal | PLANNED |
+| CG-LAB-02 | [Controles de cenário](cg-lab-02.md) | LAB-01 | MÉDIO | MÉDIO | HUMAN FRONTEND GATE VALIDADO PELO RESPONSÁVEL | E2E/manual | DONE — VALIDADO PELO RESPONSÁVEL |
+| CG-UI-01 | [Energia e demanda: decisão e previsão](cg-ui-01.md) | AI-05, DEC-01 | MÉDIO | MÉDIO | HUMAN FRONTEND GATE VALIDADO PELO RESPONSÁVEL | unit/E2E focal/manual review | DONE — VALIDADO PELO RESPONSÁVEL |
+| CG-OPS-01 | [Alarmes e recomendações preditivas](cg-ops-01.md) | DEC-01 | MÉDIO | ALTO | PEQUENO AJUSTE NO FRONT | unit/integration/E2E focal | DONE |
 | CG-INT-01 | [Prova integrada — pai](cg-int-01.md) | DASH-03, LAB-02, UI-01, OPS-01 | GRANDE | ALTO | BACKEND ONLY | executar A/B | PLANNED |
-| CG-INT-01A | [Prova automatizada](cg-int-01a.md) | DASH-03, LAB-01, DEC-01, OPS-01 | MÉDIO | ALTO | BACKEND ONLY | integration/E2E | PLANNED |
+| CG-INT-01A | [Prova automatizada](cg-int-01a.md) | DASH-03, LAB-01, DEC-01, OPS-01 | MÉDIO | ALTO | BACKEND ONLY | integration/E2E | DONE |
 | CG-INT-01B | [Gate visual e evidências](cg-int-01b.md) | INT-01A, LAB-02, UI-01 | MÉDIO | MÉDIO | BACKEND ONLY | manual | PLANNED |
 | CG-STAB-01 | [Hardening mínimo](cg-stab-01.md) | INT-01B | MÉDIO | MÉDIO | PEQUENO AJUSTE NO FRONT | regressões focais/global gate | PLANNED |
 | CG-DEL-01 | [Entrega final](cg-del-01.md) | STAB-01 | MÉDIO | MÉDIO | BACKEND ONLY | suíte final/manual | PLANNED |
@@ -57,4 +57,4 @@ Status: **G7, CG-F0-01, CG-F0-02, CG-DASH-01, CG-DASH-02, CG-DASH-03, CG-LAB-01 
 
 `S4-M7-U2/G7 → F0-01 → F0-02 → {DASH-01, AI-01, LAB-01} → DASH-02/DASH-03 → AI-02 → AI-03A → AI-03B → AI-04 → AI-05 → DEC-01 → {LAB-02, UI-01, OPS-01} → INT-01A → INT-01B → STAB-01 → DEL-01`.
 
-AI e laboratório podem avançar em paralelo depois de F0-02. CG-AI-01 aprovou somente o benchmark não operacional `SIMULATED_COMPOSITE`; CG-AI-02 construiu a série; CG-AI-03A/B/C selecionaram Ridge Delta por validação; CG-AI-04 implementou inferência Node com paridade/fallback; CG-AI-05 persiste forecasts disponíveis e expõe somente leitura, sem UI nem Decision Engine. CG-LAB-01 foi concluído sem UI. Nenhum executor antecipa UI bloqueada por gate humano. As evidências de M5–M7 são baseline reutilizável; unidades `CG-INT/STAB/DEL` repetem apenas fluxos afetados pelos deltas S4-C2.
+AI e laboratório avançaram em paralelo depois de F0-02. CG-AI-01 aprovou somente o benchmark não operacional `SIMULATED_COMPOSITE`; CG-AI-02 construiu a série; CG-AI-03A/B/C selecionaram Ridge Delta por validação; CG-AI-04 implementou inferência Node com paridade/fallback; CG-AI-05 persiste forecasts disponíveis; CG-DEC-01 classifica e persiste a evidência de risco preditivo, bloqueando somente novos inícios no estado crítico. O modelo não comanda hardware e não altera o lifecycle reativo. CG-LAB-01 foi concluído sem UI. Nenhum executor antecipa UI bloqueada por gate humano. As evidências de M5–M7 são baseline reutilizável; unidades `CG-INT/STAB/DEL` repetem apenas fluxos afetados pelos deltas S4-C2.

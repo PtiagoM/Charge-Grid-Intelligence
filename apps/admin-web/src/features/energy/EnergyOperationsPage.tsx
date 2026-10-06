@@ -11,7 +11,7 @@ function measurement(value: number | null | undefined) {
   return typeof value === "number" ? `${number(value)} kW` : "—";
 }
 
-export function EnergyOperationsPage({ establishmentId }: { establishmentId?: string }) {
+export function LegacyEnergyOperationsPage({ establishmentId }: { establishmentId?: string }) {
   const { state, account } = useAdminState();
   const scopeId = establishmentId ?? (account?.profile === "ESTABELECIMENTO" ? account.establishmentId : undefined);
   const accessibleIds = new Set(accessibleEstablishmentIds(state, account));
@@ -43,3 +43,5 @@ export function EnergyOperationsPage({ establishmentId }: { establishmentId?: st
     <section id="energy-policy" className="surface panel"><SectionHeader title="Política aplicada" subtitle="Versão persistida usada pela mesma decisão de admissão do backend." /><div className="detail-grid"><article><h3>Controle</h3><p>{policy.demandControlEnabled ? "Ativo" : "Desativado"}</p><small>{policy.version ?? "política local legada"}</small></article><article><h3>Alerta / crítico</h3><p>{policy.alertUtilizationPercent}% / {policy.criticalUtilizationPercent}%</p><small>{policy.blockStartOnCritical ? "bloqueia novos inícios" : "somente alerta"}</small></article><article><h3>Recuperação</h3><p>{policy.recoveryUtilizationPercent ?? "—"}%</p><small>{policy.recoveryStableSeconds ? `${policy.recoveryStableSeconds}s estáveis` : "indisponível"}</small></article><article><h3>Frescor</h3><p>{number(policy.freshnessMinutes)} min</p><small>{policy.blockStartWithoutFreshTelemetry ? "falha segura" : "operação permitida"}</small></article><article><h3>Provider</h3><p>{snapshot?.providerStatus ?? "OFFLINE"}</p><small>{snapshot?.source === "SIMULATED" ? "GoodWe simulado" : "origem indisponível"} · {localDate(snapshot?.observedAt)}</small></article></div></section>
   </div>;
 }
+
+export { EnergyOperationsExperience as EnergyOperationsPage } from "./EnergyOperationsExperience";

@@ -1,6 +1,6 @@
 # CG-LAB-01 — perfis energéticos reproduzíveis
 
-**Classificação:** BACKEND ONLY · **Status:** DONE · **Tamanho:** MÉDIO · **Risco:** MÉDIO.
+**Classificação:** BACKEND ONLY · **Status:** DONE — HISTÓRICO REPRODUZÍVEL COMPATÍVEL COM FORECAST · **Tamanho:** MÉDIO · **Risco:** MÉDIO.
 
 ## Objetivo e escopo
 
@@ -22,11 +22,11 @@ IDs de cenário existentes em `packages/shared/src/contracts/index.ts` foram reu
 | `TELEMETRY_LOSS` | provider offline; amostra anterior passa a stale. |
 | `RECOVERY` | FV crescente de 2 até 30 kW, 12 kW carga-base. |
 
-Na aplicação de um cenário online, a API grava 96 amostras anteriores (intervalos de 1 minuto), sempre `source=SIMULATED`; isso forma uma janela reproduzível de 96 minutos para inspeção. A seed desloca deterministicamente a rampa em até três passos. Essa série não é medição do Aurora e não autoriza treinamento operacional do forecast. EV permanece calculado a partir de carregadores realmente energizados. Nenhum cenário cria sessão, pagamento, fila ou receita.
+Na aplicação de um cenário online, a API grava 1.455 amostras anteriores de 1 minuto (`97 × 15`), sempre `source=SIMULATED`. Isso fornece os 96 buckets contínuos de 15 minutos exigidos pelo forecast, mais um bucket de alinhamento para a fronteira temporal. Os valores continuam sendo gerados pela mesma função determinística do perfil; a seed desloca a rampa em até três passos. Reaplicar cenário/seed preserva `appliedAt` e preenche amostras ausentes sem duplicar timestamps. A telemetria simulada não é medição do Aurora nem autoriza treinamento operacional do forecast. Um cenário online habilita a política de demanda persistida; um cenário offline conserva o estado da política. EV permanece calculado a partir de carregadores realmente energizados. Nenhum cenário cria sessão, pagamento, fila ou receita.
 
 ## Contrato/API e persistência
 
-`POST /commercial/plants/:plantId/hardware` mantém o payload de sinais manuais já existente e também aceita `{ "scenarioId": LabScenarioId, "seed": number }`. Reaplicar o cenário/seed ativo é idempotente. `GET /commercial/plants/:plantId/energy` retorna `simulation` com o perfil persistido (ou `null`), além do snapshot e da decisão energética. O reset existente limpa configuração e telemetria de teste; não apaga catálogo. Não foi necessária migration: `provider_config` já é JSONB persistido.
+`POST /commercial/plants/:plantId/hardware` mantém o payload de sinais manuais já existente e também aceita `{ "scenarioId": LabScenarioId, "seed": number }`. Reaplicar o cenário/seed ativo é idempotente. `GET /commercial/plants/:plantId/energy` retorna `simulation` com o perfil persistido (ou `null`), além do snapshot e da decisão energética. O reset limpa configuração, telemetria, forecast e decisões derivados do Aurora, e reseta o marcador de geração em memória; não apaga catálogo. Não foi necessária migration: `provider_config` já é JSONB persistido.
 
 Aplicar sinais manuais limpa os metadados do perfil e preserva o fluxo de configuração atual.
 
@@ -34,6 +34,7 @@ Aplicar sinais manuais limpa os metadados do perfil e preserva o fluxo de config
 
 - Unit: determinismo e transições dos perfis — passou.
 - Integração API/repository: prefixo simulado, idempotência, leitura do cenário e retorno ao modo manual — passou dentro da suíte focal do repository.
+- Regressão API/repository: `DEMAND_RAMP` produz forecast disponível e decisão crítica imediatamente após aplicação; reaplicação não duplica amostras e reset remove forecast — passou em `lab-forecast-history.test.ts`.
 - Rota HTTP do cenário e `GET energy` — passou.
 - Build `@chargegrid/shared` e `@chargegrid/api` — passou.
 - Não houve alteração visual nem teste browser.

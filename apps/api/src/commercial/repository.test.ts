@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { FORECAST_WARMUP_MINUTES } from "../goodwe/energy-scenarios.js";
 import { MockGoodWeProvider } from "../goodwe/mock-goodwe-provider.js";
 import { CommercialConflictError, CommercialNotFoundError, CommercialRepository } from "./repository.js";
 
@@ -102,6 +103,47 @@ describe("CommercialRepository", () => {
       decision: { plantId: "plant_aurora_001", quality: "FRESH", canAdmit: true, reasonCode: "ADMISSION_ALLOWED", projectedImportKw: 7 }
     });
   }, 20_000);
+
+  it("persists a predicted critical assessment once and blocks a new hardware start", async () => {
+    const repository = new CommercialRepository("memory://");
+    repositories.push(repository);
+    await repository.configurePlantTelemetry({ plantId: "plant_aurora_001", online: true, pvKw: 20, buildingLoadKw: 10 });
+    await repository.advancePlantTelemetry();
+    const activeId = "75000000-0000-4000-8000-000000000005";
+    await repository.reserveSession({ id: activeId, establishmentId: "est_aurora_001", chargerCode: "AURORA-02", driverName: "Sessão ativa", method: "CARD", authorizedCents: 2500 });
+    await repository.attachPayment(activeId, "pi_test_forecast_active", "requires_payment_method");
+    await repository.recordPayment({ sessionId: activeId, paymentIntentId: "pi_test_forecast_active", status: PaymentStatus.AUTHORIZED, providerStatus: "requires_capture", receivedAmount: 0 });
+    await repository.hardwareEvent("AURORA-02", "CONNECT");
+    expect((await repository.session(activeId)).status).toBe(CommercialSessionStatus.CHARGING);
+    const now = new Date();
+    const inputTo = new Date(now.getTime() - 60_000);
+    const forecast = {
+      contractVersion: "S4-C2", id: "forecast-demand-critical", plantId: "plant_aurora_001",
+      generatedAt: inputTo.toISOString(), expiresAt: new Date(inputTo.getTime() + 30 * 60_000).toISOString(),
+      inputFrom: inputTo.toISOString(), inputTo: inputTo.toISOString(), horizonMinutes: 60, stepMinutes: 15,
+      modelVersion: "cg-ai-03c-ridge_delta-1h-v1", provenance: "SIMULATED", fallback: null,
+      quality: { availability: "AVAILABLE", inputQuality: "FRESH", unavailableReason: null },
+      metrics: { maeKw: 1, rmseKw: 1, baselineMaeKw: 1, baselineRmseKw: 1, testFrom: "2026-01-01", testTo: "2026-01-02" },
+      points: [{ at: new Date(inputTo.getTime() + 60 * 60_000).toISOString(), predictedGridImportKw: 18.5, riskThresholdKw: 18, riskState: "PREDICTED_PEAK" }]
+    };
+    const database = (repository as unknown as { db: { query<T>(sql: string, params?: unknown[]): Promise<{ rows: T[] }> } }).db;
+    await database.query(`insert into commercial_forecasts (id, plant_id, model_version, input_to, generated_at, expires_at, record)
+      values ($1, $2, $3, $4, $5, $6, $7::jsonb)`, [forecast.id, forecast.plantId, forecast.modelVersion, forecast.inputTo, forecast.generatedAt, forecast.expiresAt, JSON.stringify(forecast)]);
+
+    const view = await repository.plantEnergyView("plant_aurora_001");
+    expect(view.decision).toMatchObject({ canAdmit: false, reasonCode: "PREDICTED_CRITICAL", forecastDecision: { outcome: "PREDICTED_CRITICAL", evidence: { forecastId: forecast.id } } });
+    const id = "74000000-0000-4000-8000-000000000004";
+    await repository.reserveSession({ id, establishmentId: "est_aurora_001", chargerCode: "AURORA-01", driverName: "Motorista previsão", method: "CARD", authorizedCents: 2500 });
+    await repository.attachPayment(id, "pi_test_forecast_critical", "requires_payment_method");
+    await repository.recordPayment({ sessionId: id, paymentIntentId: "pi_test_forecast_critical", status: PaymentStatus.AUTHORIZED, providerStatus: "requires_capture", receivedAmount: 0 });
+    await repository.hardwareEvent("AURORA-01", "CONNECT");
+    expect(await repository.session(id)).toMatchObject({ status: CommercialSessionStatus.WAITING_START, transitionReason: "PREDICTED_CRITICAL" });
+    await repository.advancePlantTelemetry();
+    expect((await repository.session(activeId)).status).toBe(CommercialSessionStatus.CHARGING);
+    expect((await database.query<{ count: number }>("select count(*)::int as count from commercial_demand_decisions")).rows[0]?.count).toBe(1);
+    await repository.plantEnergyView("plant_aurora_001");
+    expect((await database.query<{ count: number }>("select count(*)::int as count from commercial_demand_decisions")).rows[0]?.count).toBe(1);
+  }, 30_000);
 
   it("binds a frozen guest quote to one persistent session without exposing it to another guest", async () => {
     const repository = new CommercialRepository("memory://");
@@ -324,8 +366,8 @@ describe("CommercialRepository", () => {
 
     expect(profile).toMatchObject({ scenarioId: "DEMAND_RAMP", version: 1, seed: 7, stepSeconds: 60, appliedAt: appliedAt.toISOString() });
     expect(view.simulation).toEqual(profile);
-    expect(series).toHaveLength(97);
-    expect(series[0]?.observedAt).toBe(new Date(appliedAt.getTime() - 96 * 60_000).toISOString());
+    expect(series).toHaveLength(FORECAST_WARMUP_MINUTES + 1);
+    expect(series[0]?.observedAt).toBe(new Date(appliedAt.getTime() - FORECAST_WARMUP_MINUTES * 60_000).toISOString());
     expect(series.every((sample) => sample.source === "SIMULATED")).toBe(true);
     expect(view.snapshot?.gridImportKw).toBeGreaterThan(20);
     expect(await repository.snapshot("est_aurora_001")).toMatchObject({ sessions: [], queue: [] });
@@ -597,7 +639,7 @@ describe("CommercialRepository", () => {
       repository = undefined;
 
       const inspection = new PGlite(dataDir);
-      expect((await inspection.query<{ count: number }>("select count(*)::int as count from chargegrid_schema_migrations")).rows[0]?.count).toBe(10);
+      expect((await inspection.query<{ count: number }>("select count(*)::int as count from chargegrid_schema_migrations")).rows[0]?.count).toBe(11);
       await inspection.close();
     } finally {
       if (repository) await repository.close();

@@ -1,6 +1,6 @@
 # CG-DEC-01 — integrar previsão ao Decision Engine
 
-**Classificação:** BACKEND ONLY · **Status:** PLANNED · **Tamanho:** MÉDIO · **Risco:** ALTO.
+**Classificação:** BACKEND ONLY · **Status:** CONCLUÍDO · **Tamanho:** MÉDIO · **Risco:** ALTO.
 
 ## Objetivo e escopo
 
@@ -35,9 +35,27 @@ Depende de AI-05. O backend já admite/bloqueia/corta/retoma com telemetria real
 - Sessão ativa não sofre Stop preditivo.
 - Forecast stale/unavailable não produz risco fictício.
 
+## Implementação validada
+
+- `evaluateDemandForecast` aceita somente forecast disponível do modelo promovido, com horizonte/step compatíveis, input de no máximo dois steps (30 min), amostra atual e ponto futuro válido. O maior ponto previsto é classificado pelos limiares persistidos da política (Aurora: alerta 80%, crítico 90%).
+- A evidência `DemandDecisionEvidence` é persistida em `commercial_demand_decisions`, com chave de correlação única por planta, forecast e política/limiares. Releituras retornam o registro persistido, sem criar duplicata.
+- `GET` da energia inclui `forecastDecision`. Risco crítico reduz `canAdmit` e impede novos `StartCharge`; alerta é informativo e não bloqueia. A regra de telemetria atual continua prevalecendo quando já bloqueia; forecast indisponível mantém a decisão determinística existente.
+- Como o gate ocorre ao tentar `StartCharge`, autorização Stripe já concluída não é cancelada por esta unidade: a sessão permanece aguardando início com `transitionReason=PREDICTED_CRITICAL`. Captura/liquidação não é alterada.
+- A previsão não aciona `StopCharge` nem suspende sessão ativa. A proteção reativa existente continua baseada na demanda observada.
+- Um ajuste de texto/dados na composição de evidências do Admin mantém o consumidor compatível com os novos códigos de decisão; não houve mudança de layout nem criação de UI.
+- O reset de dados de teste também limpa evidências preditivas, sem apagar catálogo nem forecasts independentes da operação resetada.
+
+## Validação e registro
+
+- Unit: `demand-decision.test.ts` cobre normal/alerta/crítico, expiração e modelo incompatível.
+- Integração: `repository.test.ts` cobre bloqueio de nova conexão, persistência idempotente e sessão ativa não interrompida por previsão.
+- Typecheck dos workspaces compartilhados/Admin/PWA/API passou. A primeira execução da suite focada apontou somente a contagem de migrations do teste legado (10→11); expectativa atualizada. O teste focado de integração passou após a correção.
+- Migration: `202610040011_demand_decisions.sql`.
+- Commit: `feat(sprint4): integrate predictive demand decisions and energy view`.
+
 ## Testes, documentação e commit
 
-Unit dos limites e integration de admissão/idempotência/fallback. Atualizar contrato de decisão e política. Commit: `feat(demand): evaluate forecasts in decision engine`.
+Unidade concluída. O teste direto da API PGlite não exigiu provider real nem frontend.
 
 ## Condição de parada
 

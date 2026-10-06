@@ -1,5 +1,6 @@
-import { CommercialSessionStatus, PaymentStatus, QueueStatus, type CommercialDashboardSummary, type CommercialEnergyView, type CommercialInsight, type CommercialInsights, type CommercialOperationalReport, type CommercialSnapshot, type LabScenarioId } from "@chargegrid/shared";
+import { CommercialSessionStatus, PaymentStatus, QueueStatus, type CommercialDashboardSummary, type CommercialEnergyView, type CommercialInsight, type CommercialInsights, type CommercialOperationalReport, type CommercialSnapshot, type LabScenarioId, type PlantForecastResponse } from "@chargegrid/shared";
 import type { AdminState, Charger, ChargerTelemetry, Client, CommercialPlantLink, EnergyPolicy, EnergySnapshot, Establishment, FinancialEvent, Incident, IncidentEvent, Location, PaymentTransaction, QueueEntry, Recommendation, Session, SessionEvent, TariffPolicy } from "../domain/admin";
+import { mapPlantForecastResponse } from "./energyForecastMapper";
 
 const apiUrl = (import.meta.env.VITE_CHARGEGRID_API_URL || "http://localhost:3333").replace(/\/$/, "");
 
@@ -63,15 +64,24 @@ export async function fetchCommercialInsights(signal?: AbortSignal) {
 
 export async function fetchCommercialProjection(signal?: AbortSignal) {
   const snapshot = await fetchCommercialSnapshot(signal);
+  const plants = snapshot.establishments.filter((item) => item.plantId);
   const [insights, energyViews] = await Promise.all([
     fetchCommercialInsights(signal),
-    Promise.all(snapshot.establishments.filter((item) => item.plantId).map(async (item) => {
+    Promise.all(plants.map(async (item) => {
       const response = await fetch(`${apiUrl}/commercial/plants/${encodeURIComponent(item.plantId!)}/energy`, { signal });
       if (!response.ok) throw new Error("A API ChargeGrid não respondeu à política energética.");
       return response.json() as Promise<CommercialEnergyView>;
     }))
   ]);
-  return { snapshot, insights, energyViews };
+  const energyForecasts = await Promise.all(plants.map(async (item) => {
+    try {
+      return { plantId: item.plantId!, response: await fetchPlantForecast(item.plantId!, signal) };
+    } catch (error) {
+      if (signal?.aborted) throw error;
+      return { plantId: item.plantId!, error: error instanceof Error ? error.message : "Falha ao consultar a previsão." };
+    }
+  }));
+  return { snapshot, insights, energyViews, energyForecasts };
 }
 
 export async function decideCommercialInsight(id: string, decision: "ACKNOWLEDGE" | "RESOLVE" | "ACCEPT" | "DEFER" | "REJECT", reason: string) {
@@ -127,6 +137,12 @@ export async function fetchPlantEnergyView(plantId: string, signal?: AbortSignal
   return response.json() as Promise<CommercialEnergyView>;
 }
 
+export async function fetchPlantForecast(plantId: string, signal?: AbortSignal) {
+  const response = await fetch(`${apiUrl}/commercial/plants/${encodeURIComponent(plantId)}/forecast`, { signal });
+  if (!response.ok) throw new Error("A API ChargeGrid não respondeu à previsão energética.");
+  return response.json() as Promise<PlantForecastResponse>;
+}
+
 export async function applyPlantScenario(plantId: string, scenarioId: LabScenarioId) {
   const response = await fetch(`${apiUrl}/commercial/plants/${encodeURIComponent(plantId)}/hardware`, {
     method: "POST",
@@ -160,7 +176,7 @@ function insightEstablishmentId(snapshot: CommercialSnapshot, insight: Commercia
 
 function insightIncident(snapshot: CommercialSnapshot, insight: CommercialInsight): Incident {
   const establishmentId = insightEstablishmentId(snapshot, insight);
-  const category: Incident["category"] = insight.type === "HARDWARE_FAULT" ? "CHARGER_FAULT" : insight.type === "SETTLEMENT_PENDING" ? "PAYMENT" : insight.type === "DEMAND_REVIEW" ? "DEMAND" : "COMMUNICATION";
+  const category: Incident["category"] = insight.type === "HARDWARE_FAULT" ? "CHARGER_FAULT" : insight.type === "SETTLEMENT_PENDING" ? "PAYMENT" : ["DEMAND_REVIEW", "PREDICTED_DEMAND_CRITICAL"].includes(insight.type) ? "DEMAND" : "COMMUNICATION";
   const source: Incident["source"] = insight.type === "HARDWARE_FAULT" ? "GOODWE" : insight.type === "SETTLEMENT_PENDING" ? "PAYMENT" : "CHARGEGRID";
   return {
     id: insight.id,
@@ -179,8 +195,8 @@ function insightIncident(snapshot: CommercialSnapshot, insight: CommercialInsigh
     createdAt: insight.createdAt,
     updatedAt: insight.updatedAt,
     assignee: insight.reviewState === "ACKNOWLEDGED" || insight.reviewState === "RESOLVED" ? insight.decidedBy : undefined,
-    resolvedAt: insight.reviewState === "RESOLVED" ? insight.decidedAt : undefined,
-    resolution: insight.reviewState === "RESOLVED" ? insight.decisionReason : undefined,
+    resolvedAt: insight.reviewState === "RESOLVED" ? insight.decidedAt ?? insight.updatedAt : undefined,
+    resolution: insight.reviewState === "RESOLVED" ? insight.decisionReason ?? (insight.type === "PREDICTED_DEMAND_CRITICAL" ? "Previsão posterior não indica mais risco crítico." : undefined) : undefined,
     conditionActive: insight.conditionActive,
     reasonCode: insight.reasonCode,
     evidence: insight.evidence,
@@ -195,31 +211,41 @@ function insightIncidentEvents(insight: CommercialInsight): IncidentEvent[] {
   return events;
 }
 
-function insightRecommendation(snapshot: CommercialSnapshot, insight: CommercialInsight): Recommendation {
+function insightRecommendation(snapshot: CommercialSnapshot, insight: CommercialInsight, incidentId?: string): Recommendation {
   const establishmentId = insightEstablishmentId(snapshot, insight);
   const action: Recommendation["proposedAction"] = insight.suggestedAction === "OPEN_CHARGER" ? "OPEN_CHARGER" : insight.suggestedAction === "OPEN_FINANCE" ? "OPEN_FINANCE" : insight.suggestedAction === "OPEN_ENERGY" ? "OPEN_ENERGY" : "MONITOR";
+  const predictive = insight.type === "PREDICTED_DEMAND_RISK";
   return {
     id: insight.id,
     establishmentId,
-    title: ({ SOLAR_OPPORTUNITY: "Aproveitar excedente solar", DEMAND_REVIEW: "Revisar admissão por demanda", RESTORE_TELEMETRY: "Restaurar telemetria" } as Record<string, string>)[insight.type] ?? insight.type.replaceAll("_", " "),
+    incidentId,
+    title: ({ SOLAR_OPPORTUNITY: "Aproveitar excedente solar", DEMAND_REVIEW: "Revisar admissão por demanda", RESTORE_TELEMETRY: "Restaurar telemetria", PREDICTED_DEMAND_RISK: "Risco previsto de pico de demanda" } as Record<string, string>)[insight.type] ?? insight.type.replaceAll("_", " "),
     rationale: insight.message,
     evidence: insight.evidence,
     expectedImpact: insight.type === "SOLAR_OPPORTUNITY"
       ? "Novas cotações elegíveis podem usar a oferta solar enquanto a condição persistir."
       : insight.type === "DEMAND_REVIEW"
         ? "Novos inícios seguem a decisão de admissão persistida; a revisão humana não executa comandos."
+        : predictive
+          ? insight.reasonCode === "PREDICTED_CRITICAL"
+            ? insight.evidence.some((item) => item.includes("novos inícios bloqueados pelo backend"))
+              ? "A regra do backend bloqueia novos inícios sob risco crítico; sessões ativas não são interrompidas pela previsão."
+              : "Risco crítico previsto; o controle de demanda está desativado e não bloqueia novos inícios."
+            : insight.reasonCode === "PREDICTED_ALERT"
+              ? "A condição recomenda acompanhamento, sem bloquear novos inícios por previsão de alerta."
+              : "A condição de risco deixou de ser prevista; o registro permanece no histórico."
         : "A condição deve ser investigada antes de depender destes dados para operação.",
     proposedAction: action,
     targetId: insight.entityId,
-    confidence: insight.severity === "CRITICAL" ? "HIGH" : "MEDIUM",
+    confidence: predictive ? "UNAVAILABLE" : insight.severity === "CRITICAL" ? "HIGH" : "MEDIUM",
     deterministic: true,
-    status: insight.reviewState === "ACCEPTED" ? "ACCEPTED" : insight.reviewState === "DEFERRED" ? "DEFERRED" : insight.reviewState === "REJECTED" ? "REJECTED" : "OPEN",
+    status: insight.reviewState === "RESOLVED" && predictive ? "SUPERSEDED" : insight.reviewState === "ACCEPTED" ? "ACCEPTED" : insight.reviewState === "DEFERRED" ? "DEFERRED" : insight.reviewState === "REJECTED" ? "REJECTED" : "OPEN",
     createdAt: insight.updatedAt,
-    decidedAt: insight.decidedAt,
-    decidedBy: insight.decidedBy,
-    decisionReason: insight.decisionReason,
+    decidedAt: insight.decidedAt ?? (predictive && insight.reviewState === "RESOLVED" ? insight.updatedAt : undefined),
+    decidedBy: insight.decidedBy ?? (predictive && insight.reviewState === "RESOLVED" ? "Regra de previsão" : undefined),
+    decisionReason: insight.decisionReason ?? (predictive && insight.reviewState === "RESOLVED" ? "A previsão posterior não indica mais risco; recomendação superada automaticamente." : undefined),
     conditionActive: insight.conditionActive,
-    origin: "ChargeGrid API · regra determinística",
+    origin: predictive ? "ChargeGrid API · previsão SIMULATED_COMPOSITE + regra determinística" : "ChargeGrid API · regra determinística",
     reasonCode: insight.reasonCode,
     sourceEventId: insight.sourceEventId,
     sampleId: insight.sampleId,
@@ -228,7 +254,7 @@ function insightRecommendation(snapshot: CommercialSnapshot, insight: Commercial
   };
 }
 
-export function mergeCommercialSnapshot(state: AdminState, snapshot: CommercialSnapshot, insights?: CommercialInsights, energyViews: CommercialEnergyView[] = []): AdminState {
+export function mergeCommercialSnapshot(state: AdminState, snapshot: CommercialSnapshot, insights?: CommercialInsights, energyViews: CommercialEnergyView[] = [], energyForecasts: Array<{ plantId: string; response?: PlantForecastResponse; error?: string }> = []): AdminState {
   const ids = new Set(snapshot.establishments.map((item) => item.id));
   const locationId = (establishmentId: string) => snapshot.establishments.find((item) => item.id === establishmentId)?.plantId ?? `loc-${establishmentId}`;
   const commercialClient: Client = { id: "cli-chargegrid-pilot", name: "Operação comercial ChargeGrid", corporateName: "Cenário integrado de demonstração", document: "CHARGEGRID-PILOT", owner: "ChargeGrid", contactName: "Operação ChargeGrid", contactEmail: "operacao@chargegrid.local", status: "Ativo" };
@@ -342,6 +368,7 @@ export function mergeCommercialSnapshot(state: AdminState, snapshot: CommercialS
   const energy: EnergySnapshot[] = (snapshot.plantEnergy ?? []).map((item) => {
     const establishment = snapshot.establishments.find((candidate) => candidate.plantId === item.plantId);
     const view = energyViews.find((candidate) => candidate.policy.plantId === item.plantId);
+    const forecastResult = energyForecasts.find((candidate) => candidate.plantId === item.plantId);
     const contractedLimitKw = view?.policy.limitKw ?? 20;
     const demandState = item.energyStatus === "CRITICAL" ? "Crítico" : item.energyStatus === "ALERT" ? "Alerta" : "Favorável";
     return {
@@ -364,6 +391,7 @@ export function mergeCommercialSnapshot(state: AdminState, snapshot: CommercialS
       gridImportKw: item.gridImportKw,
       gridExportKw: item.gridExportKw,
       decision: view?.decision,
+      forecast: mapPlantForecastResponse(forecastResult?.response, new Date().toISOString(), forecastResult?.error),
       periodSolarKwh: item.solarToEvWh / 1000,
       periodGridKwh: item.gridImportWh / 1000
     };
@@ -374,7 +402,10 @@ export function mergeCommercialSnapshot(state: AdminState, snapshot: CommercialS
   });
   const commercialIncidents = (insights?.alerts ?? []).map((item) => insightIncident(snapshot, item));
   const commercialIncidentEvents = (insights?.alerts ?? []).flatMap(insightIncidentEvents);
-  const commercialRecommendations = (insights?.recommendations ?? []).map((item) => insightRecommendation(snapshot, item));
+  const commercialRecommendations = (insights?.recommendations ?? []).map((item) => {
+    const relatedIncident = (insights?.alerts ?? []).find((alert) => alert.sourceEventId && alert.sourceEventId === item.sourceEventId && insightEstablishmentId(snapshot, alert) === insightEstablishmentId(snapshot, item));
+    return insightRecommendation(snapshot, item, relatedIncident?.id);
+  });
   const scopeIds = [...ids];
   const replacedChargerIds = new Set(state.chargers.filter((item) => ids.has(item.establishmentId)).flatMap((item) => [item.id, item.internalId, item.identifier]));
   const replacedSessionIds = new Set(state.sessions.filter((item) => ids.has(item.establishmentId)).flatMap((item) => [item.id, item.internalId].filter((value): value is string => Boolean(value))));

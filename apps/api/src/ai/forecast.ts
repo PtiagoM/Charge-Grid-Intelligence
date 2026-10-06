@@ -5,7 +5,8 @@ import type { ForecastRecord, PlantEnergySnapshot } from "@chargegrid/shared";
 
 const MODEL_URL = new URL("../../../../ml/forecasting/data/forecast_cg_ai_03c_model.json", import.meta.url);
 const MODEL_PATH = fileURLToPath(MODEL_URL);
-const MODEL_VERSION = "cg-ai-03c-ridge_delta-1h-v1";
+export const FORECAST_MODEL_VERSION = "cg-ai-03c-ridge_delta-1h-v1";
+const MODEL_VERSION = FORECAST_MODEL_VERSION;
 const SHA256 = "fd0bec7a63ec7f1b06c636cc85450256960c7cb4bcabe142bdd65010548f7993";
 const STEP_MS = 15 * 60_000;
 const MAX_AGE_MS = 2 * STEP_MS;

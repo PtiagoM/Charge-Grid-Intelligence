@@ -59,9 +59,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     const refresh = async () => {
       controller = new AbortController();
       try {
-        const { snapshot, insights, energyViews } = await fetchCommercialProjection(controller.signal);
+        const { snapshot, insights, energyViews, energyForecasts } = await fetchCommercialProjection(controller.signal);
         if (active) {
-          setState((current) => mergeCommercialSnapshot(current, snapshot, insights, energyViews));
+          setState((current) => mergeCommercialSnapshot(current, snapshot, insights, energyViews, energyForecasts));
           setCommercialSync({ status: "SYNCED", lastUpdatedAt: new Date().toISOString(), error: null });
         }
       } catch (error) {
@@ -89,8 +89,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const publishTariff = useCallback(async (input: { establishmentId: string; energyCentsPerKwh: number; idleCentsPerMinute: number; reason: string }) => {
     try {
       await publishCommercialTariff(input);
-      const { snapshot, insights, energyViews } = await fetchCommercialProjection();
-      setState((current) => mergeCommercialSnapshot(current, snapshot, insights, energyViews));
+      const { snapshot, insights, energyViews, energyForecasts } = await fetchCommercialProjection();
+      setState((current) => mergeCommercialSnapshot(current, snapshot, insights, energyViews, energyForecasts));
       return { ok: true, issues: [] };
     } catch (error) {
       return { ok: false, issues: [error instanceof Error ? error.message : "Não foi possível publicar a tarifa."] };
@@ -113,8 +113,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     if (incidentId.startsWith("insight_")) {
       try {
         await decideCommercialInsight(incidentId, "ACKNOWLEDGE", `Reconhecido por ${assignee || "operação"}.`);
-        const { snapshot, insights, energyViews } = await fetchCommercialProjection();
-        setState((current) => mergeCommercialSnapshot(current, snapshot, insights, energyViews));
+        const { snapshot, insights, energyViews, energyForecasts } = await fetchCommercialProjection();
+        setState((current) => mergeCommercialSnapshot(current, snapshot, insights, energyViews, energyForecasts));
         return { ok: true, issues: [] };
       } catch (error) {
         return { ok: false, issues: [error instanceof Error ? error.message : "Não foi possível reconhecer a ocorrência."] };
@@ -129,8 +129,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     if (incidentId.startsWith("insight_")) {
       try {
         await decideCommercialInsight(incidentId, "RESOLVE", resolution);
-        const { snapshot, insights, energyViews } = await fetchCommercialProjection();
-        setState((current) => mergeCommercialSnapshot(current, snapshot, insights, energyViews));
+        const { snapshot, insights, energyViews, energyForecasts } = await fetchCommercialProjection();
+        setState((current) => mergeCommercialSnapshot(current, snapshot, insights, energyViews, energyForecasts));
         return { ok: true, issues: [] };
       } catch (error) {
         return { ok: false, issues: [error instanceof Error ? error.message : "Não foi possível resolver a ocorrência."] };
@@ -145,8 +145,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     if (recommendationId.startsWith("insight_")) {
       try {
         await decideCommercialInsight(recommendationId, decision === "ACCEPTED" ? "ACCEPT" : decision === "DEFERRED" ? "DEFER" : "REJECT", reason || "Revisado pela operação.");
-        const { snapshot, insights, energyViews } = await fetchCommercialProjection();
-        setState((current) => mergeCommercialSnapshot(current, snapshot, insights, energyViews));
+        const { snapshot, insights, energyViews, energyForecasts } = await fetchCommercialProjection();
+        setState((current) => mergeCommercialSnapshot(current, snapshot, insights, energyViews, energyForecasts));
         return { ok: true, issues: [] };
       } catch (error) {
         return { ok: false, issues: [error instanceof Error ? error.message : "Não foi possível registrar a decisão."] };

@@ -43,3 +43,39 @@ test("projects the same Aurora plant, charger and energy state across Admin surf
   await expect(page.getByRole("checkbox", { name: "Hub Solar Aurora" }).first()).toBeChecked();
   await expect(page.getByText("Outras plantas permanecem indisponíveis neste protótipo")).toBeVisible();
 });
+
+test("shows the persisted simulated forecast and admission decision in Admin", async ({ page, request }) => {
+  await request.post(`${api}/commercial/test-data/reset`);
+  const applied = await request.post(`${api}/commercial/plants/plant_aurora_001/hardware`, { data: { scenarioId: "DEMAND_RAMP", seed: 3 } });
+  expect(applied.ok()).toBe(true);
+
+  await expect.poll(async () => {
+    const response = await request.get(`${api}/commercial/plants/plant_aurora_001/forecast`);
+    if (!response.ok()) return null;
+    return (await response.json()).availability;
+  }, { timeout: 30_000, intervals: [500, 1_000, 2_000] }).toBe("AVAILABLE");
+
+  const [forecastResponse, energyResponse] = await Promise.all([
+    request.get(`${api}/commercial/plants/plant_aurora_001/forecast`),
+    request.get(`${api}/commercial/plants/plant_aurora_001/energy`)
+  ]);
+  const forecast = (await forecastResponse.json()).forecast;
+  const energy = await energyResponse.json();
+  const predictedKw = forecast.points[0].predictedGridImportKw as number;
+  expect(forecast).toMatchObject({ plantId: "plant_aurora_001", provenance: "SIMULATED", horizonMinutes: 60 });
+  expect(energy.decision).toMatchObject({ canAdmit: false, forecastDecision: { outcome: "PREDICTED_CRITICAL", evidence: { forecastId: forecast.id } } });
+
+  await page.goto("http://127.0.0.1:5273/#/login");
+  await page.getByTestId("login-email").fill("aurora@teste.com");
+  await page.getByTestId("login-password").fill("teste");
+  await page.getByTestId("login-submit").click();
+  await expect(page.getByRole("link", { name: "ChargeGrid" })).toBeVisible();
+  await page.goto("http://127.0.0.1:5273/#/mvp/energy?est=est_aurora_001");
+
+  const forecastPanel = page.getByTestId("energy-forecast");
+  await expect(forecastPanel).toContainText("SIMULATED_COMPOSITE · benchmark");
+  await expect(forecastPanel).toContainText("Horizonte de 60 min");
+  await expect(forecastPanel).toContainText(`${new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(predictedKw)} kW`);
+  await expect(page.locator("#energy-decision")).toContainText("Inícios bloqueados");
+  await expect(page.locator("#energy-decision")).toContainText(energy.decision.reasonCode);
+});

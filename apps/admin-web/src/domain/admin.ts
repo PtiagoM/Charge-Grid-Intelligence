@@ -391,6 +391,7 @@ export interface EnergySnapshot {
   gridImportKw?: number;
   gridExportKw?: number;
   decision?: CommercialEnergyDecision;
+  forecast?: EnergyForecastPresentation;
   periodSolarKwh?: number;
   periodBatteryKwh?: number;
   periodGridKwh?: number;
@@ -407,6 +408,28 @@ export interface EnergyPolicy {
   version?: string;
   recoveryUtilizationPercent?: number;
   recoveryStableSeconds?: number;
+}
+
+export interface EnergyForecastPresentation {
+  status: "AVAILABLE" | "STALE" | "UNAVAILABLE" | "ERROR";
+  provenance: "REAL" | "SANDBOX" | "SIMULATED" | "DERIVED" | null;
+  generatedAt: string | null;
+  expiresAt: string | null;
+  horizonMinutes: number | null;
+  modelVersion: string | null;
+  predictedGridImportKw: number | null;
+  predictedAt: string | null;
+  riskThresholdKw: number | null;
+  riskState: "NORMAL" | "PREDICTED_PEAK" | null;
+  testMetrics: {
+    maeKw: number;
+    rmseKw: number;
+    baselineMaeKw: number;
+    baselineRmseKw: number;
+    testFrom: string;
+    testTo: string;
+  } | null;
+  unavailableReason: string | null;
 }
 
 export interface TariffPolicy {
@@ -510,9 +533,9 @@ export interface Recommendation {
   expectedImpact: string;
   proposedAction: "OPEN_CHARGER" | "OPEN_ENERGY" | "OPEN_FINANCE" | "MONITOR";
   targetId?: string;
-  confidence: "LOW" | "MEDIUM" | "HIGH";
+  confidence: "LOW" | "MEDIUM" | "HIGH" | "UNAVAILABLE";
   deterministic: boolean;
-  status: "OPEN" | "ACCEPTED" | "DEFERRED" | "REJECTED";
+  status: "OPEN" | "ACCEPTED" | "DEFERRED" | "REJECTED" | "SUPERSEDED";
   createdAt: string;
   decidedAt?: string;
   decidedBy?: string;

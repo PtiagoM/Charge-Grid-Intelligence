@@ -37,6 +37,13 @@ describe('mergeCommercialSnapshot', () => {
     expect(insights.incidentEvents).toContainEqual(expect.objectContaining({ incidentId: 'insight_telemetry', type: 'CREATED', at: '2026-09-22T11:59:00.000Z' }));
     expect(insights.recommendations).toContainEqual(expect.objectContaining({ id: 'insight_solar', status: 'ACCEPTED', proposedAction: 'OPEN_ENERGY' }));
 
+    const predictive = mergeCommercialSnapshot(createInitialState(), snapshot, {
+      alerts: [{ id: 'insight_forecast_critical', kind: 'ALERT', type: 'PREDICTED_DEMAND_CRITICAL', entityId: 'plant_aurora_001', sourceEventId: 'forecast-001', sampleId: 'sample-001', policyVersion: 'demand-v1', conditionActive: false, severity: 'CRITICAL', reasonCode: 'PREDICTED_CRITICAL_CLEARED', message: 'A previsão atual não indica mais risco crítico.', evidence: ['Pico previsto: 19 kW.'], suggestedAction: 'OPEN_ENERGY', reviewState: 'RESOLVED', createdAt: '2026-09-22T11:59:00.000Z', updatedAt: '2026-09-22T12:01:00.000Z' }],
+      recommendations: [{ id: 'insight_forecast_recommendation', kind: 'RECOMMENDATION', type: 'PREDICTED_DEMAND_RISK', entityId: 'plant_aurora_001', sourceEventId: 'forecast-001', sampleId: 'sample-001', policyVersion: 'demand-v1', conditionActive: false, severity: 'CRITICAL', reasonCode: 'PREDICTED_CRITICAL_CLEARED', message: 'A previsão atual não indica mais risco crítico.', evidence: ['Pico previsto: 19 kW.'], suggestedAction: 'OPEN_ENERGY', reviewState: 'RESOLVED', createdAt: '2026-09-22T11:59:00.000Z', updatedAt: '2026-09-22T12:01:00.000Z' }]
+    });
+    expect(predictive.incidents).toContainEqual(expect.objectContaining({ id: 'insight_forecast_critical', category: 'DEMAND', status: 'RESOLVED', resolvedAt: '2026-09-22T12:01:00.000Z' }));
+    expect(predictive.recommendations).toContainEqual(expect.objectContaining({ id: 'insight_forecast_recommendation', incidentId: 'insight_forecast_critical', status: 'SUPERSEDED', confidence: 'UNAVAILABLE', origin: expect.stringContaining('SIMULATED_COMPOSITE') }));
+
     const resolved = mergeCommercialSnapshot(createInitialState(), snapshot, {
       alerts: [{ id: 'insight_telemetry', kind: 'ALERT', type: 'TELEMETRY_STALE', entityId: 'plant_aurora_001', sourceEventId: null, sampleId: null, policyVersion: 'demand-v1', conditionActive: false, severity: 'WARNING', reasonCode: 'TELEMETRY_RECOVERED', message: 'Telemetria restabelecida.', evidence: [], suggestedAction: 'OPEN_ENERGY', reviewState: 'RESOLVED', decidedAt: '2026-09-22T12:01:00.000Z', decidedBy: 'Operação ChargeGrid', decisionReason: 'Leitura validada.', createdAt: '2026-09-22T11:59:00.000Z', updatedAt: '2026-09-22T12:01:00.000Z' }],
       recommendations: []

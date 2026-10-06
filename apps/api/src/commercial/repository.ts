@@ -4,11 +4,12 @@ import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PGlite } from "@electric-sql/pglite";
-import { ChargerCommercialStatus, ChargerTechnicalStatus, CommercialAvailability, CommercialSessionStatus, PaymentStatus, PlantEnergyStatus, QueueStatus, type CommercialCatalog, type CommercialChargerRecord, type CommercialChargerResolution, type CommercialDashboardMetric, type CommercialDashboardSummary, type CommercialEnergyView, type CommercialEstablishmentRecord, type CommercialFinancialSummary, type CommercialInsight, type CommercialInsights, type CommercialOperationalReport, type CommercialOpeningHoursInterval, type CommercialPublicChargerRecord, type CommercialPublicEstablishmentRecord, type CommercialQueueRecord, type CommercialQuote, type CommercialSessionRecord, type CommercialSnapshot, type CommercialTariffVersion, type DataProvenance, type ForecastRecord, type LabScenarioId, type PlantEnergySnapshot, type PlantForecastResponse, type PlantSimulationProfile } from "@chargegrid/shared";
+import { ChargerCommercialStatus, ChargerTechnicalStatus, CommercialAvailability, CommercialSessionStatus, PaymentStatus, PlantEnergyStatus, QueueStatus, type CommercialCatalog, type CommercialChargerRecord, type CommercialChargerResolution, type CommercialDashboardMetric, type CommercialDashboardSummary, type CommercialEnergyView, type CommercialEstablishmentRecord, type CommercialFinancialSummary, type CommercialInsight, type CommercialInsights, type CommercialOperationalReport, type CommercialOpeningHoursInterval, type CommercialPublicChargerRecord, type CommercialPublicEstablishmentRecord, type CommercialQueueRecord, type CommercialQuote, type CommercialSessionRecord, type CommercialSnapshot, type CommercialTariffVersion, type DataProvenance, type DemandDecisionEvidence, type ForecastRecord, type LabScenarioId, type PlantEnergySnapshot, type PlantForecastResponse, type PlantSimulationProfile } from "@chargegrid/shared";
 import pg from "pg";
 import { expirePlantForecast, generatePlantForecast } from "../ai/forecast.js";
+import { evaluateDemandForecast, type ForecastDemandDecision } from "./demand-decision.js";
 import { MockGoodWeProvider, type GoodWeProvider } from "../goodwe/index.js";
-import { historicalSignals, LAB_SCENARIOS, signalsForScenario } from "../goodwe/energy-scenarios.js";
+import { FORECAST_WARMUP_MINUTES, historicalSignals, LAB_SCENARIOS, signalsForScenario } from "../goodwe/energy-scenarios.js";
 
 const { Pool } = pg;
 
@@ -233,7 +234,8 @@ const migrations = [
   { name: "202609270007_demand_policy", url: new URL("../../../../supabase/migrations/202609270007_demand_policy.sql", import.meta.url) },
   { name: "202609270008_commercial_insights", url: new URL("../../../../supabase/migrations/202609270008_commercial_insights.sql", import.meta.url) },
   { name: "202609270009_insight_lifecycle", url: new URL("../../../../supabase/migrations/202609270009_insight_lifecycle.sql", import.meta.url) },
-  { name: "202610020010_demand_forecasts", url: new URL("../../../../supabase/migrations/202610020010_demand_forecasts.sql", import.meta.url) }
+  { name: "202610020010_demand_forecasts", url: new URL("../../../../supabase/migrations/202610020010_demand_forecasts.sql", import.meta.url) },
+  { name: "202610040011_demand_decisions", url: new URL("../../../../supabase/migrations/202610040011_demand_decisions.sql", import.meta.url) }
 ] as const;
 const legacyMigrationNames = new Set(migrations.slice(0, 3).map((migration) => migration.name));
 const defaultDataDir = process.env.CHARGEGRID_DATABASE_PATH ?? (process.env.NODE_ENV === "test" ? "memory://" : fileURLToPath(new URL("../../../../.local/commercial-db", import.meta.url)));
@@ -861,8 +863,12 @@ export class CommercialRepository {
       const snapshot = await this.plantEnergy(candidate.plant_id);
       const ageMs = snapshot ? Math.max(0, Date.now() - Date.parse(snapshot.observedAt)) : Number.POSITIVE_INFINITY;
       const projectedImportKw = snapshot ? snapshot.gridImportKw + (this.admittedPowerByPlant.get(candidate.plant_id) ?? 0) + (powerKw ?? Number(candidate.nominal_power_kw)) : null;
-      if (policy?.demandControlEnabled && (!snapshot || snapshot.quality !== "FRESH" || ageMs > policy.freshSeconds * 1000 || projectedImportKw === null || projectedImportKw >= policy.limitKw * policy.criticalPercent / 100)) {
-        await this.db.query("update commercial_sessions set transition_reason = $2, updated_at = now() where id = $1", [candidate.id, !snapshot || snapshot.quality !== "FRESH" || ageMs > policy.freshSeconds * 1000 ? "TELEMETRY_UNAVAILABLE" : "RESTRICTED_BY_ENERGY"]);
+      const forecastDecision = policy ? await this.demandForecastDecision(candidate.plant_id, snapshot, policy, new Date()) : null;
+      if (policy?.demandControlEnabled && (!snapshot || snapshot.quality !== "FRESH" || ageMs > policy.freshSeconds * 1000 || projectedImportKw === null || projectedImportKw >= policy.limitKw * policy.criticalPercent / 100 || forecastDecision?.blocksNewAdmissions)) {
+        const reason = !snapshot || snapshot.quality !== "FRESH" || ageMs > policy.freshSeconds * 1000
+          ? "TELEMETRY_UNAVAILABLE"
+          : forecastDecision?.blocksNewAdmissions ? "PREDICTED_CRITICAL" : "RESTRICTED_BY_ENERGY";
+        await this.db.query("update commercial_sessions set transition_reason = $2, updated_at = now() where id = $1", [candidate.id, reason]);
         return false;
       }
       this.admittedPowerByPlant.set(candidate.plant_id, (this.admittedPowerByPlant.get(candidate.plant_id) ?? 0) + (powerKw ?? Number(candidate.nominal_power_kw)));
@@ -985,38 +991,52 @@ export class CommercialRepository {
     const policy = { ...energyPolicy(plant.energy_policy), demandControlEnabled: input.online || energyPolicy(plant.energy_policy).demandControlEnabled };
     await this.db.query("update commercial_plants set provider_config = $2::jsonb, energy_policy = $3::jsonb, updated_at = now() where id = $1", [input.plantId, JSON.stringify(input), JSON.stringify(policy)]);
     this.plantTickedAt.delete(input.plantId);
+    this.forecastTickedAt = 0;
     return this.plantEnergy(input.plantId);
   }
 
   async configurePlantScenario(input: { plantId: string; scenarioId: LabScenarioId; seed: number; now?: Date }) {
     await this.ready;
     if (!LAB_SCENARIOS.includes(input.scenarioId) || !Number.isInteger(input.seed) || input.seed < 0) throw new CommercialConflictError("Cenário ou seed de laboratório inválido.");
-    const result = await this.db.query<PlantRow>("select id, establishment_id, provider_config from commercial_plants where id = $1", [input.plantId]);
+    const result = await this.db.query<PlantRow>("select id, establishment_id, provider_config, energy_policy from commercial_plants where id = $1", [input.plantId]);
     const plant = result.rows[0];
     if (!plant) throw new CommercialNotFoundError("Planta comercial não encontrada.");
     const now = input.now ?? new Date();
     const current = providerConfig(plant.provider_config);
-    if (current.simulation?.scenarioId === input.scenarioId && current.simulation.seed === input.seed) return current.simulation;
-    const profile: PlantSimulationProfile = { scenarioId: input.scenarioId, version: 1, seed: input.seed, stepSeconds: 60, appliedAt: now.toISOString() };
+    const sameProfile = current.simulation?.scenarioId === input.scenarioId && current.simulation.seed === input.seed;
+    const profile: PlantSimulationProfile = sameProfile
+      ? current.simulation!
+      : { scenarioId: input.scenarioId, version: 1, seed: input.seed, stepSeconds: 60, appliedAt: now.toISOString() };
     const signals = signalsForScenario(profile, now);
-    await this.db.query("update commercial_plants set provider_config = $2::jsonb, updated_at = now() where id = $1", [input.plantId, JSON.stringify({ ...signals, simulation: profile })]);
+    const currentPolicy = energyPolicy(plant.energy_policy);
+    const policy = { ...currentPolicy, demandControlEnabled: signals.online || currentPolicy.demandControlEnabled };
+    if (!sameProfile || policy.demandControlEnabled !== currentPolicy.demandControlEnabled) {
+      await this.db.query("update commercial_plants set provider_config = $2::jsonb, energy_policy = $3::jsonb, updated_at = now() where id = $1", [input.plantId, JSON.stringify({ ...signals, simulation: profile }), JSON.stringify(policy)]);
+    }
     this.plantTickedAt.delete(input.plantId);
+    this.forecastTickedAt = 0;
 
     if (signals.online) {
-      for (let index = -96; index < 0; index += 1) {
-        const observedAt = new Date(now.getTime() + index * profile.stepSeconds * 1000);
+      const history = Array.from({ length: FORECAST_WARMUP_MINUTES }, (_, offset) => {
+        const index = offset - FORECAST_WARMUP_MINUTES;
+        const observedAt = new Date(Date.parse(profile.appliedAt) + index * profile.stepSeconds * 1000);
         const historical = historicalSignals(profile, index);
         const gridImportKw = Math.max(0, historical.buildingLoadKw - historical.pvKw);
         const gridExportKw = Math.max(0, historical.pvKw - historical.buildingLoadKw);
-        await this.db.query(`insert into commercial_energy_samples (
-          id, plant_id, observed_at, source, quality, pv_kw, building_load_kw, ev_load_kw, grid_import_kw, grid_export_kw,
-          ev_wh, grid_import_wh, grid_export_wh, solar_to_ev_wh
-        ) values ($1, $2, $3, 'SIMULATED', 'FRESH', $4, $5, 0, $6, $7, 0, $8, $9, 0)
+        return { id: randomUUID(), observedAt: observedAt.toISOString(), pvKw: historical.pvKw, buildingLoadKw: historical.buildingLoadKw, gridImportKw, gridExportKw };
+      });
+      await this.db.query(`insert into commercial_energy_samples (
+        id, plant_id, observed_at, source, quality, pv_kw, building_load_kw, ev_load_kw, grid_import_kw, grid_export_kw,
+        ev_wh, grid_import_wh, grid_export_wh, solar_to_ev_wh
+      ) select samples.id, $1, samples.observed_at, 'SIMULATED', 'FRESH', samples.pv_kw, samples.building_load_kw, 0,
+        samples.grid_import_kw, samples.grid_export_kw, 0, samples.grid_import_kw * $2 / 3.6, samples.grid_export_kw * $2 / 3.6, 0
+        from unnest($3::uuid[], $4::timestamptz[], $5::float8[], $6::float8[], $7::float8[], $8::float8[])
+          as samples(id, observed_at, pv_kw, building_load_kw, grid_import_kw, grid_export_kw)
         on conflict (plant_id, observed_at) do nothing`, [
-          randomUUID(), input.plantId, observedAt.toISOString(), historical.pvKw, historical.buildingLoadKw,
-          gridImportKw, gridExportKw, gridImportKw * profile.stepSeconds / 3.6, gridExportKw * profile.stepSeconds / 3.6
-        ]);
-      }
+        input.plantId, profile.stepSeconds,
+        history.map((sample) => sample.id), history.map((sample) => sample.observedAt), history.map((sample) => sample.pvKw),
+        history.map((sample) => sample.buildingLoadKw), history.map((sample) => sample.gridImportKw), history.map((sample) => sample.gridExportKw)
+      ]);
     }
     return profile;
   }
@@ -1078,6 +1098,23 @@ export class CommercialRepository {
     return { forecast, availability: forecast.quality.availability, unavailableReason: forecast.quality.unavailableReason };
   }
 
+  private async demandForecastDecision(plantId: string, sample: PlantEnergySnapshot | null, policy: ReturnType<typeof energyPolicy>, now: Date): Promise<ForecastDemandDecision> {
+    const response = await this.plantForecast(plantId, now);
+    const assessment = evaluateDemandForecast(response.forecast, plantId, sample?.id ?? null, { ...policy, version: "demand-v1" }, now);
+    const evidence = assessment.evidence;
+    if (!evidence) return assessment;
+    await this.db.query(`insert into commercial_demand_decisions (correlation_key, plant_id, forecast_id, record)
+      values ($1, $2, $3, $4::jsonb) on conflict (correlation_key) do nothing`, [
+      evidence.correlationKey, plantId, evidence.forecastId, JSON.stringify(evidence)
+    ]);
+    const stored = await this.db.query<{ record: DemandDecisionEvidence | string }>(
+      "select record from commercial_demand_decisions where correlation_key = $1", [evidence.correlationKey]
+    );
+    const record = stored.rows[0]?.record;
+    const persistedEvidence = typeof record === "string" ? JSON.parse(record) as DemandDecisionEvidence : record;
+    return { ...assessment, evidence: persistedEvidence ?? evidence, outcome: persistedEvidence?.outcome ?? assessment.outcome };
+  }
+
   async plantEnergyView(plantId: string): Promise<CommercialEnergyView> {
     await this.ready;
     const rows = await this.db.query<PlantRow>("select id, establishment_id, provider_config, energy_policy, updated_at from commercial_plants where id = $1", [plantId]);
@@ -1097,7 +1134,8 @@ export class CommercialRepository {
     const state = utilization === null ? null : utilization >= policy.criticalPercent ? "CRITICAL" as const : utilization >= policy.alertPercent ? "ALERT" as const : "NORMAL" as const;
     const projectedImportKw = snapshot && available.rows[0] ? snapshot.gridImportKw + Number(available.rows[0].nominal_power_kw) : null;
     const projectedCritical = projectedImportKw !== null && projectedImportKw >= policy.limitKw * policy.criticalPercent / 100;
-    const canAdmit = !policy.demandControlEnabled || quality === "FRESH" && state === "NORMAL" && !projectedCritical;
+    const forecastDecision = await this.demandForecastDecision(plantId, snapshot, policy, new Date());
+    const canAdmit = !policy.demandControlEnabled || quality === "FRESH" && state === "NORMAL" && !projectedCritical && !forecastDecision.blocksNewAdmissions;
     const reasonCode = !policy.demandControlEnabled
       ? "ENERGY_POLICY_DISABLED" as const
       : quality !== "FRESH"
@@ -1106,7 +1144,11 @@ export class CommercialRepository {
           ? "DEMAND_ALERT" as const
           : projectedCritical
             ? "PROJECTED_LIMIT" as const
-            : "ADMISSION_ALLOWED" as const;
+            : forecastDecision.outcome === "PREDICTED_CRITICAL"
+              ? "PREDICTED_CRITICAL" as const
+              : forecastDecision.outcome === "PREDICTED_ALERT"
+                ? "PREDICTED_ALERT" as const
+                : "ADMISSION_ALLOWED" as const;
     return {
       snapshot,
       policy: {
@@ -1118,6 +1160,10 @@ export class CommercialRepository {
       decision: {
         plantId, policyVersion: "demand-v1", sampleId: snapshot?.id ?? null, state, quality,
         enabled: policy.demandControlEnabled, canAdmit, reasonCode, projectedImportKw,
+        forecastDecision: {
+          availability: forecastDecision.availability, outcome: forecastDecision.outcome,
+          evidence: forecastDecision.evidence, unavailableReason: forecastDecision.unavailableReason
+        },
         candidateSessionIds: candidates.rows.map((item) => item.id), observedAt: snapshot?.observedAt ?? new Date().toISOString()
       },
       simulation: providerConfig(plant.provider_config).simulation
@@ -1287,11 +1333,14 @@ export class CommercialRepository {
       await tx.query("delete from commercial_queue_entries where establishment_id = $1", [establishmentId]);
       await tx.query("delete from commercial_sessions where establishment_id = $1", [establishmentId]);
       await tx.query("delete from commercial_decisions where establishment_id = $1", [establishmentId]);
+      await tx.query("delete from commercial_demand_decisions where plant_id in (select id from commercial_plants where establishment_id = $1)", [establishmentId]);
+      await tx.query("delete from commercial_forecasts where plant_id in (select id from commercial_plants where establishment_id = $1)", [establishmentId]);
       await tx.query("delete from commercial_energy_samples where plant_id in (select id from commercial_plants where establishment_id = $1)", [establishmentId]);
       await tx.query("update commercial_plants set provider_config = $2::jsonb, updated_at = now() where establishment_id = $1", [establishmentId, JSON.stringify({ online: false, pvKw: 0, buildingLoadKw: 0 })]);
     });
     const plant = await this.db.query<{ id: string }>("select id from commercial_plants where establishment_id = $1", [establishmentId]);
     plant.rows.forEach((item) => this.plantTickedAt.delete(item.id));
+    this.forecastTickedAt = 0;
     return this.snapshot(establishmentId);
   }
 
@@ -1428,9 +1477,18 @@ export class CommercialRepository {
     on conflict (correlation_key) do update set
       condition_active = excluded.condition_active, severity = excluded.severity, reason_code = excluded.reason_code,
       was_active = commercial_decisions.was_active or excluded.condition_active,
-      message = excluded.message, evidence = excluded.evidence, sample_id = excluded.sample_id,
+      message = excluded.message, evidence = excluded.evidence, source_event_id = excluded.source_event_id, sample_id = excluded.sample_id,
       policy_version = excluded.policy_version, suggested_action = excluded.suggested_action,
-      review_state = case when excluded.condition_active and commercial_decisions.review_state = 'RESOLVED' then 'OPEN' else commercial_decisions.review_state end,
+      review_state = case
+        when excluded.condition_active and commercial_decisions.review_state = 'RESOLVED' then 'OPEN'
+        when not excluded.condition_active and commercial_decisions.kind = 'RECOMMENDATION'
+          and commercial_decisions.type = 'PREDICTED_DEMAND_RISK' and commercial_decisions.condition_active
+          and commercial_decisions.review_state = 'OPEN' then 'RESOLVED'
+        when not excluded.condition_active and commercial_decisions.kind = 'ALERT'
+          and commercial_decisions.type = 'PREDICTED_DEMAND_CRITICAL' and commercial_decisions.condition_active
+          and commercial_decisions.review_state = 'OPEN' then 'RESOLVED'
+        else commercial_decisions.review_state
+      end,
       updated_at = now()`, [
       id, input.correlationKey, input.establishmentId, input.kind, input.type, input.entityId,
       input.sourceEventId ?? null, input.sampleId ?? null, input.policyVersion ?? null, input.conditionActive,
@@ -1467,6 +1525,62 @@ export class CommercialRepository {
         evidence: snapshot ? [`Importação: ${snapshot.gridImportKw.toFixed(1)} kW.`, `Estado: ${snapshot.energyStatus}.`] : ["Telemetria indisponível para avaliar a demanda."],
         suggestedAction: "OPEN_ENERGY"
       });
+
+      const prediction = await this.demandForecastDecision(plant.id, snapshot, policy, new Date());
+      const predictionEvidence = prediction.evidence;
+      if (predictionEvidence) {
+        const { peak, outcome } = predictionEvidence;
+        const active = outcome !== "PREDICTED_NORMAL";
+        const critical = outcome === "PREDICTED_CRITICAL";
+        const predictedKw = peak.predictedGridImportKw;
+        const evidence = [
+          `Previsão ${predictionEvidence.forecastId} · modelo ${predictionEvidence.modelVersion}.`,
+          `Pico previsto: ${predictedKw.toFixed(1)} kW em ${peak.at}.`,
+          `Limite: ${predictionEvidence.limitKw.toFixed(1)} kW; alerta ${predictionEvidence.alertThresholdPercent}% (${(predictionEvidence.limitKw * predictionEvidence.alertThresholdPercent / 100).toFixed(1)} kW); crítico ${predictionEvidence.criticalThresholdPercent}% (${(predictionEvidence.limitKw * predictionEvidence.criticalThresholdPercent / 100).toFixed(1)} kW).`,
+          "Horizonte: 60 minutos · entrada fresca · proveniência SIMULATED.",
+          `Regra aplicada: ${outcome}; ${critical && policy.demandControlEnabled ? "novos inícios bloqueados pelo backend" : "sem bloqueio preditivo de novos inícios"}.`
+        ];
+        await this.synchronizeInsight({
+          establishmentId: plant.establishment_id,
+          correlationKey: `forecast-demand:recommendation:${plant.id}`,
+          kind: "RECOMMENDATION",
+          type: "PREDICTED_DEMAND_RISK",
+          entityId: plant.id,
+          sourceEventId: predictionEvidence.forecastId,
+          sampleId: predictionEvidence.sampleId,
+          policyVersion: predictionEvidence.policyVersion,
+          conditionActive: active,
+          severity: critical ? "CRITICAL" : active ? "WARNING" : "INFO",
+          reasonCode: outcome,
+          message: critical
+            ? policy.demandControlEnabled
+              ? "A previsão indica risco de ultrapassagem; a política energética bloqueia novos inícios, sem interromper sessões ativas."
+              : "A previsão indica risco crítico, mas o controle de demanda está desativado; novos inícios não são bloqueados por esta regra."
+            : active
+              ? "A previsão indica aproximação do limite; acompanhe a demanda antes de novos carregamentos."
+              : "A previsão não indica risco de demanda no horizonte de 60 minutos.",
+          evidence,
+          suggestedAction: "OPEN_ENERGY"
+        });
+        await this.synchronizeInsight({
+          establishmentId: plant.establishment_id,
+          correlationKey: `forecast-demand:critical:${plant.id}`,
+          kind: "ALERT",
+          type: "PREDICTED_DEMAND_CRITICAL",
+          entityId: plant.id,
+          sourceEventId: predictionEvidence.forecastId,
+          sampleId: predictionEvidence.sampleId,
+          policyVersion: predictionEvidence.policyVersion,
+          conditionActive: critical,
+          severity: "CRITICAL",
+          reasonCode: critical ? "PREDICTED_CRITICAL" : "PREDICTED_CRITICAL_CLEARED",
+          message: critical
+            ? "Risco crítico de demanda previsto para os próximos 60 minutos."
+            : "A previsão atual não indica mais risco crítico de demanda.",
+          evidence,
+          suggestedAction: "OPEN_ENERGY"
+        });
+      }
       const chargers = await this.db.query<{ id: string; code: string; physical_status: string }>("select id, code, physical_status from commercial_chargers where plant_id = $1", [plant.id]);
       for (const charger of chargers.rows) {
         const faulted = charger.physical_status === "FAULT" || charger.physical_status === "OFFLINE";

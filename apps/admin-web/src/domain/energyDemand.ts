@@ -48,6 +48,8 @@ export function assessEnergySnapshot(snapshot: EnergySnapshot | undefined, polic
       TELEMETRY_UNAVAILABLE: "Telemetria sem qualidade suficiente para admitir nova recarga.",
       DEMAND_ALERT: "Demanda atual impede nova admissão pela política persistida.",
       PROJECTED_LIMIT: "A próxima recarga projetaria a demanda acima do limite de admissão.",
+      PREDICTED_ALERT: "A previsão indica demanda próxima ao limite; acompanhar antes de ampliar a carga.",
+      PREDICTED_CRITICAL: "A previsão indica ultrapassagem crítica; novos inícios estão bloqueados.",
       ADMISSION_ALLOWED: "A demanda atual e projetada permitem nova admissão."
     } as const)[decision.reasonCode];
     return {
@@ -61,6 +63,7 @@ export function assessEnergySnapshot(snapshot: EnergySnapshot | undefined, polic
       evidence: [
         `${snapshot.demandKw.toFixed(1)} kW de ${snapshot.contractedLimitKw.toFixed(1)} kW contratados.`,
         decision.projectedImportKw === null ? "Sem carregador disponível para calcular nova admissão." : `Próxima admissão projetada: ${decision.projectedImportKw.toFixed(1)} kW.`,
+        decision.forecastDecision.evidence ? `Previsão ${decision.forecastDecision.outcome}: ${decision.forecastDecision.evidence.peak.predictedGridImportKw.toFixed(1)} kW em ${decision.forecastDecision.evidence.peak.at}.` : `Previsão indisponível: ${decision.forecastDecision.unavailableReason ?? "não calculada"}.`,
         `Decisão ${decision.policyVersion} · ${decision.reasonCode}.`
       ]
     };
