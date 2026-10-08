@@ -235,7 +235,8 @@ const migrations = [
   { name: "202609270008_commercial_insights", url: new URL("../../../../supabase/migrations/202609270008_commercial_insights.sql", import.meta.url) },
   { name: "202609270009_insight_lifecycle", url: new URL("../../../../supabase/migrations/202609270009_insight_lifecycle.sql", import.meta.url) },
   { name: "202610020010_demand_forecasts", url: new URL("../../../../supabase/migrations/202610020010_demand_forecasts.sql", import.meta.url) },
-  { name: "202610040011_demand_decisions", url: new URL("../../../../supabase/migrations/202610040011_demand_decisions.sql", import.meta.url) }
+  { name: "202610040011_demand_decisions", url: new URL("../../../../supabase/migrations/202610040011_demand_decisions.sql", import.meta.url) },
+  { name: "202610060012_allow_scenario_forecast_refresh", url: new URL("../../../../supabase/migrations/202610060012_allow_scenario_forecast_refresh.sql", import.meta.url) }
 ] as const;
 const legacyMigrationNames = new Set(migrations.slice(0, 3).map((migration) => migration.name));
 const defaultDataDir = process.env.CHARGEGRID_DATABASE_PATH ?? (process.env.NODE_ENV === "test" ? "memory://" : fileURLToPath(new URL("../../../../.local/commercial-db", import.meta.url)));
@@ -991,7 +992,6 @@ export class CommercialRepository {
     const policy = { ...energyPolicy(plant.energy_policy), demandControlEnabled: input.online || energyPolicy(plant.energy_policy).demandControlEnabled };
     await this.db.query("update commercial_plants set provider_config = $2::jsonb, energy_policy = $3::jsonb, updated_at = now() where id = $1", [input.plantId, JSON.stringify(input), JSON.stringify(policy)]);
     this.plantTickedAt.delete(input.plantId);
-    this.forecastTickedAt = 0;
     return this.plantEnergy(input.plantId);
   }
 
@@ -1004,9 +1004,10 @@ export class CommercialRepository {
     const now = input.now ?? new Date();
     const current = providerConfig(plant.provider_config);
     const sameProfile = current.simulation?.scenarioId === input.scenarioId && current.simulation.seed === input.seed;
+    const appliedAt = new Date(Math.floor(now.getTime() / 60_000) * 60_000);
     const profile: PlantSimulationProfile = sameProfile
       ? current.simulation!
-      : { scenarioId: input.scenarioId, version: 1, seed: input.seed, stepSeconds: 60, appliedAt: now.toISOString() };
+      : { scenarioId: input.scenarioId, version: 1, seed: input.seed, stepSeconds: 60, appliedAt: appliedAt.toISOString() };
     const signals = signalsForScenario(profile, now);
     const currentPolicy = energyPolicy(plant.energy_policy);
     const policy = { ...currentPolicy, demandControlEnabled: signals.online || currentPolicy.demandControlEnabled };
@@ -1014,7 +1015,6 @@ export class CommercialRepository {
       await this.db.query("update commercial_plants set provider_config = $2::jsonb, energy_policy = $3::jsonb, updated_at = now() where id = $1", [input.plantId, JSON.stringify({ ...signals, simulation: profile }), JSON.stringify(policy)]);
     }
     this.plantTickedAt.delete(input.plantId);
-    this.forecastTickedAt = 0;
 
     if (signals.online) {
       const history = Array.from({ length: FORECAST_WARMUP_MINUTES }, (_, offset) => {
@@ -1032,7 +1032,11 @@ export class CommercialRepository {
         samples.grid_import_kw, samples.grid_export_kw, 0, samples.grid_import_kw * $2 / 3.6, samples.grid_export_kw * $2 / 3.6, 0
         from unnest($3::uuid[], $4::timestamptz[], $5::float8[], $6::float8[], $7::float8[], $8::float8[])
           as samples(id, observed_at, pv_kw, building_load_kw, grid_import_kw, grid_export_kw)
-        on conflict (plant_id, observed_at) do nothing`, [
+        on conflict (plant_id, observed_at) do update set
+          id = excluded.id,
+          source = excluded.source, quality = excluded.quality, pv_kw = excluded.pv_kw, building_load_kw = excluded.building_load_kw,
+          ev_load_kw = excluded.ev_load_kw, grid_import_kw = excluded.grid_import_kw, grid_export_kw = excluded.grid_export_kw,
+          ev_wh = excluded.ev_wh, grid_import_wh = excluded.grid_import_wh, grid_export_wh = excluded.grid_export_wh, solar_to_ev_wh = excluded.solar_to_ev_wh`, [
         input.plantId, profile.stepSeconds,
         history.map((sample) => sample.id), history.map((sample) => sample.observedAt), history.map((sample) => sample.pvKw),
         history.map((sample) => sample.buildingLoadKw), history.map((sample) => sample.gridImportKw), history.map((sample) => sample.gridExportKw)
@@ -1057,18 +1061,20 @@ export class CommercialRepository {
     return rows.rows.reverse().map(energySampleRecord);
   }
 
-  async advancePlantForecasts(now = new Date()) {
+  async advancePlantForecasts(now = new Date(), forcePlantId?: string) {
     await this.ready;
     const forecastPeriodMs = 15 * 60_000;
     const inputTo = Math.floor(now.getTime() / forecastPeriodMs) * forecastPeriodMs;
-    if (this.forecastTickedAt === inputTo) return;
+    const forced = forcePlantId !== undefined;
+    if (!forced && this.forecastTickedAt === inputTo) return;
     // ponytail: one attempt per 15-minute input window; a transient miss retries in the next window, without a job queue.
-    this.forecastTickedAt = inputTo;
+    if (!forced) this.forecastTickedAt = inputTo;
     const plants = await this.db.query<PlantRow>("select id, establishment_id, provider_config from commercial_plants");
     for (const plant of plants.rows) {
+      if (forced && plant.id !== forcePlantId) continue;
       if (!providerConfig(plant.provider_config).online) continue;
-      const latest = await this.db.query<{ input_to: Date | string }>("select input_to from commercial_forecasts where plant_id = $1 order by input_to desc limit 1", [plant.id]);
-      if (latest.rows[0] && Date.parse(String(latest.rows[0].input_to)) >= inputTo) continue;
+      const latest = await this.db.query<{ input_to: Date | string }>("select input_to from commercial_forecasts where plant_id = $1 order by input_to desc, generated_at desc limit 1", [plant.id]);
+      if (!forced && latest.rows[0] && Date.parse(String(latest.rows[0].input_to)) >= inputTo) continue;
       const samples = await this.db.query<{ observed_at: Date | string; grid_import_kw: number; quality: "FRESH" | "STALE" | "UNKNOWN" }>(`select date_trunc('minute', observed_at) + interval '1 minute' as observed_at,
           avg(grid_import_kw)::float8 as grid_import_kw,
           case when bool_and(quality = 'FRESH') then 'FRESH' else 'STALE' end as quality
@@ -1081,7 +1087,7 @@ export class CommercialRepository {
       })), now);
       if (forecast.quality.availability !== "AVAILABLE") continue;
       await this.db.query(`insert into commercial_forecasts (id, plant_id, model_version, input_to, generated_at, expires_at, record)
-        values ($1, $2, $3, $4, $5, $6, $7::jsonb) on conflict (plant_id, model_version, input_to) do nothing`, [
+        values ($1, $2, $3, $4, $5, $6, $7::jsonb)`, [
         forecast.id, forecast.plantId, forecast.modelVersion, forecast.inputTo, forecast.generatedAt, forecast.expiresAt, JSON.stringify(forecast)
       ]);
     }
@@ -1091,7 +1097,7 @@ export class CommercialRepository {
     await this.ready;
     const plant = await this.db.query<{ id: string }>("select id from commercial_plants where id = $1", [plantId]);
     if (!plant.rows[0]) throw new CommercialNotFoundError("Planta comercial não encontrada.");
-    const rows = await this.db.query<{ record: ForecastRecord | string }>("select record from commercial_forecasts where plant_id = $1 order by generated_at desc limit 1", [plantId]);
+    const rows = await this.db.query<{ record: ForecastRecord | string }>("select record from commercial_forecasts where plant_id = $1 order by generated_at desc, id desc limit 1", [plantId]);
     if (!rows.rows[0]) return { forecast: null, availability: "UNAVAILABLE" as const, unavailableReason: "FORECAST_NOT_GENERATED" };
     let forecast = typeof rows.rows[0].record === "string" ? JSON.parse(rows.rows[0].record) as ForecastRecord : rows.rows[0].record;
     if (Date.parse(forecast.expiresAt) <= now.getTime()) forecast = expirePlantForecast(forecast, await this.plantEnergy(plantId), now);

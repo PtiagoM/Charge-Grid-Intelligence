@@ -1,6 +1,6 @@
 # Sprint 4 — pacote final de execução
 
-Status: **G7, CG-F0-01, CG-F0-02, CG-DASH-01 a CG-DASH-03, CG-LAB-01/02, CG-AI-01 a CG-AI-05, CG-DEC-01, CG-OPS-01, CG-UI-01 e CG-INT-01A CONCLUÍDOS**. Este pacote transforma o plano mestre aprovado em unidades executáveis. Ele não substitui M5–M7 de `docs/specs/sprint4`.
+Status: **G7, CG-F0-01, CG-F0-02, CG-DASH-01 a CG-DASH-03, CG-LAB-01/02, CG-AI-01 a CG-AI-05, CG-DEC-01, CG-OPS-01, CG-UI-01 e CG-INT-01A/B CONCLUÍDOS**. Este pacote transforma o plano mestre aprovado em unidades executáveis. Ele não substitui M5–M7 de `docs/specs/sprint4`.
 
 ## Como usar
 
@@ -47,10 +47,10 @@ Status: **G7, CG-F0-01, CG-F0-02, CG-DASH-01 a CG-DASH-03, CG-LAB-01/02, CG-AI-0
 | CG-LAB-02 | [Controles de cenário](cg-lab-02.md) | LAB-01 | MÉDIO | MÉDIO | HUMAN FRONTEND GATE VALIDADO PELO RESPONSÁVEL | E2E/manual | DONE — VALIDADO PELO RESPONSÁVEL |
 | CG-UI-01 | [Energia e demanda: decisão e previsão](cg-ui-01.md) | AI-05, DEC-01 | MÉDIO | MÉDIO | HUMAN FRONTEND GATE VALIDADO PELO RESPONSÁVEL | unit/E2E focal/manual review | DONE — VALIDADO PELO RESPONSÁVEL |
 | CG-OPS-01 | [Alarmes e recomendações preditivas](cg-ops-01.md) | DEC-01 | MÉDIO | ALTO | PEQUENO AJUSTE NO FRONT | unit/integration/E2E focal | DONE |
-| CG-INT-01 | [Prova integrada — pai](cg-int-01.md) | DASH-03, LAB-02, UI-01, OPS-01 | GRANDE | ALTO | BACKEND ONLY | executar A/B | PLANNED |
+| CG-INT-01 | [Prova integrada — pai](cg-int-01.md) | DASH-03, LAB-02, UI-01, OPS-01 | GRANDE | ALTO | BACKEND ONLY | executar A/B | DONE |
 | CG-INT-01A | [Prova automatizada](cg-int-01a.md) | DASH-03, LAB-01, DEC-01, OPS-01 | MÉDIO | ALTO | BACKEND ONLY | integration/E2E | DONE |
-| CG-INT-01B | [Gate visual e evidências](cg-int-01b.md) | INT-01A, LAB-02, UI-01 | MÉDIO | MÉDIO | BACKEND ONLY | manual | PLANNED |
-| CG-STAB-01 | [Hardening mínimo](cg-stab-01.md) | INT-01B | MÉDIO | MÉDIO | PEQUENO AJUSTE NO FRONT | regressões focais/global gate | PLANNED |
+| CG-INT-01B | [Gate visual e evidências](cg-int-01b.md) | INT-01A, LAB-02, UI-01 | MÉDIO | MÉDIO | INTEGRAÇÃO — API + pequenos ajustes Admin/PWA | manual | DONE — validado pelo responsável em 08/10/2026 |
+| CG-STAB-01 | [Hardening mínimo](cg-stab-01.md) | INT-01B | MÉDIO | MÉDIO | PEQUENO AJUSTE NO FRONT | regressões focais/global gate | READY |
 | CG-DEL-01 | [Entrega final](cg-del-01.md) | STAB-01 | MÉDIO | MÉDIO | BACKEND ONLY | suíte final/manual | PLANNED |
 
 ## Ordem obrigatória

@@ -39,4 +39,34 @@ describe("lab forecast warm-up", () => {
     await repository.resetTestData();
     expect(await repository.plantForecast(input.plantId)).toMatchObject({ forecast: null, availability: "UNAVAILABLE" });
   }, 30_000);
+
+  it("persists a fresh forecast for a newly applied scenario in the same 15-minute window and links its decision", async () => {
+    const repository = new CommercialRepository("memory://");
+    repositories.push(repository);
+    const quarter = Math.floor(Date.now() / (15 * 60_000)) * 15 * 60_000;
+    const solarAt = new Date(quarter + 2 * 60_000);
+    const rampAt = new Date(quarter + 3 * 60_000);
+    const plantId = "plant_aurora_001";
+    const database = (repository as unknown as { db: { query(sql: string, params?: unknown[]): Promise<{ rows: Array<Record<string, unknown>> }> } }).db;
+
+    await repository.configurePlantScenario({ plantId, scenarioId: "SOLAR_SURPLUS", seed: 3, now: solarAt });
+    await repository.advancePlantTelemetry(solarAt);
+    await repository.advancePlantForecasts(solarAt);
+    const solarForecast = (await repository.plantForecast(plantId, solarAt)).forecast!;
+
+    await repository.configurePlantScenario({ plantId, scenarioId: "DEMAND_RAMP", seed: 3, now: rampAt });
+    await repository.advancePlantTelemetry(rampAt);
+    await repository.advancePlantForecasts(rampAt, plantId);
+    const rampForecast = (await repository.plantForecast(plantId, rampAt)).forecast!;
+    const view = await repository.plantEnergyView(plantId);
+
+    expect(rampForecast.id).not.toBe(solarForecast.id);
+    expect(rampForecast.generatedAt).not.toBe(solarForecast.generatedAt);
+    expect(rampForecast.inputTo).toBe(solarForecast.inputTo);
+    expect(rampForecast.provenance).toBe("SIMULATED");
+    expect(rampForecast.points?.[0]?.predictedGridImportKw).toBeGreaterThan(solarForecast.points?.[0]?.predictedGridImportKw ?? 0);
+    expect(view.simulation?.scenarioId).toBe("DEMAND_RAMP");
+    expect(view.decision.forecastDecision.evidence?.forecastId).toBe(rampForecast.id);
+    expect((await database.query("select id from commercial_forecasts where plant_id = $1 order by generated_at", [plantId])).rows).toHaveLength(2);
+  }, 30_000);
 });

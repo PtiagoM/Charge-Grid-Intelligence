@@ -33,7 +33,7 @@ Nova página de IA, novo dashboard, mudança de regra comercial, alteração da 
 
 ## Comportamento implementado
 
-- **Agora:** demanda, limite, margem, utilização e limiares são apresentados a partir do snapshot/política recebidos. O frontend apenas calcula proporções para desenho/aritmética de margem; não replica a regra de admissão.
+- **Agora:** importação da rede (campo operacional `demandKw`), limite, margem, utilização e limiares são apresentados a partir do snapshot/política recebidos. O rótulo explicita que a leitura é importação da rede, grandeza comparada ao limite; o frontend apenas calcula proporções para desenho/aritmética de margem e não replica a regra de admissão. Importação zero em `SOLAR_SURPLUS` é válida quando geração solar cobre a carga.
 - **Fluxo:** potência instantânea em kW, energia do registro em kWh e unidades explicitadas. Solar/rede e cargas são agrupados sem alegar rastreamento instantâneo por origem. Bateria sem sinal é “Não integrada”.
 - **Decisão:** mostra separadamente a medição, `projectedImportKw`, estado, `reasonCode`, versão, timestamp e evidências retornadas pela decisão do backend. A previsão tem painel próprio e não é usada pela tela para substituir `canAdmit` nem emitir comandos.
 - **Previsão:** usa o ponto escalar entregue pelo contrato; não desenha curva, não interpola nem inventa confiança. `MAE`/`RMSE` e janela de teste são rotulados como avaliação histórica offline; provenance SIMULATED fica visível.
@@ -51,6 +51,7 @@ Nova página de IA, novo dashboard, mudança de regra comercial, alteração da 
 - [x] Estados e erros do endpoint não escondem a telemetria/decisão quando estas foram obtidas.
 - [x] Sessões/fila vazias não recebem conteúdo fictício.
 - [x] Origem simulada e bateria não integrada são identificadas.
+- [x] Medidores identificam `demandKw` como importação da rede, sem alterar valor, limiares ou regra do backend.
 - [x] Fixtures de outras plantas não são representadas como operação comercial compartilhada.
 
 ## Testes, documentação e entrega

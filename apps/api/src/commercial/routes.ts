@@ -176,9 +176,11 @@ export function createCommercialRouter(options: { repository?: CommercialReposit
       return response.status(400).json({ code: "INVALID_PLANT_HARDWARE_INPUT", message: "Informe um cenário de laboratório válido ou sinais simulados válidos." });
     }
     try {
-      if (applyingScenario) await repository.configurePlantScenario({ plantId: request.params.plantId, scenarioId: scenarioId as LabScenarioId, seed });
+      const now = new Date();
+      if (applyingScenario) await repository.configurePlantScenario({ plantId: request.params.plantId, scenarioId: scenarioId as LabScenarioId, seed, now });
       else await repository.configurePlantTelemetry({ plantId: request.params.plantId, online, pvKw, buildingLoadKw });
-      await repository.advancePlantTelemetry();
+      await repository.advancePlantTelemetry(now);
+      if (applyingScenario) await repository.advancePlantForecasts(now, request.params.plantId);
       return response.json(await repository.snapshot());
     } catch (error) {
       return response.status(errorStatus(error)).json({ code: "PLANT_HARDWARE_EVENT_FAILED", message: error instanceof Error ? error.message : "Não foi possível aplicar o cenário físico da planta." });

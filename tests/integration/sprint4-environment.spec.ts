@@ -46,8 +46,8 @@ test("projects the same Aurora plant, charger and energy state across Admin surf
 
 test("shows the persisted simulated forecast and admission decision in Admin", async ({ page, request }) => {
   await request.post(`${api}/commercial/test-data/reset`);
-  const applied = await request.post(`${api}/commercial/plants/plant_aurora_001/hardware`, { data: { scenarioId: "DEMAND_RAMP", seed: 3 } });
-  expect(applied.ok()).toBe(true);
+  const solarApplied = await request.post(`${api}/commercial/plants/plant_aurora_001/hardware`, { data: { scenarioId: "SOLAR_SURPLUS", seed: 3 } });
+  expect(solarApplied.ok()).toBe(true);
 
   await expect.poll(async () => {
     const response = await request.get(`${api}/commercial/plants/plant_aurora_001/forecast`);
@@ -55,15 +55,9 @@ test("shows the persisted simulated forecast and admission decision in Admin", a
     return (await response.json()).availability;
   }, { timeout: 30_000, intervals: [500, 1_000, 2_000] }).toBe("AVAILABLE");
 
-  const [forecastResponse, energyResponse] = await Promise.all([
-    request.get(`${api}/commercial/plants/plant_aurora_001/forecast`),
-    request.get(`${api}/commercial/plants/plant_aurora_001/energy`)
-  ]);
-  const forecast = (await forecastResponse.json()).forecast;
-  const energy = await energyResponse.json();
-  const predictedKw = forecast.points[0].predictedGridImportKw as number;
-  expect(forecast).toMatchObject({ plantId: "plant_aurora_001", provenance: "SIMULATED", horizonMinutes: 60 });
-  expect(energy.decision).toMatchObject({ canAdmit: false, forecastDecision: { outcome: "PREDICTED_CRITICAL", evidence: { forecastId: forecast.id } } });
+  const solarForecast = (await (await request.get(`${api}/commercial/plants/plant_aurora_001/forecast`)).json()).forecast;
+  const solarEnergy = await (await request.get(`${api}/commercial/plants/plant_aurora_001/energy`)).json();
+  expect(solarEnergy.snapshot.demandKw).toBe(0);
 
   await page.goto("http://127.0.0.1:5273/#/login");
   await page.getByTestId("login-email").fill("aurora@teste.com");
@@ -71,7 +65,26 @@ test("shows the persisted simulated forecast and admission decision in Admin", a
   await page.getByTestId("login-submit").click();
   await expect(page.getByRole("link", { name: "ChargeGrid" })).toBeVisible();
   await page.goto("http://127.0.0.1:5273/#/mvp/energy?est=est_aurora_001");
+  const importMeter = page.getByRole("region", { name: "Importação da rede da planta" });
+  await expect(importMeter).toContainText("Importação medida da rede");
+  await expect(importMeter).toContainText("0,00 kW");
 
+  const rampApplied = await request.post(`${api}/commercial/plants/plant_aurora_001/hardware`, { data: { scenarioId: "DEMAND_RAMP", seed: 3 } });
+  expect(rampApplied.ok()).toBe(true);
+
+  const forecastResponse = await request.get(`${api}/commercial/plants/plant_aurora_001/forecast`);
+  const energyResponse = await request.get(`${api}/commercial/plants/plant_aurora_001/energy`);
+  const forecast = (await forecastResponse.json()).forecast;
+  const energy = await energyResponse.json();
+  const predictedKw = forecast.points[0].predictedGridImportKw as number;
+  expect(forecast.id).not.toBe(solarForecast.id);
+  expect(forecast.generatedAt).not.toBe(solarForecast.generatedAt);
+  expect(forecast).toMatchObject({ plantId: "plant_aurora_001", provenance: "SIMULATED", horizonMinutes: 60 });
+  expect(energy.decision).toMatchObject({ canAdmit: false, forecastDecision: { outcome: "PREDICTED_CRITICAL", evidence: { forecastId: forecast.id } } });
+
+  await expect(importMeter).toContainText(`${new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(energy.snapshot.demandKw)} kW`);
+  await expect(page.locator("#energy-decision")).toContainText("Importação medida da rede");
+  await expect(page.locator("#energy-policy")).toContainText("Importação atual da rede");
   const forecastPanel = page.getByTestId("energy-forecast");
   await expect(forecastPanel).toContainText("SIMULATED_COMPOSITE · benchmark");
   await expect(forecastPanel).toContainText("Horizonte de 60 min");

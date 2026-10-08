@@ -639,7 +639,7 @@ describe("CommercialRepository", () => {
       repository = undefined;
 
       const inspection = new PGlite(dataDir);
-      expect((await inspection.query<{ count: number }>("select count(*)::int as count from chargegrid_schema_migrations")).rows[0]?.count).toBe(11);
+      expect((await inspection.query<{ count: number }>("select count(*)::int as count from chargegrid_schema_migrations")).rows[0]?.count).toBe(12);
       await inspection.close();
     } finally {
       if (repository) await repository.close();

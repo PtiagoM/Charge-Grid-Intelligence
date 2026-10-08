@@ -59,8 +59,8 @@ function EnergyGauge({ snapshot, utilization, alertPercent, criticalPercent }: {
 
   const needle = ratio === null ? null : marker(ratio);
   return <svg className="energy-gauge" viewBox="0 0 420 260" role="img" aria-labelledby="energy-gauge-title energy-gauge-description">
-    <title id="energy-gauge-title">Utilização da demanda contratada</title>
-    <desc id="energy-gauge-description">{hasMeasurement && ratio !== null ? `${percent(utilization)} da demanda, ${measurement(snapshot?.demandKw)} de ${measurement(snapshot?.contractedLimitKw)}.` : "Utilização indisponível porque não há uma medição válida."} {alertPercent === null || criticalPercent === null ? "Política sem limiares sincronizados." : `Limiares persistidos: alerta ${alertPercent}% e crítico ${criticalPercent}%.`}</desc>
+    <title id="energy-gauge-title">Utilização da importação da rede</title>
+    <desc id="energy-gauge-description">{hasMeasurement && ratio !== null ? `${percent(utilization)} da importação limite, ${measurement(snapshot?.demandKw)} importados de ${measurement(snapshot?.contractedLimitKw)} contratados.` : "Importação da rede indisponível porque não há uma medição válida."} {alertPercent === null || criticalPercent === null ? "Política sem limiares sincronizados." : `Limiares persistidos: alerta ${alertPercent}% e crítico ${criticalPercent}%.`}</desc>
     <defs><linearGradient id="energy-demand-gradient"><stop offset="0%" stopColor="#25bf6c" /><stop offset={`${alertPercent ?? 100}%`} stopColor="#daeb5d" /><stop offset={`${criticalPercent ?? 100}%`} stopColor="#ffb83e" /><stop offset="100%" stopColor="#ff414d" /></linearGradient></defs>
     <path className="energy-gauge-track" d="M25 205 A155 155 0 0 1 335 205" pathLength={arcLength} />
     {ratio !== null ? <path className="energy-gauge-value" d="M25 205 A155 155 0 0 1 335 205" pathLength={arcLength} strokeDasharray={`${ratio} ${arcLength}`} /> : null}
@@ -69,7 +69,7 @@ function EnergyGauge({ snapshot, utilization, alertPercent, criticalPercent }: {
     {needle ? <line className="energy-gauge-needle" x1={needle.x1} y1={needle.y1} x2={needle.x2} y2={needle.y2} /> : null}
     {alert ? <g className="energy-gauge-threshold gauge-alert"><circle cx={alert.x2} cy={alert.y2} r="4" /><text x={alert.x2 + 12} y={alert.y2 - 4}>{alertPercent}%</text><text className="gauge-threshold-power" x={alert.x2 + 12} y={alert.y2 + 13}>{measurement(snapshot ? snapshot.contractedLimitKw * alertPercent! / 100 : null)}</text></g> : null}
     {critical ? <g className="energy-gauge-threshold gauge-critical"><circle cx={critical.x2} cy={critical.y2} r="4" /><text x={critical.x2 + 12} y={critical.y2 - 4}>{criticalPercent}%</text><text className="gauge-threshold-power" x={critical.x2 + 12} y={critical.y2 + 13}>{measurement(snapshot ? snapshot.contractedLimitKw * criticalPercent! / 100 : null)}</text></g> : null}
-    <text className="energy-gauge-caption" x="180" y="132" textAnchor="middle">Demanda atual</text>
+    <text className="energy-gauge-caption" x="180" y="132" textAnchor="middle">Importação da rede</text>
     <text className="energy-gauge-value-label" x="180" y="168" textAnchor="middle">{hasMeasurement ? measurement(snapshot.demandKw) : "—"}</text>
     <text className="energy-gauge-utilization" x="180" y="197" textAnchor="middle">{ratio === null ? "Sem leitura" : `${percent(utilization)} do limite`}</text>
     <text className="energy-gauge-endpoint" x="9" y="233">0 kW</text><text className="energy-gauge-endpoint" x="335" y="233" textAnchor="end">{hasMeasurement ? measurement(snapshot.contractedLimitKw) : "—"}</text>
@@ -176,13 +176,13 @@ export function EnergyOperationsExperience({ establishmentId }: { establishmentI
       {([["energy-now", "Agora"], ["energy-flow", "Fluxo"], ["energy-decision", "Decisão"], ["energy-impact", "Impacto"], ["energy-policy", "Política"]] as const).map(([id, label]) => <a key={id} href={`#${id}`} aria-current={activeSection === id ? "location" : undefined} onClick={(event) => { event.preventDefault(); setActiveSection(id); document.getElementById(id)?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "start" }); }}>{label}</a>)}
     </nav>
 
-    <section id="energy-now" className="energy-v2-section energy-now-section" aria-label="Demanda da planta">
-      <SectionHeader title="Demanda da planta" subtitle="Potência instantânea em relação ao limite contratado." />
+    <section id="energy-now" className="energy-v2-section energy-now-section" aria-label="Importação da rede da planta">
+      <SectionHeader title="Importação da rede" subtitle="Potência importada instantânea comparada ao limite contratado da planta." />
       <div className="energy-now-grid">
         <article className={`energy-demand-card demand-${assessment.state.toLowerCase()}`}>
           <EnergyGauge snapshot={snapshot} utilization={hasDemand ? assessment.utilizationPercent : null} alertPercent={hasPersistedPolicy ? policy.alertUtilizationPercent : null} criticalPercent={hasPersistedPolicy ? policy.criticalUtilizationPercent : null} />
           <div className="energy-demand-metrics">
-            <article><EnergyGlyph name="pulse" /><div><span>Demanda medida</span><strong>{hasDemand ? measurement(snapshot?.demandKw) : "—"}</strong><small>potência instantânea</small></div></article>
+            <article><EnergyGlyph name="pulse" /><div><span>Importação medida da rede</span><strong>{hasDemand ? measurement(snapshot?.demandKw) : "—"}</strong><small>potência instantânea</small></div></article>
             <article><EnergyGlyph name="limit" /><div><span>Limite contratado</span><strong>{hasDemand ? measurement(snapshot?.contractedLimitKw) : "—"}</strong><small>referência operacional</small></div></article>
             <article><EnergyGlyph name="margin" /><div><span>Margem disponível</span><strong>{hasDemand && assessment.marginKw !== null ? measurement(assessment.marginKw) : "—"}</strong><small>até o limite contratado</small></div></article>
           </div>
@@ -205,7 +205,7 @@ export function EnergyOperationsExperience({ establishmentId }: { establishmentI
     <section id="energy-decision" className="energy-v2-section" aria-label="Decisão operacional" data-testid="energy-recommendation">
       <SectionHeader title="Decisão operacional" subtitle="Resultado da política de controle aplicada à solicitação de novos inícios." action={<Badge value={blocked === null ? "UNAVAILABLE" : blocked ? "CRITICAL" : "NORMAL"}>Decisão determinística · {policyLabel}</Badge>} />
       <div className="energy-decision-sequence">
-        <article><span className="energy-sequence-index">1</span><EnergyGlyph name="pulse" /><span className="energy-card-kicker">Demanda medida</span><strong>{hasDemand ? measurement(snapshot?.demandKw) : "—"}</strong><small>{hasDemand ? `${percent(assessment.utilizationPercent)} do limite` : "Sem snapshot integrado"}</small></article>
+        <article><span className="energy-sequence-index">1</span><EnergyGlyph name="pulse" /><span className="energy-card-kicker">Importação medida da rede</span><strong>{hasDemand ? measurement(snapshot?.demandKw) : "—"}</strong><small>{hasDemand ? `${percent(assessment.utilizationPercent)} do limite` : "Sem snapshot integrado"}</small></article>
         <div className="energy-sequence-arrow" aria-hidden="true">→</div>
         <article><span className="energy-sequence-index">2</span><EnergyGlyph name="charger" /><span className="energy-card-kicker">Nova admissão</span><strong>{additionalImportKw === null ? "—" : `${additionalImportKw >= 0 ? "+" : ""}${measurement(additionalImportKw)}`}</strong><small>diferença da projeção da API</small></article>
         <div className="energy-sequence-arrow" aria-hidden="true">→</div>
@@ -233,10 +233,10 @@ export function EnergyOperationsExperience({ establishmentId }: { establishmentI
     <section id="energy-policy" className="energy-v2-section" aria-label="Política aplicada">
       <SectionHeader title="Política aplicada" subtitle={hasPersistedPolicy ? "Versão persistida usada pela mesma decisão de admissão do backend." : "Aguardando política sincronizada da API."} />
       <article className="energy-policy-card">
-        <div className="energy-policy-scale-heading"><div><span>Demanda atual</span><strong>{hasDemand ? percent(assessment.utilizationPercent) : "—"}</strong><small>{hasDemand ? `${measurement(snapshot?.demandKw)} de ${measurement(snapshot?.contractedLimitKw)}` : "Sem leitura válida"}</small></div>
+        <div className="energy-policy-scale-heading"><div><span>Importação atual da rede</span><strong>{hasDemand ? percent(assessment.utilizationPercent) : "—"}</strong><small>{hasDemand ? `${measurement(snapshot?.demandKw)} importados de ${measurement(snapshot?.contractedLimitKw)} contratados` : "Sem leitura válida"}</small></div>
           <div className="energy-policy-thresholds">{hasPersistedPolicy && policy.recoveryUtilizationPercent != null ? <span><small>Recuperação</small><strong>{percent(policy.recoveryUtilizationPercent)}</strong><small>{hasDemand ? measurement(snapshot!.contractedLimitKw * policy.recoveryUtilizationPercent / 100) : "—"}</small></span> : null}{hasPersistedPolicy ? <><span><small>Alerta</small><strong>{percent(policy.alertUtilizationPercent)}</strong><small>{hasDemand ? measurement(snapshot!.contractedLimitKw * policy.alertUtilizationPercent / 100) : "—"}</small></span><span><small>Crítico</small><strong>{percent(policy.criticalUtilizationPercent)}</strong><small>{hasDemand ? measurement(snapshot!.contractedLimitKw * policy.criticalUtilizationPercent / 100) : "—"}</small></span></> : <span>Política não sincronizada</span>}</div>
         </div>
-        <div className={`energy-policy-scale ${hasDemand ? "has-reading" : "no-reading"}`} role="img" aria-label={hasDemand ? `Demanda ${percent(assessment.utilizationPercent)}${hasPersistedPolicy ? `; alerta ${policy.alertUtilizationPercent} por cento; crítico ${policy.criticalUtilizationPercent} por cento` : ""}` : "Escala de demanda sem leitura"}>
+        <div className={`energy-policy-scale ${hasDemand ? "has-reading" : "no-reading"}`} role="img" aria-label={hasDemand ? `Importação da rede ${percent(assessment.utilizationPercent)}${hasPersistedPolicy ? `; alerta ${policy.alertUtilizationPercent} por cento; crítico ${policy.criticalUtilizationPercent} por cento` : ""}` : "Escala de importação da rede sem leitura"}>
           <div className="energy-policy-track"><span className="energy-policy-safe" />{hasPersistedPolicy ? <><span className="energy-policy-alert-zone" style={{ left: `${policy.alertUtilizationPercent}%`, width: `${Math.max(0, policy.criticalUtilizationPercent - policy.alertUtilizationPercent)}%` }} /><span className="energy-policy-critical-zone" style={{ left: `${policy.criticalUtilizationPercent}%`, width: `${Math.max(0, 100 - policy.criticalUtilizationPercent)}%` }} />{policy.recoveryUtilizationPercent == null ? null : <i className="energy-policy-marker recovery-marker" style={{ left: `${policy.recoveryUtilizationPercent}%` }} />}<i className="energy-policy-marker alert-marker" style={{ left: `${policy.alertUtilizationPercent}%` }} /><i className="energy-policy-marker critical-marker" style={{ left: `${policy.criticalUtilizationPercent}%` }} /></> : null}{hasDemand ? <i className="energy-policy-current" style={{ left: `${demandWidth}%` }}><span>{percent(assessment.utilizationPercent)}</span></i> : null}</div>
           <div className="energy-policy-scale-labels"><span>0 kW</span><span>{hasDemand ? measurement(snapshot?.contractedLimitKw) : "Limite indisponível"}</span></div>
         </div>

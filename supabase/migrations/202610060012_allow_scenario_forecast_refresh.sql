@@ -1,0 +1,2 @@
+alter table commercial_forecasts
+  drop constraint if exists commercial_forecasts_plant_id_model_version_input_to_key;

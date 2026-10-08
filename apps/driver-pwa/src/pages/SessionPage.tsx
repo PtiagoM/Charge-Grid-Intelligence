@@ -22,7 +22,7 @@ const statusCopy: Partial<Record<CommercialSessionStatus, SessionPresentation>> 
   WAITING_START: { label: "Tudo pronto", title: "Pronto para iniciar", detail: "O carregador e a garantia estão válidos.", tone: "info", icon: "plug" },
   STARTING: { label: "Conectando", title: "Iniciando recarga", detail: "Aguardando a confirmação do carregador.", tone: "info", icon: "plug" },
   CHARGING: { label: "Carregando", title: "Recarga em andamento", detail: "Acompanhe o consumo e o limite da sua sessão.", tone: "info", icon: "plug" },
-  SUSPENDED_BY_DEMAND: { label: "Recarga interrompida", title: "Pausa para proteger a planta", detail: "A energia foi interrompida por segurança. Você não será cobrado por energia não confirmada.", tone: "warning", icon: "warning" },
+  SUSPENDED_BY_DEMAND: { label: "Pausada por demanda", title: "Recarga pausada por alta demanda", detail: "A demanda de energia da planta está acima do nível seguro. A recarga será retomada automaticamente quando a demanda diminuir e o sistema confirmar condições adequadas. A cobrança considera apenas a energia confirmada.", tone: "warning", icon: "warning" },
   ENERGY_FINISHED: { label: "Energia concluída", title: "Recarga finalizada", detail: "Agora retire e desconecte o veículo.", tone: "success", icon: "check" },
   IDLE_GRACE_PERIOD: { label: "Tempo para retirada", title: "Retire seu veículo", detail: "A tolerância é gratuita enquanto o contador estiver ativo.", tone: "warning", icon: "clock" },
   IDLE_FEE: { label: "Retirada necessária", title: "Ociosidade em cobrança", detail: "A tarifa é de R$ 0,50 por minuto enquanto o veículo permanecer conectado.", tone: "danger", icon: "warning" },

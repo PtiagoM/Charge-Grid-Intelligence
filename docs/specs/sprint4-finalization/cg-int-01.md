@@ -1,6 +1,6 @@
 # CG-INT-01 — prova integrada final (unidade-pai)
 
-**Classificação:** BACKEND ONLY · **Status:** PLANNED · **Tamanho:** GRANDE · **Risco:** ALTO.
+**Classificação:** BACKEND ONLY · **Status:** DONE — CG-INT-01A e CG-INT-01B concluídas · **Tamanho:** GRANDE · **Risco:** ALTO.
 
 ## Objetivo
 

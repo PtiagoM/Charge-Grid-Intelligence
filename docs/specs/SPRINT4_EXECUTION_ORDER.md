@@ -1,6 +1,6 @@
 # Ordem canônica de execução da Sprint 4
 
-**Atualizado em:** 04/10/2026  
+**Atualizado em:** 08/10/2026  
 **Função:** eliminar concorrência entre o pacote original `sprint4` e a extensão `sprint4-finalization`.
 
 ## Regra de precedência
@@ -54,7 +54,7 @@ S4-M5-U2A concluída
 → restante de sprint4-finalization
 ```
 
-G7, F0-01, F0-02, DASH-01..03, LAB-01 e AI-01..05 estão concluídos. DEC-01 e OPS-01 foram implementados e validados; OPS-01 publica forecast persistido nas superfícies existentes, correlaciona alerta e recomendação pelo forecast atual, deduplica polling e marca a recomendação como superada quando uma previsão posterior deixa de indicar risco. O modelo e suas previsões continuam classificados como benchmark/dados `SIMULATED_COMPOSITE`, não telemetria operacional representativa do Aurora. O responsável validou visualmente LAB-02 e UI-01. LAB-01 foi corrigido para semear janela temporal simulada compatível com inferência de forecast e habilitar a política de demanda em cenários online. CG-INT-01A passou os testes focais da API e o E2E API→Admin (DEMAND_RAMP, forecast escalar e admissão bloqueada). Próxima unidade: CG-INT-01B, gate visual/manual de demonstração e evidências. A branch remota da entrega Sprint 3 continua congelada; não houve alteração, push ou publicação nela.
+G7, F0-01, F0-02, DASH-01..03, LAB-01 e AI-01..05 estão concluídos. DEC-01 e OPS-01 foram implementados e validados; OPS-01 publica forecast persistido nas superfícies existentes, correlaciona alerta e recomendação pelo forecast atual, deduplica polling e marca a recomendação como superada quando uma previsão posterior deixa de indicar risco. O modelo e suas previsões continuam classificados como benchmark/dados `SIMULATED_COMPOSITE`, não telemetria operacional representativa do Aurora. O responsável validou visualmente LAB-02 e UI-01. LAB-01 foi corrigido para semear janela temporal simulada compatível com inferência de forecast e habilitar a política de demanda em cenários online. CG-INT-01A passou os testes focais da API e o E2E API→Admin. O responsável validou manualmente CG-INT-01B em 08/10/2026 após a rodada corretiva; a próxima unidade é CG-STAB-01, que deve retomar os testes focais bloqueados por OOM e executar o gate global de hardening. A branch remota da entrega Sprint 3 continua congelada; não houve alteração, push ou publicação nela.
 
 ## Por que existem dois gates de integração/estabilidade/entrega
 
