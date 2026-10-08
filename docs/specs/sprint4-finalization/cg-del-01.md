@@ -1,6 +1,6 @@
 # CG-DEL-01 — entrega final da Sprint 4
 
-**Classificação:** BACKEND ONLY · **Status:** PLANNED · **Tamanho:** MÉDIO · **Risco:** MÉDIO.
+**Classificação:** BACKEND ONLY · **Status:** DONE · **Tamanho:** MÉDIO · **Risco:** MÉDIO.
 
 ## Objetivo e escopo
 
@@ -44,3 +44,12 @@ Usar resultado global de STAB-01; repetir apenas se entrega alterar configuraç�
 ## Condição de parada
 
 Parar antes de push, PR ou merge e solicitar autorização explícita com branch/hash/checks.
+
+## Execução concluída
+
+- Corrigidas as classificações contraditórias do README e dos documentos de dataset/modelo: `RIDGE_DELTA` é a inferência carregada pela API, enquanto treinamento/avaliação continuam classificados como `SIMULATED_COMPOSITE`, sem validação operacional no Aurora e sem comando direto de hardware.
+- README identifica o link de vídeo existente como referência histórica da Sprint 3, conserva o roteiro da Sprint 4 e aponta para a matriz, estado, model card, proveniência e metodologia. Equipe, continuidade das Sprints, arquitetura executável, setup/segurança do PGlite, resultados quantitativos, limitações e distinções real/sandbox/simulado foram conferidos contra o estado documentado.
+- Corrigida a afirmação obsoleta de que o ensaio manual G-M6/README ainda estava pendente. G7 já registra a confirmação manual do responsável; a gravação do vídeo da Sprint 4 permanece explicitamente a cargo da equipe.
+- Referenciado o gate CG-STAB-01 sem repetir a suíte: E2E Sprint 4 8/8, E01/E02 repetido 2/2, Admin 85/85, shared 5/5, API 52/52 em execuções focais, lint/typecheck/build aprovados. Limitação ambiental da suíte API monolítica por OOM de Node 24 preservada.
+- Validação desta unidade documental: links Markdown locais verificados para o README e arquivos alterados; `git diff --check` aprovado. Build/testes não repetidos porque não houve mudança executável; evidências de STAB-01 foram reutilizadas.
+- Sem mudança no código de produção, PWA, banco ou configuração executável. Sem push, PR ou merge.

@@ -105,7 +105,7 @@ CONTRACT = asserts de payload nos testes existentes, não biblioteca nova. Teste
 - **G-M3:** seis ocupados → driverfila → lablibera → chamada → checkout ou expiração; Admin/PWA mesmosdados.
 - **G-M4:** PV/base/EV/rede → restrição/corte/retomada → motivo/evento e efeito numérico. Mesma sessão/quote; simulação explicitada.
 - **G-M5:** falhaessencial/retry/ownership e inspeção mobile/desktop das superfícies; IV/bateria/helpdesk etc sem falso sucesso.
-- **G-M6:** automação de reprodução executada em checkout limpo, sem `.env`, `.local` ou banco remoto: `npm ci`, lint, typecheck, testes, builds e E2E; API oficial/PGlite iniciou e respondeu `/health` em porta isolada. **Ensaio manual contínuo do README com Maps/Stripe test e gravação permanece pendente.**
+- **G-M6:** automação de reprodução executada em checkout limpo, sem `.env`, `.local` ou banco remoto: `npm ci`, lint, typecheck, testes, builds e E2E; API oficial/PGlite iniciou e respondeu `/health` em porta isolada. O ensaio manual contínuo do README com Maps/Stripe test foi confirmado pelo responsável no G7 em 30/09/2026; não foram anexados IDs/capturas e isso não deve ser ampliado como evidência de Stripe live ou hardware físico. A extensão S4-C2 foi validada depois em INT-01B e STAB-01; ver [ordem canônica](../SPRINT4_EXECUTION_ORDER.md). **A gravação do vídeo da Sprint 4 continua a cargo da equipe; este repositório contém o roteiro, não o vídeo final.**
 
 ## Registro de gates
 

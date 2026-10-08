@@ -6,8 +6,10 @@ O motorista descobre o Hub Solar Aurora, escolhe ou identifica um carregador, au
 
 Esta baseline não é um produto de produção. Ela prioriza comportamento coerente e demonstrável, separando integração real, sandbox e simulação. A ordem vigente e o que ainda falta para concluir as etapas estão em [`docs/specs/SPRINT4_EXECUTION_ORDER.md`](docs/specs/SPRINT4_EXECUTION_ORDER.md).
 
-## Link do vídeo técnico de apresentação
+## Vídeo da Sprint 3 (referência histórica)
 Link: https://youtu.be/uPUDfY_bTtw
+
+O vídeo acima registra a entrega anterior da Sprint 3; não é apresentado como vídeo da Sprint 4. O roteiro técnico de até cinco minutos para gravar a Sprint 4 está ao final deste README.
 
 ## Equipe e continuidade
 
@@ -38,6 +40,9 @@ flowchart LR
     Lab[Laboratório de hardware] --> API
     API --> DB[(PGlite persistente oficial; PostgreSQL opcional)]
     API --> Provider[MockGoodWeProvider]
+    API --> Forecast[Inferência Node integrada]
+    Forecast --> Decision[Regras e Decision Engine]
+    Decision --> API
     DB --> API
     API --> PWA
     API --> Admin
@@ -104,7 +109,8 @@ Os cards Monitoramento, Receita, Demanda e Utilização do Dashboard consultam `
 | Banco comercial | Real no protótipo | PGlite/PostgreSQL local persistente é o runtime oficial; não usa JSON. Um processo Node contínuo é necessário para relógio e lifecycle |
 | Supabase PostgreSQL remoto | Opcional, preparado | Aplicação das migrations remotas não validada neste ambiente; não é dependência de execução local |
 | GoodWe/HCA G2 | Simulado | Laboratório e `MockGoodWeProvider` substituem somente hardware/telemetria |
-| Stripe live, GoodWe OpenAPI, HCA G2 físico, bateria e previsão ML | Conceitual/fora do escopo S4-C1 | Não estão implementados nem são apresentados como produtivos |
+| Previsão de demanda no runtime | Inferência integrada; modelo/dados `SIMULATED_COMPOSITE` | Ridge Delta versionado é inferido pela API e fornece evidência complementar ao Decision Engine; não comanda hardware nem interrompe sessão ativa |
+| Stripe live, GoodWe OpenAPI, HCA G2 físico, bateria e modelo treinado com telemetria Aurora | Conceitual/fora do escopo | Não implementados nem apresentados como produtivos |
 
 ## Justificativa técnica
 
@@ -116,6 +122,12 @@ Os cards Monitoramento, Receita, Demanda e Utilização do Dashboard consultam `
 | Stripe Payment Element em modo teste | Demonstra autorização e captura reais sem movimentar dinheiro nem simular aprovação financeira |
 | Polling de 2 segundos | Entrega atualização automática estável para o protótipo, sem introduzir a complexidade de Realtime |
 | `MockGoodWeProvider` | Substitui somente o hardware indisponível e mantém a fronteira preparada para um provider GoodWe futuro |
+
+### Previsão de demanda — benchmark e runtime
+
+O runtime Node carrega o artefato Ridge Delta, gera um forecast de pico de importação para os próximos 60 minutos e o entrega ao fluxo de regras/Decision Engine. A previsão não substitui a decisão determinística de admissão e não envia comandos ao carregador; risco crítico pode bloquear novos inícios, mas não interrompe sessões ativas. O modelo foi treinado e avaliado somente em dados compostos `SIMULATED_COMPOSITE`, montados de fontes independentes; portanto, os resultados abaixo são benchmark acadêmico e não desempenho validado no Hub Solar Aurora. Proveniência, protocolo, artefato, métricas completas e limites estão no [model card](docs/ai/model-card.md), na [decisão do dataset](docs/ai/dataset-decision.md) e no [protocolo de avaliação](docs/ai/evaluation-protocol.md).
+
+No holdout temporal do benchmark, Ridge Delta obteve MAE 4,6151 kW, RMSE 8,1457 kW e F1 0,8461; o baseline Persistence obteve MAE 5,3225 kW, RMSE 9,7665 kW e F1 0,8144. A janela de teste é única e composta: não representa garantia de previsão em operação real.
 
 ## Resultados quantitativos reproduzíveis
 
@@ -233,7 +245,7 @@ Na PWA, crie uma conta de motorista ou use uma conta Supabase Auth já cadastrad
 7. Encerre a energia na PWA, desconecte o veículo no laboratório e confirme a retirada/liquidação na PWA.
 8. Confira a sessão concluída, o carregador disponível e o pagamento capturado no Resumo financeiro.
 
-A jornada de fila é complementar. O roteiro atualizado de até cinco minutos e as evidências da Sprint 3 ficam em [`docs/SPRINT3.md`](docs/SPRINT3.md); a ordem de execução Sprint 4 está em [`docs/specs/SPRINT4_EXECUTION_ORDER.md`](docs/specs/SPRINT4_EXECUTION_ORDER.md).
+A jornada de fila é complementar. As evidências da Sprint 3 ficam em [`docs/SPRINT3.md`](docs/SPRINT3.md); a [matriz de comportamento da Sprint 4](docs/SPRINT4_BEHAVIOR_MATRIX.md), [estado atual](docs/CURRENT_STATE.md) e [ordem de execução](docs/specs/SPRINT4_EXECUTION_ORDER.md) registram o estado consolidado.
 
 ## Qualidade
 
@@ -253,7 +265,7 @@ O harness Sprint 4 usa banco e portas isolados; ele verifica contratos e jornada
 - no estado documentado, migrations remotas não foram aplicadas; usar PGlite local como runtime oficial, ou preparar o remoto antes de optar por ele;
 - Pix autoriza no Stripe test, mas o encerramento persistido após reembolso ainda não possui a mesma validação ponta a ponta do cartão;
 - captura de cartão abaixo de R$ 0,50 permanece limitação conhecida e fora do escopo; o cenário demonstrativo deve consumir pelo menos R$ 0,50;
-- não há GoodWe OpenAPI, HCA G2 físico, Stripe live, bateria, previsão ML, push remoto, RLS/IAM corporativo completo ou operação multi-instância;
+- não há GoodWe OpenAPI, HCA G2 físico, Stripe live, bateria, modelo treinado/validado com telemetria do Aurora, push remoto, RLS/IAM corporativo completo ou operação multi-instância; o forecast atual depende de telemetria simulada e do benchmark `SIMULATED_COMPOSITE`;
 - cards comerciais do Dashboard usam o agregado compartilhado S4-C2; não há série temporal e impactos ambientais/econômicos sem método permanecem indisponíveis;
 - o build do Admin mantém um aviso não bloqueante de chunk acima de 500 kB.
 

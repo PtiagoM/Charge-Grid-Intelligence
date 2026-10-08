@@ -1,14 +1,15 @@
-# CG-AI-03 — model card do benchmark de demanda
+# CG-AI-03C/04 — model card do benchmark de demanda e inferência
 
 ## Resumo
 
-- **Uso:** benchmark acadêmico de previsão temporal; não operacional.
+- **Uso:** benchmark acadêmico e inferência informativa no protótipo; sem validação operacional no Aurora.
 - **Classe dos dados:** `SIMULATED_COMPOSITE`.
-- **Resultado selecionado:** `LINEAR_LAGS_CALENDAR`, regressão Ridge múltipla padronizada; promovida pelo gate de validação, ainda não integrada ao runtime.
+- **Resultado selecionado:** `RIDGE_DELTA`, Ridge padronizada que prevê a variação até o pico de importação dos próximos 60 minutos; promovida por validação e integrada à inferência Node.
 - **Target:** máximo de `gridImportKw` nos próximos 60 min (quatro passos de 15 min).
-- **Features do Ridge selecionado:** `gridImportKw` atual, lags de 15 e 60 min, pico do bloco correspondente do dia anterior e pares seno/cosseno de hora, dia da semana e dia do ano. O AR(1) da rodada inicial usou apenas `gridImportKw` na origem.
+- **Features do Ridge Delta:** importação atual, lags de 15/30/60 min e 2/4 h, média/mínimo/máximo/variação na última hora, pico correspondente do dia anterior e pares seno/cosseno de hora, dia da semana e dia do ano.
 - **Limiar:** 117,524661 kW, percentil 90 dos picos futuros do bloco de treino. É limiar de cauda do composto, não política ou limite de Aurora.
-- **Artefato de inferência:** `ml/forecasting/data/lag_calendar_ridge_model.json`, reproduzível offline. Ainda não é API nem integração Node.
+- **Artefato promovido de inferência:** `ml/forecasting/data/forecast_cg_ai_03c_model.json`. O `lag_calendar_ridge_model.json` permanece como benchmark histórico/incumbent, não é o modelo carregado pelo runtime.
+- **Uso no protótipo:** a API persiste previsões disponíveis e o Decision Engine as usa como evidência complementar de risco para admissão. A previsão não comanda hardware nem interrompe sessão ativa; a telemetria operacional demonstrada é simulada.
 
 ## Proveniência e composição
 
@@ -93,7 +94,7 @@ No holdout, Delta melhora o incumbent em MAE (18,0%), RMSE (3,4%) e F1 (+0,0112)
 
 O resultado completo está em `ml/forecasting/data/forecast_third_candidate_evaluation.json`, as previsões do holdout em `forecast_cg_ai_03c_test.csv` e o artefato reprodutível em `forecast_cg_ai_03c_model.json`. O modelo promovido é apenas um benchmark `SIMULATED_COMPOSITE`, offline, sem integração ao Node/API/Decision Engine; o modelo CG-AI-03B permanece preservado como histórico/incumbent de comparação.
 
-## Integração de inferência — CG-AI-04
+## Integração de inferência — CG-AI-04/05 e decisão — CG-DEC-01
 
 A API Node carrega exclusivamente `forecast_cg_ai_03c_model.json`, valida SHA-256 e schema, agrega amostras de telemetria de cada intervalo de 15 min por média aritmética e reproduz as 17 features, padronização e reconstrução Delta do pipeline Python. Vetor dourado confirma paridade numérica. O `ForecastRecord` expira em no máximo 30 min após a última entrada; modelo/telemetria insuficiente, stale, inválido ou expirado gera estado `UNAVAILABLE` e, quando possível, fallback de persistência separado do valor previsto por IA.
 

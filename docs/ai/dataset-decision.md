@@ -20,6 +20,6 @@ ACN-Data foi investigado por ser a fonte preferida de sessões EV, mas o endpoin
 - Métricas CG-AI-03 descrevem somente generalização temporal dentro deste composto; não demonstram acurácia/confiança ou benefício operacional em Aurora.
 - O Decision Engine atual continua baseado em telemetria e regras determinísticas existentes.
 
-## Próxima condição
+## Estado de execução posterior
 
-CG-AI-03 está concluído usando série ampliada separada `forecasting_series.csv`; o dataset AI-02 original permanece inalterado. Ridge foi promovida somente para benchmark offline, sem integração/runtime. Consulte [protocolo de avaliação](evaluation-protocol.md) e [model card](model-card.md).
+CG-AI-03C selecionou `RIDGE_DELTA` usando a série ampliada separada `forecasting_series.csv`; o dataset AI-02 original permanece inalterado. CG-AI-04/05 integraram o artefato versionado à inferência Node e à persistência da API; CG-DEC-01/OPS-01 ligaram a evidência preditiva às regras de admissão e às superfícies existentes. Isso não muda a classe dos dados nem torna o benchmark operacional: dataset e previsão continuam `SIMULATED_COMPOSITE`, sem validação de desempenho em Aurora. A previsão nunca comanda hardware. Consulte o [protocolo de avaliação](evaluation-protocol.md) e o [model card](model-card.md).

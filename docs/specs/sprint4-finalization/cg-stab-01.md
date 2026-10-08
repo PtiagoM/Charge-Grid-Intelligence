@@ -51,4 +51,4 @@ Mudança visual relevante vira HUMAN FRONTEND GATE; problema fora do cenário fi
 - Limitação ambiental: a suíte API completa em um único processo terminou por OOM do Node 24 neste ambiente. Os arquivos relevantes passaram isoladamente; repetir a suíte completa não é necessário para esta unidade e o limite foi mantido visível, não mascarado.
 - Encerramento de API isolada validado por sinal em porta de teste. O terminal PowerShell aninhado não encaminhou uma tecla Ctrl+C ao processo filho, então essa tecla literal não foi validada nesse ensaio; o shutdown pelo handler de sinal e a reinicialização pelo E2E passaram.
 
-Próxima unidade: `CG-DEL-01`.
+Entrega documental subsequente concluída em `CG-DEL-01`; consulte a SDD correspondente.
