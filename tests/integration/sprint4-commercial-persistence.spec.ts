@@ -17,7 +17,7 @@ async function loginAdmin(page: Page) {
   await page.getByTestId("login-email").fill("aurora@teste.com");
   await page.getByTestId("login-password").fill("teste");
   await page.getByTestId("login-submit").click();
-  await expect(page.getByRole("link", { name: "ChargeGrid" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Lista de usinas" })).toBeVisible();
 }
 
 test.beforeEach(async ({ request }) => reset(request));

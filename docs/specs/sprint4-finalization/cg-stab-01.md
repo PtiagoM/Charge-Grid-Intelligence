@@ -1,6 +1,6 @@
 # CG-STAB-01 — hardening mínimo do protótipo
 
-**Classificação:** PEQUENO AJUSTE NO FRONT · **Status:** PLANNED · **Tamanho:** MÉDIO · **Risco:** MÉDIO.
+**Classificação:** PEQUENO AJUSTE NO FRONT · **Status:** DONE · **Tamanho:** MÉDIO · **Risco:** MÉDIO.
 
 ## Objetivo e escopo
 
@@ -41,3 +41,14 @@ Teste de regressão mínimo por bug; uma suíte global ao fim, E2E final uma vez
 ## Condição de parada
 
 Mudança visual relevante vira HUMAN FRONTEND GATE; problema fora do cenário final é documentado, não amplia escopo.
+
+## Execução concluída
+
+- Causa confirmada: o harness E2E encerrava a API com `SIGTERM`, que não fornece shutdown confiável ao processo filho no Windows e podia interromper o uso do PGlite. O harness agora solicita shutdown por IPC, aguarda a finalização e só usa encerramento forçado após timeout; a API de teste fecha servidor, repositório e diretório temporário isolado.
+- Corrigidos seletores E2E que ainda esperavam o link antigo “ChargeGrid” e uma asserção que usava `demandKw` em vez do contrato atual `gridImportKw`.
+- Sem alteração em código de produção, PWA, banco persistente ou branch da entrega Sprint 3. O E2E usa banco PGlite temporário exclusivo.
+- Validação: E2E Sprint 4 8/8; E01/E02 repetido por dois ciclos 2/2; Admin 85/85, shared 5/5 e 52 testes da API aprovados em invocações focais por arquivo. `lint`, `typecheck` e `build` passaram.
+- Limitação ambiental: a suíte API completa em um único processo terminou por OOM do Node 24 neste ambiente. Os arquivos relevantes passaram isoladamente; repetir a suíte completa não é necessário para esta unidade e o limite foi mantido visível, não mascarado.
+- Encerramento de API isolada validado por sinal em porta de teste. O terminal PowerShell aninhado não encaminhou uma tecla Ctrl+C ao processo filho, então essa tecla literal não foi validada nesse ensaio; o shutdown pelo handler de sinal e a reinicialização pelo E2E passaram.
+
+Próxima unidade: `CG-DEL-01`.

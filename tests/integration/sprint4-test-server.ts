@@ -27,6 +27,10 @@ async function shutdown() {
   await clock.stop();
   await new Promise<void>((resolve) => server.close(() => resolve()));
   await closeCommercialRepository();
+  if (process.connected) process.disconnect();
 }
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) process.once(signal, () => void shutdown());
+process.on("message", (message) => {
+  if (typeof message === "object" && message !== null && "type" in message && message.type === "shutdown") void shutdown();
+});

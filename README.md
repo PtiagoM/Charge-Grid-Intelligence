@@ -213,6 +213,8 @@ O runtime local usa um único processo de API para `.local/commercial-db`. Ao fi
 
 Processos também podem ser iniciados separadamente com `npm run dev:admin`, `npm run dev:pwa` e `npm run dev:api`.
 
+Se a suíte completa da API terminar por falta de memória no Node 24, execute os testes do workspace API em arquivos focais, um por invocação, com `npm run test --workspace @chargegrid/api -- <arquivo-de-teste> --maxWorkers=1`. Isso não substitui o gate completo em um ambiente com memória suficiente; não remova o banco local para contornar OOM.
+
 Contas demonstrativas do Admin:
 
 - estabelecimento Aurora: `aurora@teste.com` / `teste`;

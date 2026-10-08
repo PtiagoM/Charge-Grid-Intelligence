@@ -19,7 +19,7 @@ test("projects the same Aurora plant, charger and energy state across Admin surf
   await page.getByTestId("login-email").fill("aurora@teste.com");
   await page.getByTestId("login-password").fill("teste");
   await page.getByTestId("login-submit").click();
-  await expect(page.getByRole("link", { name: "ChargeGrid" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Lista de usinas" })).toBeVisible();
 
   await page.goto("http://127.0.0.1:5273/#/mvp/plants?est=est_aurora_001");
   await expect(page.getByRole("link", { name: "Abrir Hub Solar Aurora" })).toHaveAttribute("href", "#/mvp/plant?plant=plant_aurora_001");
@@ -57,13 +57,13 @@ test("shows the persisted simulated forecast and admission decision in Admin", a
 
   const solarForecast = (await (await request.get(`${api}/commercial/plants/plant_aurora_001/forecast`)).json()).forecast;
   const solarEnergy = await (await request.get(`${api}/commercial/plants/plant_aurora_001/energy`)).json();
-  expect(solarEnergy.snapshot.demandKw).toBe(0);
+  expect(solarEnergy.snapshot.gridImportKw).toBe(0);
 
   await page.goto("http://127.0.0.1:5273/#/login");
   await page.getByTestId("login-email").fill("aurora@teste.com");
   await page.getByTestId("login-password").fill("teste");
   await page.getByTestId("login-submit").click();
-  await expect(page.getByRole("link", { name: "ChargeGrid" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Lista de usinas" })).toBeVisible();
   await page.goto("http://127.0.0.1:5273/#/mvp/energy?est=est_aurora_001");
   const importMeter = page.getByRole("region", { name: "Importação da rede da planta" });
   await expect(importMeter).toContainText("Importação medida da rede");
@@ -82,7 +82,7 @@ test("shows the persisted simulated forecast and admission decision in Admin", a
   expect(forecast).toMatchObject({ plantId: "plant_aurora_001", provenance: "SIMULATED", horizonMinutes: 60 });
   expect(energy.decision).toMatchObject({ canAdmit: false, forecastDecision: { outcome: "PREDICTED_CRITICAL", evidence: { forecastId: forecast.id } } });
 
-  await expect(importMeter).toContainText(`${new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(energy.snapshot.demandKw)} kW`);
+  await expect(importMeter).toContainText(`${new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(energy.snapshot.gridImportKw)} kW`);
   await expect(page.locator("#energy-decision")).toContainText("Importação medida da rede");
   await expect(page.locator("#energy-policy")).toContainText("Importação atual da rede");
   const forecastPanel = page.getByTestId("energy-forecast");

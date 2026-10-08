@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { createServer } from "node:http";
-import { mkdtemp } from "node:fs/promises";
+import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
@@ -21,6 +21,9 @@ function waitForHealth(timeoutMs = 60_000) {
   return new Promise((resolveHealth, rejectHealth) => {
     const poll = async () => {
       if (stopping) return rejectHealth(new Error("Test API is stopping."));
+      if (child && (child.exitCode !== null || child.signalCode !== null)) {
+        return rejectHealth(new Error(`Isolated test API exited before becoming healthy (code ${child.exitCode ?? "signal"}).`));
+      }
       try {
         const response = await fetch("http://127.0.0.1:3433/test-harness");
         if (response.ok && (await response.json()).isolated === true) return resolveHealth();
@@ -33,7 +36,7 @@ function waitForHealth(timeoutMs = 60_000) {
 }
 
 function startApi() {
-  child = spawn(process.execPath, ["--import", "tsx", "tests/integration/sprint4-test-server.ts"], { cwd: root, env, stdio: "inherit" });
+  child = spawn(process.execPath, ["--import", "tsx", "tests/integration/sprint4-test-server.ts"], { cwd: root, env, stdio: ["ignore", "inherit", "inherit", "ipc"] });
   child.once("exit", (code) => {
     if (!stopping && !restarting) {
       console.error(`Isolated test API exited with code ${code ?? 1}.`);
@@ -45,10 +48,20 @@ function startApi() {
 
 async function stopApi() {
   const activeChild = child;
-  if (!activeChild || activeChild.exitCode !== null) return;
+  if (!activeChild || activeChild.exitCode !== null || activeChild.signalCode !== null) return;
   await new Promise((resolveExit) => {
-    activeChild.once("exit", resolveExit);
-    activeChild.kill("SIGTERM");
+    const timer = setTimeout(() => activeChild.kill(), 10_000);
+    activeChild.once("exit", () => {
+      clearTimeout(timer);
+      resolveExit();
+    });
+    if (activeChild.connected) {
+      activeChild.send({ type: "shutdown" }, (error) => {
+        if (error) activeChild.kill();
+      });
+    } else {
+      activeChild.kill();
+    }
   });
 }
 
@@ -80,6 +93,10 @@ await startApi();
 
 for (const signal of ["SIGINT", "SIGTERM"]) process.once(signal, () => {
   stopping = true;
-  control.close();
-  void stopApi();
+  void (async () => {
+    await new Promise((resolveClose) => control.close(resolveClose));
+    await stopApi();
+    await rm(databasePath, { recursive: true, force: true });
+    await rm(`${databasePath}.chargegrid-lock`, { recursive: true, force: true });
+  })();
 });
