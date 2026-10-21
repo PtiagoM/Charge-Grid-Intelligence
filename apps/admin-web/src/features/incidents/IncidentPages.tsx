@@ -17,6 +17,10 @@ function actionHref(recommendation: Recommendation) {
   return `#/mvp/operations?est=${recommendation.establishmentId}`;
 }
 
+function isEnergyDecisionRecommendation(recommendation: Recommendation) {
+  return recommendation.sourceType === "DEMAND_REVIEW" || recommendation.sourceType === "RESTORE_TELEMETRY" || recommendation.id.startsWith("rec-energy-");
+}
+
 export function IncidentInboxPage({ establishmentId }: { establishmentId?: string }) {
   const { state, account } = useAdminState();
   const [status, setStatus] = useState("all");
@@ -60,7 +64,7 @@ export function IncidentDetailPage({ incidentId, establishmentId }: { incidentId
   if (!incident || (establishmentId && incident.establishmentId !== establishmentId)) return <Navigate to="/mvp/incidents" replace />;
   const resolvedIncidentId = incident.id;
   const events = state.incidentEvents.filter((item) => item.incidentId === resolvedIncidentId).sort((a, b) => a.at.localeCompare(b.at));
-  const recommendation = state.recommendations.find((item) => item.incidentId === resolvedIncidentId);
+  const recommendation = state.recommendations.find((item) => item.incidentId === resolvedIncidentId && !isEnergyDecisionRecommendation(item));
   const chargerCode = state.chargers.find((item) => item.id === incident.chargerId)?.identifier;
   const sessionCode = state.sessions.find((item) => item.id === incident.sessionId)?.publicCode;
   const canManageIncident = Boolean(account && hasAdminCapability(account, "incidents:manage"));
@@ -76,7 +80,38 @@ export function RecommendationsPage({ establishmentId }: { establishmentId?: str
   const [feedback, setFeedback] = useState("");
   const scopeId = establishmentId ?? (account?.profile === "ESTABELECIMENTO" ? account.establishmentId : undefined);
   const accessibleIds = new Set(accessibleEstablishmentIds(state, account));
-  const recommendations = state.recommendations.filter((item) => accessibleIds.has(item.establishmentId) && (!scopeId || item.establishmentId === scopeId)).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const recommendations = state.recommendations.filter((item) => accessibleIds.has(item.establishmentId) && (!scopeId || item.establishmentId === scopeId) && !isEnergyDecisionRecommendation(item)).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   async function decide(item: Recommendation, decision: "ACCEPTED" | "DEFERRED" | "REJECTED") { const result = await decideRecommendation(item.id, decision, reasons[item.id] ?? ""); setFeedback(result.ok ? `Decisao ${decision.toLowerCase()} registrada; nenhuma acao foi executada automaticamente.` : result.issues.join(" ")); }
-  return <div className="operations-detail" data-testid="recommendations-page"><section className="surface panel"><SectionHeader eyebrow="Inteligencia explicavel" title="Recomendacoes operacionais" subtitle="Regra, evidencia, impacto e proxima acao antes de qualquer decisao humana." /><div className="kpi-grid four-cols"><KpiCard label="Abertas" value={recommendations.filter((item) => item.status === "OPEN").length} help="aguardando decisao" accent="warn" /><KpiCard label="Aceitas" value={recommendations.filter((item) => item.status === "ACCEPTED").length} help="ainda sem autoexecucao" accent="good" /><KpiCard label="Alta confianca" value={recommendations.filter((item) => item.confidence === "HIGH").length} help="evidencia deterministica" /><KpiCard label="Incidentes ligados" value={recommendations.filter((item) => item.incidentId).length} help="contexto operacional" /></div></section><section className="recommendation-list">{recommendations.map((item) => <article className="surface recommendation-card" key={item.id}><header><div><Badge value={item.status} /><Badge value={item.confidence} /><span>{item.deterministic ? "Regra deterministica" : "Modelo externo"}</span></div><small>{localDate(item.updatedAt ?? item.createdAt)}</small></header><h2>{item.title}</h2><p>{item.rationale}</p><p><small>Origem: {item.origin ?? "Regra operacional"} · Motivo: {item.reasonCode ?? "—"} · Política: {item.policyVersion ?? "—"} · Amostra: {item.sampleId ?? item.sourceEventId ?? "—"}</small></p><div className="recommendation-evidence"><div><h3>Evidencias</h3><ul>{item.evidence.map((evidence) => <li key={evidence}>{evidence}</li>)}</ul></div><div><h3>Impacto esperado</h3><p>{item.expectedImpact}</p></div></div>{item.status === "OPEN" ? <div className="recommendation-decision"><label>Motivo para adiar ou rejeitar<textarea value={reasons[item.id] ?? ""} onChange={(event) => setReasons((current) => ({ ...current, [item.id]: event.target.value }))} /></label><div><button type="button" onClick={() => decide(item, "ACCEPTED")}>Aceitar para revisao</button><button type="button" className="ghost-button" onClick={() => decide(item, "DEFERRED")}>Adiar</button><button type="button" className="ghost-button" onClick={() => decide(item, "REJECTED")}>Rejeitar</button></div></div> : <div className="recommendation-result"><p><strong>{item.decidedBy}</strong> · {localDate(item.decidedAt)}</p><span>{item.decisionReason}</span></div>}<footer><span>Aceitar nao executa comandos.</span><a className="ghost-button" href={actionHref(item)}>Revisar acao proposta</a>{item.incidentId ? <a className="ghost-button" href={`#/mvp/incident?incident=${item.incidentId}`}>Abrir incidente</a> : null}</footer></article>)}</section>{feedback ? <p role="status" className="command-feedback recommendation-toast">{feedback}</p> : null}</div>;
+  return <div className="operations-detail" data-testid="recommendations-page">
+    <section className="surface panel">
+      <SectionHeader eyebrow="Inteligência explicável" title="Recomendações operacionais" subtitle="Riscos preditivos e oportunidades com evidências e revisão humana. Decisões de demanda e restauração da telemetria ficam em Energia e demanda." />
+      <div className="kpi-grid four-cols">
+        <KpiCard label="Abertas" value={recommendations.filter((item) => item.status === "OPEN").length} help="aguardando decisão" accent="warn" />
+        <KpiCard label="Aceitas" value={recommendations.filter((item) => item.status === "ACCEPTED").length} help="ainda sem autoexecução" accent="good" />
+        <KpiCard label="Alta confiança" value={recommendations.filter((item) => item.confidence === "HIGH").length} help="evidência determinística" />
+        <KpiCard label="Incidentes ligados" value={recommendations.filter((item) => item.incidentId).length} help="contexto operacional" />
+      </div>
+    </section>
+    {recommendations.length ? <section className="recommendation-list">
+      {recommendations.map((item) => <article className="surface recommendation-card" key={item.id}>
+        <header><div><Badge value={item.status} /><Badge value={item.confidence} /><span>{item.deterministic ? "Regra deterministica" : "Modelo externo"}</span></div><small>{localDate(item.updatedAt ?? item.createdAt)}</small></header>
+        <h2>{item.title}</h2>
+        <p>{item.rationale}</p>
+        <p><small>Origem: {item.origin ?? "Regra operacional"} · Motivo: {item.reasonCode ?? "—"} · Política: {item.policyVersion ?? "—"} · Amostra: {item.sampleId ?? item.sourceEventId ?? "—"}</small></p>
+        <div className="recommendation-evidence">
+          <div><h3>Evidencias</h3><ul>{item.evidence.map((evidence) => <li key={evidence}>{evidence}</li>)}</ul></div>
+          <div><h3>Impacto esperado</h3><p>{item.expectedImpact}</p></div>
+        </div>
+        {item.status === "OPEN" ? <div className="recommendation-decision">
+          <label>Motivo para adiar ou rejeitar<textarea value={reasons[item.id] ?? ""} onChange={(event) => setReasons((current) => ({ ...current, [item.id]: event.target.value }))} /></label>
+          <div><button type="button" onClick={() => decide(item, "ACCEPTED")}>Aceitar para revisao</button><button type="button" className="ghost-button" onClick={() => decide(item, "DEFERRED")}>Adiar</button><button type="button" className="ghost-button" onClick={() => decide(item, "REJECTED")}>Rejeitar</button></div>
+        </div> : <div className="recommendation-result"><p><strong>{item.decidedBy}</strong> · {localDate(item.decidedAt)}</p><span>{item.decisionReason}</span></div>}
+        <footer><span>Aceitar não executa comandos.</span><a className="ghost-button" href={actionHref(item)}>Revisar ação proposta</a>{item.incidentId ? <a className="ghost-button" href={"#/mvp/incident?incident=" + item.incidentId}>Abrir incidente</a> : null}</footer>
+      </article>)}
+    </section> : <section className="surface panel operations-empty" role="status">
+      <strong>Nenhuma recomendação independente disponível.</strong>
+      <span>Decisões de demanda e restauração da telemetria são apresentadas em ChargeGrid &gt; Energia e demanda.</span>
+    </section>}
+    {feedback ? <p role="status" className="command-feedback recommendation-toast">{feedback}</p> : null}
+  </div>;
 }

@@ -1,6 +1,8 @@
 # Metodologia ambiental e econômica do Dashboard
 
-Status: **conservadora; sem CO₂ evitado ou economia de fatura calculados**. Atualizada em 30/09/2026 como parte de CG-DASH-03.
+Status: **conservadora; sem CO₂ evitado ou economia de fatura calculados**. Metodologia atualizada em 30/09/2026 como parte de CG-DASH-03; interface revisada em 08/10/2026.
+
+Métricas indisponíveis exibem o motivo conhecido. O monitoramento explica que o contrato atual oferece agregados do período, não pontos temporais. Nenhuma série é inventada para preencher o gráfico.
 
 ## Dados disponíveis
 

@@ -1,5 +1,4 @@
 import { useState, type FormEvent } from "react";
-import { Navigate } from "react-router-dom";
 import { useAdminState } from "../../app/AdminState";
 import { Badge, DataTable, KpiCard, SectionHeader } from "../../components/AdminUi";
 import type { ReportJob, ReportType } from "../../domain/admin";
@@ -39,7 +38,6 @@ export function ReportsOperationsPage({ establishmentId }: { establishmentId?: s
   if (!account || !hasAdminCapability(account, "reports:generate")) return <AccessDeniedPage />;
   const allowedScopes: string[] = accessibleEstablishmentIds(state, account).filter((id) => id === "est_aurora_001");
   const effectiveScopes = establishmentId ? allowedScopes.filter((item) => item === establishmentId) : allowedScopes;
-  if (establishmentId && !effectiveScopes.length) return <Navigate to="/mvp/reports" replace />;
   const scopeSet = new Set(effectiveScopes);
   const jobs = state.reportJobs.filter((item) => item.requestedBy === account.id || item.establishmentIds.some((scope) => scopeSet.has(scope)));
   const subscriptions = state.reportSubscriptions.filter((item) => item.accountId === account.id);

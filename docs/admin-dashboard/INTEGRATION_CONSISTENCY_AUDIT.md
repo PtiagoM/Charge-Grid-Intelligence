@@ -33,7 +33,7 @@ Os aliases históricos `plant_demo_aurora_001`, `gw-est_aurora_001` e `cplant-es
 8. **Relatórios podiam gerar linhas locais sintéticas.** Para Aurora, sessões, energia, financeiro, carregadores e decisões vêm de `/commercial/reports`. Outros escopos são indicados como indisponíveis no protótipo.
 9. **Capacidade FV confundida com soma da potência EV.** Sem capacidade fotovoltaica persistida, o Painel exibe indisponibilidade; os 42 kW dos seis carregadores não são mais rotulados como kWp.
 10. **Estado comercial paralelo da fila no contexto Admin.** Ações locais não utilizadas foram retiradas do contexto. A tela operacional observa a fila da API.
-11. **“Hub Solar Insight” global sem responsabilidade própria.** O atalho/assistente estático foi removido. Energia permanece em Ferramentas de análise; recomendações ficam na Central de alarmes.
+11. **“Hub Solar Insight” global sem responsabilidade própria.** O atalho/assistente estático foi removido. Energia e demanda foi agrupada em ChargeGrid; Ferramentas de análise permanece dedicada a diagnósticos. A Central de alarmes mantém recomendações preditivas e oportunidades, sem repetir as decisões de admissão e telemetria exibidas em Energia e demanda.
 
 ## Matriz final das superfícies
 
@@ -44,11 +44,11 @@ Os aliases históricos `plant_demo_aurora_001`, `gw-est_aurora_001` e `cplant-es
 | Detalhe da planta | projeção da API | planta/carregador | Integrado | Exibe UUID e código público sem inventar geração FV |
 | Lista de dispositivos | snapshot da API | carregador | Integrado | `FAULT`, `OFFLINE`, `CHARGING` e potência usam o mesmo registro |
 | ChargeGrid > Operação | snapshot + energia + decisões | carregador/planta | Integrado | Polling de 2 s; sem runtime paralelo |
+| ChargeGrid > Energia e demanda | snapshot + política/decisão/forecast da API | planta/telemetria | Integrado | Leitura operacional; não aparece mais em Ferramentas de análise |
 | ChargeGrid > Sessões | snapshot da API | sessão | Integrado | UUID interno e `publicCode` preservados |
 | ChargeGrid > Fila | snapshot da API | entrada de fila | Integrado | Somente leitura; processamento pertence ao backend |
 | ChargeGrid > Financeiro | snapshot/pagamentos | pagamento/sessão | Integrado | Stripe sandbox e valores persistidos |
-| Energia e demanda | `/commercial/plants/:plantId/energy` | amostra/política/decisão | Integrado | Estado, fluxo, decisão, impacto e política separados visualmente |
-| Recomendações | `/commercial/insights` | recomendação | Integrado | Regra determinística explicável, sem autoexecução |
+| Recomendações | `/commercial/insights` | recomendação | Integrado | Central mantém riscos preditivos/oportunidades; decisões de admissão e telemetria ficam em Energia e demanda |
 | Central de alarmes | `/commercial/insights` | incidente | Integrado | Falha simulada gera alerta persistido; recuperação precede resolução humana |
 | Central de relatórios | `/commercial/reports` | relatório operacional | Integrado para Aurora | Outros locais não recebem números artificiais |
 | Laboratório | MockGoodWeProvider -> API | carregador/planta | Simulação legítima | Simula somente hardware e telemetria; não cria sessão, pagamento ou receita |

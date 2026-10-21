@@ -526,6 +526,7 @@ export interface IncidentEvent {
 export interface Recommendation {
   id: string;
   establishmentId: string;
+  sourceType?: string;
   incidentId?: string;
   title: string;
   rationale: string;

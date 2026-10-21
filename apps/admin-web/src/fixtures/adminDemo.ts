@@ -171,7 +171,7 @@ export function createInitialState(): AdminState {
     ],
     recommendations: [
       { id: "rec-incident-goodwe-CG-MX-01-offline", establishmentId: "est-mercadox", incidentId: "incident-goodwe-CG-MX-01-offline", title: "Investigar equipamento afetado", rationale: "GoodWe reportou COMMUNICATION_LOST.", evidence: ["Origem GOODWE.", "1 ocorrencia correlacionada.", "Severidade HIGH."], expectedImpact: "Reduzir indisponibilidade e evitar novas sessoes afetadas.", proposedAction: "OPEN_CHARGER", targetId: "CG-MX-01", confidence: "HIGH", deterministic: true, status: "OPEN", createdAt: "2026-08-18T16:30:00-03:00" },
-      { id: "rec-energy-est-fiap", establishmentId: "est-fiap", title: "Monitorar margem antes da proxima admissao", rationale: "Margem reduzida; monitorar antes de ampliar a carga.", evidence: ["76,0 kW de 100,0 kW contratados.", "Limiar critico em 90%."], expectedImpact: "Preservar a operacao dentro da politica energetica.", proposedAction: "OPEN_ENERGY", targetId: "est-fiap", confidence: "MEDIUM", deterministic: true, status: "OPEN", createdAt: observedAt }
+      { id: "rec-energy-est-fiap", establishmentId: "est-fiap", sourceType: "DEMAND_REVIEW", title: "Monitorar margem antes da proxima admissao", rationale: "Margem reduzida; monitorar antes de ampliar a carga.", evidence: ["76,0 kW de 100,0 kW contratados.", "Limiar critico em 90%."], expectedImpact: "Preservar a operacao dentro da politica energetica.", proposedAction: "OPEN_ENERGY", targetId: "est-fiap", confidence: "MEDIUM", deterministic: true, status: "OPEN", createdAt: observedAt }
     ],
     reportJobs: [],
     reportSubscriptions: []

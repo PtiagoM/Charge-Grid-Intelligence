@@ -54,7 +54,10 @@ test('proprietário comercial recebe visão agregada de energia e da camada Char
   await expect(page.getByTestId('dashboard-environment-card')).toContainText('Solar para recarga');
   await expect(page.getByTestId('dashboard-environment-card')).toContainText('4,00 kWh');
   await expect(page.getByTestId('dashboard-environment-card')).toContainText('CO₂ evitado (estimativa)');
-  await expect(page.getByTestId('dashboard-environment-card')).toContainText('Indisponível');
+  await expect(page.getByTestId('dashboard-environment-card')).toContainText('Não calculado');
+  await expect(page.getByTestId('dashboard-environment-card')).toContainText('Sem fator de emissão por período');
+  await expect(page.getByTestId('dashboard-chart-empty')).toContainText('Série temporal não disponível');
+  await expect(page.getByTestId('dashboard-chart-empty')).toContainText('totais do período, não valores por horário');
   await expect(page.getByTestId('dashboard-economy-metrics')).toContainText('0,00 kWh');
   await expect(page.getByTestId('dashboard-economy-metrics')).toContainText('12,00 kWh');
   await expect(page.getByTestId('dashboard-economy-metrics')).toContainText('Economia estimada na conta');

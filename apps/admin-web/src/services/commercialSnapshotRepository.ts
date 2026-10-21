@@ -218,6 +218,7 @@ function insightRecommendation(snapshot: CommercialSnapshot, insight: Commercial
   return {
     id: insight.id,
     establishmentId,
+    sourceType: insight.type,
     incidentId,
     title: ({ SOLAR_OPPORTUNITY: "Aproveitar excedente solar", DEMAND_REVIEW: "Revisar admissão por demanda", RESTORE_TELEMETRY: "Restaurar telemetria", PREDICTED_DEMAND_RISK: "Risco previsto de pico de demanda" } as Record<string, string>)[insight.type] ?? insight.type.replaceAll("_", " "),
     rationale: insight.message,

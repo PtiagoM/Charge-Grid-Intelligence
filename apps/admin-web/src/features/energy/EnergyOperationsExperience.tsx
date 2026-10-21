@@ -118,7 +118,7 @@ function ForecastPanel({ forecast, sync }: {
 function EnergyPortfolio({ establishmentIds, state }: { establishmentIds: Set<string>; state: ReturnType<typeof useAdminState>["state"] }) {
   const visible = state.establishments.filter((item) => establishmentIds.has(item.id));
   return <section className="surface panel operations-page" data-testid="energy-portfolio">
-    <SectionHeader eyebrow="Ferramentas de análise" title="Energia por estabelecimento" subtitle="A operação integrada e os dados energéticos são apresentados somente quando sincronizados pela API ChargeGrid." />
+    <SectionHeader eyebrow="ChargeGrid" title="Energia por estabelecimento" subtitle="A operação integrada e os dados energéticos são apresentados somente quando sincronizados pela API ChargeGrid." />
     <div className="energy-portfolio-grid">{visible.map((establishment) => {
       const snapshot = state.energy.find((item) => item.establishmentId === establishment.id);
       const integrated = snapshot?.source === "SIMULATED" && Boolean(snapshot.sampleId);
@@ -164,7 +164,7 @@ export function EnergyOperationsExperience({ establishmentId }: { establishmentI
   const policyLabel = snapshot?.decision?.policyVersion ?? policy.version ?? "Política não sincronizada";
 
   return <div className="energy-experience" data-testid="mvp-energy-panel">
-    <nav className="enterprise-breadcrumb" aria-label="Navegação estrutural"><span><a href="#/mvp/energy">Ferramentas de análise</a><i>/</i></span><span><strong>{establishment?.name ?? "Energia e demanda"}</strong></span></nav>
+    <nav className="enterprise-breadcrumb" aria-label="Navegação estrutural"><span><a href="#/mvp/energy">ChargeGrid · Energia e demanda</a><i>/</i></span><span><strong>{establishment?.name ?? "Energia e demanda"}</strong></span></nav>
     <header className="energy-page-heading">
       <div><h1>Energia e demanda</h1><p>{establishment?.name ?? "Estabelecimento"} · operação energética</p></div>
       <div className="energy-page-meta">

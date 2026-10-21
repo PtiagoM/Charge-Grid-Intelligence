@@ -35,6 +35,8 @@ describe('admin navigation', () => {
     expect(getAdminDomainForRoute('financial-session')?.id).toBe('chargegrid');
     expect(getAdminDomainForRoute('pricing')?.id).toBe('organization');
     expect(getAdminDomainForRoute('plant-onboarding')?.id).toBe('organization');
+    expect(getAdminDomainForRoute('energy')?.id).toBe('chargegrid');
+    expect(getAdminContextLinks(domain('analysis'), commercialOwner).map((item) => item.route)).not.toContain('energy');
   });
 
   it('mantém usinas, dispositivos e relatórios livres de fluxos comerciais deslocados', () => {
@@ -44,10 +46,11 @@ describe('admin navigation', () => {
     expect(getAdminContextLinks(domain('reports'), commercialOwner).map((item) => item.route)).toEqual(['reports']);
   });
 
-  it('libera a entrada operacional somente à conta proprietária comercial', () => {
-    expect(getAdminContextLinks(domain('chargegrid'), commercialOwner).map((item) => item.route)).toEqual(['operations', 'sessions', 'queue', 'finance']);
-    expect(getAdminContextLinks(domain('chargegrid'), central)).toEqual([]);
-    expect(getAdminContextLinks(domain('chargegrid'), consultant)).toEqual([]);
+  it('restringe operação comercial e apresenta energia conforme a permissão', () => {
+    expect(getAdminContextLinks(domain('chargegrid'), commercialOwner).map((item) => item.route)).toEqual(['operations', 'energy', 'sessions', 'queue', 'finance']);
+    expect(getAdminContextLinks(domain('chargegrid'), central).map((item) => item.route)).toEqual(['energy']);
+    expect(getAdminEntryRoute(domain('chargegrid'), central)).toBe('energy');
+    expect(getAdminContextLinks(domain('chargegrid'), consultant).map((item) => item.route)).toEqual(['energy']);
     expect(getAdminContextLinks(domain('chargegrid'), installer)).toEqual([]);
     expect(getAdminContextLinks(domain('chargegrid'), semsOwner)).toEqual([]);
   });

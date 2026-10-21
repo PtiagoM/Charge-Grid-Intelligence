@@ -283,6 +283,8 @@ A composição visível segue esta matriz:
 
 ### Local definitivo das funções ChargeGrid
 
+Energia e demanda é uma aba dentro da entrada ChargeGrid para leitura operacional da planta; Ferramentas de análise continua dedicada a diagnósticos técnicos. A Central de alarmes conserva recomendações com fluxo humano próprio, como risco preditivo e oportunidade solar, e não lista novamente decisões de admissão ou restauração de telemetria já explicadas em Energia e demanda.
+
 | Função | Superfície responsável |
 | --- | --- |
 | operação local, sessões e fila | entrada dinâmica `ChargeGrid` do proprietário comercial |

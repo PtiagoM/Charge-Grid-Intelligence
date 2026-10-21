@@ -14,6 +14,12 @@
 - Validação: `npm run typecheck`, build Admin/PWA, 79 testes unitários Admin, E02 de persistência/restart, smoke E2E do Service Worker e E2E de API indisponível→stale→recuperada passaram. Não foi repetida a suíte E05/API, pois nenhum código da API/provider foi alterado nesta unidade.
 - Estado anterior preservado para rastreabilidade; o próximo gate vigente está descrito acima.
 
+## Integração final do Admin — atualização 21/10/2026
+
+- Energia e demanda agora está agrupada sob ChargeGrid; Recomendações mantém riscos preditivos/oportunidades independentes, sem repetir decisões de admissão e restauração de telemetria. O Dashboard explica estados sem dados e não desenha séries temporais inexistentes.
+- A validação E2E focal encontrou e corrigiu uma rota de relatórios em branco para um estabelecimento sem escopo Aurora: a página agora mantém o estado sem dados, sem ampliar autorização. Testes Admin focais: 15/15; E2E dashboard/navegação/recomendações: 7/7; lint e typecheck passaram.
+- A suíte agregada `npm test` não concluiu neste Windows/Node 24: o carregamento do Vitest do Admin recebeu `Acesso negado` ao percorrer o diretório-pai e o processo da API terminou em OOM. A suíte focal do Admin e o E2E relevante passaram; não mascarar a falha agregada.
+
 ## Planejamento final da Sprint 4 — atualizado em 04/10/2026
 
 - A ordem canônica está em [`docs/specs/SPRINT4_EXECUTION_ORDER.md`](specs/SPRINT4_EXECUTION_ORDER.md): primeiro concluir o pacote original `sprint4` em M5–M7; depois iniciar `sprint4-finalization`.
@@ -43,6 +49,7 @@ O registro de implementação, evidências e limitações da Sprint fica em [`SP
 
 ### Sprint 4 — consistência transversal do Admin (27/09/2026)
 
+- Refinamento de navegação em 08/10/2026: Energia e demanda passou para ChargeGrid e saiu de Ferramentas de análise. A seção Recomendações preserva apenas riscos preditivos/oportunidades com revisão humana; espelhos de admissão e restauração de telemetria ficam somente em Energia e demanda.
 - A identidade canônica do cenário é `est_aurora_001 -> plant_aurora_001 -> UUIDs dos carregadores`, com `AURORA-01` a `AURORA-06` reservados à apresentação, código e QR.
 - Lista de usinas, Lista de dispositivos, ChargeGrid, Sessões, Energia e demanda, Recomendações, Central de alarmes e Central de relatórios projetam os mesmos registros comerciais da API. Os aliases históricos Aurora deixaram de orientar a jornada ativa.
 - Política/decisão de demanda e recomendações explicáveis pertencem ao backend. O Admin apenas apresenta os dados e registra revisão humana; nenhuma recomendação executa comando oculto.

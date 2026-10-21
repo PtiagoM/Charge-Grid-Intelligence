@@ -54,13 +54,14 @@ export const ADMIN_DOMAINS: readonly AdminDomain[] = [
   },
   {
     id: "chargegrid", label: "ChargeGrid", icon: "badge-dollar-sign",
-    entryRoute: { GOODWE: "operations", ESTABELECIMENTO: "operations" },
+    entryRoute: { GOODWE: "energy", ESTABELECIMENTO: "operations" },
     description: {
-      GOODWE: "Operação local indisponível para responsabilidades de carteira.",
-      ESTABELECIMENTO: "Operação, sessões, fila e resultado financeiro das plantas comerciais próprias."
+      GOODWE: "Energia e demanda das plantas autorizadas; operação comercial local indisponível para responsabilidades de carteira.",
+      ESTABELECIMENTO: "Operação, energia, sessões, fila e resultado financeiro das plantas comerciais próprias."
     },
     links: [
       { route: "operations", label: "Operação", capability: "operations:monitor" },
+      { route: "energy", label: "Energia e demanda", capability: "energy:monitor" },
       { route: "sessions", label: "Sessões", capability: "operations:monitor" },
       { route: "queue", label: "Fila", capability: "queue:manage" },
       { route: "finance", label: "Resumo financeiro", capability: "finance:read" }
@@ -100,7 +101,6 @@ export const ADMIN_DOMAINS: readonly AdminDomain[] = [
       { route: "analysis-iv", label: "Diagnóstico IV", capability: "analysis:technical" },
       { route: "analysis-comparison", label: "Comparação de dados", capability: "analysis:technical" },
       { route: "analysis-battery", label: "Consistência da bateria", capability: "analysis:technical" },
-      { route: "energy", label: "Energia e demanda", capability: "energy:monitor" },
       { route: "expansion", label: "Oportunidades", capability: "intelligence:portfolio" }
     ]
   },

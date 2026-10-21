@@ -49,8 +49,17 @@ function metricValue(metric: CommercialDashboardMetric<number> | undefined) {
 }
 
 function metricLabel(metric: CommercialDashboardMetric<number> | undefined, format: (value: number) => string) {
-  if (!metric) return "Carregando";
-  if (metric.quality === "UNAVAILABLE") return "Indisponível";
+  if (!metric) return null;
+  if (metric.quality === "UNAVAILABLE") {
+    switch (metric.unavailableReason) {
+      case "NO_ENERGY_SAMPLES_IN_PERIOD": return "Sem amostras no período";
+      case "CURRENT_TELEMETRY_UNAVAILABLE": return "Sem leitura atual";
+      case "PLANT_NOT_CONFIGURED": return "Planta não configurada";
+      case "DEMAND_POLICY_NOT_CONFIGURED": return "Política não configurada";
+      case "NO_PUBLISHED_CHARGERS": return "Sem carregadores publicados";
+      default: return "Indisponível";
+    }
+  }
   return `${format(metric.value)}${metric.quality === "STALE" ? " · desatualizado" : ""}`;
 }
 
@@ -125,6 +134,7 @@ function Overview({ requestedEstablishmentId }: { requestedEstablishmentId?: str
   const chargerCount = metricValue(dashboardSummary?.counts.chargersAtGeneration);
   const availableChargerCount = metricValue(dashboardSummary?.counts.availableChargersAtGeneration);
   const availabilityPercent = chargerCount !== null && chargerCount > 0 && availableChargerCount !== null ? availableChargerCount / chargerCount * 100 : null;
+  const dashboardMetricLabel = (metric: CommercialDashboardMetric<number> | undefined, format: (value: number) => string) => metricLabel(metric, format) ?? (dashboardStatus === "LOADING" ? "Carregando" : "Indisponível");
   const periodLabels: Record<DashboardPeriod, string> = { day: "24 horas", week: "7 dias", month: "30 dias" };
   const stationStates = [
     ["Em operação", locations.filter((location) => chargers.some((charger) => charger.locationId === location.id && charger.status !== "offline")).length],
@@ -135,23 +145,32 @@ function Overview({ requestedEstablishmentId }: { requestedEstablishmentId?: str
   ] as const;
   const chartSeriesByMode: Record<DashboardChartMode, DashboardChartSeries[]> = {
     energy: [
-      { label: "Energia de recarga", color: "#ff323a", displayValue: metricLabel(dashboardSummary?.energy.evWh, (value) => `${number(value / 1000)} kWh`) },
-      { label: "Solar para EV", color: "#f3bd46", displayValue: metricLabel(dashboardSummary?.energy.solarToEvWh, (value) => `${number(value / 1000)} kWh`) },
-      { label: "Importação da rede", color: "#7b858e", displayValue: metricLabel(dashboardSummary?.energy.gridImportWh, (value) => `${number(value / 1000)} kWh`) }
+      { label: "Energia de recarga", color: "#ff323a", displayValue: dashboardMetricLabel(dashboardSummary?.energy.evWh, (value) => `${number(value / 1000)} kWh`) },
+      { label: "Solar para EV", color: "#f3bd46", displayValue: dashboardMetricLabel(dashboardSummary?.energy.solarToEvWh, (value) => `${number(value / 1000)} kWh`) },
+      { label: "Importação da rede", color: "#7b858e", displayValue: dashboardMetricLabel(dashboardSummary?.energy.gridImportWh, (value) => `${number(value / 1000)} kWh`) }
     ],
-    revenue: [{ label: "Receita líquida capturada", color: "#ff323a", displayValue: canReadFinance ? metricLabel(dashboardSummary?.financial.netCapturedCents, (value) => money(value / 100)) : "Sem permissão financeira" }],
+    revenue: [{ label: "Receita líquida capturada", color: "#ff323a", displayValue: canReadFinance ? dashboardMetricLabel(dashboardSummary?.financial.netCapturedCents, (value) => money(value / 100)) : "Sem permissão financeira" }],
     demand: [
-      { label: "Importação atual", color: "#ff323a", displayValue: metricLabel(dashboardSummary?.demand.currentGridImportKw, (value) => `${number(value)} kW`) },
-      { label: "Pico do período", color: "#f3bd46", displayValue: metricLabel(dashboardSummary?.demand.peakGridImportKw, (value) => `${number(value)} kW`) },
-      { label: "Limite da política", color: "#7b858e", displayValue: metricLabel(dashboardSummary?.demand.limitKw, (value) => `${number(value)} kW`) }
+      { label: "Importação atual", color: "#ff323a", displayValue: dashboardMetricLabel(dashboardSummary?.demand.currentGridImportKw, (value) => `${number(value)} kW`) },
+      { label: "Pico do período", color: "#f3bd46", displayValue: dashboardMetricLabel(dashboardSummary?.demand.peakGridImportKw, (value) => `${number(value)} kW`) },
+      { label: "Limite da política", color: "#7b858e", displayValue: dashboardMetricLabel(dashboardSummary?.demand.limitKw, (value) => `${number(value)} kW`) }
     ],
     utilization: [
-      { label: "Utilização no período", color: "#ff323a", displayValue: metricLabel(dashboardSummary?.utilization.ratio, (value) => `${number(value * 100)}%`) },
+      { label: "Utilização no período", color: "#ff323a", displayValue: dashboardMetricLabel(dashboardSummary?.utilization.ratio, (value) => `${number(value * 100)}%`) },
       { label: "Disponíveis", color: "#7b858e", displayValue: chargerCount === null || availableChargerCount === null ? "Indisponível" : `${availableChargerCount}/${chargerCount}` }
     ]
   };
   const chartSeries = chartSeriesByMode[chartMode];
   const showCommercialChart = canReadCommercial;
+  const chartEmptyState = !canReadCommercial
+    ? { title: "Resumo ChargeGrid indisponível", description: "Este perfil ou escopo não tem acesso aos indicadores comerciais." }
+    : dashboardStatus === "LOADING"
+      ? { title: "Carregando indicadores", description: "Consultando o resumo do período na API ChargeGrid." }
+      : dashboardStatus === "UNAVAILABLE"
+        ? { title: "Resumo indisponível", description: dashboardError ?? "Não foi possível consultar os dados deste estabelecimento." }
+        : dashboardStatus === "STALE"
+          ? { title: "Atualização indisponível", description: "A última leitura foi mantida. A API não fornece pontos históricos para desenhar uma curva." }
+          : { title: "Série temporal não disponível", description: "A API fornece totais do período, não valores por horário. Os agregados medidos estão na legenda acima." };
   const dashboardEstablishmentName = state.establishments.find((item) => item.id === dashboardEstablishmentId)?.name ?? "Estabelecimento ChargeGrid";
   const dashboardStatusLabel = dashboardStatus === "LOADING" ? "Carregando dados" : dashboardStatus === "STALE" ? "Última leitura · atualização indisponível" : dashboardStatus === "UNAVAILABLE" ? dashboardError ?? "Dados indisponíveis para este escopo" : "Atualização automática";
 
@@ -169,7 +188,7 @@ function Overview({ requestedEstablishmentId }: { requestedEstablishmentId?: str
       <div className="sems-operator-column">
         <article className="sems-dashboard-card sems-power-card"><header><div className="sems-card-heading"><img src={assets.dashboard.power} alt="" /><div><h2>Potência</h2><span>Tempo real</span></div></div></header><div className="sems-power-gauge" style={{ "--gauge-value": `${Math.min(100, Math.round((currentPower / Math.max(totalPower ?? currentPower, 1)) * 100)) * 1.8}deg` } as CSSProperties}><div><strong>{solarPower === null && gridPower === null ? "—" : number(currentPower)}</strong><span>kW</span></div></div><footer><span><i className="is-red" />Solar {solarPower === null ? "Sem telemetria" : `${number(solarPower)} kW`}</span><span><i />Rede {gridPower === null ? "Sem telemetria" : `${number(gridPower)} kW`}</span></footer></article>
         <article className="sems-dashboard-card sems-alarm-card"><header><div className="sems-card-heading"><img src={assets.dashboard.alarm} alt="" /><h2>Alarmes</h2></div><a href="#/mvp/incidents">Detalhes ›</a></header><div className="sems-alarm-body"><div className="sems-alarm-donut" style={{ "--alarm-share": `${Math.min(100, alarmTotal * 12)}%` } as CSSProperties}><strong>{alarmTotal}</strong><span>Total</span></div><ul><li><i className="is-critical" /><span>Falha</span><strong>{unavailable}</strong></li><li><i className="is-warning" /><span>Aviso</span><strong>{openIncidents}</strong></li></ul></div></article>
-        <article className="sems-dashboard-card sems-environment-card" data-testid="dashboard-environment-card"><header><h2>Contribuições ambientais</h2><span>{periodLabels[chartPeriod]} · energia medida; impactos indisponíveis sem fatores versionados</span></header><div><p><img src={assets.dashboard.generatedEnergy} alt="" /><span>Solar para recarga</span><strong>{metricLabel(dashboardSummary?.energy.solarToEvWh, (value) => `${number(value / 1000)} kWh`)}</strong></p><p><img src={assets.dashboard.co2} alt="" /><span>CO₂ evitado (estimativa)</span><strong title="Fator temporal do MCTI ainda não está incorporado">Indisponível</strong></p><p><img src={assets.dashboard.tree} alt="" /><span>Equivalência ambiental</span><strong title="Não há metodologia versionada para esta equivalência">Não calculada</strong></p></div></article>
+        <article className="sems-dashboard-card sems-environment-card" data-testid="dashboard-environment-card"><header><h2>Contribuições ambientais</h2><span>{periodLabels[chartPeriod]} · energia medida; impactos indisponíveis sem fatores versionados</span></header><div><p><img src={assets.dashboard.generatedEnergy} alt="" /><span>Solar para recarga</span><strong>{dashboardMetricLabel(dashboardSummary?.energy.solarToEvWh, (value) => `${number(value / 1000)} kWh`)}</strong></p><p><img src={assets.dashboard.co2} alt="" /><span>CO₂ evitado (estimativa)</span><strong>Não calculado</strong><small>Sem fator de emissão por período</small></p><p><img src={assets.dashboard.tree} alt="" /><span>Equivalência ambiental</span><strong>Não calculada</strong><small>Sem método versionado</small></p></div></article>
       </div>
       <div className="sems-operator-main">
         <article className="sems-dashboard-card sems-economy-card">
@@ -180,16 +199,16 @@ function Overview({ requestedEstablishmentId }: { requestedEstablishmentId?: str
             </div>
           </header>
           <div className="sems-economy-metrics" data-testid="dashboard-economy-metrics">
-            <p><img src={assets.dashboard.generatedEnergy} alt="" /><span>Geração fotovoltaica no período</span><strong title="A API ainda não expõe energia fotovoltaica total no período">Indisponível</strong></p>
-            <p><img src={assets.dashboard.gridFeedIn} alt="" /><span>Energia exportada</span><strong>{metricLabel(dashboardSummary?.energy.gridExportWh, (value) => `${number(value / 1000)} kWh`)}</strong></p>
-            <p><img src={assets.dashboard.chargingEnergy} alt="" /><span>Energia entregue a EV</span><strong>{metricLabel(dashboardSummary?.energy.evWh, (value) => `${number(value / 1000)} kWh`)}</strong></p>
-            <p><img src={assets.dashboard.generationIncome} alt="" /><span>Economia estimada na conta</span><strong title="Sem tarifa de importação evitada documentada">Indisponível</strong></p>
-            <p><img src={assets.dashboard.gridIncome} alt="" /><span>Receita por exportação</span><strong title="Sem tarifa de injeção documentada">Indisponível</strong></p>
-            <p><img src={assets.dashboard.dischargedEnergy} alt="" /><span>Descarga da bateria</span><strong title="Bateria/SOC não está instrumentada no escopo atual">Indisponível</strong></p>
+            <p><img src={assets.dashboard.generatedEnergy} alt="" /><span>Geração fotovoltaica no período</span><strong>Indisponível</strong><small>API não agrega a geração total</small></p>
+            <p><img src={assets.dashboard.gridFeedIn} alt="" /><span>Energia exportada</span><strong>{dashboardMetricLabel(dashboardSummary?.energy.gridExportWh, (value) => `${number(value / 1000)} kWh`)}</strong></p>
+            <p><img src={assets.dashboard.chargingEnergy} alt="" /><span>Energia entregue a EV</span><strong>{dashboardMetricLabel(dashboardSummary?.energy.evWh, (value) => `${number(value / 1000)} kWh`)}</strong></p>
+            <p><img src={assets.dashboard.generationIncome} alt="" /><span>Economia estimada na conta</span><strong>Indisponível</strong><small>Sem tarifa evitada e baseline de fatura</small></p>
+            <p><img src={assets.dashboard.gridIncome} alt="" /><span>Receita por exportação</span><strong>Indisponível</strong><small>Sem tarifa de injeção</small></p>
+            <p><img src={assets.dashboard.dischargedEnergy} alt="" /><span>Descarga da bateria</span><strong>Indisponível</strong><small>Bateria sem medição neste protótipo</small></p>
           </div>
-          {canReadCommercial ? <aside className="sems-chargegrid-summary" data-testid="dashboard-chargegrid-summary"><div><span>{dashboardStatusLabel}</span><strong>{dashboardEstablishmentName}</strong></div><dl><div><dt>{canReadFinance ? "Receita líquida capturada" : "Sessões"}</dt><dd>{canReadFinance ? metricLabel(dashboardSummary?.financial.netCapturedCents, (value) => money(value / 100)) : metricLabel(dashboardSummary?.counts.sessionsCreatedInPeriod, (value) => String(value))}</dd></div><div><dt>Sessões no período</dt><dd>{metricLabel(dashboardSummary?.counts.sessionsCreatedInPeriod, (value) => String(value))}</dd></div><div><dt>Disponibilidade</dt><dd>{availabilityPercent === null ? "Indisponível" : `${number(availabilityPercent)}%`}</dd></div><div><dt>Carregadores publicados</dt><dd>{chargerCount === null ? "Indisponível" : String(chargerCount)}</dd></div></dl></aside> : null}
+          {canReadCommercial ? <aside className="sems-chargegrid-summary" data-testid="dashboard-chargegrid-summary"><div><span>{dashboardStatusLabel}</span><strong>{dashboardEstablishmentName}</strong></div><dl><div><dt>{canReadFinance ? "Receita líquida capturada" : "Sessões"}</dt><dd>{canReadFinance ? dashboardMetricLabel(dashboardSummary?.financial.netCapturedCents, (value) => money(value / 100)) : dashboardMetricLabel(dashboardSummary?.counts.sessionsCreatedInPeriod, (value) => String(value))}</dd></div><div><dt>Sessões no período</dt><dd>{dashboardMetricLabel(dashboardSummary?.counts.sessionsCreatedInPeriod, (value) => String(value))}</dd></div><div><dt>Disponibilidade</dt><dd>{availabilityPercent === null ? "Indisponível" : `${number(availabilityPercent)}%`}</dd></div><div><dt>Carregadores publicados</dt><dd>{chargerCount === null ? dashboardMetricLabel(dashboardSummary?.counts.chargersAtGeneration, String) : String(chargerCount)}</dd></div></dl></aside> : null}
         </article>
-        <article className="sems-dashboard-card sems-monitor-card"><header><div className="sems-card-heading"><img src={assets.dashboard.curve} alt="" /><div><h2>Monitoramento</h2><span>{dashboardEstablishmentName} · {periodLabels[chartPeriod]} · {dashboardStatusLabel}</span></div></div><div>{(["day", "week", "month"] as DashboardPeriod[]).map((period) => <button className={chartPeriod === period ? "is-active" : ""} type="button" key={period} onClick={() => setChartPeriod(period)}>{period === "day" ? "24h" : period === "week" ? "7 dias" : "30 dias"}</button>)}</div></header>{showCommercialChart ? <nav className="sems-chart-mode-tabs" aria-label="Indicador do monitoramento">{(["energy", "revenue", "demand", "utilization"] as DashboardChartMode[]).map((mode) => <button className={chartMode === mode ? "is-active" : ""} key={mode} type="button" onClick={() => setChartMode(mode)}>{mode === "energy" ? "Monitoramento de energia" : mode === "revenue" ? "Receita ChargeGrid" : mode === "demand" ? "Demanda ChargeGrid" : "Utilização ChargeGrid"}</button>)}</nav> : null}<div className="sems-monitor-legend" data-testid="dashboard-summary-metrics">{chartSeries.map((series) => <span key={series.label}><i style={{ background: series.color }} />{series.label}<strong>{series.displayValue}</strong></span>)}</div><div className="sems-monitor-chart" aria-label="Resumo de monitoramento agregado"><p className="sems-monitor-empty" data-testid="dashboard-chart-empty">{dashboardSummary ? "A série temporal não está disponível; os valores medidos/derivados deste período estão na legenda." : dashboardStatus === "LOADING" ? "Carregando dados do ChargeGrid…" : dashboardError ?? "O resumo não está disponível para este escopo."}</p></div></article>
+        <article className="sems-dashboard-card sems-monitor-card"><header><div className="sems-card-heading"><img src={assets.dashboard.curve} alt="" /><div><h2>Monitoramento</h2><span>{dashboardEstablishmentName} · {periodLabels[chartPeriod]} · {dashboardStatusLabel}</span></div></div><div>{(["day", "week", "month"] as DashboardPeriod[]).map((period) => <button className={chartPeriod === period ? "is-active" : ""} type="button" key={period} onClick={() => setChartPeriod(period)}>{period === "day" ? "24h" : period === "week" ? "7 dias" : "30 dias"}</button>)}</div></header>{showCommercialChart ? <nav className="sems-chart-mode-tabs" aria-label="Indicador do monitoramento">{(["energy", "revenue", "demand", "utilization"] as DashboardChartMode[]).map((mode) => <button className={chartMode === mode ? "is-active" : ""} key={mode} type="button" onClick={() => setChartMode(mode)}>{mode === "energy" ? "Monitoramento de energia" : mode === "revenue" ? "Receita ChargeGrid" : mode === "demand" ? "Demanda ChargeGrid" : "Utilização ChargeGrid"}</button>)}</nav> : null}{dashboardSummary && showCommercialChart ? <div className="sems-monitor-legend" data-testid="dashboard-summary-metrics">{chartSeries.map((series) => <span key={series.label}><i style={{ background: series.color }} />{series.label}<strong>{series.displayValue}</strong></span>)}</div> : null}<div className="sems-monitor-chart" aria-label="Resumo de monitoramento agregado"><div className="sems-monitor-empty" data-testid="dashboard-chart-empty" role="status" aria-live="polite"><strong>{chartEmptyState.title}</strong><span>{chartEmptyState.description}</span></div></div></article>
       </div>
     </section>
   </>;
