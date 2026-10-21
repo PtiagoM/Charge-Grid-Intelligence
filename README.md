@@ -389,7 +389,3 @@ Na disciplina, a implementação evidencia integração de energia e operação 
 - **integração de sistemas:** Maps, PWA, Stripe, API, banco, Admin e simulador GoodWe trocam dados por contratos explícitos;
 - **coleta e visualização:** telemetria e eventos persistidos aparecem automaticamente nas interfaces do motorista e do estabelecimento;
 - **decisão operacional:** disponibilidade, falha, ocupação e fila alteram o comportamento comercial usando o mesmo estado compartilhado.
-
-## Vídeo técnico da entrega final
-
-O [roteiro completo de 4min50s](docs/delivery/SPRINT4_VIDEO_SCRIPT.md) contém preparação, sequência de cliques, falas, evidências esperadas e conteúdo dos quatro slides. Alterna a jornada do motorista e a do gestor, com foco no módulo energético, na previsão e na decisão da Sprint 4. Os slides e a gravação serão produzidos pela equipe. O vídeo histórico da Sprint 3 não substitui essa entrega.
