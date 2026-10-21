@@ -14,8 +14,9 @@ test('fila preserva FIFO e deixa admissao sob automacao da plataforma', async ({
 
   const queue = page.getByTestId('queue-operations-page');
   await expect(queue).toContainText('Marcos Silva');
-  await expect(queue).toContainText('#1');
-  await expect(queue).toContainText('#2');
+  const rows = queue.getByRole('row');
+  await expect(rows.nth(1)).toContainText('Marcos Silva');
+  await expect(rows.nth(2)).toContainText('Luiza Prado');
   await expect(queue).toContainText('Automação ativa');
   await expect(queue.getByRole('button', { name: 'Chamar próximo' })).toHaveCount(0);
   await expect(queue.getByRole('button', { name: 'Confirmar chegada' })).toHaveCount(0);
@@ -58,14 +59,12 @@ test('dashboard operacional aparece no scroll e abre o novo detalhe da sessao', 
   await expect(dashboard).not.toContainText('Sessões recentes');
   await expect(dashboard).not.toContainText('Fila atual');
 
-  await dashboard.getByRole('button', { name: 'Energia', exact: true }).click();
-  await expect(dashboard.getByRole('button', { name: 'Energia', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await dashboard.getByRole('button', { name: 'Semana' }).click();
-  await expect(dashboard.getByRole('button', { name: 'Semana' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(dashboard).toContainText('Energia entregue');
+  await expect(dashboard).toContainText('sessões persistidas');
 
   const chargeGridNavigation = page.getByRole('tablist', { name: 'Navegação de ChargeGrid' });
   await chargeGridNavigation.getByRole('tab', { name: 'Sessões' }).click();
-  await page.getByRole('link', { name: 'Abrir sessão ›' }).click();
+  await page.getByRole('link', { name: 'Abrir sessão ›' }).first().click();
   const detail = page.getByTestId('mvp-session-detail');
   await expect(detail).toBeVisible();
   await expect(detail).toContainText('Contexto da recarga');

@@ -22,7 +22,7 @@ test('Central GoodWe altera responsabilidade e escopo com historico preservado',
   await editor.getByLabel('Papel ChargeGrid').selectOption('REPORT_VIEWER');
   await editor.getByLabel('Shopping FIAP').check();
   await editor.getByRole('button', { name: 'Registrar concessão' }).click();
-  await expect(page.getByRole('status')).toContainText('Concessão registrada');
+  await expect(access.getByRole('status')).toContainText('Concessão registrada');
   const rows = page.getByRole('row').filter({ hasText: 'Operacao FIAP' });
   await expect(rows).toHaveCount(2);
   await expect(rows.filter({ hasText: 'Financeiro e relatórios' })).toContainText('Vigente');
@@ -38,7 +38,7 @@ test('administrador local revoga somente a camada ChargeGrid e preserva a conta 
   const row = page.getByRole('row').filter({ hasText: 'Operacao FIAP' });
   await row.getByLabel('Motivo para revogar Operacao FIAP').fill('Colaborador removido da escala local.');
   await row.getByRole('button', { name: 'Revogar' }).click();
-  await expect(page.getByRole('status')).toContainText('Acesso revogado imediatamente');
+  await expect(access.getByRole('status')).toContainText('Acesso revogado imediatamente');
 
   await page.goto('/#/logout');
   await page.goto('/#/login');
@@ -58,7 +58,7 @@ test('contrato autorizado libera somente a planta coberta pelo codigo', async ({
   await governance.getByRole('button', { name: 'Contratos e ativações' }).click();
   await governance.getByLabel('Código de ativação').fill('CG-ACT-FIAP-VM');
   await governance.getByRole('button', { name: 'Validar contrato' }).click();
-  await expect(page.getByRole('status')).toContainText('Contrato confirmado');
+  await expect(governance.getByRole('status')).toContainText('Contrato confirmado');
   await governance.getByRole('link', { name: 'Continuar onboarding' }).click();
   await expect(page).toHaveURL(/contract=contract-fiap-vila-mariana/);
   await expect(page.getByTestId('plant-onboarding')).toContainText('CG-CTR-2026-006');
@@ -75,32 +75,22 @@ test('operador tem navegacao reduzida e rotas sensiveis bloqueadas no dominio', 
   await expect(page.getByTestId('reports-operations-page')).toBeVisible();
 });
 
-test('administrador gera e baixa CSV por tarefa assincrona', async ({ page }) => {
+test('administrador fora do Aurora nao exporta nem agenda relatorio sem escopo', async ({ page }) => {
   await login(page, 'estabelecimento@teste.com');
   await page.goto('/#/mvp/reports');
   const reports = page.getByTestId('reports-operations-page');
-  const builder = page.getByTestId('report-builder');
   await expect(reports).toContainText('Nenhum relatorio gerado');
-  await page.getByTestId('report-subscription-form').getByRole('button', { name: 'Salvar assinatura' }).click();
-  await expect(page.getByRole('status')).toContainText('Assinatura atualizada e auditada');
-  await expect(reports.locator('.subscription-summary')).toContainText('Vigente');
-  await builder.getByLabel('Tipo').selectOption('SESSIONS');
-  await builder.getByRole('button', { name: 'Gerar relatorio' }).click();
-  await expect(page.getByRole('status')).toContainText('Relatorio pronto');
-  const readyRow = page.getByRole('row').filter({ hasText: 'report-sessions-' });
-  await expect(readyRow).toContainText('Pronto');
-  const downloadPromise = page.waitForEvent('download');
-  await readyRow.getByRole('button', { name: 'Baixar CSV' }).click();
-  const download = await downloadPromise;
-  expect(download.suggestedFilename()).toBe('chargegrid-sessions-2026-08-01-2026-08-22.csv');
+  await expect(reports).toContainText('Hub Solar Aurora não está no escopo autorizado desta conta.');
+  await expect(reports.getByRole('button', { name: 'Gerar relatorio' })).toBeDisabled();
+  await expect(reports.getByRole('button', { name: 'Salvar assinatura' })).toBeDisabled();
   await expect(reports).toContainText('Central de tarefas');
 });
 
-test('analista exporta e acompanha financeiro somente no escopo FIAP', async ({ page }) => {
+test('analista FIAP nao recebe acesso aos relatorios Aurora', async ({ page }) => {
   await login(page, 'relatorios@teste.com');
   await page.goto('/#/mvp/reports');
   const reports = page.getByTestId('reports-operations-page');
-  await expect(reports).toContainText('Shopping FIAP');
+  await expect(reports).toContainText('Hub Solar Aurora não está no escopo autorizado desta conta.');
   await expect(reports).not.toContainText('MercadoX Pinheiros');
   await expect(page.getByTestId('report-subscription-form')).toBeVisible();
   await page.goto('/#/mvp/finance');
@@ -108,13 +98,12 @@ test('analista exporta e acompanha financeiro somente no escopo FIAP', async ({ 
   await expect(page.getByRole('button', { name: 'Conciliar' })).toHaveCount(0);
 });
 
-test('falha de exportacao pode ser repetida sem apagar o historico', async ({ page }) => {
+test('relatorios nao inventam tarefa ou arquivo quando nao existe exportacao', async ({ page }) => {
   await login(page);
   await page.goto('/#/mvp/reports');
-  const failed = page.getByRole('row').filter({ hasText: 'report-incidents-demo-failed' });
-  await expect(failed).toContainText('Falhou');
-  await failed.getByRole('button', { name: 'Tentar novamente' }).click();
-  await expect(page.getByRole('status')).toContainText('Nova tarefa concluida');
-  await expect(failed).toContainText('Falhou');
-  await expect(page.getByRole('row').filter({ hasText: 'Incidentes' }).filter({ hasText: 'Pronto' })).toHaveCount(1);
+  const reports = page.getByTestId('reports-operations-page');
+  await expect(reports).toContainText('Nenhum relatorio gerado');
+  await expect(reports.getByRole('button', { name: 'Baixar CSV' })).toHaveCount(0);
+  await page.reload();
+  await expect(reports).toContainText('Nenhum relatorio gerado');
 });

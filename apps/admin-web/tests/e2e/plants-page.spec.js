@@ -33,7 +33,7 @@ test('consultor pesquisa e combina filtros dentro da carteira na lista SEMS+', a
   await page.getByRole('button', { name: 'Usina residencial com baterias' }).click();
   await page.getByRole('button', { name: 'Confirmar' }).click();
   await expect(page.getByTestId('plant-card-gw-plant-fiap-vila-mariana')).toBeVisible();
-  await expect(page.getByTestId('plant-card-gw-plant-mercadox-pinheiros')).toBeVisible();
+  await expect(page.getByTestId('plant-card-gw-plant-mercadox-pinheiros')).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Ativar planta comercial' })).toHaveCount(0);
 
   await page.getByRole('link', { name: 'Gestão da organização' }).click();
