@@ -1,4 +1,6 @@
-import { readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { expirePlantForecast, forecastFeatures, generatePlantForecast, loadForecastModel, predictDeltaPeak, type QuarterHour } from "./forecast.js";
 
@@ -20,6 +22,24 @@ function minuteHistory(origin: Date) {
 }
 
 describe("CG-AI-03C Node inference parity", () => {
+  it("accepts LF and CRLF checkouts while rejecting modified model contents", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "chargegrid-model-"));
+    const path = join(directory, "model.json");
+    const artifact = (await readFile(new URL("../../../../ml/forecasting/data/forecast_cg_ai_03c_model.json", import.meta.url), "utf8")).replace(/\r\n/g, "\n");
+    try {
+      for (const contents of [artifact, artifact.replace(/\n/g, "\r\n")]) {
+        await writeFile(path, contents);
+        expect(await loadForecastModel(path)).not.toBeNull();
+      }
+      const modified = JSON.parse(artifact);
+      modified.model.coefficients[0] += 1;
+      await writeFile(path, JSON.stringify(modified, null, 2) + "\n");
+      expect(await loadForecastModel(path)).toBeNull();
+    } finally {
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+
   it("matches the Python feature vector and Ridge Delta golden prediction", async () => {
     const vector = await golden();
     const origin = new Date(vector.originAt);

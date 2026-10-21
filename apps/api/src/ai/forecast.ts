@@ -7,7 +7,7 @@ const MODEL_URL = new URL("../../../../ml/forecasting/data/forecast_cg_ai_03c_mo
 const MODEL_PATH = fileURLToPath(MODEL_URL);
 export const FORECAST_MODEL_VERSION = "cg-ai-03c-ridge_delta-1h-v1";
 const MODEL_VERSION = FORECAST_MODEL_VERSION;
-const SHA256 = "fd0bec7a63ec7f1b06c636cc85450256960c7cb4bcabe142bdd65010548f7993";
+const SHA256 = "22279934cab7f4ca9cd245123d782e1ad7c73982e857c80773a0fc5f3354faca";
 const STEP_MS = 15 * 60_000;
 const MAX_AGE_MS = 2 * STEP_MS;
 const HORIZON_MINUTES = 60;
@@ -38,7 +38,9 @@ function finiteArray(values: unknown, length: number): values is number[] {
 }
 
 function validateModel(value: unknown, bytes: Buffer): ForecastModel | null {
-  if (createHash("sha256").update(bytes).digest("hex") !== SHA256 || !value || typeof value !== "object") return null;
+  // Git checkouts may convert LF to CRLF; pin the artifact with canonical LF bytes.
+  const canonical = bytes.toString("utf8").replace(/\r\n/g, "\n");
+  if (createHash("sha256").update(canonical).digest("hex") !== SHA256 || !value || typeof value !== "object") return null;
   const artifact = value as Record<string, unknown>;
   if (!artifact.model || typeof artifact.model !== "object" || !artifact.testMetrics || typeof artifact.testMetrics !== "object") return null;
   const model = artifact.model as Record<string, unknown>;

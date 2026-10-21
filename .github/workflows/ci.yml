@@ -74,8 +74,8 @@ jobs:
           npm run build:shared
           npm run test:e2e
 
-      - name: Integrated Sprint 3 journey
-        run: npm run test:e2e:demo
+      - name: Integrated Sprint 4 journeys
+        run: npm run test:e2e:sprint4
 
       - name: Upload Playwright report
         if: failure()
