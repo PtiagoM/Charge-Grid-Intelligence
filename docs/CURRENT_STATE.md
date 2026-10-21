@@ -1,5 +1,16 @@
 # ChargeGrid Intelligence — fonte única de verdade
 
+## Entrega acadêmica final — 21/10/2026
+
+Esta seção prevalece sobre os estados históricos abaixo. O responsável autorizou organizar a `main`, publicar e integrar a versão final por PR; a integração é acompanhada no [PR #18](https://github.com/PtiagoM/Charge-Grid-Intelligence/pull/18), de `feature/sprint4-finalization` para `main`, condicionada aos checks obrigatórios.
+
+- O [README final](../README.md) apresenta setup no início, contexto GoodWe, público/problema, solução e jornadas, arquitetura entre camadas, energia, IA, síntese das sprints, resultados e limites. Documentos antigos são referências históricas, não promessas adicionais de implementação.
+- O [roteiro técnico](delivery/SPRINT4_VIDEO_SCRIPT.md) planeja 4min50s, com dez segundos de margem, falas, ações, evidências e conteúdo de quatro slides. O foco é energia/previsão/decisão da Sprint 4, reutilizando uma jornada completa. Slides e gravação final permanecem a cargo da equipe; o vídeo da Sprint 3 está rotulado como histórico.
+- A investigação da CI do PR encontrou hash do modelo dependente de CRLF. O carregamento agora valida o mesmo artefato em LF canônico, preservando hash/schema; teste cobre LF, CRLF e conteúdo alterado. O pipeline substitui o comando removido `test:e2e:demo` pelo harness integrado atual `test:e2e:sprint4`, com banco/portas isolados. O teste histórico Sprint 3 permanece no repositório, fora do gate atual.
+- Validação desta revisão: lint, typecheck e builds aprovados; shared 5/5, Admin 85/85, forecast 5/5 e jornadas E2E Sprint 4 8/8. A primeira execução agregada da API teve EACCES em portas e OOM no Windows/Node 24; com um worker e portas liberadas, passou 52/53 com timeout no catálogo público. A repetição isolada de `app.test.ts` passou 8/8, cobrindo o teste restante. A mutação temporária da condição de integridade foi rejeitada pelos testes e restaurada antes do commit. Esses resultados não são apresentados como execução agregada local aprovada; o gate completo de CI e a regressão ampla ficam nos checks do PR.
+- O modelo Ridge Delta é inferido no runtime, mas treinado/avaliado em `SIMULATED_COMPOSITE`. Cenários do laboratório preparam histórico simulado e atualizam o forecast imediatamente; sem esse aquecimento explícito, são necessários cerca de 24 h de histórico contíguo. Previsão crítica bloqueia novas admissões; não comanda parada de sessão ativa.
+- Escopo final preservado: protótipo acadêmico local integrado, não operação produtiva homologada. GoodWe/HCA G2 físicos, bateria, Stripe live e indicadores de economia/CO₂ sem método continuam fora do resultado demonstrado.
+
 ## Execução Sprint 4 — atualização 08/10/2026
 
 - CG-STAB-01 concluída em `feature/sprint4-finalization`: harness E2E encerra a API de teste graciosamente por IPC antes de reiniciar, corrige seletores desatualizados e usa o campo contratual `gridImportKw`. Sprint 4 E2E 8/8 e E01/E02 em dois ciclos 2/2; Admin 85/85, shared 5/5, API 52/52 em execuções focais por arquivo; lint, typecheck e build passaram. A suíte API monolítica ainda encerra por OOM do Node 24 no ambiente. Nenhum código de produção/PWA ou banco persistente foi alterado.

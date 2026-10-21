@@ -4,6 +4,8 @@ Este documento e a fonte canonica para branches, commits, Pull Requests, validac
 
 ## Objetivo
 
+> **Entrega final — 21/10/2026:** o responsável autorizou publicação e integração da Sprint 4 em `main` por PR. A entrega está consolidada em `feature/sprint4-finalization`, PR #18; o README final e `docs/delivery/SPRINT4_VIDEO_SCRIPT.md` são os materiais de entrega. As tabelas/PRs datados abaixo preservam o histórico de desenvolvimento, não uma lista atual de integrações pendentes. Toda promoção continua condicionada aos checks obrigatórios aprovados, sem push direto em `main`.
+
 Manter o Dashboard Admin e o Driver PWA evoluindo em linhas independentes, com integracao controlada na `main` somente depois de validacao automatizada e decisao humana.
 
 ## Estado historico relevante
