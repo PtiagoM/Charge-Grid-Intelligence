@@ -8,27 +8,15 @@ async function login(page, email) {
   await page.getByTestId('login-submit').click();
 }
 
-test('GoodWe administra cliente comercial e registra auditoria', async ({ page }) => {
+test('GoodWe consulta carteira sincronizada sem cadastrar cliente no SEMS+', async ({ page }) => {
   await login(page, 'goodwe@teste.com');
   await page.goto('/#/mvp/clients');
-  await expect(page.getByRole('heading', { name: 'Clientes comerciais', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Carteira comercial', exact: true })).toBeVisible();
   await expect(page.getByText('Rede FIAP', { exact: true })).toBeVisible();
 
   await page.goto('/#/mvp/new-client');
-  const form = page.locator('[data-form="create-client"]');
-  await form.locator('input[name="name"]').fill('Grupo ChargeGrid Demo');
-  await form.locator('input[name="corporateName"]').fill('Grupo ChargeGrid Demo S.A.');
-  await form.locator('input[name="document"]').fill('11.222.333/0001-44');
-  await form.locator('input[name="owner"]').fill('Executiva GoodWe');
-  await form.locator('input[name="contactName"]').fill('Gestora Demo');
-  await form.locator('input[name="contactEmail"]').fill('gestora.demo@chargegrid.local');
-  await form.locator('button[type="submit"]').click();
-
-  await expect(page).toHaveURL(/#\/mvp\/client\?client=cli-grupo-chargegrid-demo/);
-  await expect(page.getByRole('heading', { name: 'Grupo ChargeGrid Demo', exact: true })).toBeVisible();
-
-  await page.goto('/#/mvp/audit');
-  await expect(page.getByText('Cliente Grupo ChargeGrid Demo criado', { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/#\/mvp\/clients/);
+  await expect(page.locator('[data-form="create-client"]')).toHaveCount(0);
 });
 
 test('Business consulta contrato e abre chamado somente no proprio escopo', async ({ page }) => {

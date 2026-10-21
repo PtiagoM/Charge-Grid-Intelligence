@@ -1,3 +1,5 @@
+import type { CommercialEnergyDecision } from "@chargegrid/shared";
+
 export type Profile = "GOODWE" | "ESTABELECIMENTO";
 export type SemsAccountType = "OWNER" | "DISTRIBUTOR_INSTALLER";
 export type SemsOrganizationFunction = "ADMINISTRATOR" | "NAVIGATOR" | "TECHNICIAN";
@@ -9,9 +11,10 @@ export type AdminRole =
   | "ESTABLISHMENT_ADMIN"
   | "ESTABLISHMENT_OPERATOR"
   | "REPORT_VIEWER";
-export type ChargerStatus = "available" | "charging" | "limited" | "offline";
-export type ChargerCommercialStatus = "ELIGIBLE" | "CONFIGURED" | "PUBLISHED" | "SUSPENDED";
-export type SessionStatus = "authorized" | "starting" | "active" | "finished" | "start_failed";
+export type ChargerStatus = "available" | "connected" | "charging" | "limited" | "fault" | "offline";
+/** Frontend-only publication lifecycle; commercial availability lives in @chargegrid/shared. */
+export type ChargerPublicationStatus = "ELIGIBLE" | "CONFIGURED" | "PUBLISHED" | "SUSPENDED";
+export type SessionStatus = "authorized" | "starting" | "active" | "suspended" | "energy_finished" | "settling" | "finished" | "start_failed";
 export type ChargerCommandType = "START_CHARGE" | "STOP_CHARGE";
 export type ChargerCommandStatus = "REQUESTED" | "ACCEPTED" | "CONFIRMED" | "FAILED" | "EXPIRED";
 export type ChargerConnectorState = "AVAILABLE" | "CONNECTED" | "CHARGING" | "FAULT" | "OFFLINE";
@@ -19,6 +22,7 @@ export type PlantAccessPolicy = "PUBLIC" | "PRIVATE" | "MIXED";
 
 export interface GoodWePlantCharger {
   id: string;
+  code?: string;
   serial: string;
   model: string;
   powerKw: number;
@@ -27,6 +31,7 @@ export interface GoodWePlantCharger {
 
 export interface GoodWePlant {
   id: string;
+  source?: "GOODWE_FIXTURE" | "COMMERCIAL_API";
   name: string;
   organization: string;
   address: string;
@@ -105,6 +110,7 @@ export interface Account {
   semsOrganizationFunction?: SemsOrganizationFunction;
   displayName: string;
   establishmentId?: string;
+  technicalEstablishmentIds?: string[];
 }
 
 export interface Client {
@@ -149,12 +155,14 @@ export interface Charger {
   locationId: string;
   identifier: string;
   internalId: string;
+  parkingSpot?: string;
+  currentSessionId?: string | null;
   serial: string;
   model: string;
   powerKw: number;
   installationDate: string;
   status: ChargerStatus;
-  commercialStatus: ChargerCommercialStatus;
+  publicationStatus: ChargerPublicationStatus;
   todayEnergyKwh: number;
   revenueToday: number;
 }
@@ -251,6 +259,9 @@ export interface Payment {
 
 export interface Session {
   id: string;
+  publicCode?: string;
+  /** Compatibilidade temporária com fixtures SEMS+ legadas. */
+  internalId?: string;
   chargerId: string;
   establishmentId: string;
   locationId: string;
@@ -317,6 +328,8 @@ export interface QueueEntry {
   vehicle: string;
   requiredConnector: "TYPE_2" | "CCS_2";
   status: "waiting" | "called" | "assigned" | "no_show" | "expired" | "released";
+  position?: number;
+  estimatedWaitMinutes?: number | null;
   joinedAt: string;
   calledAt?: string;
   callExpiresAt?: string;
@@ -359,6 +372,10 @@ export interface AuditEntry {
 }
 
 export interface EnergySnapshot {
+  plantId?: string;
+  sampleId?: string;
+  source?: "SIMULATED";
+  quality?: "FRESH" | "STALE" | "UNKNOWN";
   establishmentId: string;
   demandState: "Favorável" | "Alerta" | "Crítico";
   observedAt: string;
@@ -366,9 +383,15 @@ export interface EnergySnapshot {
   demandKw: number;
   contractedLimitKw: number;
   powerMarginPercent: number;
-  batterySocPercent: number;
+  batterySocPercent: number | null;
   solarPowerKw: number;
   gridPowerKw: number;
+  buildingLoadKw?: number;
+  evLoadKw?: number;
+  gridImportKw?: number;
+  gridExportKw?: number;
+  decision?: CommercialEnergyDecision;
+  forecast?: EnergyForecastPresentation;
   periodSolarKwh?: number;
   periodBatteryKwh?: number;
   periodGridKwh?: number;
@@ -381,6 +404,32 @@ export interface EnergyPolicy {
   freshnessMinutes: number;
   blockStartOnCritical: boolean;
   blockStartWithoutFreshTelemetry: boolean;
+  demandControlEnabled?: boolean;
+  version?: string;
+  recoveryUtilizationPercent?: number;
+  recoveryStableSeconds?: number;
+}
+
+export interface EnergyForecastPresentation {
+  status: "AVAILABLE" | "STALE" | "UNAVAILABLE" | "ERROR";
+  provenance: "REAL" | "SANDBOX" | "SIMULATED" | "DERIVED" | null;
+  generatedAt: string | null;
+  expiresAt: string | null;
+  horizonMinutes: number | null;
+  modelVersion: string | null;
+  predictedGridImportKw: number | null;
+  predictedAt: string | null;
+  riskThresholdKw: number | null;
+  riskState: "NORMAL" | "PREDICTED_PEAK" | null;
+  testMetrics: {
+    maeKw: number;
+    rmseKw: number;
+    baselineMaeKw: number;
+    baselineRmseKw: number;
+    testFrom: string;
+    testTo: string;
+  } | null;
+  unavailableReason: string | null;
 }
 
 export interface TariffPolicy {
@@ -457,6 +506,11 @@ export interface Incident {
   assignee?: string;
   resolvedAt?: string;
   resolution?: string;
+  conditionActive?: boolean;
+  reasonCode?: string;
+  evidence?: string[];
+  policyVersion?: string | null;
+  sampleId?: string | null;
 }
 
 export interface IncidentEvent {
@@ -472,6 +526,7 @@ export interface IncidentEvent {
 export interface Recommendation {
   id: string;
   establishmentId: string;
+  sourceType?: string;
   incidentId?: string;
   title: string;
   rationale: string;
@@ -479,13 +534,20 @@ export interface Recommendation {
   expectedImpact: string;
   proposedAction: "OPEN_CHARGER" | "OPEN_ENERGY" | "OPEN_FINANCE" | "MONITOR";
   targetId?: string;
-  confidence: "LOW" | "MEDIUM" | "HIGH";
+  confidence: "LOW" | "MEDIUM" | "HIGH" | "UNAVAILABLE";
   deterministic: boolean;
-  status: "OPEN" | "ACCEPTED" | "DEFERRED" | "REJECTED";
+  status: "OPEN" | "ACCEPTED" | "DEFERRED" | "REJECTED" | "SUPERSEDED";
   createdAt: string;
   decidedAt?: string;
   decidedBy?: string;
   decisionReason?: string;
+  conditionActive?: boolean;
+  origin?: string;
+  reasonCode?: string;
+  sourceEventId?: string | null;
+  sampleId?: string | null;
+  policyVersion?: string | null;
+  updatedAt?: string;
 }
 
 export interface IncidentActionResult {

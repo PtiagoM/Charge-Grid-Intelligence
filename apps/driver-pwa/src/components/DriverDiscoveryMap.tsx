@@ -188,6 +188,9 @@ export function DriverDiscoveryMap({ places, selectedPlaceId, userPosition, focu
   const selectedPlaceIdRef = useRef(selectedPlaceId);
   const onSelectPlaceRef = useRef(onSelectPlace);
   const themeRef = useRef(theme);
+  const placesRef = useRef(places);
+  const userPositionRef = useRef(userPosition);
+  const focusedPlaceIdRef = useRef<string | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [errorCode, setErrorCode] = useState("");
   const [attempt, setAttempt] = useState(0);
@@ -196,10 +199,12 @@ export function DriverDiscoveryMap({ places, selectedPlaceId, userPosition, focu
   selectedPlaceIdRef.current = selectedPlaceId;
   onSelectPlaceRef.current = onSelectPlace;
   themeRef.current = theme;
+  placesRef.current = places;
+  userPositionRef.current = userPosition;
 
   useEffect(() => {
     const element = mapElement.current;
-    if (!element || places.length === 0) return;
+    if (!element || placesRef.current.length === 0) return;
     let cancelled = false;
     let providerFailed = false;
     let dataLayer: GoogleDataLayer | undefined;
@@ -227,7 +232,7 @@ export function DriverDiscoveryMap({ places, selectedPlaceId, userPosition, focu
     void loadGoogleMaps().then((maps) => {
       if (cancelled) return;
       const map = new maps.Map(element, {
-        center: places[0]?.position ?? { lat: -23.55052, lng: -46.63331 },
+        center: placesRef.current[0]?.position ?? { lat: -23.55052, lng: -46.63331 },
         zoom: 11,
         minZoom: 4,
         ...mapVisualOptions(themeRef.current),
@@ -243,7 +248,7 @@ export function DriverDiscoveryMap({ places, selectedPlaceId, userPosition, focu
       dataLayer = map.data;
       runtime.current = { maps, map, dataLayer };
 
-      for (const place of places) {
+      for (const place of placesRef.current) {
         dataLayer.add({
           id: place.id,
           geometry: new maps.Data.Point(place.position),
@@ -256,16 +261,16 @@ export function DriverDiscoveryMap({ places, selectedPlaceId, userPosition, focu
         bounds.extend(place.position);
       }
 
-      if (userPosition) {
-        dataLayer.add({ id: "driver-position", geometry: new maps.Data.Point(userPosition), properties: { kind: "driver", title: "Sua localização" } });
-        bounds.extend(userPosition);
+      if (userPositionRef.current) {
+        dataLayer.add({ id: "driver-position", geometry: new maps.Data.Point(userPositionRef.current), properties: { kind: "driver", title: "Sua localização" } });
+        bounds.extend(userPositionRef.current);
       }
 
-      dataLayer.setStyle((feature) => markerStyle(maps, places, selectedPlaceIdRef.current, feature));
+      dataLayer.setStyle((feature) => markerStyle(maps, placesRef.current, selectedPlaceIdRef.current, feature));
 
       dataClickListener = dataLayer.addListener("click", (event) => {
         const placeId = String(event.feature.getProperty("placeId") ?? "");
-        const place = places.find((item) => item.id === placeId);
+        const place = placesRef.current.find((item) => item.id === placeId);
         if (!place) return;
         map.setCenter(place.position);
         map.setZoom(14);
@@ -277,7 +282,7 @@ export function DriverDiscoveryMap({ places, selectedPlaceId, userPosition, focu
         onSelectPlaceRef.current(place.id);
       });
 
-      const selected = places.find((place) => place.id === selectedPlaceIdRef.current);
+      const selected = placesRef.current.find((place) => place.id === selectedPlaceIdRef.current);
       if (selected) {
         map.setCenter(selected.position);
         map.setZoom(14);
@@ -304,16 +309,19 @@ export function DriverDiscoveryMap({ places, selectedPlaceId, userPosition, focu
       if (runtime.current?.dataLayer === dataLayer) runtime.current = null;
       element.replaceChildren();
     };
-  }, [attempt, places, userPosition]);
+  }, [attempt]);
 
   useEffect(() => {
     const current = runtime.current;
     if (!current) return;
     current.dataLayer.setStyle((feature) => markerStyle(current.maps, places, selectedPlaceId, feature));
     const selected = places.find((place) => place.id === selectedPlaceId);
-    if (selected) {
+    if (selected && selectedPlaceId !== focusedPlaceIdRef.current) {
       current.map.setCenter(selected.position);
       current.map.setZoom(14);
+      focusedPlaceIdRef.current = selectedPlaceId;
+    } else if (!selectedPlaceId) {
+      focusedPlaceIdRef.current = null;
     }
   }, [places, selectedPlaceId]);
 

@@ -1,5 +1,5 @@
-# Supabase migrations
+# Banco comercial
 
-O Driver PWA já usa Supabase Auth, mas nenhuma migration comercial foi criada. Este diretório deverá receber schema, constraints, índices e policies RLS para `profiles`, `vehicles` e demais entidades somente após a spec `supabase-commercial-persistence`.
+As migrations deste diretório definem o schema comercial compartilhado por API, Admin e PWA. O runtime oficial mínimo aplica-as ao iniciar a API Node sobre PGlite local; PostgreSQL/Supabase remoto é opcional via `CHARGEGRID_DATABASE_URL`.
 
-Até lá, `user_metadata` atende apenas ao perfil básico de autenticação e não substitui banco de produto, RLS ou autorização da API. Consulte `docs/CURRENT_STATE.md`.
+`202610020010_demand_forecasts.sql` persiste forecasts disponíveis. `202610040011_demand_decisions.sql` persiste `DemandDecisionEvidence` correlacionada de forma idempotente ao forecast. `202610060012_allow_scenario_forecast_refresh.sql` remove apenas a unicidade por janela para preservar previsões sucessivas quando o operador aplica explicitamente outro cenário; a deduplicação normal de 15 minutos continua na API. A API é a autoridade das escritas; não executar migrations manualmente contra o banco de demonstração enquanto a API estiver aberta. Consulte `docs/CURRENT_STATE.md` e `apps/api/src/ai/README.md`.

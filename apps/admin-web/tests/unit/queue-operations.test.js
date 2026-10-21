@@ -14,8 +14,8 @@ describe('queue operations', () => {
     const transition = callNextDriver(initial, account(initial), 'est-fiap', NOW);
 
     expect(transition.ok).toBe(true);
-    expect(transition.entry).toMatchObject({ id: 'Q-001', status: 'called', suggestedChargerId: 'CG-FIAP-03' });
-    expect(transition.state.chargers.find((item) => item.id === 'CG-FIAP-03')?.status).toBe('available');
+    expect(transition.entry).toMatchObject({ id: 'Q-001', status: 'called', suggestedChargerId: 'CG-FIAP-02' });
+    expect(transition.state.chargers.find((item) => item.id === 'CG-FIAP-02')?.status).toBe('available');
     expect(transition.state.queueEvents.at(-1)).toMatchObject({ type: 'CALLED', queueEntryId: 'Q-001' });
     expect(queuePosition(transition.state, 'Q-002')).toEqual({ position: 1, estimatedWaitMinutes: 18 });
   });

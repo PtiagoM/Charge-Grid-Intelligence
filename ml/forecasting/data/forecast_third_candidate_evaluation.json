@@ -1,0 +1,312 @@
+{
+  "candidates": {
+    "GRADIENT_BOOSTING_STUMPS": {
+      "features": [
+        "gridImportKw_lag_0",
+        "gridImportKw_lag_15m",
+        "gridImportKw_lag_60m",
+        "previous_day_next_hour_peak_kw",
+        "hour_sin",
+        "hour_cos",
+        "weekday_sin",
+        "weekday_cos",
+        "year_day_sin",
+        "year_day_cos",
+        "buildingLoadKw_origin",
+        "buildingLoadKw_lag_60m",
+        "evChargingKw_origin",
+        "evChargingKw_lag_60m",
+        "pvGenerationKw_origin",
+        "pvGenerationKw_lag_60m"
+      ],
+      "learningRate": 0.1,
+      "rounds": 24,
+      "tuning": "none",
+      "type": "deterministic additive gradient boosting regression with depth-1 squared-error trees"
+    },
+    "PERSISTENCE": {
+      "type": "repeat current grid import"
+    },
+    "RIDGE_COMPONENTS": {
+      "features": [
+        "gridImportKw_lag_0",
+        "gridImportKw_lag_15m",
+        "gridImportKw_lag_60m",
+        "previous_day_next_hour_peak_kw",
+        "hour_sin",
+        "hour_cos",
+        "weekday_sin",
+        "weekday_cos",
+        "year_day_sin",
+        "year_day_cos",
+        "buildingLoadKw_origin",
+        "buildingLoadKw_lag_15m",
+        "buildingLoadKw_lag_60m",
+        "evChargingKw_origin",
+        "evChargingKw_lag_15m",
+        "evChargingKw_lag_60m",
+        "pvGenerationKw_origin",
+        "pvGenerationKw_lag_15m",
+        "pvGenerationKw_lag_60m"
+      ],
+      "type": "standardized Ridge alpha=1.0"
+    },
+    "RIDGE_DELTA": {
+      "features": [
+        "gridImportKw_lag_0",
+        "gridImportKw_lag_15m",
+        "gridImportKw_lag_60m",
+        "previous_day_next_hour_peak_kw",
+        "hour_sin",
+        "hour_cos",
+        "weekday_sin",
+        "weekday_cos",
+        "year_day_sin",
+        "year_day_cos",
+        "gridImportKw_lag_30m",
+        "gridImportKw_lag_2h",
+        "gridImportKw_lag_4h",
+        "gridImportKw_mean_trailing_1h",
+        "gridImportKw_min_trailing_1h",
+        "gridImportKw_max_trailing_1h",
+        "gridImportKw_change_trailing_1h"
+      ],
+      "reconstruction": "max(0, current gridImportKw + predicted delta)",
+      "type": "standardized Ridge alpha=1.0 on future-hour-peak minus origin grid import"
+    },
+    "RIDGE_INCUMBENT": {
+      "evaluation": "reuse existing artifact; not refit",
+      "features": [
+        "gridImportKw_lag_0",
+        "gridImportKw_lag_15m",
+        "gridImportKw_lag_60m",
+        "previous_day_next_hour_peak_kw",
+        "hour_sin",
+        "hour_cos",
+        "weekday_sin",
+        "weekday_cos",
+        "year_day_sin",
+        "year_day_cos"
+      ],
+      "type": "frozen CG-AI-03B standardized Ridge"
+    },
+    "RIDGE_TEMPORAL": {
+      "features": [
+        "gridImportKw_lag_0",
+        "gridImportKw_lag_15m",
+        "gridImportKw_lag_60m",
+        "previous_day_next_hour_peak_kw",
+        "hour_sin",
+        "hour_cos",
+        "weekday_sin",
+        "weekday_cos",
+        "year_day_sin",
+        "year_day_cos",
+        "gridImportKw_lag_30m",
+        "gridImportKw_lag_2h",
+        "gridImportKw_lag_4h",
+        "gridImportKw_mean_trailing_1h",
+        "gridImportKw_min_trailing_1h",
+        "gridImportKw_max_trailing_1h",
+        "gridImportKw_change_trailing_1h"
+      ],
+      "type": "standardized Ridge alpha=1.0"
+    },
+    "SEASONAL_NAIVE_24H": {
+      "type": "prior-day corresponding next-hour peak"
+    }
+  },
+  "datasetClass": "SIMULATED_COMPOSITE",
+  "environment": {
+    "dependencies": "Python standard library only",
+    "pythonVersion": "3.14.7",
+    "randomness": "none"
+  },
+  "horizonMinutes": 60,
+  "limitations": [
+    "All benchmark rows are SIMULATED_COMPOSITE and do not represent Aurora telemetry.",
+    "No candidate predicts the exact quarter-hour of the next-hour maximum.",
+    "Component lags inherit the composite construction and do not establish causal generalization to a real site.",
+    "The boosted stump model is an additive, low-capacity nonlinear candidate; no package was installed and no tuning was performed."
+  ],
+  "riskThreshold": {
+    "method": "training-only 90th percentile of future-hour peaks",
+    "operationalUse": false,
+    "valueKw": 117.524661
+  },
+  "round": "CG-AI-03C",
+  "selection": {
+    "promoted": true,
+    "riskF1DifferenceVsIncumbent": -0.00627770689902607,
+    "rule": "new candidate must strictly improve both MAE and RMSE over frozen incumbent; F1 may not fall by more than 0.02; among passing candidates rank by MAE, RMSE, then F1",
+    "selectedCandidateDeltaPercentVsIncumbent": {
+      "maeKw": -5.8693758419856055,
+      "rmseKw": -1.3603283132685051
+    },
+    "selectedOnValidation": "RIDGE_DELTA"
+  },
+  "split": {
+    "train": {
+      "first": "2019-04-02 00:00:00",
+      "last": "2019-08-29 23:00:00",
+      "n": 14397
+    },
+    "validation": {
+      "first": "2019-08-30 00:15:00",
+      "last": "2019-10-19 23:00:00",
+      "n": 4892
+    }
+  },
+  "status": "NEW_MODEL_PROMOTED",
+  "target": "maximum gridImportKw in the next four 15-minute intervals",
+  "testEvaluatedThisRound": true,
+  "testMetrics": {
+    "PERSISTENCE": {
+      "maeKw": 5.322525316213276,
+      "n": 4595,
+      "peakDetection": {
+        "f1": 0.8144104803493449,
+        "falseNegatives": 140,
+        "falsePositives": 30,
+        "precision": 0.9255583126550868,
+        "recall": 0.7270955165692008,
+        "thresholdKw": 117.524661,
+        "truePositives": 373
+      },
+      "rmseKw": 9.76649057375682
+    },
+    "RIDGE_DELTA": {
+      "maeKw": 4.615088231729316,
+      "n": 4595,
+      "peakDetection": {
+        "f1": 0.8460754332313966,
+        "falseNegatives": 98,
+        "falsePositives": 53,
+        "precision": 0.8867521367521367,
+        "recall": 0.8089668615984406,
+        "thresholdKw": 117.524661,
+        "truePositives": 415
+      },
+      "rmseKw": 8.145712441908895
+    },
+    "RIDGE_INCUMBENT": {
+      "maeKw": 5.626216121287289,
+      "n": 4595,
+      "peakDetection": {
+        "f1": 0.8348530901722391,
+        "falseNegatives": 101,
+        "falsePositives": 62,
+        "precision": 0.869198312236287,
+        "recall": 0.8031189083820662,
+        "thresholdKw": 117.524661,
+        "truePositives": 412
+      },
+      "rmseKw": 8.431892263410719
+    }
+  },
+  "testSplit": {
+    "first": "2019-10-20 00:15:00",
+    "last": "2019-12-16 09:00:00",
+    "n": 4595
+  },
+  "validationMetrics": {
+    "GRADIENT_BOOSTING_STUMPS": {
+      "maeKw": 9.100380306772198,
+      "n": 4892,
+      "peakDetection": {
+        "f1": 0.8518189884649512,
+        "falseNegatives": 138,
+        "falsePositives": 29,
+        "precision": 0.9430255402750491,
+        "recall": 0.7766990291262136,
+        "thresholdKw": 117.524661,
+        "truePositives": 480
+      },
+      "rmseKw": 14.719602491505324
+    },
+    "PERSISTENCE": {
+      "maeKw": 5.796446362837285,
+      "n": 4892,
+      "peakDetection": {
+        "f1": 0.8343777976723367,
+        "falseNegatives": 152,
+        "falsePositives": 33,
+        "precision": 0.9338677354709419,
+        "recall": 0.7540453074433657,
+        "thresholdKw": 117.524661,
+        "truePositives": 466
+      },
+      "rmseKw": 10.471495200066137
+    },
+    "RIDGE_COMPONENTS": {
+      "maeKw": 5.00353935975228,
+      "n": 4892,
+      "peakDetection": {
+        "f1": 0.864367816091954,
+        "falseNegatives": 54,
+        "falsePositives": 123,
+        "precision": 0.8209606986899564,
+        "recall": 0.912621359223301,
+        "thresholdKw": 117.524661,
+        "truePositives": 564
+      },
+      "rmseKw": 7.911298898813075
+    },
+    "RIDGE_DELTA": {
+      "maeKw": 5.306159543547671,
+      "n": 4892,
+      "peakDetection": {
+        "f1": 0.8820678513731826,
+        "falseNegatives": 72,
+        "falsePositives": 74,
+        "precision": 0.8806451612903226,
+        "recall": 0.883495145631068,
+        "thresholdKw": 117.524661,
+        "truePositives": 546
+      },
+      "rmseKw": 8.425947418625727
+    },
+    "RIDGE_INCUMBENT": {
+      "maeKw": 5.63701727361371,
+      "n": 4892,
+      "peakDetection": {
+        "f1": 0.8883455582722086,
+        "falseNegatives": 73,
+        "falsePositives": 64,
+        "precision": 0.8949096880131363,
+        "recall": 0.8818770226537217,
+        "thresholdKw": 117.524661,
+        "truePositives": 545
+      },
+      "rmseKw": 8.542148685759608
+    },
+    "RIDGE_TEMPORAL": {
+      "maeKw": 5.54258828085079,
+      "n": 4892,
+      "peakDetection": {
+        "f1": 0.8827809215844786,
+        "falseNegatives": 72,
+        "falsePositives": 73,
+        "precision": 0.8820678513731826,
+        "recall": 0.883495145631068,
+        "thresholdKw": 117.524661,
+        "truePositives": 546
+      },
+      "rmseKw": 8.48716637815575
+    },
+    "SEASONAL_NAIVE_24H": {
+      "maeKw": 18.716676913327884,
+      "n": 4892,
+      "peakDetection": {
+        "f1": 0.5559055118110235,
+        "falseNegatives": 265,
+        "falsePositives": 299,
+        "precision": 0.5414110429447853,
+        "recall": 0.5711974110032363,
+        "thresholdKw": 117.524661,
+        "truePositives": 353
+      },
+      "rmseKw": 31.922922451585357
+    }
+  }
+}

@@ -3,11 +3,14 @@ import {
   ChargerTechnicalStatus,
   CommercialAvailability,
   type ChargerSummary,
+  type CommercialCatalog,
   type EstablishmentSummary
 } from "@chargegrid/shared";
 import { assets } from "../constants/assets";
 
 export interface CommercialPlant extends EstablishmentSummary {
+  /** Only this catalog entry has a complete commercial vertical in Sprint 4. */
+  isOperational: boolean;
   position: { lat: number; lng: number };
   chargerCount: number;
   nominalPowerKw: number;
@@ -35,7 +38,8 @@ interface PlantSeed {
 }
 
 function createPlant(seed: PlantSeed): CommercialPlant {
-  const commercialAvailability = seed.available === 0
+  const isOperational = seed.id === "est_aurora_001";
+  const commercialAvailability = !isOperational ? CommercialAvailability.CLOSED : seed.available === 0
     ? CommercialAvailability.FULL_QUEUE
     : seed.available === seed.total
       ? CommercialAvailability.OPEN_AVAILABLE
@@ -47,14 +51,14 @@ function createPlant(seed: PlantSeed): CommercialPlant {
   if (seed.available > 0) availableIndexes.add(qrChargerIndex);
   for (let index = 0; index < seed.total && availableIndexes.size < seed.available; index += 1) availableIndexes.add(index);
   const chargers = Array.from({ length: seed.total }, (_, index): ChargerSummary => {
-    const commercialStatus = availableIndexes.has(index)
+    const commercialStatus = !isOperational ? ChargerCommercialStatus.CLOSED : availableIndexes.has(index)
       ? ChargerCommercialStatus.AVAILABLE_TO_START
       : index === seed.total - 1 && seed.total > 5
         ? ChargerCommercialStatus.MAINTENANCE
         : ChargerCommercialStatus.OCCUPIED;
     return {
-      id: `${seed.id}_charger_${String(index + 1).padStart(2, "0")}`,
-      commercialName: `${prefix} ${String(index + 1).padStart(2, "0")}`,
+      id: seed.id === "est_aurora_001" ? `AURORA-${String(index + 1).padStart(2, "0")}` : `${seed.id}_charger_${String(index + 1).padStart(2, "0")}`,
+      commercialName: seed.id === "est_aurora_001" ? `AURORA-${String(index + 1).padStart(2, "0")}` : `${prefix} ${String(index + 1).padStart(2, "0")}`,
       technicalStatus: commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START
         ? ChargerTechnicalStatus.AVAILABLE
         : commercialStatus === ChargerCommercialStatus.MAINTENANCE
@@ -74,15 +78,15 @@ function createPlant(seed: PlantSeed): CommercialPlant {
     openingHours: seed.openingHours,
     distanceKm: seed.distance,
     commercialAvailability,
-    availableChargerCount: seed.available,
+    availableChargerCount: isOperational ? seed.available : 0,
     tariffFrom: { amount: seed.tariff, currency: "BRL" },
-    favorableEnergyCondition: seed.available > 0,
+    favorableEnergyCondition: false,
     queueSummary: {
       establishmentId: seed.id,
-      activeCount: seed.queued,
+      activeCount: isOperational ? seed.queued : 0,
       commercialAvailability,
-      estimatedWaitMinutes: seed.wait,
-      registeredCount: seed.queued
+      estimatedWaitMinutes: isOperational ? seed.wait : undefined,
+      registeredCount: isOperational ? seed.queued : 0
     },
     position: seed.position,
     chargerCount: seed.total,
@@ -90,6 +94,7 @@ function createPlant(seed: PlantSeed): CommercialPlant {
     imageUrl: assets.plant,
     category: seed.category,
     qrSlug: seed.qrSlug,
+    isOperational,
     chargers
   };
 }
@@ -193,12 +198,58 @@ export function getPlantById(id?: string | null) {
   return commercialPlants.find((plant) => plant.id === id);
 }
 
+export function mergeCommercialCatalog(catalog: CommercialCatalog): CommercialPlant[] {
+  return commercialPlants.map((plant) => {
+    if (!plant.isOperational) return plant;
+    const establishment = catalog.establishments.find((item) => item.id === plant.id);
+    if (!establishment) return { ...plant, isOperational: false };
+    const chargers = establishment.chargers.map((charger): ChargerSummary => ({
+      id: charger.code,
+      internalId: charger.id,
+      commercialName: charger.code,
+      technicalStatus: charger.physicalStatus,
+      commercialStatus: charger.commercialStatus,
+      nominalPowerKw: charger.nominalPowerKw,
+      currentPowerKw: charger.currentPowerKw,
+      parkingSpot: charger.parkingSpot,
+      lastTechnicalUpdateAt: charger.updatedAt
+    }));
+    const availableChargerCount = establishment.availableChargerCount;
+    const allFaulted = chargers.length > 0 && chargers.every((charger) => [ChargerTechnicalStatus.FAULT, ChargerTechnicalStatus.OFFLINE].includes(charger.technicalStatus));
+    const commercialAvailability = allFaulted ? CommercialAvailability.FAULT
+      : availableChargerCount === 0 ? CommercialAvailability.FULL_QUEUE
+        : availableChargerCount === chargers.length ? CommercialAvailability.OPEN_AVAILABLE
+          : CommercialAvailability.OPEN_PARTIAL;
+    return {
+      ...plant,
+      isOperational: true,
+      name: establishment.name,
+      address: establishment.address,
+      position: { lat: establishment.latitude, lng: establishment.longitude },
+      commercialAvailability,
+      availableChargerCount,
+      tariffFrom: { amount: (establishment.offerTariffCents ?? establishment.tariffCents) / 100, currency: "BRL" },
+      favorableEnergyCondition: establishment.favorableEnergyCondition,
+      queueSummary: establishment.queueSummary,
+      chargerCount: chargers.length,
+      nominalPowerKw: Math.max(...chargers.map((charger) => charger.nominalPowerKw ?? 0)),
+      chargers
+    };
+  });
+}
+
 export function getChargingPointBySlug(slug?: string | null) {
-  const plant = commercialPlants.find((item) => item.qrSlug === slug);
-  if (!plant) return null;
-  const chargerNumber = Number(slug?.match(/-(\d+)$/)?.[1] ?? 1);
-  const charger = plant.chargers[chargerNumber - 1] ?? plant.chargers[0];
-  return charger ? { plant, charger } : null;
+  const normalized = slug?.trim().toLocaleLowerCase("pt-BR");
+  if (!normalized) return null;
+  for (const plant of commercialPlants.filter((item) => item.isOperational)) {
+    const chargerByCode = plant.chargers.find((charger) => charger.id.toLocaleLowerCase("pt-BR") === normalized);
+    if (chargerByCode) return { plant, charger: chargerByCode };
+    if (plant.qrSlug.toLocaleLowerCase("pt-BR") !== normalized) continue;
+    const chargerNumber = Number(normalized.match(/-(\d+)$/)?.[1] ?? 1);
+    const charger = plant.chargers[chargerNumber - 1] ?? plant.chargers[0];
+    return charger ? { plant, charger } : null;
+  }
+  return null;
 }
 
 export function distanceBetweenKm(from: { lat: number; lng: number }, to: { lat: number; lng: number }) {

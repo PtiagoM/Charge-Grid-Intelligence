@@ -1,13 +1,13 @@
 # ChargeGrid Intelligence — Cenário Compartilhado de Demonstração v1.0
 
-**Status:** fonte das fixtures D0–D15 para Admin/testes e referência de domínio para a Driver PWA  
+**Status:** cenário compartilhado D0–D15 para contratos, domínio e Driver PWA; o Admin mantém fixtures de persona próprias derivadas deste vocabulário  
 **Contrato relacionado:** Contratos e Enums Compartilhados v1.0  
 **Data-base do replay:** 19 de agosto de 2026, `America/Sao_Paulo` (`-03:00`)  
 **Natureza:** dados e eventos simulados; não são operação, cobrança ou telemetria produtiva.
 
-> **Aplicabilidade atual — 21/08/2026:** este documento continua sendo a fonte das fixtures D0–D15 do Admin e dos testes compartilhados. A Driver PWA possui um catálogo comercial próprio com seis plantas e usa Stripe real em modo teste. A natureza de fixture deve permanecer em documentação/código e não deve ser exibida como aviso na interface do usuário.
+> **Aplicabilidade atual — 25/08/2026:** este documento é a fonte do cenário compartilhado e dos testes de domínio. O Admin usa fixtures de persona (`Shopping FIAP`, `MercadoX Pinheiros`) para exercitar escopos e navegação, mantendo os mesmos enums e regras. A Driver PWA possui um catálogo comercial próprio com seis plantas e usa Stripe real em modo teste.
 
-> **Regra central histórica:** o cenário preserva coerência de domínio entre Admin, contratos e testes. Ele não obriga o catálogo atual da Driver PWA a reproduzir cada registro D0. O Mock GoodWe continua sendo a fonte técnica de referência; pagamentos da PWA usam Stripe sandbox.
+> **Regra central:** o cenário preserva coerência de domínio entre contratos e testes compartilhados, mas não obriga IDs ou nomes do catálogo Admin/PWA. O Mock GoodWe continua sendo a fonte técnica de referência; pagamentos da PWA usam Stripe sandbox.
 
 ## 1. Objetivo, limites e modo de uso
 

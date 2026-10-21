@@ -23,7 +23,7 @@ const availability = {
 };
 
 export function EstablishmentCard({ plant, distanceKm, selected, recommendationLabel }: EstablishmentCardProps) {
-  const status = availability[plant.commercialAvailability];
+  const status = plant.isOperational ? availability[plant.commercialAvailability] : { label: "Em expansão", tone: "neutral" as const };
   return (
     <article className={`establishment-card ${selected ? "is-selected" : ""}`}>
       {recommendationLabel ? <p className="recommendation-label"><AppIcon name="check" size={15} /> {recommendationLabel}</p> : null}
@@ -39,7 +39,7 @@ export function EstablishmentCard({ plant, distanceKm, selected, recommendationL
         <div><span>Tarifa atual</span><strong>{currency.format(plant.tariffFrom?.amount ?? 0)}/kWh</strong></div>
         <div><span>Fila</span><strong>{plant.queueSummary.activeCount === 0 ? "Sem fila" : `${plant.queueSummary.activeCount} aguardando`}</strong></div>
       </div>
-      <Link className="primary-link" to={`/place/${plant.id}`}>Ver detalhes</Link>
+      <Link className="primary-link" to={`/place/${plant.id}`}>{plant.isOperational ? "Ver detalhes" : "Ver informações"}</Link>
     </article>
   );
 }

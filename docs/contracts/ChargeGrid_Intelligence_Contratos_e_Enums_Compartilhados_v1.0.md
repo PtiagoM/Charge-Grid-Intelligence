@@ -94,9 +94,13 @@ Cada campo relevante usa uma das origens abaixo. A origem descreve a fonte de ve
 
 ## 4. Papéis de usuário
 
-### 4.1 Enum `UserRole`
+### 4.1 Enum `UserRole` (compatibilidade ChargeGrid/PWA)
 
 `GOODWE_ADMIN | ESTABLISHMENT_ADMIN | ESTABLISHMENT_OPERATOR | DRIVER | GUEST`
+
+`GOODWE_ADMIN` permanece somente como valor legado de transporte/fixtures. Nunca concede acesso global por si só. No Admin Web, a autorização GoodWe é derivada da combinação de tipo de conta SEMS+, função organizacional, papel ChargeGrid, escopo e capacidade.
+
+Para o modelo administrativo, os enums complementares são `SemsAccountType`, `SemsOrganizationFunction` e `ChargeGridRole`. O papel `GOODWE_CENTRAL` representa governança agregada com escopo explícito; não é uma conta-mestre.
 
 | Papel | Propósito e escopo de visualização | Ações permitidas | Limitações |
 |---|---|---|---|
@@ -158,6 +162,10 @@ A disponibilidade comercial é publicada principalmente para o **estabelecimento
 | `FAULT` | Não existe rota comercial segura no momento devido a falha/offline relevante. | Não inicia; comunica indisponibilidade e incidente quando autorizado. |
 
 **Exemplo obrigatório:** um HCA G2 pode estar tecnicamente `AVAILABLE`, mas comercialmente `MAINTENANCE` ou `CLOSED`; portanto, estar online não significa estar vendável. Inversamente, `FULL_QUEUE` pode ocorrer com todos os equipamentos tecnicamente saudáveis.
+
+### 5.2.1 Ciclo de publicação `ChargerPublicationStatus`
+
+O ciclo administrativo de publicação não é disponibilidade comercial. Ele usa os valores `ELIGIBLE | CONFIGURED | PUBLISHED | SUSPENDED` e só pode ser alterado pelo administrador comercial autorizado da planta. Implementações devem manter esse enum separado de `ChargerCommercialStatus`.
 
 ## 6. Sessão comercial
 

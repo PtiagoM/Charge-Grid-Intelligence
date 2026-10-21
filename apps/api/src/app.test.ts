@@ -11,7 +11,33 @@ describe("GET /health", () => {
   });
 });
 
+describe("public commercial catalog", () => {
+  it("resolves the canonical Aurora charger without exposing driver or payment data", async () => {
+    const app = createApp();
+    const catalog = await request(app).get("/commercial/catalog");
+    const resolved = await request(app).get("/commercial/chargers/resolve/aurora-02");
+
+    expect(catalog.status).toBe(200);
+    expect(catalog.body.establishments[0].chargers).toHaveLength(6);
+    expect(resolved.status).toBe(200);
+    expect(resolved.body.charger).toMatchObject({ id: "00000000-0000-4000-8000-000000000002", code: "AURORA-02", parkingSpot: "B02" });
+    expect(JSON.stringify(resolved.body)).not.toMatch(/driver|email|payment_intent/i);
+  }, 10_000);
+});
+
 describe("Stripe sandbox routes", () => {
+  it("rejects empty bodies without throwing and permits zero settlement", async () => {
+    const app = createApp();
+    for (const path of ["/payments/intents", "/payments/pi_test/capture", "/payments/pi_test/refund"]) {
+      expect((await request(app).post(path)).status).toBe(400);
+    }
+  });
+  it("permits the desktop and development private networks", async () => {
+    for (const origin of ["http://localhost:5173", "http://10.0.0.8:5174", "http://192.168.1.8:5174", "http://172.16.1.8:5174"]) {
+      const response = await request(createApp()).get("/health").set("Origin", origin);
+      expect(response.headers["access-control-allow-origin"]).toBe(origin);
+    }
+  });
   it("reports whether test credentials are configured without exposing secrets", async () => {
     const response = await request(createApp()).get("/payments/config");
 
@@ -22,6 +48,13 @@ describe("Stripe sandbox routes", () => {
 
   it("rejects malformed payment intents before calling the provider", async () => {
     const response = await request(createApp()).post("/payments/intents").send({ amount: -1, method: "CASH" });
+
+    expect(response.status).toBe(400);
+    expect(response.body.code).toBe("INVALID_PAYMENT_INPUT");
+  });
+
+  it("rejects a non-UUID commercial session before touching persistence", async () => {
+    const response = await request(createApp()).post("/payments/intents").send({ amount: 25, method: "CARD", sessionId: "session-local", establishmentId: "est_aurora_001", chargerId: "AURORA-01" });
 
     expect(response.status).toBe(400);
     expect(response.body.code).toBe("INVALID_PAYMENT_INPUT");

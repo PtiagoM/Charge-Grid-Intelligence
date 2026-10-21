@@ -67,6 +67,7 @@ export class StripePaymentProvider {
       paymentIntentId: intent.id,
       clientSecret: intent.client_secret,
       status: paymentStatus(intent.status),
+      providerStatus: intent.status,
       amount: fromMinorUnits(intent.amount),
       currency: "BRL" as const,
       mode: this.mode
@@ -82,18 +83,23 @@ export class StripePaymentProvider {
       amount: fromMinorUnits(intent.amount),
       capturableAmount: fromMinorUnits(intent.amount_capturable),
       receivedAmount: fromMinorUnits(intent.amount_received),
-      method: intent.metadata.payment_method
+      method: intent.metadata.payment_method,
+      sessionId: intent.metadata.chargegrid_session_id
     };
   }
 
   async capture(input: { paymentIntentId: string; sessionId: string; amount: number; idempotencyKey: string }) {
     const existing = await this.stripe.paymentIntents.retrieve(input.paymentIntentId);
     if (existing.metadata.chargegrid_session_id !== input.sessionId) throw new Error("Pagamento não pertence à sessão informada.");
+    if (input.amount === 0) {
+      if (existing.status !== "canceled") await this.stripe.paymentIntents.cancel(input.paymentIntentId, {}, { idempotencyKey: input.idempotencyKey });
+      return { paymentIntentId: existing.id, status: PaymentStatus.FAILED, amount: 0, currency: "BRL" as const, providerStatus: "canceled" as const };
+    }
     const intent = await this.stripe.paymentIntents.capture(input.paymentIntentId, {
       amount_to_capture: Math.min(toMinorUnits(input.amount), existing.amount_capturable),
       metadata: { settlement_type: "chargegrid_final_capture" }
     }, { idempotencyKey: input.idempotencyKey });
-    return { paymentIntentId: intent.id, status: paymentStatus(intent.status), amount: fromMinorUnits(intent.amount_received), currency: "BRL" as const };
+    return { paymentIntentId: intent.id, status: paymentStatus(intent.status), providerStatus: intent.status, amount: fromMinorUnits(intent.amount_received), currency: "BRL" as const };
   }
 
   async refund(input: { paymentIntentId: string; sessionId: string; amount: number; idempotencyKey: string }) {

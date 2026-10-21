@@ -1,4 +1,4 @@
-import { ChargerCommercialStatus, CommercialSessionStatus, PaymentStatus, QueueStatus } from "@chargegrid/shared";
+import { CommercialSessionStatus, PaymentStatus, QueueStatus, type CommercialQueueRecord, type CommercialSessionRecord } from "@chargegrid/shared";
 import {
   createContext,
   useCallback,
@@ -12,6 +12,7 @@ import {
 import { commercialPlants, getPlantById } from "../data/commercialPlants";
 import { showBrowserNotification } from "../services/browserNotifications";
 import { remoteAuthConfigured, signInDriver, signOutDriver, signUpDriver, subscribeToRemoteSession } from "../services/driverAuth";
+import { getCommercialQueue, getCommercialSession, getCommercialSessions, joinCommercialQueue, leaveCommercialQueue } from "../services/paymentApi";
 
 export type DriverMode = "guest" | "driver";
 export type PaymentMethod = "CARD" | "PIX";
@@ -59,6 +60,7 @@ export interface DriverNotification {
 }
 
 export interface DriverSessionState {
+  backendManaged?: boolean;
   paymentSessionId: string;
   owner: DriverMode;
   status: CommercialSessionStatus;
@@ -78,10 +80,12 @@ export interface DriverSessionState {
   idleMinutes: number;
   idleAmount: number;
   idleGraceEndsAt?: string;
+  vehicleDisconnected?: boolean;
   completionReason?: SessionCompletionReason;
 }
 
 export interface DriverQueueState {
+  backendEntryId: string;
   status: QueueStatus;
   establishmentId: string;
   establishmentName: string;
@@ -113,6 +117,8 @@ interface PersistedState {
 }
 
 export interface CheckoutInput {
+  establishmentId: string;
+  chargerId: string;
   paymentSessionId: string;
   owner: DriverMode;
   financialLimit: number;
@@ -136,7 +142,10 @@ export interface AuthResult {
 
 interface DriverAppContextValue extends PersistedState {
   profile: DriverProfile | null;
+  isCommercialDriver: boolean;
   isOnline: boolean;
+  sessionSyncError: string;
+  queueSyncError: string;
   register(input: RegisterInput): Promise<AuthResult>;
   login(email: string, password: string): Promise<AuthResult>;
   logout(): void;
@@ -149,10 +158,10 @@ interface DriverAppContextValue extends PersistedState {
   finishEnergy(): void;
   applyIdleFee(): void;
   settleSession(): void;
+  dismissCompletedSession(): void;
   getQueueJoinPreview(establishmentId: string): QueueJoinPreview;
-  joinQueue(establishmentId: string): void;
-  callQueue(): void;
-  leaveQueue(): void;
+  joinQueue(establishmentId: string): Promise<void>;
+  leaveQueue(): Promise<void>;
   markNotificationsRead(): void;
   addNotification(title: string, body: string, url?: string): void;
 }
@@ -181,13 +190,58 @@ const initialState: PersistedState = {
 function readStoredState(): PersistedState {
   try {
     const parsed = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "null") as PersistedState | null;
-    return parsed?.version === 2 ? parsed : initialState;
+    return parsed?.version === 2 ? { ...parsed, session: parsed.session?.backendManaged ? parsed.session : null, queue: parsed.queue?.backendEntryId ? parsed.queue : null, receipts: [] } : initialState;
   } catch {
     return initialState;
   }
 }
 
 const DriverAppContext = createContext<DriverAppContextValue | null>(null);
+
+function driverQueue(entry: CommercialQueueRecord): DriverQueueState {
+  return {
+    backendEntryId: entry.id,
+    status: entry.status,
+    establishmentId: entry.establishmentId,
+    establishmentName: entry.establishmentName,
+    position: entry.position,
+    estimatedWaitMinutes: entry.estimatedWaitMinutes ?? Math.max(0, entry.position * 8),
+    expiresAt: entry.assignmentExpiresAt,
+    chargerName: entry.chargerCode,
+    chargerId: entry.chargerCode,
+    parkingSpot: entry.parkingSpot
+  };
+}
+
+function driverSession(remote: CommercialSessionRecord): DriverSessionState {
+  return {
+    backendManaged: true,
+    paymentSessionId: remote.id,
+    owner: remote.actorType === "DRIVER" ? "driver" : "guest",
+    status: remote.status,
+    paymentStatus: remote.payment.status,
+    paymentIntentId: remote.payment.paymentIntentId,
+    establishmentId: remote.establishmentId,
+    establishmentName: remote.establishmentName,
+    chargerId: remote.chargerCode,
+    chargerName: remote.chargerName,
+    parkingSpot: remote.parkingSpot ?? "-",
+    tariffPerKwh: remote.tariffCents / 100,
+    financialLimit: remote.authorizedCents / 100,
+    paymentMethod: remote.payment.method,
+    energyKwh: remote.energyWh / 1000,
+    currentPowerKw: remote.currentPowerKw,
+    energyAmount: remote.energyCostCents / 100,
+    idleMinutes: remote.quote?.idleCentsPerMinute ? Math.round(remote.idleCostCents / remote.quote.idleCentsPerMinute) : 0,
+    idleAmount: remote.idleCostCents / 100,
+    idleGraceEndsAt: remote.idleGraceEndsAt ?? undefined,
+    vehicleDisconnected: Boolean(remote.disconnectedAt)
+  };
+}
+
+function isCommerciallyActive(status: CommercialSessionStatus) {
+  return ![CommercialSessionStatus.COMPLETED, CommercialSessionStatus.PAYMENT_FAILED, CommercialSessionStatus.START_FAILED, CommercialSessionStatus.FAULTED, CommercialSessionStatus.CANCELLED].includes(status);
+}
 
 function notification(title: string, body: string, url = "/notifications"): DriverNotification {
   return { id: crypto.randomUUID(), title, body, createdAt: new Date().toISOString(), read: false, url };
@@ -202,6 +256,8 @@ async function hashPassword(value: string) {
 export function DriverAppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<PersistedState>(readStoredState);
   const [isOnline, setIsOnline] = useState(() => navigator.onLine);
+  const [sessionSyncError, setSessionSyncError] = useState("");
+  const [queueSyncError, setQueueSyncError] = useState("");
   const lastBrowserNotificationId = useRef(state.notifications[0]?.id);
 
   useEffect(() => {
@@ -289,7 +345,9 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     void signOutDriver();
-    setState((current) => ({ ...current, isAuthenticated: false, session: current.session?.owner === "driver" ? null : current.session, queue: null }));
+    setSessionSyncError("");
+    setQueueSyncError("");
+    setState((current) => ({ ...current, account: null, isAuthenticated: false, session: null, queue: null, receipts: [], notifications: [] }));
   }, []);
 
   const clearLocalData = useCallback(() => setState((current) => ({ ...initialState, theme: current.theme })), []);
@@ -303,14 +361,17 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
 
   const authorizeSession = useCallback((input: CheckoutInput) => {
     setState((current) => {
-      const plant = getPlantById(current.selectedEstablishmentId) ?? defaultPlant;
-      const charger = plant.chargers.find((item) => item.id === current.selectedChargerId) ?? plant.chargers[0] ?? defaultCharger;
+      if (current.session && current.session.status !== CommercialSessionStatus.COMPLETED) return current;
+      const plant = getPlantById(input.establishmentId);
+      const charger = plant?.chargers.find((item) => item.id === input.chargerId);
+      if (!plant || !charger) return current;
       return {
         ...current,
         session: {
+          backendManaged: true,
           paymentSessionId: input.paymentSessionId,
           owner: input.owner,
-          status: CommercialSessionStatus.AUTHORIZED,
+          status: CommercialSessionStatus.WAITING_START,
           paymentStatus: input.paymentMethod === "PIX" ? PaymentStatus.PAID : PaymentStatus.AUTHORIZED,
           paymentIntentId: input.paymentIntentId,
           establishmentId: plant.id,
@@ -349,10 +410,11 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const tickSession = useCallback(() => setState((current) => {
-    if (!current.session || current.session.status !== CommercialSessionStatus.CHARGING) return current;
+    if (!current.session || current.session.backendManaged || current.session.status !== CommercialSessionStatus.CHARGING) return current;
     const session = current.session;
     const maxEnergyKwh = session.tariffPerKwh > 0 ? session.financialLimit / session.tariffPerKwh : session.energyKwh + 0.5;
-    const energyKwh = Number(Math.min(session.energyKwh + 0.5, maxEnergyKwh).toFixed(2));
+    // Local simulator: each 3-second tick represents five charging minutes.
+    const energyKwh = Number(Math.min(session.energyKwh + session.currentPowerKw * (5 / 60), maxEnergyKwh).toFixed(4));
     const energyAmount = Number(Math.min(session.financialLimit, energyKwh * session.tariffPerKwh).toFixed(2));
     const reachedLimit = energyAmount >= session.financialLimit;
     return {
@@ -377,15 +439,22 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
     notifications: [notification("Energia finalizada", "Retire o veículo em até 15 minutos para evitar cobrança de ociosidade.", "/session"), ...current.notifications]
   } : current), []);
 
-  const applyIdleFee = useCallback(() => setState((current) => current.session ? {
-    ...current,
-    session: { ...current.session, status: CommercialSessionStatus.IDLE_FEE, idleMinutes: 4, idleAmount: 2, idleGraceEndsAt: undefined },
-    notifications: [notification("Ociosidade em cobrança", "A tolerância terminou. A taxa atual é de R$ 0,50 por minuto.", "/session"), ...current.notifications]
-  } : current), []);
+  const applyIdleFee = useCallback(() => setState((current) => {
+    const session = current.session;
+    if (!session || session.status !== CommercialSessionStatus.IDLE_GRACE_PERIOD || !session.idleGraceEndsAt || Date.parse(session.idleGraceEndsAt) > Date.now()) return current;
+    const idleMinutes = Math.min(60, Math.ceil((Date.now() - Date.parse(session.idleGraceEndsAt)) / 60_000));
+    const idleAmount = Number(Math.min(idleMinutes * 0.5, Math.max(0, session.financialLimit - session.energyAmount)).toFixed(2));
+    return {
+      ...current,
+      session: { ...session, status: CommercialSessionStatus.IDLE_FEE, idleMinutes, idleAmount },
+      notifications: [notification("Ociosidade registrada", "R$ 0,50 por minuto, limitada ao saldo da garantia e a 60 minutos.", "/session"), ...current.notifications]
+    };
+  }), []);
 
   const settleSession = useCallback(() => setState((current) => {
     if (!current.session) return current;
     const session = current.session;
+    if (session.backendManaged) return current;
     const totalAmount = Number((session.energyAmount + session.idleAmount).toFixed(2));
     const refundAmount = session.paymentMethod === "PIX" ? Number(Math.max(0, session.financialLimit - totalAmount).toFixed(2)) : 0;
     const receipt: DriverReceipt = {
@@ -412,6 +481,10 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
     };
   }), []);
 
+  const dismissCompletedSession = useCallback(() => setState((current) => current.session?.status === CommercialSessionStatus.COMPLETED
+    ? { ...current, session: null }
+    : current), []);
+
   const getQueueJoinPreview = useCallback((establishmentId: string): QueueJoinPreview => {
     const plant = getPlantById(establishmentId) ?? defaultPlant;
     return {
@@ -421,51 +494,31 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const joinQueue = useCallback((establishmentId: string) => setState((current) => {
-    if (!current.isAuthenticated || current.queue || (current.session && current.session.status !== CommercialSessionStatus.COMPLETED)) return current;
-    const plant = getPlantById(establishmentId) ?? defaultPlant;
-    return {
+  const joinQueue = useCallback(async (establishmentId: string) => {
+    const profile = state.account?.profile;
+    if (!state.isAuthenticated || !profile) throw new Error("Entre na sua conta para usar a fila.");
+    if (state.account?.authProvider !== "supabase") throw new Error("Entre novamente para usar a fila comercial.");
+    if (state.session && state.session.status !== CommercialSessionStatus.COMPLETED) throw new Error("Conclua sua sessão antes de entrar na fila.");
+    const entry = await joinCommercialQueue({ establishmentId });
+    setState((current) => ({
       ...current,
-      queue: {
-        status: QueueStatus.WAITING,
-        establishmentId: plant.id,
-        establishmentName: plant.name,
-        position: Math.max(1, plant.queueSummary.activeCount + 1),
-        estimatedWaitMinutes: plant.queueSummary.estimatedWaitMinutes ?? 18
-      },
-      notifications: [notification("Você entrou na fila", `Acompanhe sua posição em ${plant.name}.`, "/queue"), ...current.notifications]
-    };
-  }), []);
+      queue: driverQueue(entry),
+      notifications: [notification("Você entrou na fila", `Acompanhe sua posição em ${entry.establishmentName}.`, "/queue"), ...current.notifications]
+    }));
+  }, [state.account?.authProvider, state.account?.profile, state.isAuthenticated, state.session]);
 
-  const callQueue = useCallback(() => setState((current) => {
-    if (!current.queue) return current;
-    const plant = getPlantById(current.queue.establishmentId) ?? defaultPlant;
-    const charger = plant.chargers.find((item) => item.commercialStatus === ChargerCommercialStatus.AVAILABLE_TO_START) ?? plant.chargers[0] ?? defaultCharger;
-    return {
-      ...current,
-      selectedEstablishmentId: plant.id,
-      selectedChargerId: charger.id,
-      queue: {
-        ...current.queue,
-        status: QueueStatus.CALLED,
-        position: 1,
-        estimatedWaitMinutes: 0,
-        expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
-        chargerName: charger.commercialName,
-        chargerId: charger.id,
-        parkingSpot: charger.parkingSpot
-      },
-      notifications: [notification("Sua vez", `Dirija-se à vaga ${charger.parkingSpot ?? "indicada"} em até 10 minutos.`, "/queue"), ...current.notifications]
-    };
-  }), []);
-
-  const leaveQueue = useCallback(() => setState((current) => ({ ...current, queue: null })), []);
+  const leaveQueue = useCallback(async () => {
+    const entry = state.queue;
+    const driverId = state.account?.profile.id;
+    if (entry && driverId) await leaveCommercialQueue(entry.backendEntryId);
+    setState((current) => ({ ...current, queue: null }));
+  }, [state.account?.profile.id, state.queue]);
   const markNotificationsRead = useCallback(() => setState((current) => ({ ...current, notifications: current.notifications.map((item) => ({ ...item, read: true })) })), []);
   const addNotification = useCallback((title: string, body: string, url?: string) => setState((current) => ({ ...current, notifications: [notification(title, body, url), ...current.notifications] })), []);
 
   useEffect(() => {
     const status = state.session?.status;
-    if (!status) return;
+    if (!status || state.session?.backendManaged) return;
     const nextStatus: Partial<Record<CommercialSessionStatus, CommercialSessionStatus>> = {
       [CommercialSessionStatus.AUTHORIZED]: CommercialSessionStatus.WAITING_START,
       [CommercialSessionStatus.WAITING_START]: CommercialSessionStatus.STARTING,
@@ -487,18 +540,97 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
     if (!next) return;
     const timer = window.setTimeout(() => setSessionStatus(next), delay[status]);
     return () => window.clearTimeout(timer);
-  }, [setSessionStatus, settleSession, state.session?.status]);
+  }, [setSessionStatus, settleSession, state.session?.backendManaged, state.session?.status]);
 
   useEffect(() => {
-    if (state.session?.status !== CommercialSessionStatus.CHARGING) return;
+    if (state.session?.backendManaged || state.session?.status !== CommercialSessionStatus.CHARGING) return;
     const timer = window.setInterval(tickSession, 3000);
     return () => window.clearInterval(timer);
-  }, [state.session?.status, tickSession]);
+  }, [state.session?.backendManaged, state.session?.status, tickSession]);
+
+  useEffect(() => {
+    const driverId = state.account?.profile.id;
+    if (!state.isAuthenticated || state.account?.authProvider !== "supabase" || !driverId) return;
+    const controller = new AbortController();
+    void getCommercialSessions(undefined, controller.signal).then(({ sessions }) => {
+      const current = sessions.find((session) => isCommerciallyActive(session.status));
+      if (controller.signal.aborted || !current) return;
+      setState((saved) => saved.account?.profile.id !== driverId || (saved.session?.backendManaged && isCommerciallyActive(saved.session.status))
+        ? saved
+        : { ...saved, session: driverSession(current) });
+    }).catch(() => undefined);
+    return () => controller.abort();
+  }, [state.account?.authProvider, state.account?.profile.id, state.isAuthenticated]);
+
+  useEffect(() => {
+    const sessionId = state.session?.backendManaged ? state.session.paymentSessionId : undefined;
+    if (!sessionId || state.session?.status === CommercialSessionStatus.COMPLETED) { setSessionSyncError(""); return; }
+    let active = true;
+    let timer = 0;
+    let controller: AbortController | undefined;
+    const refresh = async () => {
+      controller = new AbortController();
+      try {
+        const remote = await getCommercialSession(sessionId, controller.signal);
+        if (!active) return;
+        setSessionSyncError("");
+        setState((current) => !current.session || current.session.paymentSessionId !== remote.id ? current : {
+          ...current,
+          session: driverSession(remote)
+        });
+      } catch (error) {
+        if (active && !controller.signal.aborted) setSessionSyncError(error instanceof Error ? error.message : "A sessão não está sincronizada com a API.");
+      } finally {
+        if (active) timer = window.setTimeout(() => void refresh(), 2000);
+      }
+    };
+    void refresh();
+    return () => { active = false; window.clearTimeout(timer); controller?.abort(); };
+  }, [state.session?.backendManaged, state.session?.paymentSessionId, state.session?.status]);
+
+  useEffect(() => {
+    const driverId = state.account?.profile.id;
+    if (!state.isAuthenticated || state.account?.authProvider !== "supabase" || !driverId) return;
+    let active = true;
+    let timer = 0;
+    let controller: AbortController | undefined;
+    const refresh = async () => {
+      controller = new AbortController();
+      try {
+        const { entry } = await getCommercialQueue(driverId, controller.signal);
+        if (!active) return;
+        setQueueSyncError("");
+        setState((current) => {
+          if (!entry) return current.queue ? { ...current, queue: null } : current;
+          const nextQueue = driverQueue(entry);
+          const called = entry.status === QueueStatus.CALLED && current.queue?.status !== QueueStatus.CALLED;
+          return {
+            ...current,
+            queue: nextQueue,
+            selectedEstablishmentId: entry.chargerCode ? entry.establishmentId : current.selectedEstablishmentId,
+            selectedChargerId: entry.chargerCode ?? current.selectedChargerId,
+            notifications: called
+              ? [notification("Sua vez", `Dirija-se à vaga ${entry.parkingSpot ?? "indicada"} em até 10 minutos.`, "/queue"), ...current.notifications]
+              : current.notifications
+          };
+        });
+      } catch (error) {
+        if (active && !controller.signal.aborted) setQueueSyncError(error instanceof Error ? error.message : "Sua fila não está sincronizada com a API.");
+      } finally {
+        if (active) timer = window.setTimeout(() => void refresh(), 2000);
+      }
+    };
+    void refresh();
+    return () => { active = false; window.clearTimeout(timer); controller?.abort(); };
+  }, [state.account?.authProvider, state.account?.profile.id, state.isAuthenticated]);
 
   const value = useMemo<DriverAppContextValue>(() => ({
     ...state,
     profile: state.account?.profile ?? null,
+    isCommercialDriver: state.isAuthenticated && state.account?.authProvider === "supabase",
     isOnline,
+    sessionSyncError,
+    queueSyncError,
     register,
     login,
     logout,
@@ -511,13 +643,13 @@ export function DriverAppProvider({ children }: { children: ReactNode }) {
     finishEnergy,
     applyIdleFee,
     settleSession,
+    dismissCompletedSession,
     getQueueJoinPreview,
     joinQueue,
-    callQueue,
     leaveQueue,
     markNotificationsRead,
     addNotification
-  }), [addNotification, applyIdleFee, authorizeSession, callQueue, clearLocalData, finishEnergy, getQueueJoinPreview, isOnline, joinQueue, leaveQueue, login, logout, markNotificationsRead, register, selectChargingPoint, setSessionStatus, setTheme, settleSession, state, tickSession]);
+  }), [addNotification, applyIdleFee, authorizeSession, clearLocalData, dismissCompletedSession, finishEnergy, getQueueJoinPreview, isOnline, joinQueue, leaveQueue, login, logout, markNotificationsRead, queueSyncError, register, selectChargingPoint, sessionSyncError, setSessionStatus, setTheme, settleSession, state, tickSession]);
 
   return <DriverAppContext.Provider value={value}>{children}</DriverAppContext.Provider>;
 }

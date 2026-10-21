@@ -8,39 +8,68 @@ async function login(page, email = 'estabelecimento@teste.com') {
   await page.getByTestId('login-submit').click();
 }
 
-test('fila chama em FIFO, confirma chegada e conclui admissao', async ({ page }) => {
+test('fila preserva FIFO e deixa admissao sob automacao da plataforma', async ({ page }) => {
   await login(page);
   await page.goto('/#/mvp/queue');
 
   const queue = page.getByTestId('queue-operations-page');
   await expect(queue).toContainText('Marcos Silva');
-  await expect(queue).toContainText('#1');
-  await page.getByRole('button', { name: 'Chamar proximo' }).click();
-  await expect(page.getByRole('status')).toContainText('chamado com sucesso');
-  await expect(queue).toContainText('CG-FIAP-03');
-  await expect(queue).toContainText('sem reserva tecnica');
-
-  await page.getByRole('button', { name: 'Confirmar chegada' }).click();
-  await expect(page.getByRole('status')).toContainText('Comparecimento confirmado');
-  await expect(queue).toContainText('Admitido');
-  await page.getByRole('button', { name: 'Concluir admissao' }).click();
-  await expect(page.getByRole('status')).toContainText('removida da fila ativa');
-  await expect(queue).toContainText('Concluido');
+  const rows = queue.getByRole('row');
+  await expect(rows.nth(1)).toContainText('Marcos Silva');
+  await expect(rows.nth(2)).toContainText('Luiza Prado');
+  await expect(queue).toContainText('Automação ativa');
+  await expect(queue.getByRole('button', { name: 'Chamar próximo' })).toHaveCount(0);
+  await expect(queue.getByRole('button', { name: 'Confirmar chegada' })).toHaveCount(0);
+  await expect(queue.getByRole('button', { name: 'Registrar no-show' })).toHaveCount(0);
+  await expect(queue.getByRole('button', { name: 'Concluir admissão' })).toHaveCount(0);
 });
 
-test('GoodWe escolhe o estabelecimento antes de gerenciar a fila', async ({ page }) => {
+test('Central GoodWe nao recebe operacao local de fila', async ({ page }) => {
   await login(page, 'goodwe@teste.com');
   await page.goto('/#/mvp/queue');
-  await expect(page.getByTestId('queue-portfolio')).toContainText('Shopping FIAP');
-  await expect(page.getByTestId('queue-portfolio')).toContainText('GoodWe Shanghai Lab');
-  await page.getByRole('link', { name: 'Gerenciar fila' }).first().click();
-  await expect(page.getByTestId('queue-operations-page')).toContainText('Shopping FIAP');
+  await expect(page.getByTestId('access-denied')).toBeVisible();
 });
 
-test('central operacional oferece progressao vertical para fila e sessoes', async ({ page }) => {
+test('operacao representa os carregadores da planta sem controles de cenario', async ({ page }) => {
   await login(page);
   await page.goto('/#/mvp/operations');
-  await expect(page.getByRole('heading', { name: /Central/ })).toBeVisible();
-  await expect(page.getByRole('link', { name: /Gerenciar fila/ })).toBeVisible();
-  await expect(page.getByRole('link', { name: /Acompanhar sessoes/ })).toBeVisible();
+  const operation = page.getByTestId('chargegrid-operation-stage');
+  await expect(operation).toBeVisible();
+  await expect(operation.getByTestId('chargegrid-operation-scenario')).toHaveCount(0);
+  await expect(operation.locator('.cg-spot-hitbox')).toHaveCount(5);
+
+  await operation.getByRole('button', { name: /A02.*CG-01.*Carregando/ }).click();
+  await expect(page.getByTestId('chargegrid-selected-charger')).toContainText('Carregando');
+  await operation.getByRole('button', { name: /A04.*CG-04.*Falha/ }).click();
+  await expect(page.getByTestId('chargegrid-selected-charger')).toContainText('Falha');
+});
+
+test('dashboard operacional aparece no scroll e abre o novo detalhe da sessao', async ({ page }) => {
+  await login(page);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/#/mvp/operations');
+
+  const dashboard = page.getByTestId('chargegrid-operations-dashboard');
+  await dashboard.scrollIntoViewIfNeeded();
+  await expect(dashboard).toBeVisible();
+  await expect(dashboard).toContainText('Performance comercial');
+  await expect(dashboard).toContainText('Monitoramento');
+  await expect(dashboard).toContainText('Demanda e condição energética');
+  await expect(dashboard).toContainText('Atenção');
+  await expect(dashboard).not.toContainText('Sessões recentes');
+  await expect(dashboard).not.toContainText('Fila atual');
+
+  await expect(dashboard).toContainText('Energia entregue');
+  await expect(dashboard).toContainText('sessões persistidas');
+
+  const chargeGridNavigation = page.getByRole('tablist', { name: 'Navegação de ChargeGrid' });
+  await chargeGridNavigation.getByRole('tab', { name: 'Sessões' }).click();
+  await page.getByRole('link', { name: 'Abrir sessão ›' }).first().click();
+  const detail = page.getByTestId('mvp-session-detail');
+  await expect(detail).toBeVisible();
+  await expect(detail).toContainText('Contexto da recarga');
+  await expect(detail).toContainText('Pagamento e liquidação');
+  await expect(detail).toContainText('Linha do tempo da sessão');
+  await detail.getByRole('link', { name: 'Voltar à operação' }).click();
+  await expect(page.getByTestId('chargegrid-operation-stage')).toBeVisible();
 });

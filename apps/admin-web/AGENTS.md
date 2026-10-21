@@ -10,4 +10,4 @@ Estas instrucoes complementam o `AGENTS.md` da raiz e se aplicam a tudo em `apps
 - Para navegacao, mapas ou jornadas criticas, execute os testes E2E correspondentes.
 - Antes do PR, execute build, testes unitários e lint do Admin; execute apenas E2E focal para o fluxo alterado. Antes da integração em `main`, execute a suíte E2E completa do Admin ou acione o workflow manual correspondente.
 - Nunca introduza implementacao de PWA dentro do Admin para contornar a separacao de produtos.
-
+teste

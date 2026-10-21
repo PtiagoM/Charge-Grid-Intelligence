@@ -73,15 +73,15 @@ Rotas são internas do projeto e não tentam reproduzir identificadores/query st
 | `/` | dashboard por papel | todos os administrativos |
 | `/plants` | portfólio e mapa sanitizado | conforme plantas autorizadas |
 | `/plants/:plantId` | detalhe técnico/comercial e tabs | contexto da planta |
-| `/chargegrid` | visão geral do módulo | todos os administrativos |
-| `/chargegrid/onboarding` | vincular planta GoodWe existente | admins |
-| `/chargegrid/chargers` | inventário comercial de EV | todos por escopo |
+| `/chargegrid` | visão geral da operação comercial local | proprietário comercial com capacidade operacional |
+| `/chargegrid/onboarding` | vincular planta GoodWe existente | estabelecimento autorizado; ativação contratual é governada pela organização |
+| `/chargegrid/chargers` | inventário comercial de EV | usuários com capacidade comercial e escopo explícito |
 | `/chargegrid/chargers/:chargerId` | detalhe técnico/comercial, sessão e histórico | todos por capacidade |
-| `/chargegrid/sessions` | sessões ao vivo e histórico | estabelecimento; GoodWe agregado |
+| `/chargegrid/sessions` | sessões ao vivo e histórico | estabelecimento; GoodWe somente em leitura agregada quando autorizado |
 | `/chargegrid/sessions/:sessionId` | timeline operacional/financeira | por escopo |
-| `/chargegrid/queue` | contexto operacional da fila | estabelecimento |
+| `/chargegrid/queue` | contexto operacional da fila | estabelecimento com capacidade de operação local |
 | `/chargegrid/energy` | energia, demanda e sustentabilidade | por planta/portfólio |
-| `/chargegrid/finance` | tarifa, receita, pagamentos e liquidação | admins autorizados |
+| `/chargegrid/finance` | tarifa, receita, pagamentos e liquidação | estabelecimento autorizado; GoodWe somente agregado quando explicitamente permitido |
 | `/chargegrid/incidents` | inbox e tratamento | operação/admins |
 | `/chargegrid/recommendations` | previsões e recomendações | admins autorizados |
 | `/chargegrid/reports` | relatórios, exportações e tarefas | admins autorizados |

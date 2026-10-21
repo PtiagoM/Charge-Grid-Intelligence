@@ -113,5 +113,5 @@ export function decideRecommendation(state: AdminState, account: Account | null,
 
 export function deterministicEnergyRecommendation(state: AdminState, establishmentId: string, now = new Date().toISOString()): Recommendation {
   const energy = recommendEnergyAction(state, establishmentId, now);
-  return { id: `rec-energy-${establishmentId}`, establishmentId, title: energy.title, rationale: energy.reason, evidence: energy.evidence, expectedImpact: energy.action === "REVIEW_STOP" ? "Recuperar margem de demanda com decisao assistida." : "Preservar a operacao dentro da politica energetica.", proposedAction: "OPEN_ENERGY", targetId: establishmentId, confidence: energy.severity === "critical" ? "HIGH" : "MEDIUM", deterministic: true, status: "OPEN", createdAt: now };
+  return { id: `rec-energy-${establishmentId}`, establishmentId, sourceType: "DEMAND_REVIEW", title: energy.title, rationale: energy.reason, evidence: energy.evidence, expectedImpact: energy.action === "REVIEW_STOP" ? "Recuperar margem de demanda com decisao assistida." : "Preservar a operacao dentro da politica energetica.", proposedAction: "OPEN_ENERGY", targetId: establishmentId, confidence: energy.severity === "critical" ? "HIGH" : "MEDIUM", deterministic: true, status: "OPEN", createdAt: now };
 }

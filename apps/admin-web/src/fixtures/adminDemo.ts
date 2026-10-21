@@ -38,10 +38,12 @@ const commercialPlants: CommercialPlantLink[] = [
 
 const fiapChargers: Charger[] = [
   ["CG-FIAP-01", "FIAP-ACL-01", "charging", 22, 18.4, 54.28],
+  ["CG-FIAP-02", "FIAP-ACL-02", "available", 22, 0, 0],
   ["CG-FIAP-03", "FIAP-ACL-03", "available", 60, 9.8, 28.91],
+  ["CG-FIAP-04", "FIAP-ACL-04", "limited", 22, 4.1, 12.1],
   ["CG-FIAP-05", "FIAP-ACL-05", "available", 22, 12.6, 37.17]
 ].map(([id, internalId, status, powerKw, todayEnergyKwh, revenueToday], index) => ({
-  id: String(id), establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", identifier: String(id), internalId: String(internalId), serial: `GWFIAP000${index + 1}`, model: "GoodWe AC 22", powerKw: Number(powerKw), installationDate: "2026-01-15", status: status as Charger["status"], commercialStatus: "PUBLISHED", todayEnergyKwh: Number(todayEnergyKwh), revenueToday: Number(revenueToday)
+  id: String(id), establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", identifier: String(id), internalId: String(internalId), serial: `GWFIAP000${index + 1}`, model: "GoodWe AC 22", powerKw: Number(powerKw), installationDate: "2026-01-15", status: status as Charger["status"], publicationStatus: "PUBLISHED", todayEnergyKwh: Number(todayEnergyKwh), revenueToday: Number(revenueToday)
 }));
 
 const sessionEvents: SessionEvent[] = [
@@ -61,10 +63,12 @@ export function createInitialState(): AdminState {
   const observedAt = new Date().toISOString();
   return {
     accounts: [
-      { id: "acc-goodwe", email: "goodwe@teste.com", password: "teste", profile: "GOODWE", semsAccountType: "DISTRIBUTOR_INSTALLER", role: "GOODWE_CENTRAL", semsOrganizationFunction: "ADMINISTRATOR", displayName: "Central GoodWe Brasil" },
-      { id: "acc-goodwe-consultant", email: "consultor@teste.com", password: "teste", profile: "GOODWE", semsAccountType: "DISTRIBUTOR_INSTALLER", role: "GOODWE_PORTFOLIO_MANAGER", semsOrganizationFunction: "NAVIGATOR", displayName: "Consultora GoodWe SP" },
+      { id: "acc-goodwe", email: "goodwe@teste.com", password: "teste", profile: "GOODWE", semsAccountType: "DISTRIBUTOR_INSTALLER", role: "GOODWE_CENTRAL", semsOrganizationFunction: "ADMINISTRATOR", displayName: "Central GoodWe Brasil", technicalEstablishmentIds: establishments.map((item) => item.id) },
+      { id: "acc-goodwe-consultant", email: "consultor@teste.com", password: "teste", profile: "GOODWE", semsAccountType: "DISTRIBUTOR_INSTALLER", role: "GOODWE_PORTFOLIO_MANAGER", semsOrganizationFunction: "NAVIGATOR", displayName: "Consultora GoodWe SP", technicalEstablishmentIds: ["est-fiap", "est-mercadox"] },
       { id: "acc-goodwe-support", email: "suporte@teste.com", password: "teste", profile: "GOODWE", semsAccountType: "DISTRIBUTOR_INSTALLER", role: "GOODWE_TECH_SUPPORT", semsOrganizationFunction: "TECHNICIAN", displayName: "Suporte técnico GoodWe" },
+      { id: "acc-sems-installer", email: "instalador@teste.com", password: "teste", profile: "GOODWE", semsAccountType: "DISTRIBUTOR_INSTALLER", semsOrganizationFunction: "ADMINISTRATOR", displayName: "Instaladora Solar SP", technicalEstablishmentIds: ["est-fiap", "est-mercadox"] },
       { id: "acc-est-fiap", email: "estabelecimento@teste.com", password: "teste", profile: "ESTABELECIMENTO", semsAccountType: "OWNER", role: "ESTABLISHMENT_ADMIN", displayName: "Gestora FIAP", establishmentId: "est-fiap" },
+      { id: "acc-est-aurora", email: "aurora@teste.com", password: "teste", profile: "ESTABELECIMENTO", semsAccountType: "OWNER", role: "ESTABLISHMENT_ADMIN", displayName: "Gestora Aurora", establishmentId: "est_aurora_001" },
       { id: "acc-operator-fiap", email: "operador@teste.com", password: "teste", profile: "ESTABELECIMENTO", semsAccountType: "OWNER", role: "ESTABLISHMENT_OPERATOR", displayName: "Operacao FIAP", establishmentId: "est-fiap" },
       { id: "acc-reports-fiap", email: "relatorios@teste.com", password: "teste", profile: "ESTABELECIMENTO", semsAccountType: "OWNER", role: "REPORT_VIEWER", displayName: "Analista FIAP", establishmentId: "est-fiap" },
       { id: "acc-sems-owner", email: "usuario@teste.com", password: "teste", profile: "ESTABELECIMENTO", semsAccountType: "OWNER", displayName: "Usuário SEMS+", establishmentId: "est-mercadox" }
@@ -74,6 +78,7 @@ export function createInitialState(): AdminState {
       { id: "grant-acc-goodwe-consultant", accountId: "acc-goodwe-consultant", role: "GOODWE_PORTFOLIO_MANAGER", establishmentIds: ["est-fiap", "est-mercadox"], status: "ACTIVE", grantedAt: "2026-01-10T09:00:00-03:00", grantedBy: "Central GoodWe Brasil" },
       { id: "grant-acc-goodwe-support", accountId: "acc-goodwe-support", role: "GOODWE_TECH_SUPPORT", establishmentIds: ["est-fiap", "est-mercadox"], status: "ACTIVE", grantedAt: "2026-01-10T09:10:00-03:00", grantedBy: "Central GoodWe Brasil" },
       { id: "grant-acc-est-fiap-initial", accountId: "acc-est-fiap", role: "ESTABLISHMENT_ADMIN", establishmentIds: ["est-fiap"], status: "ACTIVE", grantedAt: "2026-01-15T09:00:00-03:00", grantedBy: "Consultora GoodWe SP" },
+      { id: "grant-acc-est-aurora-initial", accountId: "acc-est-aurora", role: "ESTABLISHMENT_ADMIN", establishmentIds: ["est_aurora_001"], status: "ACTIVE", grantedAt: "2026-09-22T09:00:00-03:00", grantedBy: "Central GoodWe Brasil" },
       { id: "grant-acc-operator-fiap-initial", accountId: "acc-operator-fiap", role: "ESTABLISHMENT_OPERATOR", establishmentIds: ["est-fiap"], status: "ACTIVE", grantedAt: "2026-02-01T09:00:00-03:00", grantedBy: "Gestora FIAP" },
       { id: "grant-acc-reports-fiap-initial", accountId: "acc-reports-fiap", role: "REPORT_VIEWER", establishmentIds: ["est-fiap"], status: "ACTIVE", grantedAt: "2026-02-01T09:05:00-03:00", grantedBy: "Gestora FIAP" }
     ],
@@ -98,15 +103,17 @@ export function createInitialState(): AdminState {
     locations,
     chargers: [
       ...fiapChargers,
-      { id: "CG-MX-01", establishmentId: "est-mercadox", locationId: "loc-mercadox-pinheiros", identifier: "CARREGADORMX01", internalId: "MX-PIN-01", serial: "GWMX0001", model: "GoodWe AC 22", powerKw: 22, installationDate: "2026-03-10", status: "offline", commercialStatus: "PUBLISHED", todayEnergyKwh: 4.2, revenueToday: 13.02 },
-      { id: "CG-US-01", establishmentId: "est-goodwe-california", locationId: "loc-goodwe-california", identifier: "GW-CALIFORNIA-01", internalId: "US-HUB-01", serial: "GWUS0001", model: "GoodWe DC 80", powerKw: 80, installationDate: "2026-02-18", status: "available", commercialStatus: "PUBLISHED", todayEnergyKwh: 31.2, revenueToday: 16.22 },
-      { id: "CG-DE-01", establishmentId: "est-goodwe-europe", locationId: "loc-goodwe-europe", identifier: "GW-EUROPE-01", internalId: "DE-CENTER-01", serial: "GWDE0001", model: "GoodWe AC 22", powerKw: 22, installationDate: "2026-04-07", status: "charging", commercialStatus: "PUBLISHED", todayEnergyKwh: 24.7, revenueToday: 12.1 },
-      { id: "CG-CN-01", establishmentId: "est-goodwe-shanghai", locationId: "loc-goodwe-shanghai", identifier: "GW-SHANGHAI-01", internalId: "CN-LAB-01", serial: "GWCN0001", model: "GoodWe DC 120", powerKw: 120, installationDate: "2026-05-12", status: "available", commercialStatus: "PUBLISHED", todayEnergyKwh: 48.9, revenueToday: 38.14 }
+      { id: "CG-MX-01", establishmentId: "est-mercadox", locationId: "loc-mercadox-pinheiros", identifier: "CARREGADORMX01", internalId: "MX-PIN-01", serial: "GWMX0001", model: "GoodWe AC 22", powerKw: 22, installationDate: "2026-03-10", status: "offline", publicationStatus: "PUBLISHED", todayEnergyKwh: 4.2, revenueToday: 13.02 },
+      { id: "CG-US-01", establishmentId: "est-goodwe-california", locationId: "loc-goodwe-california", identifier: "GW-CALIFORNIA-01", internalId: "US-HUB-01", serial: "GWUS0001", model: "GoodWe DC 80", powerKw: 80, installationDate: "2026-02-18", status: "available", publicationStatus: "PUBLISHED", todayEnergyKwh: 31.2, revenueToday: 16.22 },
+      { id: "CG-DE-01", establishmentId: "est-goodwe-europe", locationId: "loc-goodwe-europe", identifier: "GW-EUROPE-01", internalId: "DE-CENTER-01", serial: "GWDE0001", model: "GoodWe AC 22", powerKw: 22, installationDate: "2026-04-07", status: "charging", publicationStatus: "PUBLISHED", todayEnergyKwh: 24.7, revenueToday: 12.1 },
+      { id: "CG-CN-01", establishmentId: "est-goodwe-shanghai", locationId: "loc-goodwe-shanghai", identifier: "GW-SHANGHAI-01", internalId: "CN-LAB-01", serial: "GWCN0001", model: "GoodWe DC 120", powerKw: 120, installationDate: "2026-05-12", status: "available", publicationStatus: "PUBLISHED", todayEnergyKwh: 48.9, revenueToday: 38.14 }
     ],
     chargerTelemetry: [
       { chargerId: "CG-FIAP-01", connectorState: "CHARGING", currentPowerKw: 18.4, observedAt: "2026-08-18T18:00:00-03:00", vehicleConnected: true },
+      { chargerId: "CG-FIAP-02", connectorState: "AVAILABLE", currentPowerKw: 0, observedAt: "2026-08-18T18:00:00-03:00", vehicleConnected: false },
       { chargerId: "CG-FIAP-03", connectorState: "CONNECTED", currentPowerKw: 0, observedAt: "2026-08-18T18:00:00-03:00", vehicleConnected: true },
-      { chargerId: "CG-FIAP-05", connectorState: "CONNECTED", currentPowerKw: 0, observedAt: "2026-08-18T18:00:00-03:00", vehicleConnected: true },
+      { chargerId: "CG-FIAP-04", connectorState: "FAULT", currentPowerKw: 0, observedAt: "2026-08-18T17:52:00-03:00", vehicleConnected: false, faultCode: "EV_COMMUNICATION" },
+      { chargerId: "CG-FIAP-05", connectorState: "AVAILABLE", currentPowerKw: 0, observedAt: "2026-08-18T18:00:00-03:00", vehicleConnected: false },
       { chargerId: "CG-MX-01", connectorState: "OFFLINE", currentPowerKw: 0, observedAt: "2026-08-18T16:30:00-03:00", vehicleConnected: false, faultCode: "COMMUNICATION_LOST" },
       { chargerId: "CG-US-01", connectorState: "AVAILABLE", currentPowerKw: 0, observedAt: "2026-08-18T18:00:00-03:00", vehicleConnected: false },
       { chargerId: "CG-DE-01", connectorState: "CHARGING", currentPowerKw: 20.1, observedAt: "2026-08-18T18:00:00-03:00", vehicleConnected: true },
@@ -156,6 +163,7 @@ export function createInitialState(): AdminState {
       { id: "financial-captured-0998", transactionId: "pay-CG-2026-0998", type: "CAPTURED", at: "2026-08-18T15:13:00-03:00", actor: "STRIPE_SANDBOX", amountCents: 5517 }
     ],
     incidents: [
+      { id: "incident-goodwe-CG-FIAP-04-fault", establishmentId: "est-fiap", locationId: "loc-fiap-aclimacao", chargerId: "CG-FIAP-04", source: "GOODWE", sourceEventId: "CG-FIAP-04-2026-08-18T17:52:00-03:00", correlationKey: "charger-CG-FIAP-04-ev-communication", category: "CHARGER_FAULT", severity: "HIGH", status: "OPEN", title: "CG-FIAP-04 indisponivel", summary: "Falha de comunicacao com o veiculo.", occurrences: 1, createdAt: "2026-08-18T17:52:00-03:00", updatedAt: "2026-08-18T17:52:00-03:00" },
       { id: "incident-goodwe-CG-MX-01-offline", establishmentId: "est-mercadox", locationId: "loc-mercadox-pinheiros", chargerId: "CG-MX-01", source: "GOODWE", sourceEventId: "CG-MX-01-2026-08-18T16:30:00-03:00", correlationKey: "charger-CG-MX-01-availability", category: "COMMUNICATION", severity: "HIGH", status: "OPEN", title: "CG-MX-01 offline", summary: "GoodWe reportou COMMUNICATION_LOST.", occurrences: 1, createdAt: "2026-08-18T16:30:00-03:00", updatedAt: "2026-08-18T16:30:00-03:00" }
     ],
     incidentEvents: [
@@ -163,13 +171,9 @@ export function createInitialState(): AdminState {
     ],
     recommendations: [
       { id: "rec-incident-goodwe-CG-MX-01-offline", establishmentId: "est-mercadox", incidentId: "incident-goodwe-CG-MX-01-offline", title: "Investigar equipamento afetado", rationale: "GoodWe reportou COMMUNICATION_LOST.", evidence: ["Origem GOODWE.", "1 ocorrencia correlacionada.", "Severidade HIGH."], expectedImpact: "Reduzir indisponibilidade e evitar novas sessoes afetadas.", proposedAction: "OPEN_CHARGER", targetId: "CG-MX-01", confidence: "HIGH", deterministic: true, status: "OPEN", createdAt: "2026-08-18T16:30:00-03:00" },
-      { id: "rec-energy-est-fiap", establishmentId: "est-fiap", title: "Monitorar margem antes da proxima admissao", rationale: "Margem reduzida; monitorar antes de ampliar a carga.", evidence: ["76,0 kW de 100,0 kW contratados.", "Limiar critico em 90%."], expectedImpact: "Preservar a operacao dentro da politica energetica.", proposedAction: "OPEN_ENERGY", targetId: "est-fiap", confidence: "MEDIUM", deterministic: true, status: "OPEN", createdAt: observedAt }
+      { id: "rec-energy-est-fiap", establishmentId: "est-fiap", sourceType: "DEMAND_REVIEW", title: "Monitorar margem antes da proxima admissao", rationale: "Margem reduzida; monitorar antes de ampliar a carga.", evidence: ["76,0 kW de 100,0 kW contratados.", "Limiar critico em 90%."], expectedImpact: "Preservar a operacao dentro da politica energetica.", proposedAction: "OPEN_ENERGY", targetId: "est-fiap", confidence: "MEDIUM", deterministic: true, status: "OPEN", createdAt: observedAt }
     ],
-    reportJobs: [
-      { id: "report-incidents-demo-failed", type: "INCIDENTS", requestedBy: "acc-goodwe", establishmentIds: ["est-mercadox"], periodFrom: "2026-08-01", periodTo: "2026-08-18", status: "FAILED", requestedAt: "2026-08-18T17:00:00-03:00", completedAt: "2026-08-18T17:00:04-03:00", failureReason: "Provider de armazenamento indisponivel na tentativa inicial." }
-    ],
-    reportSubscriptions: [
-      { id: "subscription-acc-est-fiap-sessions", accountId: "acc-est-fiap", type: "SESSIONS", establishmentIds: ["est-fiap"], cadence: "WEEKLY", status: "PAUSED", updatedAt: "2026-08-18T17:00:00-03:00" }
-    ]
+    reportJobs: [],
+    reportSubscriptions: []
   };
 }

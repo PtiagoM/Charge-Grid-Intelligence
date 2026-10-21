@@ -18,7 +18,7 @@ test('GoodWe navega entre módulos estratégicos do MVP', async ({ page }) => {
 
   await page.goto('/#/mvp/ai');
   await expect(page.getByTestId('recommendations-page')).toBeVisible();
-  await expect(page.getByTestId('recommendations-page')).toContainText('Aceitar nao executa comandos');
+  await expect(page.getByTestId('recommendations-page')).toContainText('Aceitar não executa comandos');
 
   await page.goto('/#/mvp/reports');
   await expect(page.getByTestId('mvp-reports-panel')).toBeVisible();

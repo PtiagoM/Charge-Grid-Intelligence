@@ -1,4 +1,5 @@
-import { useState, type CSSProperties, type FormEvent } from "react";
+import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
+import type { CommercialDashboardMetric, CommercialDashboardSummary } from "@chargegrid/shared";
 import { Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useAdminState } from "../../app/AdminState";
 import type { Charger, Client } from "../../domain/admin";
@@ -15,8 +16,10 @@ import { AccessDeniedPage, ReportsOperationsPage } from "../governance/Governanc
 import { OrganizationGovernancePage } from "../governance/OrganizationGovernancePage";
 import { hasAdminCapability } from "../../domain/adminCapabilities";
 import { getAdminRouteCapability } from "../../app/adminNavigation";
-import { accessibleEstablishmentIds } from "../../domain/accessOperations";
+import { accessibleEstablishmentIds, commercialAccessibleEstablishmentIds, hasOwnChargeGridOperation, technicalAccessibleEstablishmentIds } from "../../domain/accessOperations";
 import { SemsBatteryConsistencyPage, SemsComparisonPage, SemsIvDiagnosisPage } from "../analysis/SemsAnalysisPages";
+import { catalogWithCommercialPlants } from "../../services/goodwePlantCatalogRepository";
+import { dashboardPeriodBounds, fetchCommercialDashboardSummary, type DashboardPeriod } from "../../services/commercialSnapshotRepository";
 
 const establishmentTabs = new Set(["overview", "plants", "plant", "locations", "location", "charger", "chargers", "sessions", "session", "operations", "queue", "incidents", "incident", "energy", "pricing", "finance", "financial-session", "invoices", "contract", "support", "ticket", "documents", "ai", "recommendations", "reports", "settings", "access", "plant-onboarding", "analysis-iv", "analysis-comparison", "analysis-battery"]);
 
@@ -28,49 +31,184 @@ function StatusPill({ value }: { value: string }) {
   return <span className={`enterprise-status ${value.toLowerCase().replaceAll(" ", "-")}`}>{value}</span>;
 }
 
-function Overview({ establishmentId }: { establishmentId?: string }) {
+type DashboardChartMode = "energy" | "revenue" | "demand" | "utilization";
+
+type DashboardChartSeries = {
+  label: string;
+  color: string;
+  displayValue: string;
+};
+
+function optionalSum(values: Array<number | undefined>) {
+  const present = values.filter((value): value is number => typeof value === "number");
+  return present.length ? present.reduce((sum, value) => sum + value, 0) : null;
+}
+
+function metricValue(metric: CommercialDashboardMetric<number> | undefined) {
+  return metric && metric.quality !== "UNAVAILABLE" ? metric.value : null;
+}
+
+function metricLabel(metric: CommercialDashboardMetric<number> | undefined, format: (value: number) => string) {
+  if (!metric) return null;
+  if (metric.quality === "UNAVAILABLE") {
+    switch (metric.unavailableReason) {
+      case "NO_ENERGY_SAMPLES_IN_PERIOD": return "Sem amostras no período";
+      case "CURRENT_TELEMETRY_UNAVAILABLE": return "Sem leitura atual";
+      case "PLANT_NOT_CONFIGURED": return "Planta não configurada";
+      case "DEMAND_POLICY_NOT_CONFIGURED": return "Política não configurada";
+      case "NO_PUBLISHED_CHARGERS": return "Sem carregadores publicados";
+      default: return "Indisponível";
+    }
+  }
+  return `${format(metric.value)}${metric.quality === "STALE" ? " · desatualizado" : ""}`;
+}
+
+function Overview({ requestedEstablishmentId }: { requestedEstablishmentId?: string }) {
   const { state, account } = useAdminState();
-  const allowedEstablishmentIds = accessibleEstablishmentIds(state, account);
-  const establishmentIds = account?.profile === "GOODWE"
-    ? new Set(establishmentId ? [establishmentId] : allowedEstablishmentIds)
-    : new Set([account?.establishmentId ?? ""]);
-  const chargers = state.chargers.filter((item) => establishmentIds.has(item.establishmentId));
-  const sessions = state.sessions.filter((item) => establishmentIds.has(item.establishmentId));
-  const locations = state.locations.filter((item) => establishmentIds.has(item.establishmentId));
-  const queue = state.queue.filter((item) => establishmentIds.has(item.establishmentId) && item.status === "waiting");
-  const available = chargers.filter((item) => item.status === "available").length;
-  const inUse = chargers.filter((item) => item.status === "charging").length;
-  const totalPower = chargers.reduce((sum, item) => sum + item.powerKw, 0);
-  const delivered = sessions.reduce((sum, item) => sum + item.energyKwh, 0);
-  const revenue = sessions.reduce((sum, item) => sum + (item.finalAmount ?? item.consumedAmount), 0);
-  const offline = chargers.filter((item) => item.status === "offline").length;
-  const energy = state.energy.find((item) => establishmentIds.has(item.establishmentId)) ?? state.energy[0];
-  const currentPower = (energy?.solarPowerKw ?? 0) + (energy?.gridPowerKw ?? 0);
-  const activeSessions = sessions.filter((item) => item.status === "active").length;
-  const hasChargeGrid = Boolean(account?.role);
-  const openIncidents = state.incidents.filter((item) => establishmentIds.has(item.establishmentId) && item.status !== "RESOLVED").length;
-  const alarmTotal = openIncidents + offline;
-  const operatingPercent = chargers.length ? Math.round(((available + inUse) / chargers.length) * 100) : 0;
+  const [summaryExpanded, setSummaryExpanded] = useState(false);
+  const [chartMode, setChartMode] = useState<DashboardChartMode>("energy");
+  const [chartPeriod, setChartPeriod] = useState<DashboardPeriod>("week");
+  const technicalScope = new Set(technicalAccessibleEstablishmentIds(account));
+  const commercialScope = new Set(commercialAccessibleEstablishmentIds(state, account).filter((id) => technicalScope.has(id)));
+  const canReadCommercial = Boolean(account && hasAdminCapability(account, "commercial:read") && commercialScope.size);
+  const canReadFinance = Boolean(account && hasAdminCapability(account, "finance:read"));
+  const dashboardEstablishmentId = requestedEstablishmentId && commercialScope.has(requestedEstablishmentId)
+    ? requestedEstablishmentId
+    : commercialScope.has("est_aurora_001")
+      ? "est_aurora_001"
+      : commercialScope.size === 1 ? [...commercialScope][0] : undefined;
+  const [dashboardSummary, setDashboardSummary] = useState<CommercialDashboardSummary | null>(null);
+  const [dashboardStatus, setDashboardStatus] = useState<"LOADING" | "READY" | "STALE" | "UNAVAILABLE">("LOADING");
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
+  useEffect(() => {
+    if (!canReadCommercial || !dashboardEstablishmentId) {
+      setDashboardSummary(null);
+      setDashboardError(null);
+      setDashboardStatus("UNAVAILABLE");
+      return;
+    }
+    let active = true;
+    let successfulRead = false;
+    let timer = 0;
+    let controller: AbortController | undefined;
+    setDashboardSummary(null);
+    setDashboardError(null);
+    setDashboardStatus("LOADING");
+    const refresh = async () => {
+      controller = new AbortController();
+      try {
+        const period = dashboardPeriodBounds(chartPeriod);
+        const summary = await fetchCommercialDashboardSummary({ establishmentId: dashboardEstablishmentId, ...period }, controller.signal);
+        if (active) {
+          successfulRead = true;
+          setDashboardSummary(summary);
+          setDashboardError(null);
+          setDashboardStatus("READY");
+        }
+      } catch (error) {
+        if (active && !controller.signal.aborted) {
+          setDashboardError(error instanceof Error ? error.message : "A API ChargeGrid está indisponível.");
+          setDashboardStatus(successfulRead ? "STALE" : "UNAVAILABLE");
+        }
+      } finally {
+        if (active) timer = window.setTimeout(() => void refresh(), 2000);
+      }
+    };
+    void refresh();
+    return () => { active = false; window.clearTimeout(timer); controller?.abort(); };
+  }, [canReadCommercial, chartPeriod, dashboardEstablishmentId]);
+  const chargers = state.chargers.filter((item) => technicalScope.has(item.establishmentId));
+  const locations = state.locations.filter((item) => technicalScope.has(item.establishmentId));
+  const plantCatalog = catalogWithCommercialPlants(state);
+  const totalPower = optionalSum(state.commercialPlants
+    .filter((item) => technicalScope.has(item.establishmentId))
+    .map((item) => plantCatalog.find((plant) => plant.id === item.goodwePlantId)?.capacityKwp)
+    .filter((value) => value !== 0));
+  const energySnapshots = state.energy.filter((item) => technicalScope.has(item.establishmentId));
+  const unavailable = chargers.filter((item) => item.status === "offline" || item.status === "fault").length;
+  const solarPower = optionalSum(energySnapshots.map((item) => item.solarPowerKw));
+  const gridPower = optionalSum(energySnapshots.map((item) => item.gridPowerKw));
+  const currentPower = (solarPower ?? 0) + (gridPower ?? 0);
+  const openIncidents = state.incidents.filter((item) => technicalScope.has(item.establishmentId) && item.status !== "RESOLVED" && item.conditionActive !== false).length;
+  const alarmTotal = openIncidents + unavailable;
+  const chargerCount = metricValue(dashboardSummary?.counts.chargersAtGeneration);
+  const availableChargerCount = metricValue(dashboardSummary?.counts.availableChargersAtGeneration);
+  const availabilityPercent = chargerCount !== null && chargerCount > 0 && availableChargerCount !== null ? availableChargerCount / chargerCount * 100 : null;
+  const dashboardMetricLabel = (metric: CommercialDashboardMetric<number> | undefined, format: (value: number) => string) => metricLabel(metric, format) ?? (dashboardStatus === "LOADING" ? "Carregando" : "Indisponível");
+  const periodLabels: Record<DashboardPeriod, string> = { day: "24 horas", week: "7 dias", month: "30 dias" };
+  const stationStates = [
+    ["Em operação", locations.filter((location) => chargers.some((charger) => charger.locationId === location.id && charger.status !== "offline")).length],
+    ["Aguardando", 0],
+    ["Offline", locations.filter((location) => chargers.some((charger) => charger.locationId === location.id && charger.status === "offline")).length],
+    ["Falha", new Set(state.incidents.filter((item) => technicalScope.has(item.establishmentId) && item.status !== "RESOLVED").map((item) => item.locationId)).size],
+    ["Em construção", 0]
+  ] as const;
+  const chartSeriesByMode: Record<DashboardChartMode, DashboardChartSeries[]> = {
+    energy: [
+      { label: "Energia de recarga", color: "#ff323a", displayValue: dashboardMetricLabel(dashboardSummary?.energy.evWh, (value) => `${number(value / 1000)} kWh`) },
+      { label: "Solar para EV", color: "#f3bd46", displayValue: dashboardMetricLabel(dashboardSummary?.energy.solarToEvWh, (value) => `${number(value / 1000)} kWh`) },
+      { label: "Importação da rede", color: "#7b858e", displayValue: dashboardMetricLabel(dashboardSummary?.energy.gridImportWh, (value) => `${number(value / 1000)} kWh`) }
+    ],
+    revenue: [{ label: "Receita líquida capturada", color: "#ff323a", displayValue: canReadFinance ? dashboardMetricLabel(dashboardSummary?.financial.netCapturedCents, (value) => money(value / 100)) : "Sem permissão financeira" }],
+    demand: [
+      { label: "Importação atual", color: "#ff323a", displayValue: dashboardMetricLabel(dashboardSummary?.demand.currentGridImportKw, (value) => `${number(value)} kW`) },
+      { label: "Pico do período", color: "#f3bd46", displayValue: dashboardMetricLabel(dashboardSummary?.demand.peakGridImportKw, (value) => `${number(value)} kW`) },
+      { label: "Limite da política", color: "#7b858e", displayValue: dashboardMetricLabel(dashboardSummary?.demand.limitKw, (value) => `${number(value)} kW`) }
+    ],
+    utilization: [
+      { label: "Utilização no período", color: "#ff323a", displayValue: dashboardMetricLabel(dashboardSummary?.utilization.ratio, (value) => `${number(value * 100)}%`) },
+      { label: "Disponíveis", color: "#7b858e", displayValue: chargerCount === null || availableChargerCount === null ? "Indisponível" : `${availableChargerCount}/${chargerCount}` }
+    ]
+  };
+  const chartSeries = chartSeriesByMode[chartMode];
+  const showCommercialChart = canReadCommercial;
+  const chartEmptyState = !canReadCommercial
+    ? { title: "Resumo ChargeGrid indisponível", description: "Este perfil ou escopo não tem acesso aos indicadores comerciais." }
+    : dashboardStatus === "LOADING"
+      ? { title: "Carregando indicadores", description: "Consultando o resumo do período na API ChargeGrid." }
+      : dashboardStatus === "UNAVAILABLE"
+        ? { title: "Resumo indisponível", description: dashboardError ?? "Não foi possível consultar os dados deste estabelecimento." }
+        : dashboardStatus === "STALE"
+          ? { title: "Atualização indisponível", description: "A última leitura foi mantida. A API não fornece pontos históricos para desenhar uma curva." }
+          : { title: "Série temporal não disponível", description: "A API fornece totais do período, não valores por horário. Os agregados medidos estão na legenda acima." };
+  const dashboardEstablishmentName = state.establishments.find((item) => item.id === dashboardEstablishmentId)?.name ?? "Estabelecimento ChargeGrid";
+  const dashboardStatusLabel = dashboardStatus === "LOADING" ? "Carregando dados" : dashboardStatus === "STALE" ? "Última leitura · atualização indisponível" : dashboardStatus === "UNAVAILABLE" ? dashboardError ?? "Dados indisponíveis para este escopo" : "Atualização automática";
 
   return <>
     <section className="sems-dashboard-map" data-testid="mvp-overview-panel">
       <WorldMap state={{ ...state, locations, chargers }} />
       <article className="sems-station-summary world-station-summary" data-testid="mvp-overview-kpis">
-        <div className="station-row station-row-main"><div className="station-map-illustration" aria-hidden="true"><span /><i /><b /><em /></div><div className="station-value"><p><strong>{locations.length}</strong><button type="button" aria-label="Expandir estacoes">⌄</button></p><span>Station Number <small>?</small></span></div></div>
-        <div className="station-row"><div className="station-solar-illustration" aria-hidden="true"><span /><span /><span /></div><div className="station-value"><p><strong>{number(totalPower)}</strong><small>kWp</small></p><span>Capacity</span></div></div>
-        <div className="station-row"><div className="station-storage-illustration" aria-hidden="true"><span /><span /><span /></div><div className="station-value"><p><strong>{number(34.84)}</strong><small>kWh</small></p><span>Capacity</span></div></div>
+        <div className="station-row station-row-main"><div className="station-map-illustration" aria-hidden="true"><span /><i /><b /><em /></div><div className="station-value"><p><strong>{locations.length}</strong><button type="button" aria-label="Expandir resumo das usinas" aria-expanded={summaryExpanded} onClick={() => setSummaryExpanded((value) => !value)}>⌄</button></p><span>Usinas monitoradas <small>?</small></span></div></div>
+        <div className="station-row"><div className="station-solar-illustration" aria-hidden="true"><span /><span /><span /></div><div className="station-value"><p><strong>{totalPower === null ? "—" : number(totalPower)}</strong>{totalPower === null ? null : <small>kWp</small>}</p><span>Capacidade FV</span></div></div>
+        <div className="station-row"><div className="station-storage-illustration" aria-hidden="true"><span /><span /><span /></div><div className="station-value"><p><strong>—</strong></p><span>Bateria indisponível</span></div></div>
+        {summaryExpanded ? <div className="station-state-list" data-testid="dashboard-station-state-list">{stationStates.map(([label, value]) => <p key={label}><span>{label}</span><strong>{value}</strong></p>)}</div> : null}
       </article>
     </section>
     <section className="sems-operator-dashboard" data-testid="mvp-overview-recommendation">
       <div className="sems-operator-column">
-        <article className="sems-dashboard-card sems-power-card"><header><div className="sems-card-heading"><img src={assets.dashboard.power} alt="" /><div><h2>Potência</h2><span>Tempo real</span></div></div></header><div className="sems-power-gauge" style={{ "--gauge-value": `${Math.min(100, Math.round((currentPower / Math.max(totalPower, 1)) * 100)) * 1.8}deg` } as CSSProperties}><div><strong>{number(currentPower)}</strong><span>kW</span></div></div><footer><span><i className="is-red" />Solar {number(energy?.solarPowerKw ?? 0)} kW</span><span><i />Rede {number(energy?.gridPowerKw ?? 0)} kW</span></footer></article>
-        <article className="sems-dashboard-card sems-alarm-card"><header><div className="sems-card-heading"><img src={assets.dashboard.alarm} alt="" /><h2>Alarmes</h2></div><a href="#/mvp/incidents">Detalhes ›</a></header><div className="sems-alarm-body"><div className="sems-alarm-donut" style={{ "--alarm-share": `${Math.min(100, alarmTotal * 12)}%` } as CSSProperties}><strong>{alarmTotal}</strong><span>Total</span></div><ul><li><i className="is-critical" /><span>Falha</span><strong>{offline}</strong></li><li><i className="is-warning" /><span>Aviso</span><strong>{openIncidents}</strong></li></ul></div></article>
-        <article className="sems-dashboard-card sems-environment-card"><header><h2>Contribuições ambientais</h2><span>Desde o início da operação</span></header><div><p><img src={assets.dashboard.co2} alt="" /><span>CO₂ evitado</span><strong>{number(delivered * 0.081)} t</strong></p><p><img src={assets.dashboard.tree} alt="" /><span>Árvores equivalentes</span><strong>{Math.round(delivered * 0.42)}</strong></p><p><img src={assets.dashboard.generatedEnergy} alt="" /><span>Carvão padrão evitado</span><strong>{number(delivered * 0.033)} t</strong></p></div></article>
+        <article className="sems-dashboard-card sems-power-card"><header><div className="sems-card-heading"><img src={assets.dashboard.power} alt="" /><div><h2>Potência</h2><span>Tempo real</span></div></div></header><div className="sems-power-gauge" style={{ "--gauge-value": `${Math.min(100, Math.round((currentPower / Math.max(totalPower ?? currentPower, 1)) * 100)) * 1.8}deg` } as CSSProperties}><div><strong>{solarPower === null && gridPower === null ? "—" : number(currentPower)}</strong><span>kW</span></div></div><footer><span><i className="is-red" />Solar {solarPower === null ? "Sem telemetria" : `${number(solarPower)} kW`}</span><span><i />Rede {gridPower === null ? "Sem telemetria" : `${number(gridPower)} kW`}</span></footer></article>
+        <article className="sems-dashboard-card sems-alarm-card"><header><div className="sems-card-heading"><img src={assets.dashboard.alarm} alt="" /><h2>Alarmes</h2></div><a href="#/mvp/incidents">Detalhes ›</a></header><div className="sems-alarm-body"><div className="sems-alarm-donut" style={{ "--alarm-share": `${Math.min(100, alarmTotal * 12)}%` } as CSSProperties}><strong>{alarmTotal}</strong><span>Total</span></div><ul><li><i className="is-critical" /><span>Falha</span><strong>{unavailable}</strong></li><li><i className="is-warning" /><span>Aviso</span><strong>{openIncidents}</strong></li></ul></div></article>
+        <article className="sems-dashboard-card sems-environment-card" data-testid="dashboard-environment-card"><header><h2>Contribuições ambientais</h2><span>{periodLabels[chartPeriod]} · energia medida; impactos indisponíveis sem fatores versionados</span></header><div><p><img src={assets.dashboard.generatedEnergy} alt="" /><span>Solar para recarga</span><strong>{dashboardMetricLabel(dashboardSummary?.energy.solarToEvWh, (value) => `${number(value / 1000)} kWh`)}</strong></p><p><img src={assets.dashboard.co2} alt="" /><span>CO₂ evitado (estimativa)</span><strong>Não calculado</strong><small>Sem fator de emissão por período</small></p><p><img src={assets.dashboard.tree} alt="" /><span>Equivalência ambiental</span><strong>Não calculada</strong><small>Sem método versionado</small></p></div></article>
       </div>
       <div className="sems-operator-main">
-        <article className="sems-dashboard-card sems-economy-card"><header><div><h2>Economia</h2><span>{hasChargeGrid ? "Energia e operação comercial acumuladas" : "Produção e benefícios energéticos acumulados"}</span></div><select aria-label="Período da economia"><option>Desde sempre</option></select></header><div className="sems-economy-metrics"><p><img src={assets.dashboard.generationIncome} alt="" /><span>Receita</span><strong>{money(revenue)}</strong></p><p><img src={assets.dashboard.chargingEnergy} alt="" /><span>{hasChargeGrid ? "Energia entregue" : "Energia gerada"}</span><strong>{number(delivered)} <small>kWh</small></strong></p><p><img src={assets.dashboard.generatedEnergy} alt="" /><span>{hasChargeGrid ? "Sessões" : "Plantas monitoradas"}</span><strong>{hasChargeGrid ? sessions.length : locations.length}</strong></p><p><img src={assets.dashboard.gridIncome} alt="" /><span>Disponibilidade</span><strong>{operatingPercent}<small>%</small></strong></p></div></article>
-        <article className="sems-dashboard-card sems-monitor-card"><header><div className="sems-card-heading"><img src={assets.dashboard.curve} alt="" /><div><h2>Monitoramento</h2><span>{hasChargeGrid ? "Energia entregue e sessões de recarga" : "Potência e energia das plantas"}</span></div></div><div><button className="is-active" type="button">Dia</button><button type="button">Mês</button><button type="button">Ano</button></div></header><div className="sems-monitor-legend"><span><i />{hasChargeGrid ? "Energia entregue" : "Energia"}</span><span><i />{hasChargeGrid ? "Sessões" : "Potência"}</span></div><div className="sems-monitor-chart" aria-label="Gráfico de monitoramento dos últimos sete dias"><span className="chart-grid" /><svg viewBox="0 0 760 250" preserveAspectRatio="none" role="img"><defs><linearGradient id="energy-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#ff323a" stopOpacity=".34" /><stop offset="1" stopColor="#ff323a" stopOpacity="0" /></linearGradient></defs><path className="chart-area" d="M0 210 C90 190 110 130 205 155 S330 80 405 105 S515 35 590 72 S680 38 760 52 L760 250 L0 250 Z" /><path className="chart-energy" d="M0 210 C90 190 110 130 205 155 S330 80 405 105 S515 35 590 72 S680 38 760 52" /><path className="chart-sessions" d="M0 220 C80 205 145 178 210 190 S330 145 410 164 S535 110 600 126 S690 92 760 110" /></svg><div className="chart-axis"><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span><span>Dom</span></div></div></article>
-        {hasChargeGrid ? <article className="sems-dashboard-card chargegrid-operation-card"><header><div><span className="chargegrid-kicker">Camada ChargeGrid</span><h2>Operação dos carregadores</h2></div><a href="#/mvp/operations">Abrir central operacional ›</a></header><div className="chargegrid-operation-metrics"><p data-testid="mvp-kpi-available"><span>Disponíveis</span><strong>{available}</strong></p><p data-testid="mvp-kpi-inuse"><span>Em recarga</span><strong>{inUse}</strong></p><p data-testid="mvp-kpi-active-sessions"><span>Sessões ativas</span><strong>{activeSessions}</strong></p><p data-testid="mvp-kpi-demand-state"><span>Demanda</span><strong>{energy?.demandState ?? "Favorável"}</strong><small>{energy?.powerMarginPercent ?? 100}% de margem</small></p><p><span>Fila atual</span><strong>{queue.length}</strong></p></div></article> : null}
+        <article className="sems-dashboard-card sems-economy-card">
+          <header>
+            <div><h2>Economia</h2><span>{periodLabels[chartPeriod]} · métricas medidas; economia estimada indisponível sem baseline tarifária</span></div>
+            <div className="sems-economy-period">
+              <select aria-label="Período da economia" value={chartPeriod} onChange={(event) => setChartPeriod(event.target.value as DashboardPeriod)}><option value="day">24 horas</option><option value="week">7 dias</option><option value="month">30 dias</option></select>
+            </div>
+          </header>
+          <div className="sems-economy-metrics" data-testid="dashboard-economy-metrics">
+            <p><img src={assets.dashboard.generatedEnergy} alt="" /><span>Geração fotovoltaica no período</span><strong>Indisponível</strong><small>API não agrega a geração total</small></p>
+            <p><img src={assets.dashboard.gridFeedIn} alt="" /><span>Energia exportada</span><strong>{dashboardMetricLabel(dashboardSummary?.energy.gridExportWh, (value) => `${number(value / 1000)} kWh`)}</strong></p>
+            <p><img src={assets.dashboard.chargingEnergy} alt="" /><span>Energia entregue a EV</span><strong>{dashboardMetricLabel(dashboardSummary?.energy.evWh, (value) => `${number(value / 1000)} kWh`)}</strong></p>
+            <p><img src={assets.dashboard.generationIncome} alt="" /><span>Economia estimada na conta</span><strong>Indisponível</strong><small>Sem tarifa evitada e baseline de fatura</small></p>
+            <p><img src={assets.dashboard.gridIncome} alt="" /><span>Receita por exportação</span><strong>Indisponível</strong><small>Sem tarifa de injeção</small></p>
+            <p><img src={assets.dashboard.dischargedEnergy} alt="" /><span>Descarga da bateria</span><strong>Indisponível</strong><small>Bateria sem medição neste protótipo</small></p>
+          </div>
+          {canReadCommercial ? <aside className="sems-chargegrid-summary" data-testid="dashboard-chargegrid-summary"><div><span>{dashboardStatusLabel}</span><strong>{dashboardEstablishmentName}</strong></div><dl><div><dt>{canReadFinance ? "Receita líquida capturada" : "Sessões"}</dt><dd>{canReadFinance ? dashboardMetricLabel(dashboardSummary?.financial.netCapturedCents, (value) => money(value / 100)) : dashboardMetricLabel(dashboardSummary?.counts.sessionsCreatedInPeriod, (value) => String(value))}</dd></div><div><dt>Sessões no período</dt><dd>{dashboardMetricLabel(dashboardSummary?.counts.sessionsCreatedInPeriod, (value) => String(value))}</dd></div><div><dt>Disponibilidade</dt><dd>{availabilityPercent === null ? "Indisponível" : `${number(availabilityPercent)}%`}</dd></div><div><dt>Carregadores publicados</dt><dd>{chargerCount === null ? dashboardMetricLabel(dashboardSummary?.counts.chargersAtGeneration, String) : String(chargerCount)}</dd></div></dl></aside> : null}
+        </article>
+        <article className="sems-dashboard-card sems-monitor-card"><header><div className="sems-card-heading"><img src={assets.dashboard.curve} alt="" /><div><h2>Monitoramento</h2><span>{dashboardEstablishmentName} · {periodLabels[chartPeriod]} · {dashboardStatusLabel}</span></div></div><div>{(["day", "week", "month"] as DashboardPeriod[]).map((period) => <button className={chartPeriod === period ? "is-active" : ""} type="button" key={period} onClick={() => setChartPeriod(period)}>{period === "day" ? "24h" : period === "week" ? "7 dias" : "30 dias"}</button>)}</div></header>{showCommercialChart ? <nav className="sems-chart-mode-tabs" aria-label="Indicador do monitoramento">{(["energy", "revenue", "demand", "utilization"] as DashboardChartMode[]).map((mode) => <button className={chartMode === mode ? "is-active" : ""} key={mode} type="button" onClick={() => setChartMode(mode)}>{mode === "energy" ? "Monitoramento de energia" : mode === "revenue" ? "Receita ChargeGrid" : mode === "demand" ? "Demanda ChargeGrid" : "Utilização ChargeGrid"}</button>)}</nav> : null}{dashboardSummary && showCommercialChart ? <div className="sems-monitor-legend" data-testid="dashboard-summary-metrics">{chartSeries.map((series) => <span key={series.label}><i style={{ background: series.color }} />{series.label}<strong>{series.displayValue}</strong></span>)}</div> : null}<div className="sems-monitor-chart" aria-label="Resumo de monitoramento agregado"><div className="sems-monitor-empty" data-testid="dashboard-chart-empty" role="status" aria-live="polite"><strong>{chartEmptyState.title}</strong><span>{chartEmptyState.description}</span></div></div></article>
       </div>
     </section>
   </>;
@@ -78,12 +216,14 @@ function Overview({ establishmentId }: { establishmentId?: string }) {
 
 function ClientsPage() {
   const { state, account } = useAdminState();
+  const [search, setSearch] = useState("");
   const scopeSet = new Set(accessibleEstablishmentIds(state, account));
-  const visibleClients = state.clients.filter((client) => state.establishments.some((item) => item.clientId === client.id && scopeSet.has(item.id)));
-  return <><Breadcrumbs items={[{ label: "GoodWe" }, { label: "Clientes" }]} /><section className="surface panel enterprise-page" data-testid="clients-panel"><SectionHeader title="Carteira comercial" subtitle="Estabelecimentos e ativações sincronizados do backoffice dentro da responsabilidade atribuída." /><div className="portfolio-inline-status"><strong>{visibleClients.length} cliente(s)</strong><span>{scopeSet.size} estabelecimento(s) no escopo</span><span>Cadastro contratual mantido fora do SEMS+</span></div><form className="enterprise-search-row" onSubmit={(event) => event.preventDefault()}><label><span>Buscar cliente</span><input placeholder="Nome, documento ou responsavel" /></label><label><span>Ciclo</span><select><option>Todos</option><option>Onboarding</option><option>Operacao</option><option>Expansao</option></select></label><button type="submit">Aplicar filtros</button></form><div className="enterprise-client-list">{visibleClients.map((client) => {
+  const term = search.trim().toLowerCase();
+  const visibleClients = state.clients.filter((client) => state.establishments.some((item) => item.clientId === client.id && scopeSet.has(item.id)) && (!term || [client.name, client.corporateName, client.document, client.owner].some((value) => value.toLowerCase().includes(term))));
+  return <><Breadcrumbs items={[{ label: "GoodWe" }, { label: "Clientes" }]} /><section className="surface panel enterprise-page" data-testid="clients-panel"><SectionHeader title="Carteira comercial" subtitle="Estabelecimentos e ativações sincronizados do backoffice dentro da responsabilidade atribuída." /><div className="portfolio-inline-status"><strong>{visibleClients.length} cliente(s)</strong><span>{scopeSet.size} estabelecimento(s) no escopo</span><span>Cadastro contratual mantido fora do SEMS+</span></div><div className="enterprise-search-row"><label><span>Buscar cliente</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nome, documento ou responsável" /></label></div><div className="enterprise-client-list">{visibleClients.map((client) => {
     const establishments = state.establishments.filter((item) => item.clientId === client.id); const ids = new Set(establishments.map((item) => item.id)); const locations = state.locations.filter((item) => ids.has(item.establishmentId)); const chargers = state.chargers.filter((item) => ids.has(item.establishmentId));
     return <article className="enterprise-client-card" key={client.id}><img src={assets.plant} alt={client.name} /><div className="enterprise-client-main"><div className="enterprise-card-title"><div><span>Enterprise</span><h3>{client.name}</h3><p>{client.corporateName}</p></div><StatusPill value={client.status} /></div><div className="enterprise-client-metrics"><span><strong>{establishments.length}</strong> estabelecimentos</span><span><strong>{locations.length}</strong> pontos</span><span><strong>{chargers.length}</strong> carregadores</span><span><strong>{state.supportTickets.filter((item) => ids.has(item.establishmentId)).length}</strong> chamados</span></div><div className="enterprise-card-footer"><span>Responsavel GoodWe: {client.owner}</span><span>Health 91/100</span><a className="ghost-button" href={`#/mvp/client?client=${client.id}`}>Abrir cliente</a></div></div></article>;
-  })}</div></section></>;
+  })}</div>{!visibleClients.length ? <p className="operations-empty">Nenhum cliente corresponde à busca.</p> : null}</section></>;
 }
 
 function ClientDetail({ client }: { client: Client | undefined }) {
@@ -100,7 +240,7 @@ function EstablishmentsPage() {
   const { state, account } = useAdminState();
   const scopeSet = new Set(accessibleEstablishmentIds(state, account));
   const establishments = state.establishments.filter((item) => scopeSet.has(item.id));
-  return <section className="surface panel sems-list-page"><SectionHeader title="Estabelecimentos" subtitle="Unidades sincronizadas do backoffice dentro da carteira atribuída." /><div className="establishment-folder-grid">{establishments.map((item) => { const locations = state.locations.filter((location) => location.establishmentId === item.id); const chargers = state.chargers.filter((charger) => charger.establishmentId === item.id); return <article className="establishment-folder-card" key={item.id}><div className="folder-thumb"><img src={assets.plant} alt={item.name} /></div><div className="folder-body"><h3>{item.name}</h3><p>{item.city}/{item.state} · Cliente comercial</p><div className="network-card-stats"><span><strong>{locations.length}</strong> pontos</span><span><strong>{chargers.length}</strong> carregadores</span><span><strong>{chargers.filter((charger) => charger.status === "charging").length}</strong> em uso</span><span><strong>{chargers.filter((charger) => charger.status === "available").length}</strong> disponíveis</span></div><p>{state.queue.filter((entry) => entry.establishmentId === item.id).length} motorista(s) em fila</p><a className="ghost-button" href={`#/mvp/establishment?est=${item.id}`}>Abrir pasta</a></div></article>; })}</div></section>;
+  return <section className="surface panel sems-list-page"><SectionHeader title="Estabelecimentos" subtitle="Unidades sincronizadas do backoffice dentro da carteira atribuída." /><div className="establishment-folder-grid">{establishments.map((item) => { const locations = state.locations.filter((location) => location.establishmentId === item.id); const chargers = state.chargers.filter((charger) => charger.establishmentId === item.id); return <article className="establishment-folder-card" key={item.id}><div className="folder-thumb"><img src={assets.plant} alt={item.name} /></div><div className="folder-body"><h3>{item.name}</h3><p>{item.city}/{item.state} · Cliente comercial</p><div className="network-card-stats"><span><strong>{locations.length}</strong> pontos</span><span><strong>{chargers.length}</strong> carregadores</span><span><strong>{chargers.filter((charger) => ["connected", "charging"].includes(charger.status)).length}</strong> em uso</span><span><strong>{chargers.filter((charger) => charger.status === "available").length}</strong> disponíveis</span></div><p>{state.queue.filter((entry) => entry.establishmentId === item.id).length} motorista(s) em fila</p><a className="ghost-button" href={`#/mvp/establishment?est=${item.id}`}>Abrir pasta</a></div></article>; })}</div></section>;
 }
 
 function EstablishmentDetail({ establishmentId }: { establishmentId: string }) {
@@ -121,13 +261,13 @@ function LocationsPage({ establishmentId }: { establishmentId?: string }) {
     <div className="network-view-tabs"><span className="is-active">Blocos</span><a href="#/mvp/overview">Mapa</a></div>
     <div className="network-location-grid">{locations.map((item) => {
       const chargers = state.chargers.filter((charger) => charger.locationId === item.id);
-      return <article className="network-location-card" key={item.id}><img className="network-card-cover" src={assets.plant} alt={item.name} /><div className="network-card-body"><div className="network-card-title"><div><h3>{item.name}</h3><p>{item.city}/{item.state}</p></div><Badge value={item.status === "Ativo" ? "available" : "offline"} /></div><p className="network-card-address">{item.address}, {item.number}</p><div className="network-card-stats"><span><strong>{chargers.length}</strong> carregadores</span><span><strong>{chargers.filter((charger) => charger.status === "available").length}</strong> disponiveis</span><span><strong>{chargers.filter((charger) => charger.status === "charging").length}</strong> em uso</span><span><strong>{chargers.filter((charger) => charger.status === "offline").length}</strong> offline</span></div><a className="ghost-button" href={`#/mvp/location?est=${item.establishmentId}&loc=${item.id}`}>{establishmentId ? "Abrir monitoramento" : "Abrir ponto"}</a></div></article>;
+      return <article className="network-location-card" key={item.id}><img className="network-card-cover" src={assets.plant} alt={item.name} /><div className="network-card-body"><div className="network-card-title"><div><h3>{item.name}</h3><p>{item.city}/{item.state}</p></div><Badge value={item.status === "Ativo" ? "available" : "offline"} /></div><p className="network-card-address">{item.address}, {item.number}</p><div className="network-card-stats"><span><strong>{chargers.length}</strong> carregadores</span><span><strong>{chargers.filter((charger) => charger.status === "available").length}</strong> disponiveis</span><span><strong>{chargers.filter((charger) => ["connected", "charging"].includes(charger.status)).length}</strong> em uso</span><span><strong>{chargers.filter((charger) => charger.status === "offline").length}</strong> offline</span></div><a className="ghost-button" href={`#/mvp/location?est=${item.establishmentId}&loc=${item.id}`}>{establishmentId ? "Abrir monitoramento" : "Abrir ponto"}</a></div></article>;
     })}</div>
   </section>;
 }
 
 function ChargerCards({ items }: { items: Charger[] }) {
-  return <div className="charger-visual-grid">{items.map((charger) => <article key={charger.id} className="charger-visual-card"><img src={assets.charger} alt={charger.model} /><div><div className="network-card-title"><h3>{charger.internalId || charger.id}</h3><Badge value={charger.status} /></div><p>{charger.model} · {charger.powerKw} kW</p><p>{charger.status === "charging" ? "Sessao ativa" : "Sem sessao ativa"}</p><div className="network-card-meta"><span>Health 92/100</span><span>{number(charger.todayEnergyKwh)} kWh hoje</span></div><a className="ghost-button" href={`#/mvp/charger?est=${charger.establishmentId}&loc=${charger.locationId}&charger=${charger.id}`}>Ver equipamento</a></div></article>)}</div>;
+  return <div className="charger-visual-grid">{items.map((charger) => <article key={charger.id} className="charger-visual-card"><img src={assets.charger} alt={charger.model} /><div><div className="network-card-title"><h3>{charger.identifier}</h3><Badge value={charger.status} /></div><p>{charger.model} · {charger.powerKw} kW</p><p>{charger.status === "charging" ? "Sessao ativa" : "Sem sessao ativa"}</p><div className="network-card-meta"><span>Health 92/100</span><span>{number(charger.todayEnergyKwh)} kWh hoje</span></div><a className="ghost-button" href={`#/mvp/charger?est=${charger.establishmentId}&loc=${charger.locationId}&charger=${charger.id}`}>Ver equipamento</a></div></article>)}</div>;
 }
 
 function LocationDetail({ establishmentId, locationId }: { establishmentId: string; locationId: string }) {
@@ -150,7 +290,7 @@ function SupportPage({ establishmentId }: { establishmentId?: string }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const accessibleIds = new Set(accessibleEstablishmentIds(state, account));
-  const canUseChargeGridSupport = Boolean(account?.role);
+  const canUseChargeGridSupport = hasOwnChargeGridOperation(state, account);
   const tickets = state.supportTickets.filter((item) => accessibleIds.has(item.establishmentId) && (!establishmentId || item.establishmentId === establishmentId));
   const chargers = state.chargers.filter((item) => accessibleIds.has(item.establishmentId) && (!establishmentId || item.establishmentId === establishmentId));
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -159,7 +299,7 @@ function SupportPage({ establishmentId }: { establishmentId?: string }) {
     const id = createTicket(establishmentId ?? "est-fiap", String(data.get("title")), String(data.get("description")));
     navigate(`/mvp/ticket?ticket=${id}`);
   }
-  return <div className="sems-service-page"><section className="surface sems-service-banner"><div className="sems-service-highlight"><span>GoodWe Service</span><h2>Energia inteligente com suporte conectado</h2><p>Conteúdo técnico, comunicados e atendimento em um único centro.</p></div><aside><h3>Comunicados</h3><p><strong>Next-Gen SEMS+: sua energia sob uma nova perspectiva</strong><span>15/07/2026 08:48:13</span></p>{canUseChargeGridSupport ? <p><strong>Operação ChargeGrid integrada ao portal</strong><span>23/08/2026 10:30:00</span></p> : null}</aside></section><section className="sems-service-grid"><article className="surface sems-service-news"><header><h2>Notícias GoodWe</h2><span>Mais</span></header><div><img src={assets.plant} alt="Soluções GoodWe" /><p><strong>GoodWe entre as marcas globais de energia inteligente</strong><span>04/12/2024</span></p></div><footer><button type="button" onClick={() => setOpen(true)}>◉ Suporte técnico</button><button type="button" onClick={() => setOpen(true)}>⌁ Fale conosco</button></footer></article><article className="surface sems-service-warranty"><header><h2>Garantia e equipamentos</h2><span>Mais</span></header>{chargers.slice(0, 2).map((charger) => <a key={charger.id} href={`#/mvp/charger?est=${charger.establishmentId}&charger=${charger.id}`}><span>{charger.model}</span><strong>{charger.serial}</strong></a>)}</article><aside className="sems-service-links">{account && hasAdminCapability(account, "intelligence:read") ? <a href="#/mvp/ai">◉ Agente de IA GoodWe</a> : null}<a href="#/mvp/documents">▤ Manual do usuário</a><button type="button" onClick={() => setOpen(true)}>▱ Feedback</button><a href="#/mvp/overview">▦ Sobre o SEMS+</a></aside></section>{canUseChargeGridSupport ? <section className="surface panel enterprise-page"><SectionHeader title="Chamados ChargeGrid" subtitle={establishmentId ? "Atendimento comercial e técnico da operação de recarga." : "Selecione um estabelecimento para abrir um novo chamado."} action={establishmentId ? <button className="sems-primary-action" type="button" onClick={() => setOpen((value) => !value)}>Abrir chamado</button> : undefined} />{open && establishmentId ? <form className="simulator-grid" data-form="create-support-ticket" onSubmit={submit}><label>Título<input name="title" required /></label><label>Descrição<textarea name="description" required /></label><button type="submit">Criar chamado</button></form> : null}<div className="support-grid">{tickets.map((ticket) => <article key={ticket.id} className="support-card"><header><div><span>{ticket.code}</span><h3>{ticket.title}</h3></div><StatusPill value={ticket.status} /></header><p>{ticket.description}</p><a className="ghost-button" href={`#/mvp/ticket?est=${ticket.establishmentId}&ticket=${ticket.id}`}>Abrir chamado</a></article>)}</div></section> : null}</div>;
+  return <div className="sems-service-page"><section className="surface sems-service-banner"><div className="sems-service-highlight"><span>GoodWe Service</span><h2>Energia inteligente com suporte conectado</h2><p>Conteúdo técnico, comunicados e atendimento em um único centro.</p></div><aside><h3>Comunicados</h3><p><strong>Next-Gen SEMS+: sua energia sob uma nova perspectiva</strong><span>15/07/2026 08:48:13</span></p>{canUseChargeGridSupport ? <p><strong>Operação ChargeGrid integrada ao portal</strong><span>23/08/2026 10:30:00</span></p> : null}</aside></section><section className="sems-service-grid"><article className="surface sems-service-news"><header><h2>Notícias GoodWe</h2><span>Mais</span></header><div><img src={assets.plant} alt="Soluções GoodWe" /><p><strong>GoodWe entre as marcas globais de energia inteligente</strong><span>04/12/2024</span></p></div><footer><button type="button" onClick={() => setOpen(true)}>◉ Suporte técnico</button><button type="button" onClick={() => setOpen(true)}>⌁ Fale conosco</button></footer></article><article className="surface sems-service-warranty"><header><h2>Garantia e equipamentos</h2><span>Mais</span></header>{chargers.slice(0, 2).map((charger) => <a key={charger.id} href={`#/mvp/charger?est=${charger.establishmentId}&charger=${charger.id}`}><span>{charger.model}</span><strong>{charger.serial}</strong></a>)}</article><aside className="sems-service-links">{account && hasAdminCapability(account, "intelligence:read") ? <a href="#/mvp/ai">◉ Agente de IA GoodWe</a> : null}<button type="button" onClick={() => setOpen(true)}>▱ Feedback</button><a href="#/mvp/overview">▦ Sobre o SEMS+</a></aside></section>{canUseChargeGridSupport ? <section className="surface panel enterprise-page"><SectionHeader title="Chamados ChargeGrid" subtitle={establishmentId ? "Atendimento comercial e técnico da operação de recarga." : "Selecione um estabelecimento para abrir um novo chamado."} action={establishmentId ? <button className="sems-primary-action" type="button" onClick={() => setOpen((value) => !value)}>Abrir chamado</button> : undefined} />{open && establishmentId ? <form className="simulator-grid" data-form="create-support-ticket" onSubmit={submit}><label>Título<input name="title" required /></label><label>Descrição<textarea name="description" required /></label><button type="submit">Criar chamado</button></form> : null}<div className="support-grid">{tickets.map((ticket) => <article key={ticket.id} className="support-card"><header><div><span>{ticket.code}</span><h3>{ticket.title}</h3></div><StatusPill value={ticket.status} /></header><p>{ticket.description}</p><a className="ghost-button" href={`#/mvp/ticket?est=${ticket.establishmentId}&ticket=${ticket.id}`}>Abrir chamado</a></article>)}</div></section> : null}</div>;
 }
 
 function TicketPage({ ticketId }: { ticketId: string }) {
@@ -173,7 +313,7 @@ function GenericPage({ tab }: { tab: string }) {
   const { state } = useAdminState();
   const titles: Record<string, string> = { installations: "Implantacoes", contracts: "Contratos", expansion: "Expansao", documents: "Documentos" };
   if (tab === "contracts") return <section className="surface panel enterprise-page"><SectionHeader title="Contratos comerciais" subtitle="Modelos, vigencias, tarifas e obrigacoes da carteira." /><div className="contract-grid">{state.establishments.map((item) => { const shareBps = state.tariffPolicies.find((policy) => policy.establishmentId === item.id && policy.status === "ACTIVE")?.platformShareBps; return <article className="contract-card" key={item.id}><header><div><span>{item.contractCode}</span><h3>Contrato ChargeGrid</h3><p>{item.name}</p></div><StatusPill value="Ativo" /></header><dl><div><dt>Modelo</dt><dd>Revenue share</dd></div><div><dt>SLA</dt><dd>8 horas</dd></div><div><dt>Participacao</dt><dd>{shareBps === undefined ? "Nao parametrizada" : `${shareBps / 100}%`}</dd></div></dl><a className="ghost-button" href={`#/mvp/contract?est=${item.id}`}>Ver condicoes</a></article>; })}</div></section>;
-  if (tab === "installations") return <section className="surface panel enterprise-page"><SectionHeader title="Implantacoes" subtitle="Da vistoria ao aceite: acompanhe responsabilidade, prazo e bloqueios." action={<button className="sems-primary-action">Nova implantacao</button>} /><div className="enterprise-progress-list">{state.establishments.map((item, index) => <a href={`#/mvp/establishment?est=${item.id}`} key={item.id}><div><strong>IMP-2026-00{index + 1}</strong><span>{item.name}</span></div><div className="progress-track"><i style={{ width: `${78 - index * 9}%` }} /></div><b>{78 - index * 9}%</b><StatusPill value={index ? "Em andamento" : "Concluida"} /></a>)}</div></section>;
+  if (tab === "installations") return <section className="surface panel enterprise-page"><SectionHeader title="Implantacoes" subtitle="Da vistoria ao aceite: acompanhe responsabilidade, prazo e bloqueios." /><div className="enterprise-progress-list">{state.establishments.map((item, index) => <a href={`#/mvp/establishment?est=${item.id}`} key={item.id}><div><strong>IMP-2026-00{index + 1}</strong><span>{item.name}</span></div><div className="progress-track"><i style={{ width: `${78 - index * 9}%` }} /></div><b>{78 - index * 9}%</b><StatusPill value={index ? "Em andamento" : "Concluida"} /></a>)}</div></section>;
   if (tab === "expansion") return <section className="surface panel enterprise-page"><SectionHeader title="Expansao" subtitle="Oportunidades priorizadas por utilizacao, fila e demanda." /><div className="opportunity-grid">{state.clients.slice(0, 3).map((item, index) => <article key={item.id}><span>Score {88 - index * 7}</span><h3>Expandir infraestrutura de {item.name}</h3><p>Uso recorrente e fila indicam potencial comercial.</p><a className="ghost-button" href={`#/mvp/client?client=${item.id}`}>Abrir oportunidade</a></article>)}</div></section>;
   if (tab === "documents") return <section className="surface panel enterprise-page"><SectionHeader title="Documentos" subtitle="Arquivos comerciais e operacionais disponiveis." /><DataTable columns={["Documento", "Tipo", "Versao", "Status"]}><tr><td>Manual de operacao ChargeGrid</td><td>Operacional</td><td>v2.1</td><td><StatusPill value="Publicado" /></td></tr><tr><td>Politica de tarifacao</td><td>Comercial</td><td>v1.4</td><td><StatusPill value="Publicado" /></td></tr></DataTable></section>;
   return <section className="surface panel enterprise-page"><SectionHeader eyebrow="ChargeGrid Intelligence" title={titles[tab] ?? "Area indisponivel"} subtitle="Esta rota nao faz parte da release administrativa validada." /><a className="ghost-button" href="#/mvp/overview">Voltar para a visao geral</a></section>;
@@ -207,12 +347,13 @@ export function AdminDashboardPage() {
   const requestedClientId = query.get("client");
   const requestedClientScopes = requestedClientId ? state.establishments.filter((item) => item.clientId === requestedClientId).map((item) => item.id) : [];
   const requestedResourceScope = requestedCharger?.establishmentId ?? requestedSession?.establishmentId ?? requestedIncident?.establishmentId ?? requestedTransaction?.establishmentId ?? requestedTicket?.establishmentId;
+  if (requestedCharger && !accessibleScopeSet.has(requestedCharger.establishmentId)) return <Navigate to="/mvp/chargers" replace />;
   if (requestedResourceScope && !accessibleScopeSet.has(requestedResourceScope)) return <AccessDeniedPage />;
   if (requestedClientId && !requestedClientScopes.some((scope) => accessibleScopeSet.has(scope))) return <AccessDeniedPage />;
 
   const content = (() => {
     switch (tab) {
-      case "overview": return <Overview establishmentId={establishmentId || undefined} />;
+      case "overview": return <Overview requestedEstablishmentId={establishmentId || undefined} />;
       case "clients": return <ClientsPage />;
       case "new-client": return <Navigate to="/mvp/clients" replace />;
       case "client": return <ClientDetail client={state.clients.find((item) => item.id === query.get("client"))} />;
@@ -250,8 +391,7 @@ export function AdminDashboardPage() {
       case "ticket": return account.role ? <TicketPage ticketId={query.get("ticket") ?? ""} /> : <Navigate to="/mvp/support" replace />;
       case "audit": return <Navigate to="/mvp/access?section=audit" replace />;
       case "contracts": return <Navigate to="/mvp/access?section=contracts" replace />;
-      case "expansion":
-      case "documents": return <GenericPage tab={tab} />;
+      case "expansion": return <GenericPage tab={tab} />;
       default: return <Navigate to="/mvp/overview" replace />;
     }
   })();

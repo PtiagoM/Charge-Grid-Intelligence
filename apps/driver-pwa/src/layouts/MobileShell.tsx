@@ -38,6 +38,7 @@ export function MobileShell() {
   const sessionNavigationActive = isSessionContext(location.pathname);
   const showBack = !["/", "/explore", "/session", "/history", "/account"].includes(location.pathname);
   const unreadCount = notifications.filter((item) => !item.read).length;
+  const queueCalled = queue ? [QueueStatus.CALLED, QueueStatus.ASSIGNED].includes(queue.status) : false;
 
   function goBack() {
     if (window.history.length > 1) {
@@ -71,8 +72,8 @@ export function MobileShell() {
         </div>
       </header> : null}
       {!isMapRoute && !isOnline ? <div className="offline-banner" role="status"><AppIcon name="wifi-off" size={18} /> Você está offline. Novas autorizações estão indisponíveis.</div> : null}
-      {!isMapRoute && isAuthenticated && queue && !location.pathname.startsWith("/queue") ? <button type="button" className={`active-queue-banner${queue.status === QueueStatus.CALLED ? " is-called" : ""}`} onClick={() => navigate("/queue")}>
-        <AppIcon name="clock" size={19} /><span><strong>{queue.status === QueueStatus.CALLED ? "Sua vaga está disponível" : `Você está na fila · posição #${queue.position}`}</strong><small>{queue.status === QueueStatus.CALLED ? "Toque para ver o carregador atribuído" : `${queue.establishmentName} · acompanhe a qualquer momento`}</small></span><AppIcon name="chevron-right" size={18} />
+      {!isMapRoute && isAuthenticated && queue && !location.pathname.startsWith("/queue") ? <button type="button" className={`active-queue-banner${queueCalled ? " is-called" : ""}`} onClick={() => navigate("/queue")}>
+        <AppIcon name="clock" size={19} /><span><strong>{queueCalled ? "Sua vaga está disponível" : `Você está na fila · posição #${queue.position}`}</strong><small>{queueCalled ? "Toque para ver o carregador atribuído" : `${queue.establishmentName} · acompanhe a qualquer momento`}</small></span><AppIcon name="chevron-right" size={18} />
       </button> : null}
       <main className="mobile-content"><Outlet /></main>
       {hasAccountNavigation && !isMapRoute ? <nav className="bottom-nav" aria-label="Navegação do motorista">

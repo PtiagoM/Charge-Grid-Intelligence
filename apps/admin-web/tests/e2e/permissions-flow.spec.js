@@ -21,14 +21,14 @@ test('não existem cadastros manuais de ponto ou carregador GoodWe no fluxo publ
   await expect(page).toHaveURL(/#\/mvp\/overview/);
 });
 
-test('administrador local controla a publicação individual do carregador', async ({ page }) => {
+test('administrador observa publicacao sem oferecer alteracao nao implementada', async ({ page }) => {
   await login(page, 'estabelecimento@teste.com');
   await page.goto('/#/mvp/charger?est=est-fiap&charger=CG-FIAP-01');
   await expect(page.getByRole('heading', { name: 'Publicação comercial' })).toBeVisible();
   await expect(page.getByText('PUBLISHED', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Suspender publicação' }).click();
-  await expect(page.getByText('SUSPENDED', { exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Publicar no ChargeGrid' })).toBeVisible();
+  await expect(page.getByText('A publicação do catálogo é observada pela API; alteração administrativa não faz parte deste protótipo.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Suspender publicação' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Publicar no ChargeGrid' })).toHaveCount(0);
 });
 
 test('técnico mantém diagnóstico SEMS+ sem dados comerciais ou pessoais', async ({ page }) => {

@@ -4,12 +4,13 @@ import { Link } from "react-router-dom";
 import { AppIcon } from "./AppIcon";
 import { EstablishmentCard } from "./EstablishmentCard";
 import { PageIntro, SecondaryButton } from "./Ui";
-import { commercialPlants } from "../data/commercialPlants";
+import { useCommercialPlants } from "../data/useCommercialPlants";
 
 type AvailabilityFilter = "all" | "available" | "queue";
 const availableStates: CommercialAvailability[] = [CommercialAvailability.OPEN_AVAILABLE, CommercialAvailability.OPEN_PARTIAL];
 
 export function SessionPlantCatalog() {
+  const { plants } = useCommercialPlants();
   const [query, setQuery] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [minPower, setMinPower] = useState("");
@@ -19,7 +20,7 @@ export function SessionPlantCatalog() {
 
   const results = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("pt-BR");
-    return commercialPlants.filter((plant) => {
+    return plants.filter((plant) => {
       const matchesQuery = !normalizedQuery || `${plant.name} ${plant.address} ${plant.category}`.toLocaleLowerCase("pt-BR").includes(normalizedQuery);
       const matchesPrice = !maxPrice || (plant.tariffFrom?.amount ?? Infinity) <= Number(maxPrice);
       const matchesPower = !minPower || plant.nominalPowerKw >= Number(minPower);
@@ -29,7 +30,7 @@ export function SessionPlantCatalog() {
         || availability === "queue" && plant.commercialAvailability === CommercialAvailability.FULL_QUEUE;
       return matchesQuery && matchesPrice && matchesPower && matchesDistance && matchesAvailability;
     }).sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
-  }, [availability, maxDistance, maxPrice, minPower, query]);
+  }, [availability, maxDistance, maxPrice, minPower, plants, query]);
 
   const activeFilterCount = [maxPrice, minPower, maxDistance, availability === "all" ? "" : availability].filter(Boolean).length;
   const visiblePlants = results.slice(0, visibleCount);

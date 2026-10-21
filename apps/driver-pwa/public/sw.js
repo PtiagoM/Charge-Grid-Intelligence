@@ -1,6 +1,6 @@
 /* global self, caches, fetch, URL */
 
-const CACHE_NAME = "chargegrid-driver-shell-v3";
+const CACHE_NAME = "chargegrid-driver-shell-v6";
 const APP_SHELL = ["/", "/manifest.webmanifest", "/chargegrid-mark.svg"];
 
 self.addEventListener("install", (event) => {
@@ -9,12 +9,21 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))));
-  self.clients.claim();
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    const previousShellCaches = keys.filter((key) => key.startsWith("chargegrid-driver-shell-") && key !== CACHE_NAME);
+    await Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)));
+    await self.clients.claim();
+    if (!previousShellCaches.length) return;
+    const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    for (const client of windows) void client.navigate(client.url).catch(() => undefined);
+  })());
 });
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+  const requestUrl = new URL(event.request.url);
+  if (/^\/(?:api\/)?(?:commercial|payments)(?:\/|$)/.test(requestUrl.pathname)) return;
   if (event.request.mode === "navigate") {
     event.respondWith(fetch(event.request).catch(() => caches.match("/")));
     return;

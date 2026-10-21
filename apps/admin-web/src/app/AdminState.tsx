@@ -1,17 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { AccessActionResult, Account, AdminState, ChargerCommercialStatus, FinancialActionResult, IncidentActionResult, PlantOnboardingDraft, PlantOnboardingPublishResult, QueueActionResult, Recommendation, ReportActionResult, ReportSubscription, RequestChargerCommandInput, RequestChargerCommandResult, SupportTicket } from "../domain/admin";
+import type { AccessActionResult, Account, AdminState, FinancialActionResult, IncidentActionResult, PlantOnboardingDraft, PlantOnboardingPublishResult, Recommendation, ReportActionResult, ReportSubscription, SupportTicket } from "../domain/admin";
 import { createInitialState } from "../fixtures/adminDemo";
 import { GOODWE_PLANT_CATALOG } from "../fixtures/goodwePlantCatalog";
 import { createEmptyPlantOnboardingDraft, publishPlantOnboarding as publishPlantDraft } from "../domain/plantOnboarding";
 import { browserAdminStateRepository } from "../services/adminStateRepository";
-import { acceptChargerCommand, requestChargerCommand as requestCommand, resolveChargerCommand, updateChargerCommercialStatus as updateCommercialStatus } from "../domain/chargerOperations";
-import { demoAdminChargerCommandRepository } from "../services/adminChargerCommandRepository";
-import { callNextDriver, confirmQueueArrival as confirmArrival, markQueueNoShow as noShow, releaseQueueEntry as releaseEntry } from "../domain/queueOperations";
-import { activateTariffPolicy as activateTariff, refundPayment as refundTransaction, settlePayment as settleTransaction, type ActivateTariffInput } from "../domain/financialOperations";
-import { acknowledgeIncident as acknowledgeOperationalIncident, correlateOperationalSignals, decideRecommendation as decideOperationalRecommendation, resolveIncident as resolveOperationalIncident } from "../domain/incidentOperations";
+import { refundPayment as refundTransaction, settlePayment as settleTransaction } from "../domain/financialOperations";
+import { acknowledgeIncident as acknowledgeOperationalIncident, decideRecommendation as decideOperationalRecommendation, resolveIncident as resolveOperationalIncident } from "../domain/incidentOperations";
 import { grantAccess as grantAccountAccess, revokeAccess as revokeAccountAccess, type GrantAccessInput } from "../domain/accessOperations";
 import { completeReport, failReport, markReportProcessing, requestReport as requestOperationalReport, saveReportSubscription as saveOperationalReportSubscription, type RequestReportInput } from "../domain/reportOperations";
-import { demoAdminReportRepository } from "../services/adminReportRepository";
+import { decideCommercialInsight, fetchCommercialProjection, generateCommercialReportArtifact, mergeCommercialSnapshot, publishCommercialTariff } from "../services/commercialSnapshotRepository";
 
 function readState(): AdminState {
   return browserAdminStateRepository.load(createInitialState());
@@ -20,20 +17,15 @@ function readState(): AdminState {
 interface AdminContextValue {
   state: AdminState;
   account: Account | null;
+  commercialSync: { status: "LOADING" | "SYNCED" | "STALE" | "UNAVAILABLE"; lastUpdatedAt: string | null; error: string | null };
   login: (email: string, password: string) => Account | null;
   logout: () => void;
-  updateChargerCommercialStatus: (chargerId: string, target: ChargerCommercialStatus) => AccessActionResult;
-  requestChargerCommand: (input: RequestChargerCommandInput) => Promise<RequestChargerCommandResult>;
-  callNextQueueDriver: (establishmentId: string) => QueueActionResult;
-  confirmQueueArrival: (entryId: string) => QueueActionResult;
-  markQueueNoShow: (entryId: string, now?: string) => QueueActionResult;
-  releaseQueueEntry: (entryId: string) => QueueActionResult;
-  activateTariffPolicy: (input: ActivateTariffInput) => FinancialActionResult;
+  publishTariff: (input: { establishmentId: string; energyCentsPerKwh: number; idleCentsPerMinute: number; reason: string }) => Promise<FinancialActionResult>;
   refundPayment: (transactionId: string, amountCents: number, reason: string, idempotencyKey: string) => FinancialActionResult;
   settlePayment: (transactionId: string) => FinancialActionResult;
-  acknowledgeIncident: (incidentId: string, assignee: string) => IncidentActionResult;
-  resolveIncident: (incidentId: string, resolution: string) => IncidentActionResult;
-  decideRecommendation: (recommendationId: string, decision: Extract<Recommendation["status"], "ACCEPTED" | "DEFERRED" | "REJECTED">, reason: string) => IncidentActionResult;
+  acknowledgeIncident: (incidentId: string, assignee: string) => Promise<IncidentActionResult>;
+  resolveIncident: (incidentId: string, resolution: string) => Promise<IncidentActionResult>;
+  decideRecommendation: (recommendationId: string, decision: Extract<Recommendation["status"], "ACCEPTED" | "DEFERRED" | "REJECTED">, reason: string) => Promise<IncidentActionResult>;
   grantAccess: (input: GrantAccessInput) => AccessActionResult;
   revokeAccess: (grantId: string, reason: string) => AccessActionResult;
   requestReport: (input: RequestReportInput) => Promise<ReportActionResult>;
@@ -49,10 +41,42 @@ const AdminContext = createContext<AdminContextValue | null>(null);
 
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AdminState>(readState);
+  const [commercialSync, setCommercialSync] = useState<AdminContextValue["commercialSync"]>({ status: "LOADING", lastUpdatedAt: null, error: null });
 
   useEffect(() => browserAdminStateRepository.save(state), [state]);
 
   const account = state.accounts.find((item) => item.id === state.currentAccountId) ?? null;
+  const accountId = account?.id;
+
+  useEffect(() => {
+    if (!accountId) {
+      setCommercialSync({ status: "UNAVAILABLE", lastUpdatedAt: null, error: null });
+      return;
+    }
+    let active = true;
+    let timer = 0;
+    let controller: AbortController | undefined;
+    const refresh = async () => {
+      controller = new AbortController();
+      try {
+        const { snapshot, insights, energyViews, energyForecasts } = await fetchCommercialProjection(controller.signal);
+        if (active) {
+          setState((current) => mergeCommercialSnapshot(current, snapshot, insights, energyViews, energyForecasts));
+          setCommercialSync({ status: "SYNCED", lastUpdatedAt: new Date().toISOString(), error: null });
+        }
+      } catch (error) {
+        if (active && !controller.signal.aborted) setCommercialSync((current) => ({
+          ...current,
+          status: current.lastUpdatedAt ? "STALE" : "UNAVAILABLE",
+          error: error instanceof Error ? error.message : "A API ChargeGrid está indisponível."
+        }));
+      } finally {
+        if (active) timer = window.setTimeout(() => void refresh(), 2000);
+      }
+    };
+    void refresh();
+    return () => { active = false; window.clearTimeout(timer); controller?.abort(); };
+  }, [accountId]);
 
   const login = useCallback((email: string, password: string) => {
     const matched = state.accounts.find((item) => item.email === email.trim().toLowerCase() && item.password === password) ?? null;
@@ -62,60 +86,16 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => setState((current) => ({ ...current, currentAccountId: null })), []);
 
-  const updateChargerCommercialStatus = useCallback((chargerId: string, target: ChargerCommercialStatus) => {
-    const transition = updateCommercialStatus(state, account, chargerId, target);
-    if (transition.ok) setState(transition.state);
-    return { ok: transition.ok, issues: transition.issues };
-  }, [account, state]);
-
-  const requestChargerCommand = useCallback(async (input: RequestChargerCommandInput) => {
-    const requested = requestCommand(state, account, input);
-    if (!requested.ok || !requested.command) return requested;
-    setState(requested.state);
-
-    const provider = await demoAdminChargerCommandRepository.submit(requested.command);
-    const accepted = acceptChargerCommand(requested.state, requested.command.id, provider.providerCommandId, provider.acceptedAt);
-    if (!accepted.ok || !accepted.command) {
-      setState(accepted.state);
-      return accepted;
+  const publishTariff = useCallback(async (input: { establishmentId: string; energyCentsPerKwh: number; idleCentsPerMinute: number; reason: string }) => {
+    try {
+      await publishCommercialTariff(input);
+      const { snapshot, insights, energyViews, energyForecasts } = await fetchCommercialProjection();
+      setState((current) => mergeCommercialSnapshot(current, snapshot, insights, energyViews, energyForecasts));
+      return { ok: true, issues: [] };
+    } catch (error) {
+      return { ok: false, issues: [error instanceof Error ? error.message : "Não foi possível publicar a tarifa."] };
     }
-    setState(accepted.state);
-
-    const observation = await demoAdminChargerCommandRepository.observe(accepted.command);
-    const resolved = resolveChargerCommand(accepted.state, accepted.command.id, observation.outcome, observation.observedAt);
-    setState(correlateOperationalSignals(resolved.state, observation.observedAt));
-    return resolved;
-  }, [account, state]);
-
-  const callNextQueueDriver = useCallback((establishmentId: string) => {
-    const transition = callNextDriver(state, account, establishmentId);
-    if (transition.ok) setState(transition.state);
-    return transition;
-  }, [account, state]);
-
-  const confirmQueueArrival = useCallback((entryId: string) => {
-    const transition = confirmArrival(state, account, entryId);
-    if (transition.ok) setState(transition.state);
-    return transition;
-  }, [account, state]);
-
-  const markQueueNoShow = useCallback((entryId: string, now?: string) => {
-    const transition = noShow(state, account, entryId, now);
-    if (transition.ok) setState(transition.state);
-    return transition;
-  }, [account, state]);
-
-  const releaseQueueEntry = useCallback((entryId: string) => {
-    const transition = releaseEntry(state, account, entryId);
-    if (transition.ok) setState(transition.state);
-    return transition;
-  }, [account, state]);
-
-  const activateTariffPolicy = useCallback((input: ActivateTariffInput) => {
-    const transition = activateTariff(state, account, input);
-    if (transition.ok) setState(transition.state);
-    return transition;
-  }, [account, state]);
+  }, []);
 
   const refundPayment = useCallback((transactionId: string, amountCents: number, reason: string, idempotencyKey: string) => {
     const transition = refundTransaction(state, account, transactionId, amountCents, reason, idempotencyKey);
@@ -129,19 +109,49 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     return transition;
   }, [account, state]);
 
-  const acknowledgeIncident = useCallback((incidentId: string, assignee: string) => {
+  const acknowledgeIncident = useCallback(async (incidentId: string, assignee: string) => {
+    if (incidentId.startsWith("insight_")) {
+      try {
+        await decideCommercialInsight(incidentId, "ACKNOWLEDGE", `Reconhecido por ${assignee || "operação"}.`);
+        const { snapshot, insights, energyViews, energyForecasts } = await fetchCommercialProjection();
+        setState((current) => mergeCommercialSnapshot(current, snapshot, insights, energyViews, energyForecasts));
+        return { ok: true, issues: [] };
+      } catch (error) {
+        return { ok: false, issues: [error instanceof Error ? error.message : "Não foi possível reconhecer a ocorrência."] };
+      }
+    }
     const transition = acknowledgeOperationalIncident(state, account, incidentId, assignee);
     if (transition.ok) setState(transition.state);
     return transition;
   }, [account, state]);
 
-  const resolveIncident = useCallback((incidentId: string, resolution: string) => {
+  const resolveIncident = useCallback(async (incidentId: string, resolution: string) => {
+    if (incidentId.startsWith("insight_")) {
+      try {
+        await decideCommercialInsight(incidentId, "RESOLVE", resolution);
+        const { snapshot, insights, energyViews, energyForecasts } = await fetchCommercialProjection();
+        setState((current) => mergeCommercialSnapshot(current, snapshot, insights, energyViews, energyForecasts));
+        return { ok: true, issues: [] };
+      } catch (error) {
+        return { ok: false, issues: [error instanceof Error ? error.message : "Não foi possível resolver a ocorrência."] };
+      }
+    }
     const transition = resolveOperationalIncident(state, account, incidentId, resolution);
     if (transition.ok) setState(transition.state);
     return transition;
   }, [account, state]);
 
-  const decideRecommendation = useCallback((recommendationId: string, decision: Extract<Recommendation["status"], "ACCEPTED" | "DEFERRED" | "REJECTED">, reason: string) => {
+  const decideRecommendation = useCallback(async (recommendationId: string, decision: Extract<Recommendation["status"], "ACCEPTED" | "DEFERRED" | "REJECTED">, reason: string) => {
+    if (recommendationId.startsWith("insight_")) {
+      try {
+        await decideCommercialInsight(recommendationId, decision === "ACCEPTED" ? "ACCEPT" : decision === "DEFERRED" ? "DEFER" : "REJECT", reason || "Revisado pela operação.");
+        const { snapshot, insights, energyViews, energyForecasts } = await fetchCommercialProjection();
+        setState((current) => mergeCommercialSnapshot(current, snapshot, insights, energyViews, energyForecasts));
+        return { ok: true, issues: [] };
+      } catch (error) {
+        return { ok: false, issues: [error instanceof Error ? error.message : "Não foi possível registrar a decisão."] };
+      }
+    }
     const transition = decideOperationalRecommendation(state, account, recommendationId, decision, reason);
     if (transition.ok) setState(transition.state);
     return transition;
@@ -167,7 +177,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     if (!processing.ok || !processing.job) return processing;
     setState(processing.state);
     try {
-      const artifact = await demoAdminReportRepository.generate(processing.state, processing.job);
+      const isAuroraReport = processing.job.establishmentIds.length === 1 && processing.job.establishmentIds[0] === "est_aurora_001";
+      if (!isAuroraReport) throw new Error("Relatórios operacionais estão disponíveis somente para o Hub Solar Aurora neste protótipo.");
+      const artifact = await generateCommercialReportArtifact({ type: processing.job.type, establishmentId: "est_aurora_001", periodFrom: processing.job.periodFrom, periodTo: processing.job.periodTo });
       const completed = completeReport(processing.state, processing.job.id, artifact);
       setState(completed.state);
       return completed;
@@ -218,7 +230,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     return publication.result;
   }, [state]);
 
-  const value = useMemo(() => ({ state, account, login, logout, updateChargerCommercialStatus, requestChargerCommand, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, activateTariffPolicy, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, requestReport: runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding }), [state, account, login, logout, updateChargerCommercialStatus, requestChargerCommand, callNextQueueDriver, confirmQueueArrival, markQueueNoShow, releaseQueueEntry, activateTariffPolicy, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding]);
+  const value = useMemo(() => ({ state, account, commercialSync, login, logout, publishTariff, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, requestReport: runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding }), [state, account, commercialSync, login, logout, publishTariff, refundPayment, settlePayment, acknowledgeIncident, resolveIncident, decideRecommendation, grantAccess, revokeAccess, runReport, retryReport, saveReportSubscription, createTicket, updatePlantOnboardingDraft, resetPlantOnboardingDraft, publishPlantOnboarding]);
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;
 }
 

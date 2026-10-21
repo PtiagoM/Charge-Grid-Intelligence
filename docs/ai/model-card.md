@@ -1,0 +1,103 @@
+# CG-AI-03C/04 — model card do benchmark de demanda e inferência
+
+## Resumo
+
+- **Uso:** benchmark acadêmico e inferência informativa no protótipo; sem validação operacional no Aurora.
+- **Classe dos dados:** `SIMULATED_COMPOSITE`.
+- **Resultado selecionado:** `RIDGE_DELTA`, Ridge padronizada que prevê a variação até o pico de importação dos próximos 60 minutos; promovida por validação e integrada à inferência Node.
+- **Target:** máximo de `gridImportKw` nos próximos 60 min (quatro passos de 15 min).
+- **Features do Ridge Delta:** importação atual, lags de 15/30/60 min e 2/4 h, média/mínimo/máximo/variação na última hora, pico correspondente do dia anterior e pares seno/cosseno de hora, dia da semana e dia do ano.
+- **Limiar:** 117,524661 kW, percentil 90 dos picos futuros do bloco de treino. É limiar de cauda do composto, não política ou limite de Aurora.
+- **Artefato promovido de inferência:** `ml/forecasting/data/forecast_cg_ai_03c_model.json`. O `lag_calendar_ridge_model.json` permanece como benchmark histórico/incumbent, não é o modelo carregado pelo runtime.
+- **Uso no protótipo:** a API persiste previsões disponíveis e o Decision Engine as usa como evidência complementar de risco para admissão. A previsão não comanda hardware nem interrompe sessão ativa; a telemetria operacional demonstrada é simulada.
+
+## Proveniência e composição
+
+A série de 253 datas (2019-04-01–2019-12-16; 24.090 observações de 15 min) combina fontes independentes:
+
+- [EULP/ComStock AMY2018 R1](https://data.openei.org/submissions/4520), 5B SmallOffice: schema usa timestamp, `models_used` e energia de intervalo; carga modelada em resolução de 15 min, licença CC BY 4.0. Timestamps originais sem timezone explícito.
+- [NREL Workplace Charging Data](https://data.nlr.gov/submissions/182), DOI 10.7799/1838140: schema de início/fim/energia de sessão; 6.968 sessões foram sobrepostas ao período. A energia de sessões medidas foi distribuída uniformemente sobre duração como estimativa, não telemetria EV de 15 min. Timestamps sem offset são mantidos como wall-clock local; reutilização segue o aviso do catálogo incluído em `ml/forecasting/NOTICE.md`.
+- [NREL PVDAQ](https://data.openei.org/submissions/4568), sistema 10/NREL CIS-1, DOI 10.25984/1846021: canal AC `ac_power__423` em W e `measured_on`; amostragem observada de aproximadamente 1 min, agregada a 15 min. Dados sob CC BY 4.0. Potência FV medida é normalizada pela placa DC de 1,12 kW e escalada linearmente a cenário hipotético de 75 kWp.
+
+`gridImportKw = max(0, buildingLoadKw + evChargingKw - pvGenerationKw)`. Fontes não são co-localizadas nem temporalmente contemporâneas; os dados mantêm timestamps locais ingênuos e classe simulada. Manifesto, hashes, licenças e qualidade estão em `ml/forecasting/data/forecasting_series.manifest.json` e `forecasting_series.quality.json`.
+
+Foram incorporados 253 arquivos-dia PVDAQ; 250 têm 96 intervalos observados e três são parciais (`2019-12-02`, `2019-12-10`, `2019-12-16`). Missingness não é preenchida com zero: janelas temporais incompletas são omitidas. Metadata PVDAQ confirma sistema 10 e nameplate de 1,12 kW. A licença/aviso e schema são verificados/documentados antes da composição; as transformações e os hashes permitem auditar a amostra específica.
+
+## Protocolo
+
+Datas inteiras em ordem: treino 60% (151 dias; 14.397 origens válidas), validação 20% (51 dias; 4.892 origens) e teste final 20% (51 dias; 4.595 origens). Gaps e janelas futuras que cruzam partições são descartados. Candidato ajustado somente em treino; método escolhido por MAE de validação. A promoção requer que MAE e RMSE sejam ambos menores que o baseline de menor MAE e que F1 não caia mais de 0,02. Teste não participa da seleção. Detalhes no [`protocolo`](evaluation-protocol.md).
+
+Primeira rodada registrada com Python 3.14.7 e somente biblioteca padrão; OLS/Ridge fechado, sem aleatoriedade ou seed.
+
+## Resultados — primeira rodada (CG-AI-03)
+
+| Método | Val MAE kW | Val RMSE kW | Val F1 pico | Test MAE kW | Test RMSE kW | Test F1 pico |
+|---|---:|---:|---:|---:|---:|---:|
+| Persistência (selecionado) | 5,7964 | 10,4715 | 0,8344 | 5,3225 | 9,7665 | 0,8144 |
+| AR(1), não promovido | 5,9255 | 10,4123 | 0,8286 | 5,2640 | 9,6474 | 0,8076 |
+| Sazonal ingênuo 24 h | 18,7167 | 31,9229 | 0,5559 | 16,5949 | 28,1970 | 0,5603 |
+
+Na primeira rodada, AR(1) piorou MAE de validação e teve F1 inferior; por isso persistência foi retida. O teste dessa rodada foi registrado antes da segunda experiência controlada.
+
+O JSON completo contém precision/recall, confusões, coeficientes e limites; o CSV de previsões contém um registro estruturado por origem do holdout. Ambos têm `datasetClass=SIMULATED_COMPOSITE`.
+
+## Segunda rodada controlada — CG-AI-03B
+
+Único candidato novo: regressão linear múltipla Ridge, com features padronizadas usando estatísticas do treino e penalização fixa `alpha=1.0` (sem tuning). Target direto: máximo de `gridImportKw` na próxima hora. Features disponíveis na origem: `gridImportKw` atual, lags de 15 e 60 minutos, máximo do bloco da próxima hora do dia anterior, seno/cosseno da hora, dia da semana e dia do ano. Não usa qualquer componente/target do horizonte futuro. Python 3.14.7, biblioteca padrão, cálculo determinístico.
+
+| Método | Val MAE kW | Val RMSE kW | Val F1 pico | Test MAE kW | Test RMSE kW | Test F1 pico |
+|---|---:|---:|---:|---:|---:|---:|
+| Ridge lags+calendário (promovida) | 5,6370 | 8,5421 | 0,8883 | 5,6262 | 8,4319 | 0,8349 |
+| Persistência | 5,7964 | 10,4715 | 0,8344 | 5,3225 | 9,7665 | 0,8144 |
+
+Na validação, Ridge passou os gates: MAE e RMSE menores que persistência; F1 aumentou. Após congelar a seleção, o teste foi avaliado uma vez. No holdout, Ridge melhora RMSE e F1, mas seu MAE é 0,3037 kW pior; isso não altera a seleção por validação e indica generalização mista. Para pico, recall sobe e precision cai (FP: 62 versus 30); a detecção captura mais positivos, com mais falsos alarmes.
+
+O artefato e resultados dessa rodada estão em `ml/forecasting/data/lag_calendar_ridge_model.json`, `forecast_second_candidate_evaluation.json` e `forecast_second_candidate_test.csv`. A avaliação não estima o quarto de hora exato do pico — somente o máximo horário — e não é telemetria Aurora.
+
+## Limitações e uso proibido
+
+- Não representa desempenho em Hub Solar Aurora nem em uma micro-rede real.
+- A regra de balanço não inclui bateria, perdas, curtailment, exportação líquida, limite de conexão ou tarifa.
+- EV tem energia real por sessão, mas potência uniforme estimada; EULP é modelado; FV medido é escalado para 75 kWp hipotéticos.
+- Cobertura PV parcial causa exclusão de janelas; o holdout é temporal, mas as fontes são compostas e podem ter padrões sazonais específicos.
+- O limiar de risco não deve ser configurado no backend/Decision Engine. Uma integração futura precisa de previsão calibrada/validada com dados representativos e aplicar política energética vigente separadamente.
+- Sem confidence score: nenhum intervalo probabilístico foi calibrado.
+
+## Terceira rodada controlada — CG-AI-03C
+
+Foi feita uma única rodada, mantendo os exemplos rolling-origin e os blocos cronológicos congelados (14.397 treino, 4.892 validação, 4.595 teste), horizonte de 60 minutos, limiar de pico de 117,524661 kW e Ridge CG-AI-03B como incumbent sem re-treino. O holdout só foi calculado depois que `RIDGE_DELTA` passou a seleção pela validação. Não houve tuning, mudança de dataset ou instalação de dependências.
+
+Foram avaliados: Ridge incumbent; Ridge temporal com lags de 30 min/2 h/4 h, média/mínimo/máximo da última hora e variação em uma hora; Ridge com building load, EV e PV observados na origem e lags de 15/60 min; Ridge Delta com as features temporais, prevendo `pico_futuro - gridImportKw_atual`; e um Gradient Boosting determinístico de 24 stumps (profundidade 1, learning rate 0,1) com features do incumbent e componentes energéticos na origem/lag 60 min. Todas as features estão disponíveis na origem ou antes; nenhuma componente no horizonte futuro foi usada. A padronização Ridge foi ajustada somente no treino; os alvos de Delta foram reconstruídos como `max(0, atual + delta previsto)`.
+
+### Validação (seleção exclusiva)
+
+| Método | MAE kW | RMSE kW | F1 pico | FP | FN |
+|---|---:|---:|---:|---:|---:|
+| Ridge incumbent | 5,6370 | 8,5421 | 0,8883 | 64 | 73 |
+| Ridge + temporal | 5,5426 | 8,4872 | 0,8828 | 73 | 72 |
+| Ridge + componentes | **5,0035** | **7,9113** | 0,8644 | 123 | 54 |
+| Ridge Delta (selecionado) | 5,3062 | 8,4259 | 0,8821 | 74 | 72 |
+| Gradient Boosting stumps | 9,1004 | 14,7196 | 0,8518 | 29 | 138 |
+| Persistência | 5,7964 | 10,4715 | 0,8344 | 33 | 152 |
+
+Promoção exigiu, contra o incumbent, MAE e RMSE estritamente menores e F1 não mais que 0,02 abaixo; candidatos elegíveis foram ordenados por MAE, RMSE e F1. Ridge + componentes teve o menor erro numérico, mas caiu 0,0240 em F1, excedendo o limite de 0,02, com mais falsos positivos (123). Ridge Delta foi selecionado: MAE melhorou 5,87%, RMSE 1,36%, enquanto F1 caiu 0,0063; FP subiram de 64 para 74 e FN caíram de 73 para 72. Isso representa ganho moderado, não evidência de significância estatística ou garantia operacional.
+
+### Holdout (aberto após congelar Ridge Delta)
+
+| Método | MAE kW | RMSE kW | F1 pico | FP | FN |
+|---|---:|---:|---:|---:|---:|
+| Persistência | 5,3225 | 9,7665 | 0,8144 | 30 | 140 |
+| Ridge incumbent | 5,6262 | 8,4319 | 0,8349 | 62 | 101 |
+| Ridge Delta selecionado | **4,6151** | **8,1457** | **0,8461** | 53 | 98 |
+
+No holdout, Delta melhora o incumbent em MAE (18,0%), RMSE (3,4%) e F1 (+0,0112); em relação à persistência, melhora MAE (13,3%), RMSE (16,6%) e F1 (+0,0317). O limiar não foi reajustado. F1 é medida de detecção, não “acurácia”. O teste é uma única janela temporal composta e não demonstra desempenho fora dela.
+
+O resultado completo está em `ml/forecasting/data/forecast_third_candidate_evaluation.json`, as previsões do holdout em `forecast_cg_ai_03c_test.csv` e o artefato reprodutível em `forecast_cg_ai_03c_model.json`. O treinamento e a avaliação são offline sobre `SIMULATED_COMPOSITE`; a integração posterior ao Node/API/Decision Engine está descrita abaixo. O modelo CG-AI-03B permanece preservado como histórico/incumbent de comparação.
+
+## Integração de inferência — CG-AI-04/05 e decisão — CG-DEC-01
+
+A API Node carrega exclusivamente `forecast_cg_ai_03c_model.json`, valida SHA-256 e schema, agrega amostras de telemetria de cada intervalo de 15 min por média aritmética e reproduz as 17 features, padronização e reconstrução Delta do pipeline Python. Vetor dourado confirma paridade numérica. O `ForecastRecord` expira em no máximo 30 min após a última entrada; modelo/telemetria insuficiente, stale, inválido ou expirado gera estado `UNAVAILABLE` e, quando possível, fallback de persistência separado do valor previsto por IA.
+
+CG-AI-05 conecta a inferência ao relógio da API, persiste resultados disponíveis e expõe a consulta do forecast. CG-DEC-01 valida qualidade/validade e compara o pico previsto com os limiares da política do estabelecimento; risco crítico pode bloquear novas admissões. A previsão não chama hardware, não interrompe sessão ativa e não transforma o limiar do benchmark em política. Como os timestamps de treino são wall-clock sem timezone conhecido, a inferência usa campos UTC do contrato; essa diferença semântica e a classe `SIMULATED_COMPOSITE` impedem tratar o resultado como previsão operacional validada no Aurora.
+
+A integridade do artefato é validada por SHA-256 com quebras de linha canônicas LF, preservando o mesmo conteúdo em checkouts Windows/CRLF e Linux/LF. Alterações no conteúdo continuam rejeitadas.

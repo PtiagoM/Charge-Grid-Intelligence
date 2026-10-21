@@ -1,5 +1,13 @@
 # Estratégia de testes do Dashboard Admin
 
+**Atualizado em:** 27 de agosto de 2026
+
+## Evidência corrente
+
+A rodada de convergência visual e Operação ChargeGrid encerrou com lint e build aprovados, 20 arquivos/76 testes unitários aprovados, 13 E2E focais da operação e 5 E2E focais após o redesenho do pagamento. Operação, Fila, carregador, sessão e pagamento também foram inspecionados em navegador na viewport `1440 × 1000`.
+
+Esses números registram baterias executadas em momentos distintos e não devem ser somados como cenários únicos. A suíte E2E integral ainda não foi executada nesta cadeia e continua sendo gate para integração em `main`, conforme a tabela abaixo.
+
 ## Estado atual: convergência de produto e interface
 
 O Dashboard Admin está em reconstrução ativa: toma o SEMS+ como referência de linguagem e densidade, adiciona capacidades próprias do ChargeGrid e ainda ajusta decisões de modelo de negócio. Nesta fase, uma mudança de hierarquia, tela, texto ou fluxo pode ser deliberada; portanto, o teste não deve congelar uma aparência provisória.

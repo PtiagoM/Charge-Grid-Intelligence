@@ -8,34 +8,22 @@ async function login(page, email = 'estabelecimento@teste.com') {
   await page.getByTestId('login-submit').click();
 }
 
-test('operador inicia sessao autorizada e ve confirmacao por telemetria', async ({ page }) => {
+test('operador monitora sessao autorizada sem substituir inicio automatico', async ({ page }) => {
   await login(page);
   await page.goto('/#/mvp/charger?charger=CG-FIAP-03');
 
-  const form = page.getByTestId('charger-command-form');
-  await expect(form).toContainText('Iniciar recarga');
-  await form.getByPlaceholder('Descreva por que este comando esta sendo enviado').fill('Motorista confirmou conexao presencial');
-  await form.getByRole('checkbox').check();
-  await form.getByRole('button', { name: 'Iniciar recarga' }).click();
-
-  await expect(page.getByRole('status')).toContainText('confirmado pela telemetria');
-  await expect(page.getByTestId('mvp-charger-detail')).toContainText('18,60 kW');
-  await expect(page.getByTestId('mvp-charger-detail')).toContainText('Confirmado');
-  await page.getByRole('link', { name: 'Abrir linha do tempo' }).click();
-  await expect(page.getByTestId('mvp-session-detail')).toContainText('Energia confirmada no conector');
+  await expect(page.getByTestId('charger-command-form')).toHaveCount(0);
+  await expect(page.getByTestId('mvp-charger-detail')).toContainText('Somente monitoramento neste momento.');
+  await page.getByRole('button', { name: 'Abrir registro de carregamento', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Registro de carregamento' })).toContainText('CG-2026-1002');
 });
 
-test('falha de partida permanece distinta de recarga ativa', async ({ page }) => {
+test('conector sem energia nao recebe comando local de liberacao', async ({ page }) => {
   await login(page);
   await page.goto('/#/mvp/charger?charger=CG-FIAP-05');
 
-  const form = page.getByTestId('charger-command-form');
-  await form.getByPlaceholder('Descreva por que este comando esta sendo enviado').fill('Inicio assistido solicitado pelo motorista');
-  await form.getByRole('checkbox').check();
-  await form.getByRole('button', { name: 'Iniciar recarga' }).click();
-
-  await expect(page.getByRole('status')).toContainText('handshake');
-  await expect(page.getByTestId('mvp-charger-detail')).toContainText('Falhou');
+  await expect(page.getByTestId('charger-command-form')).toHaveCount(0);
+  await expect(page.getByTestId('mvp-charger-detail')).toContainText('Não conectado');
   await expect(page.getByTestId('mvp-charger-detail')).toContainText('0,00 kW');
 });
 

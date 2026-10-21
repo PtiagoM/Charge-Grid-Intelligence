@@ -1,10 +1,106 @@
 # ChargeGrid Intelligence — fonte única de verdade
 
-**Atualizado em:** 23 de agosto de 2026  
+## Entrega acadêmica final — 21/10/2026
+
+Esta seção prevalece sobre os estados históricos abaixo. O responsável autorizou organizar a `main`, publicar e integrar a versão final por PR; a integração é acompanhada no [PR #18](https://github.com/PtiagoM/Charge-Grid-Intelligence/pull/18), de `feature/sprint4-finalization` para `main`, condicionada aos checks obrigatórios.
+
+- O [README final](../README.md) apresenta setup no início, contexto GoodWe, público/problema, solução e jornadas, arquitetura entre camadas, energia, IA, síntese das sprints, resultados e limites. Documentos antigos são referências históricas, não promessas adicionais de implementação.
+- O [roteiro técnico](delivery/SPRINT4_VIDEO_SCRIPT.md) planeja 4min50s, com dez segundos de margem, falas, ações, evidências e conteúdo de quatro slides. O foco é energia/previsão/decisão da Sprint 4, reutilizando uma jornada completa. Slides e gravação final permanecem a cargo da equipe; o vídeo da Sprint 3 está rotulado como histórico.
+- A investigação da CI do PR encontrou hash do modelo dependente de CRLF. O carregamento agora valida o mesmo artefato em LF canônico, preservando hash/schema; teste cobre LF, CRLF e conteúdo alterado. O pipeline substitui o comando removido `test:e2e:demo` pelo harness integrado atual `test:e2e:sprint4`, com banco/portas isolados. O teste histórico Sprint 3 permanece no repositório, fora do gate atual.
+- Validação desta revisão: lint, typecheck e builds aprovados; shared 5/5, Admin 85/85, forecast 5/5 e jornadas E2E Sprint 4 8/8. A primeira execução agregada da API teve EACCES em portas e OOM no Windows/Node 24; com um worker e portas liberadas, passou 52/53 com timeout no catálogo público. A repetição isolada de `app.test.ts` passou 8/8, cobrindo o teste restante. A mutação temporária da condição de integridade foi rejeitada pelos testes e restaurada antes do commit. Esses resultados não são apresentados como execução agregada local aprovada; o gate completo de CI e a regressão ampla ficam nos checks do PR.
+- O modelo Ridge Delta é inferido no runtime, mas treinado/avaliado em `SIMULATED_COMPOSITE`. Cenários do laboratório preparam histórico simulado e atualizam o forecast imediatamente; sem esse aquecimento explícito, são necessários cerca de 24 h de histórico contíguo. Previsão crítica bloqueia novas admissões; não comanda parada de sessão ativa.
+- Escopo final preservado: protótipo acadêmico local integrado, não operação produtiva homologada. GoodWe/HCA G2 físicos, bateria, Stripe live e indicadores de economia/CO₂ sem método continuam fora do resultado demonstrado.
+- A regressão ampla do Admin foi executada: inicialmente 37/57, com expectativas históricas de controles já removidos/limitados e seletores `status` ambíguos. Oito arquivos E2E foram alinhados ao produto vigente, preservando 57 casos e sem alterar runtime: monitoramento em vez de comandos locais, publicação somente observada, financeiro sandbox sem ações fictícias, relatórios restritos ao Aurora, recomendações independentes e incidente ativo sem resolução prematura. A suíte completa passou **57/57** após a revisão; lint aprovado. Publicação de tarifa e CSV reais da vertical Aurora continuam cobertos pelo E06 integrado, dentro dos **8/8** da Sprint 4.
+
+## Execução Sprint 4 — atualização 08/10/2026
+
+- CG-STAB-01 concluída em `feature/sprint4-finalization`: harness E2E encerra a API de teste graciosamente por IPC antes de reiniciar, corrige seletores desatualizados e usa o campo contratual `gridImportKw`. Sprint 4 E2E 8/8 e E01/E02 em dois ciclos 2/2; Admin 85/85, shared 5/5, API 52/52 em execuções focais por arquivo; lint, typecheck e build passaram. A suíte API monolítica ainda encerra por OOM do Node 24 no ambiente. Nenhum código de produção/PWA ou banco persistente foi alterado.
+- CG-DEL-01 concluiu o alinhamento da documentação da entrega: a previsão Ridge Delta é descrita como inferência integrada sobre dados `SIMULATED_COMPOSITE`, o roteiro separa o vídeo histórico da Sprint 3 do vídeo ainda a gravar da Sprint 4, e os gates finais refletem as validações existentes. Pacote `sprint4-finalization` concluído localmente; nenhuma publicação remota foi feita.
+
+- CG-AI-01/02/03 concluídos; CG-AI-03C promoveu Ridge Delta após comparação controlada. CG-AI-04 implementou inferência Node com paridade Python/Node e fallback; CG-AI-05 persiste previsões disponíveis em `commercial_forecasts`; CG-DEC-01 classifica/persiste `DemandDecisionEvidence`, bloqueia novos inícios apenas em risco crítico e nunca usa a previsão para interromper sessão ativa ou comandar hardware. O treinamento permanece `SIMULATED_COMPOSITE`; no protótipo o forecast só influencia admissão sobre telemetria GoodWe simulada. Não foi validado para telemetria/planta ou hardware reais; calendário de treino tem timezone de origem desconhecida. A previsão requer cerca de 24 h de telemetria simulada contígua e sua primeira disponibilidade não é imediata. CG-LAB-01 oferece cinco cenários GoodWe simulados pela API; CG-LAB-02 teve referência visual aprovada e gate manual validado pelo responsável.
+- `S4-M6-U2` e G6 concluídos: o responsável validou manualmente recuperação do checkout após falha recuperável e bloqueio de ações repetidas durante Stop. U2 também passou typecheck, lint focal, build PWA e E01/E02.
+- `S4-M7-U1` concluída nesta branch: README, estado atual, ordem/gates e evidências atualizados; o harness E2E agora usa banco PGlite temporário exclusivo por execução para não herdar tarifas de rodadas anteriores nem tocar no banco pessoal. E2E Sprint 4: 7/7; `npm test`: 117/117; lint, typecheck e builds Admin/PWA/API passaram. Os testes quantitativos agora também afirmam os 500 Wh exportados no vetor de telemetria.
+- `S4-M7-U2` — validação automatizada em checkout limpo concluída: `npm ci`, lint, typecheck, `npm test` (117/117), builds Admin/PWA/API e E2E Sprint 4 (7/7) passaram; API oficial iniciou com PGlite isolado e respondeu `/health` na porta 4333. A porta padrão 3333 estava ocupada por processo preexistente e foi preservada. `npm ci` reportou 3 vulnerabilidades transientes (2 moderadas, 1 alta); não foi executado `npm audit fix`.
+- G7, `CG-F0-01/02`, `CG-DASH-01` a `CG-DASH-03`, `CG-LAB-01/02`, `CG-AI-01` a `CG-AI-05`, `CG-DEC-01`, `CG-OPS-01`, `CG-UI-01`, `CG-INT-01A/B`, `CG-STAB-01` e `CG-DEL-01` concluídos/validados localmente. A branch acadêmica Sprint 3 com o vídeo (`feature/admin-sprint3-integration`) não foi alterada nem publicada. DEC-01 acrescenta evidência preditiva ao backend e bloqueia apenas novos inícios em risco crítico; OPS-01 projeta os mesmos registros em incidentes/recomendações sem controlar hardware. As referências visuais de `CG-UI-01` e `CG-LAB-02` foram aprovadas pelo responsável. A correção de 06/10 força novo forecast quando um cenário é aplicado e esclarece os medidores de importação; a mensagem PWA de pausa por demanda também foi corrigida e validada manualmente pelo responsável em 08/10. CG-INT-01B foi encerrada; STAB-01 e DEL-01 estão concluídas.
+- `S4-M6-U1` concluída: polling comercial não sobreposto e cancelável, Service Worker atualizado com cache network-only para rotas comerciais, reload das abas na ativação e indicação de leitura indisponível/stale no Admin e na PWA.
+- Validação: `npm run typecheck`, build Admin/PWA, 79 testes unitários Admin, E02 de persistência/restart, smoke E2E do Service Worker e E2E de API indisponível→stale→recuperada passaram. Não foi repetida a suíte E05/API, pois nenhum código da API/provider foi alterado nesta unidade.
+- Estado anterior preservado para rastreabilidade; o próximo gate vigente está descrito acima.
+
+## Integração final do Admin — atualização 21/10/2026
+
+- Energia e demanda agora está agrupada sob ChargeGrid; Recomendações mantém riscos preditivos/oportunidades independentes, sem repetir decisões de admissão e restauração de telemetria. O Dashboard explica estados sem dados e não desenha séries temporais inexistentes.
+- A validação E2E focal encontrou e corrigiu uma rota de relatórios em branco para um estabelecimento sem escopo Aurora: a página agora mantém o estado sem dados, sem ampliar autorização. Testes Admin focais: 15/15; E2E dashboard/navegação/recomendações: 7/7; lint e typecheck passaram.
+- A suíte agregada `npm test` não concluiu neste Windows/Node 24: o carregamento do Vitest do Admin recebeu `Acesso negado` ao percorrer o diretório-pai e o processo da API terminou em OOM. A suíte focal do Admin e o E2E relevante passaram; não mascarar a falha agregada.
+
+## Planejamento final da Sprint 4 — atualizado em 04/10/2026
+
+- A ordem canônica está em [`docs/specs/SPRINT4_EXECUTION_ORDER.md`](specs/SPRINT4_EXECUTION_ORDER.md): primeiro concluir o pacote original `sprint4` em M5–M7; depois iniciar `sprint4-finalization`.
+- Estado de execução atualizado em 08/10/2026: M0–M7/G0–G7 e todas as unidades `CG-F0` até `CG-DEL-01` implementados/documentados e validados localmente no escopo dos respectivos gates. A suíte API monolítica teve OOM no Node 24; os testes focais por arquivo e os E2E Sprint 4 passaram. A gravação do vídeo da Sprint 4 permanece atividade da equipe; não há evidência de publicação do vídeo nesta branch.
+- Revisão visual de `CG-UI-01` em 05/10/2026: medidor ampliado, diagrama energético vetorial original, sequência de admissão medida/incremento/projeção/decisão, previsão com status e motivo, estados vazios ilustrados e escala persistida. Navegação interna preserva a rota do Admin. Conferidos desktop 1440 × 1000 e mobile 390 × 844; build/typecheck, lint focal, 14 testes unitários e 3 E2E focais aprovados. Detalhes e limites na SDD `sprint4-finalization/cg-ui-01.md`. Sem alterações de backend/PWA ou publicação nesta revisão.
+- O pacote [`docs/specs/sprint4-finalization`](specs/sprint4-finalization/spec.md) contém a extensão S4-C2 e contratos congelados; os controles visuais do laboratório ainda aguardam referência humana. A previsão no Admin usa escalar do endpoint, apresenta avaliação offline histórica como SIMULATED_COMPOSITE e não inventa série/confiança nem substitui a regra operacional. IA usa benchmark `SIMULATED_COMPOSITE`, não telemetria operacional Aurora.
+- M5-U2A adicionou injeção de provider apenas no harness de teste e prova E2E de autorização controlada, operação/sessões e persistência; PWA, Stripe normal e schema não foram alterados.
+- M5-U2B provou fila autenticada, atribuição temporária e checkout elegível, além de tarifa versionada, cotação nova, histórico e CSV vindo da API; identidade/payment providers determinísticos existem somente no harness.
+- M5-U2C cobriu energia, Stop/retirada/liquidação controlados e a recuperação após falha do comando de parada; a confirmação Stripe sandbox real foi registrada em U3.
+- M5-U3: responsável confirmou Maps real, Payment Element Stripe test, sessão compartilhada, energia acima do mínimo de captura, liquidação e reload; confirmação sem referências de sessão/PaymentIntent ou capturas anexadas.
+- A PWA permanece considerada finalizada; bateria segue fora do escopo obrigatório; previsão segue a cadeia treino offline Python → artefato versionado → inferência Node → regras → Decision Engine.
+- A base implementada permanece em `feature/sprint4-finalization`; a branch acadêmica com o vídeo da Sprint 3 continua congelada e não foi alterada, publicada ou integrada nesta unidade.
+
+**Atualizado em:** 30 de setembro de 2026  
 **Escopo:** GoodWe, produto, negócio, operação, arquitetura, implementação, histórico e decisões vigentes  
 **Status:** documento canônico para continuidade do projeto
 
 Este é o primeiro documento que uma pessoa ou IA sem contexto deve ler. Ele consolida os documentos oficiais, o código atual e cinco sínteses de conversas históricas. Seu objetivo é preservar o máximo de contexto útil sem permitir que hipóteses antigas pareçam decisões atuais.
+
+## Estado verificado para a Sprint 3 — 16/09/2026
+
+A base desta execução é `c8cc21c`, em `develop/admin-web`, com a PR #16 já integrada e sem alterações locais preexistentes. As referências abaixo a PR #16 pendente, reconstrução administrativa futura e ordem exclusivamente visual são históricas. A prioridade vigente, definida pelo usuário, é integração funcional demonstrável entre API, Admin e PWA, preservando a experiência existente.
+
+A auditoria inicial confirmou Admin nativo funcional com domínio e persistência no navegador, PWA com estado operacional local e API financeira Stripe sandbox. Não existia uma sessão operacional compartilhada pelo servidor entre os dois frontends. A validação inicial passou: lint, 88 testes (76 Admin, 7 API e 5 shared) e todos os builds. Não havia testes automatizados próprios da PWA.
+
+O registro de implementação, evidências e limitações da Sprint fica em [`SPRINT3.md`](SPRINT3.md). Código verificado e decisões posteriores prevalecem sobre descrições antigas de implementação. A transparência sobre simulação é obrigatória: o modo técnico de demonstração deve identificá-la explicitamente, conforme a instrução atual do usuário, superando restrições antigas a esse rótulo. O escopo transversal desta entrega autoriza mudanças coordenadas nos dois produtos e nos contratos; não autoriza publicação ou merge.
+
+### Sprint 4 — consistência transversal do Admin (27/09/2026)
+
+- Refinamento de navegação em 08/10/2026: Energia e demanda passou para ChargeGrid e saiu de Ferramentas de análise. A seção Recomendações preserva apenas riscos preditivos/oportunidades com revisão humana; espelhos de admissão e restauração de telemetria ficam somente em Energia e demanda.
+- A identidade canônica do cenário é `est_aurora_001 -> plant_aurora_001 -> UUIDs dos carregadores`, com `AURORA-01` a `AURORA-06` reservados à apresentação, código e QR.
+- Lista de usinas, Lista de dispositivos, ChargeGrid, Sessões, Energia e demanda, Recomendações, Central de alarmes e Central de relatórios projetam os mesmos registros comerciais da API. Os aliases históricos Aurora deixaram de orientar a jornada ativa.
+- Política/decisão de demanda e recomendações explicáveis pertencem ao backend. O Admin apenas apresenta os dados e registra revisão humana; nenhuma recomendação executa comando oculto.
+- Falhas e telemetria recuperadas permanecem auditáveis e podem ser resolvidas por decisão humana. Os relatórios Aurora são derivados de sessões, energia, pagamentos, carregadores e decisões persistidos.
+- O laboratório continua sendo exclusivamente a fronteira simulada GoodWe/hardware. Fixtures SEMS+ não Aurora continuam como referência técnica, sem serem apresentadas como operação comercial real.
+- Diagnóstico completo, matriz de fontes e evidências: [`admin-dashboard/INTEGRATION_CONSISTENCY_AUDIT.md`](admin-dashboard/INTEGRATION_CONSISTENCY_AUDIT.md).
+
+### Sprint 4 — Marco 1 concluído (26/09/2026)
+
+> Checkpoint histórico. Referências abaixo a “próximo marco” ou trabalho ainda pendente descrevem o estado de 26/09 e não substituem a ordem canônica atual (`S4-M6-U2`).
+
+- A base compartilhada agora possui ledger de migrations e aplica `202609260004_s4_foundation.sql` uma única vez; bancos comerciais legados são baselined sem reexecutar o UPSERT destrutivo das migrations antigas.
+- Aurora segue sendo o único catálogo operacional completo: `plant_aurora_001`, seis UUIDs estáveis, códigos/QR e vaga B02 foram preservados. A API publica o catálogo sanitizado em `/commercial/catalog` e resolve UUID/código/QR em `/commercial/chargers/resolve/:identifier`.
+- O snapshot administrativo mantém o código para UI, mas `session.chargerId` passou a ser o UUID real. `currentSessionId` e `assignmentId` existem no registro do carregador; os vínculos são limpos antes do reset das sessões.
+- A API passa a validar a identidade Supabase do motorista no servidor; `driverId` enviado pelo cliente não define propriedade. Visitantes recebem token opaco apenas no header, persistido somente como hash e limitado à cotação/sessão correspondente. Leituras, parada, captura, reembolso e consulta de PaymentIntent aplicam a mesma posse; fila exige motorista autenticado.
+- O checkout normal cria uma cotação Aurora persistida, válida por cinco minutos e com tarifa congelada, antes do PaymentIntent Stripe. A PWA mantém o token de visitante apenas em `sessionStorage`, envia o UUID interno do mesmo carregador exibido por código e continua usando o Payment Element existente.
+- A tentativa aceita um único `quoteId`/método/limite: repetição idêntica preserva a sessão e a chave Stripe; tentativa divergente conflita. Se o Stripe já respondeu, uma falha posterior não marca a sessão como paga/falha automaticamente nem libera o carregador às cegas.
+- O início automático cobre agora as duas ordens reais: pagamento autorizado antes de `CONNECT`, ou veículo conectado antes da autorização. Ambos passam pelo `MockGoodWeProvider` e convergem na mesma transição `WAITING_START → CHARGING`; releitura posterior do PaymentIntent não regride uma sessão concluída para aguardando início.
+- Fim de energia e desconexão agora persistem os marcos comerciais da política aceita (`energyEndedAt`, tolerância de 15 minutos quando a quote a habilita, `disconnectedAt`, custos de energia/ociosidade/total). Captura e reembolso passam a usar o valor derivado pela API, não o valor enviado pela tela; a baixa persistida distingue consumo e saldo devolvido. Continua conhecido o limite externo de R$ 0,01–0,49.
+- Para sessões backend-managed, a PWA passou a exibir energia, ociosidade e o fim da tolerância do mesmo registro remoto; não avança esses valores pelo relógio da interface.
+- A atribuição temporária da fila agora vence apenas pelo relógio do backend: libera o carregador físico disponível e processa o próximo motorista. Quando uma atribuição vira sessão, o `sessionId` é persistido e o início de carga completa a entrada.
+- A API oferece histórico de sessões por proprietário em `GET /commercial/sessions`; motorista e visitante veem somente registros próprios. A tela de histórico será conectada a essa projeção no Marco 2.
+- O resumo financeiro operacional está disponível em `GET /commercial/financial-summary`, derivado exclusivamente de sessões e pagamentos persistidos (`authorized`, consumo, captura e devolução). Na data deste checkpoint, o passo seguinte era finalizar a Driver PWA; essa etapa já foi concluída posteriormente.
+- Validação do gate: lint e typecheck globais passaram; testes shared (5), Admin (78) e API (23) passaram. No ambiente atual, a execução paralela da API esgota memória; `npm test --workspace @chargegrid/api -- --maxWorkers=1` é a alternativa verde reproduzível.
+- Lifecycle físico, ociosidade, fila final, energia/demanda e projeções completas Admin/PWA permanecem nos próximos checkpoints M1-U4+.
+
+### Vertical real vigente — 22/09/2026
+
+- A jornada normal da PWA cria um PaymentIntent Stripe real em modo de teste e persiste a mesma sessão comercial observada pelo Admin.
+- `Hub Solar Aurora` e os carregadores `AURORA-01` a `AURORA-06` usam IDs operacionais comuns no catálogo mobile, API, banco e Admin.
+- A API possui adapters para PostgreSQL remoto (`CHARGEGRID_DATABASE_URL`) e PGlite. Neste ambiente a autoridade executável continua sendo PGlite persistente, inicializado pelas migrations `202609220001_commercial_core.sql`, `202609220002_hardware_lifecycle.sql` e `202609220003_commercial_queue.sql`, porque a conexão SQL remota não foi fornecida.
+- Admin `Operação` e `Sessões` recebem o snapshot comercial por polling de dois segundos. PWA e Admin apenas observam o estado persistido; polling não avança sessão nem energia.
+- O ciclo validado é: Aurora → AURORA-01 → Payment Element → autorização Stripe → `WAITING_START` → laboratório GoodWe conecta o veículo → `StartCharge` automático → `CHARGING` compartilhado → energia/custo calculados pelo relógio da API → encerramento na PWA → captura Stripe → `COMPLETED`, Financeiro capturado e carregador disponível.
+- O laboratório técnico existente em `/admin` não cria sessão ou pagamento: ele emite apenas eventos físicos (`CONNECT`, `STOP`, `DISCONNECT`, `OFFLINE`, `FAULT`, `RECOVER`) sobre os mesmos carregadores persistidos. A potência escolhida acompanha `CONNECT` e é aplicada pelo StartCharge automático. **Reiniciar dados de teste** limpa o estado operacional do Aurora, mas preserva catálogo, IDs, códigos, QR, coordenadas e tarifa.
+- Admin `Operação`, `Sessões` e `Resumo financeiro` projetam a mesma sessão e o mesmo PaymentIntent. O limite financeiro também limita a energia persistida correspondente, inclusive após reinício da API.
+- A fila autenticada também é compartilhada: existe no máximo uma entrada ativa por motorista, o Admin observa a mesma posição e a liberação física de um carregador cria uma atribuição temporária de dez minutos que chega à PWA por polling. Sair da chamada libera o equipamento quando não há sessão ativa.
+- Mapa, detalhe do local, catálogo de sessão, QR, código manual e checkout resolvem `AURORA-01` a `AURORA-06` sobre o snapshot da API. Disponibilidade, fila, estado físico/comercial, ocupação e potência do Aurora não usam mais a fixture como autoridade. O service worker não armazena respostas da API.
+- Bloqueio atual: o projeto Supabase configurado foi alcançado, mas a consulta retornou `PGRST205` porque as tabelas comerciais ainda não existem. A Supabase CLI 2.117.0 exige um token de plataforma ausente para `link/db push`; service role não substitui esse token nem uma URL SQL. O seed idempotente está em `supabase/seed.sql`. Até fornecer autenticação da CLI e `CHARGEGRID_DATABASE_URL`, o banco executável é PGlite local. O encerramento com cartão foi validado; o fluxo Pix ainda não promove o encerramento persistido após o reembolso.
+- A rota PWA `/demo`, os endpoints API `/demo`, o runtime JSON, seus comandos e E2E paralelos foram retirados. `/admin` permanece exclusivamente como laboratório de hardware GoodWe simulado sobre a API e o banco comerciais normais.
 
 ## 0. Governança
 
@@ -49,7 +145,7 @@ Não confundir documentação com homologação, sandbox com produção, ou fixt
 9. A interface não deve exibir rótulos como “dados simulados”, “cenário demo” ou equivalentes. A natureza de fixtures deve permanecer documentada e testável, sem poluir a experiência do usuário.
 10. Supabase Auth é a identidade remota do motorista quando configurado. O fallback local existe somente para desenvolvimento sem credenciais.
 11. A fila é exclusiva para motoristas autenticados. A entrada exige confirmação explícita, informa posição/espera previstas e explica que o primeiro carregador compatível liberado na planta será atribuído.
-12. Fila e sessão comercial são estados globais persistidos no contexto do motorista: devem continuar durante a navegação. Busca, filtros e estados transitórios de interface permanecem locais à tela.
+12. Fila e sessão comercial pertencem à API e ao banco compartilhado; o contexto do motorista mantém somente a projeção recebida por polling para continuidade de navegação. Busca, filtros e estados transitórios de interface permanecem locais à tela.
 13. O limite financeiro autorizado é um teto de recarga: ao atingi-lo, a sessão encerra a energia sem ultrapassar o valor e informa o motorista. Durante a recarga, o principal indicador é uma barra verde de consumo do limite, saldo e tempo estimado restante.
 14. `Explorar` preserva uma prévia do mapa antes das recomendações determinísticas e explicáveis. Acionar a barra de busca abre o mapa imersivo; a ordenação das recomendações prioriza disponibilidade comercial, fila/espera, distância, potência, tarifa e condição energética favorável e não deve alegar uso de IA.
 15. Sem sessão ativa, a aba `Sessão` é a origem do catálogo completo de plantas, busca e filtros compactos. Com sessão ativa, preserva o contexto comercial corrente.
@@ -76,8 +172,20 @@ Não confundir documentação com homologação, sandbox com produção, ou fixt
 13. Novos carregadores da planta ficam elegíveis, mas não são publicados automaticamente.
 14. Usuários GoodWe recebem responsabilidade e escopo de carteira, região, parceiro ou planta; visão nacional é capacidade estratégica adicional e agregada por padrão.
 15. A apresentação ChargeGrid segue a densidade e a hierarquia do SEMS+: listas, tabelas, gráficos, estados inline e resumos compactos prevalecem sobre grades genéricas de cards grandes com números.
+16. As funções organizacionais `Administrador`, `Navegador` e `Técnico` continuam distintas dos papéis ChargeGrid; a demonstração não pretende reconstruir toda a matriz proprietária de permissões do SEMS+.
+17. Permissões internas do SEMS+ só são reproduzidas quando confirmadas por evidência ou necessárias ao modelo ChargeGrid; diferenças desconhecidas de acesso a dispositivos não devem ser inventadas.
+18. Central GoodWe não é conta-mestre nem novo tipo de login: é colaborador profissional GoodWe com função organizacional de administrador, responsabilidade ChargeGrid de consultor/governança e escopo de rede completo; diferenças de tela ou ação exigem origem explícita.
+19. O proprietário SEMS+ da planta contratada é automaticamente o administrador da operação ChargeGrid; não existe uma persona separada de administrador do estabelecimento.
+20. Proprietário com planta comercial recebe entrada dinâmica `ChargeGrid` para operação, sessões, fila e financeiro; proprietário comum e instalador sem vínculo preservam apenas as sete superfícies SEMS+.
+21. Consultor e Central usam inicialmente as superfícies SEMS+ existentes; uma entrada ChargeGrid GoodWe para Visão geral/Oportunidades é secundária e só será criada se provar utilidade sem introduzir CRM ou gestão de tarefas.
+22. Contratos, ativações e tarifa pertencem à Gestão da organização; Central de relatórios fica dedicada a geração, exportação, tarefas e histórico de relatórios.
+23. Inteligência não é página decorativa: deve aparecer em recomendação, demanda, oportunidade ou indicador com evidência e decisão associada.
 
 O registro completo e canônico destas decisões está em `docs/admin-dashboard/PRODUCT_DECISIONS.md`.
+
+O plano histórico da reconstrução do Admin está em `docs/admin-dashboard/NEXT_EXECUTION_PLAN.md`. Para qualquer continuação da Sprint 4, a fonte de próximo passo é `docs/specs/SPRINT4_EXECUTION_ORDER.md`.
+
+O recorte histórico do Admin está em `docs/admin-dashboard/REMAINING_WORK.md`; ele não substitui os gates e a ordem canônica da Sprint 4.
 
 ### Implementação local da decisão — 23/08/2026
 
@@ -85,6 +193,7 @@ O registro completo e canônico destas decisões está em `docs/admin-dashboard/
 - somente o carregador possui detalhe reconstruído nesta fase, com palco do equipamento, último carregamento, monitoramento e registros; os demais dispositivos permanecem no inventário técnico;
 - Central GoodWe, gestor de carteira e suporte técnico possuem escopos explícitos nas fixtures do Admin;
 - a função organizacional SEMS+ (`Administrador`, `Navegador` ou `Técnico`) é armazenada separadamente do papel ChargeGrid;
+- a fidelidade de permissões prioriza contratos, ativações, carteiras, publicação de carregadores, operação local e proteção comercial; a matriz interna GoodWe permanece deliberadamente simplificada;
 - a Gestão da organização reúne informações organizacionais, usuários e funções, contratos e ativações e logs;
 - o código autorizado localiza um contrato de uma planta e inicia o onboarding sem permitir redigitação do estabelecimento, consultor ou vínculo técnico;
 - uma conta SEMS+ sem concessão ChargeGrid autentica normalmente e não recebe conteúdo comercial;
@@ -94,6 +203,25 @@ O registro completo e canônico destas decisões está em `docs/admin-dashboard/
 - carregadores descobertos entram como elegíveis e exigem configuração e publicação individual pelo administrador do estabelecimento;
 - a janela de chamada da fila foi unificada em dez minutos;
 - esta implementação permanece frontend/fixture; autoridade produtiva, RLS, integração contratual e emissão segura do código continuam pendentes no backend.
+
+### Integração histórica do Admin — 23/08/2026
+
+- `7fe0205` — `feat(admin): align ChargeGrid flows with SEMS responsibilities` — foi integrado em `develop/admin-web` pelo PR #5 (`b7d3fea`);
+- a entrega consolida a camada ChargeGrid sobre as superfícies SEMS+, sem alterar o Driver PWA, API, pacotes compartilhados ou `main`;
+- CI do PR aprovou lint, testes e build; a regressão E2E integral permaneceu fora da execução automática conforme a estratégia vigente;
+- a validação local proporcional registrou 20 arquivos/72 testes unitários e 20 cenários E2E focais aprovados; o navegador integrado não estava disponível para uma nova inspeção manual;
+- o modelo de permissões apresentado no frontend é demonstrativo: reproduz a estrutura e as restrições ChargeGrid confirmadas, mas não afirma equivalência integral à matriz proprietária de autorização GoodWe.
+
+### Estado atual do Admin — 27/08/2026
+
+- Fase 0 consolidada e integrada pelo PR #10; o Painel agregado do PR #11 também já está em `origin/develop/admin-web` (`97cf69d`).
+- As PRs #12–#15 foram integradas nas respectivas branches empilhadas. A PR #16, `feature/admin-current-state` → `develop/admin-web`, consolida Lista de usinas, Lista de dispositivos, Operação ChargeGrid e documentação em uma única integração final.
+- O PR #14 contém a visão operacional local, fila automática, detalhes de carregador e sessão, resumo financeiro e detalhe de pagamento; comandos locais ficaram restritos às contingências `Liberar recarga` e `Parar recarga`.
+- Operação, Fila, carregador, sessão e pagamento foram inspecionados em navegador real a `1440 × 1000` e seguem a escala visual do Painel.
+- Foram aprovados lint, build do Admin, 20 arquivos/76 testes unitários, 13 E2E focais da operação e 5 E2E focais adicionais de sessão/financeiro. O CI de lint, testes e build também foi aprovado na cadeia publicada.
+- A regressão E2E integral e qualquer baseline visual continuam reservados ao gate de integração, depois da aprovação das superfícies restantes.
+- O trabalho restante está consolidado em `docs/admin-dashboard/REMAINING_WORK.md`; F1 está avançada, mas ainda depende de detalhe de planta, fechamento de governança do proprietário, alarmes/recomendações, relatórios/serviço e jornada consolidada.
+- Registros de M0–M9, PR #5 e branches anteriores permanecem históricos e não descrevem isoladamente a base vigente.
 
 ## Registro da entrega atual — 21 de agosto de 2026
 
@@ -604,7 +732,7 @@ produto/contexto → arquitetura → contratos → demo
 → design system → spec → código/testes
 ```
 
-## 18. Estado implementado em 22/08/2026
+## 18. Estado implementado consolidado em 27/08/2026
 
 | Área | Estado | Fonte |
 | --- | --- | --- |
@@ -621,7 +749,7 @@ produto/contexto → arquitetura → contratos → demo
 | Progresso | **LOCAL**: teto, barra verde, saldo e estimativa | `SessionPage.tsx` |
 | Notificações | **LOCAL**: navegador/service worker | `browserNotifications.ts` |
 | PWA | **IMPLEMENTADO**: manifest, SW, ícone, instalação/safe areas | `public/` |
-| Dashboard Admin | **BASE LOCAL M0–M9 CONCLUÍDA**: onboarding, operação, fila, energia, financeiro, incidentes, recomendações sem autoexecução, acesso por papel/escopo e relatórios exportáveis funcionam no sandbox; M9 removeu implementações paralelas e validou build, lint, unitários, E2E crítico e 390/1280/1440 px. Providers, autorização backend/RLS, tema claro, entrega agendada e a nova regressão visual após o próximo redesenho permanecem pendentes | `apps/admin-web/`, `docs/admin-dashboard/VALIDATION_REPORT.md` |
+| Dashboard Admin | **F0 INTEGRADA; F1 AVANÇADA NA PR #16**: personas, escopos e Painel agregado estão em `develop/admin-web`; a PR de integração consolida Usinas, Dispositivos e Operação ChargeGrid, incluindo fila automática e detalhes de carregador, sessão e pagamento. O Gate F1 ainda depende das lacunas registradas em `REMAINING_WORK.md`. Providers, autorização backend/RLS, acabamento visual integral e regressão completa antes de `main` permanecem pendentes | `apps/admin-web/`, `docs/admin-dashboard/VALIDATION_REPORT.md`, `docs/admin-dashboard/REMAINING_WORK.md` |
 | GoodWe | **SIMULADO** | `apps/api/src/goodwe/` |
 | Persistência comercial | **NÃO IMPLEMENTADO**: migrations/repositories/RLS | `supabase/` |
 | IA | **NÃO IMPLEMENTADO** | `apps/api/src/ai/README.md` |

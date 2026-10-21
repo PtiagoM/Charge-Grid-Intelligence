@@ -1,0 +1,103 @@
+{
+  "alignment": "2018 EULP month/day and wall-clock profile is overlaid on NREL/PVDAQ local wall-clock sample dates; source timestamps are naive and are not converted to UTC.",
+  "classification": "SIMULATED_COMPOSITE",
+  "gridImportRule": "max(0, buildingLoadKw + evChargingKw - pvGenerationKw); no battery, export settlement, losses or curtailment model.",
+  "hypotheses": {
+    "hypotheticalCompositePvNameplateKw": 75.0,
+    "pvSourceNameplateKw": 1.12,
+    "pvdaqSystemId": "10"
+  },
+  "interval": "15 minutes, right-edge local wall-clock labels",
+  "operationalUse": false,
+  "sampleOnly": true,
+  "sourceRowsUsed": {
+    "compositeRows": 339,
+    "eulpProfileIntervalsAvailable": 35040,
+    "eulpProfileIntervalsUsed": 339,
+    "nrelSessionsOverlappingSelectedDates": 198,
+    "pvdaqRowsByDate": {
+      "2019-04-04": 1440,
+      "2019-07-08": 1440,
+      "2019-10-31": 1440,
+      "2020-01-23": 760
+    }
+  },
+  "sources": [
+    {
+      "bytes": 7733179,
+      "file": "eulp-small-office.csv",
+      "license": "CC BY 4.0; NREL/OEDI attribution required",
+      "sha256": "7cc903c58fe8bccd7855cf229849ff27f7cc5f00bdebbe2d1697ac9cb8d846ec",
+      "url": "https://oedi-data-lake.s3.amazonaws.com/nrel-pds-building-stock/end-use-load-profiles-for-us-building-stock/2021/comstock_amy2018_release_1/timeseries_aggregates/by_ashrae_iecc_climate_zone_2004/5b-smalloffice.csv",
+      "version": "ComStock AMY2018 Release 1; climate zone 5B; SmallOffice; modeled year 2018"
+    },
+    {
+      "bytes": 8005625,
+      "file": "nrel-workplace.csv",
+      "license": "NLR Data Catalog license; use/copy permitted with full notice and DOE/NREL/ALLIANCE attribution",
+      "sha256": "045db2f40cd393412d12395f679aab546723585737dd8d760d0375754d2b4e55",
+      "url": "https://data.nlr.gov/system/files/182/dataSet_Oct2021.csv",
+      "version": "NREL Workplace Charging Data, Data Set Oct 2021, DOI 10.7799/1838140"
+    },
+    {
+      "bytes": 191276,
+      "dataset": "NREL PVDAQ Public Data Lake, DOI 10.25984/1846021",
+      "file": "pvdaq-system10-2019-04-04.csv",
+      "license": "CC BY 4.0; attribution and changes required",
+      "sha256": "d4c1d2a35408365d0a29a43b420f12d6f2153613b229540ee3f6494fb0e872f0",
+      "systemId": "10",
+      "url": "https://oedi-data-lake.s3.amazonaws.com/pvdaq/csv/pvdata/system_id=10/year=2019/month=4/day=4/system_10__date_2019_04_04.csv",
+      "version": "PVDAQ CSV snapshot indexed 2025-07-29"
+    },
+    {
+      "bytes": 187723,
+      "dataset": "NREL PVDAQ Public Data Lake, DOI 10.25984/1846021",
+      "file": "pvdaq-system10-2019-07-08.csv",
+      "license": "CC BY 4.0; attribution and changes required",
+      "sha256": "0cd678f8d117132376b7b96d912950121ed242238752f36cef54082f7ce28952",
+      "systemId": "10",
+      "url": "https://oedi-data-lake.s3.amazonaws.com/pvdaq/csv/pvdata/system_id=10/year=2019/month=7/day=8/system_10__date_2019_07_08.csv",
+      "version": "PVDAQ CSV snapshot indexed 2025-07-29"
+    },
+    {
+      "bytes": 202677,
+      "dataset": "NREL PVDAQ Public Data Lake, DOI 10.25984/1846021",
+      "file": "pvdaq-system10-2019-10-31.csv",
+      "license": "CC BY 4.0; attribution and changes required",
+      "sha256": "a3b1b8d5ee3ce7145a1356d9d8a1ecaff6e4c7888cae02fd5b51f189549f984a",
+      "systemId": "10",
+      "url": "https://oedi-data-lake.s3.amazonaws.com/pvdaq/csv/pvdata/system_id=10/year=2019/month=10/day=31/system_10__date_2019_10_31.csv",
+      "version": "PVDAQ CSV snapshot indexed 2025-07-29"
+    },
+    {
+      "bytes": 105548,
+      "dataset": "NREL PVDAQ Public Data Lake, DOI 10.25984/1846021",
+      "file": "pvdaq-system10-2020-01-23.csv",
+      "license": "CC BY 4.0; attribution and changes required",
+      "sha256": "3c3d2e0fdbe95f1d01aa65f25f59791f5f7911cd8e3df9620152c1f30a8d1f31",
+      "systemId": "10",
+      "url": "https://oedi-data-lake.s3.amazonaws.com/pvdaq/csv/pvdata/system_id=10/year=2020/month=1/day=23/system_10__date_2020_01_23.csv",
+      "version": "PVDAQ CSV snapshot indexed 2025-07-29"
+    },
+    {
+      "bytes": 1134,
+      "dataset": "NREL PVDAQ Public Data Lake, DOI 10.25984/1846021",
+      "file": "pvdaq-system10-metadata.json",
+      "license": "CC BY 4.0; attribution and changes required",
+      "nameplateDcKw": 1.12,
+      "sha256": "28c1a901fb2712e978b4d46eede0eaf0849aba1c8058068e2f3f835227d43bfb",
+      "site": "[10] NREL CIS -1",
+      "systemId": "10",
+      "systemName": "[10] NREL CIS -1",
+      "url": "https://oedi-data-lake.s3.amazonaws.com/pvdaq/csv/system_metadata/10_system_metadata.json",
+      "version": "PVDAQ system 10 metadata snapshot indexed 2025-07-29"
+    }
+  ],
+  "target": "gridImportKw",
+  "temporalSplit": {
+    "2019-04-04": "train",
+    "2019-07-08": "train",
+    "2019-10-31": "validation",
+    "2020-01-23": "test"
+  }
+}

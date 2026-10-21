@@ -72,6 +72,14 @@ export function WorldMap({ state }: { state: AdminState }) {
     };
   }), [state.chargers, state.locations]);
   const clusters = useMemo(() => buildVisibleMapClusters(mapLocations, 3.25), [mapLocations]);
+  const selectedLocation = state.locations.find((location) => location.id === selectedId);
+  const selectedCommercialPlant = selectedLocation ? state.commercialPlants.find((plant) => plant.locationId === selectedLocation.id && plant.status === "PUBLISHED") : undefined;
+  const selectedChargers = selectedLocation ? state.chargers.filter((charger) => charger.locationId === selectedLocation.id) : [];
+  const selectedPublishedChargers = selectedChargers.filter((charger) => charger.publicationStatus === "PUBLISHED");
+  const selectedEnergy = selectedLocation ? state.energy.find((item) => item.establishmentId === selectedLocation.establishmentId) : undefined;
+  const selectedAvailability = selectedPublishedChargers.length
+    ? Math.round((selectedPublishedChargers.filter((charger) => charger.status !== "offline").length / selectedPublishedChargers.length) * 100)
+    : null;
 
   useEffect(() => {
     let disposed = false;
@@ -120,5 +128,15 @@ export function WorldMap({ state }: { state: AdminState }) {
         return <button key={cluster.id} type="button" className={`world-map-marker ${cluster.locations.some((item) => item.location.id === selectedId) ? "is-selected" : ""} ${cluster.hasOffline ? "has-alert" : ""}`} style={style} data-testid={`world-map-marker-${primary?.location.id}`} onClick={() => primary && setSelectedId(primary.location.id)} aria-label={`${primary?.location.name ?? "Ponto"}: ponto com carregador`}><span>{cluster.isCluster ? cluster.locations.length : ""}</span></button>;
       })}
     </div>
+    {selectedLocation ? <aside className="world-map-popover" data-testid="world-map-popover" aria-label={`Resumo de ${selectedLocation.name}`}>
+      <header><div><span>{selectedCommercialPlant ? "Usina comercial" : "Usina energética"}</span><strong>{selectedCommercialPlant?.commercialName ?? selectedLocation.name}</strong></div><button type="button" aria-label="Fechar resumo da usina" onClick={() => setSelectedId("")}>×</button></header>
+      <p className="world-map-popover-location">{selectedLocation.city}/{selectedLocation.state} · {selectedLocation.status}</p>
+      <dl className="world-map-technical-summary">
+        <div><dt>Potência nominal</dt><dd>{selectedChargers.reduce((sum, charger) => sum + charger.powerKw, 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} kW</dd></div>
+        <div><dt>Energia solar</dt><dd>{selectedEnergy ? `${selectedEnergy.solarPowerKw.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} kW` : "Sem telemetria"}</dd></div>
+        <div><dt>Demanda</dt><dd>{selectedEnergy ? `${selectedEnergy.demandKw.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} kW` : "Sem telemetria"}</dd></div>
+      </dl>
+      {selectedCommercialPlant ? <section className="world-map-chargegrid-preview"><span>Operação ChargeGrid</span><dl><div><dt>Carregadores publicados</dt><dd>{selectedPublishedChargers.length}</dd></div><div><dt>Disponibilidade</dt><dd>{selectedAvailability === null ? "Sem telemetria" : `${selectedAvailability}%`}</dd></div><div><dt>Energia entregue hoje</dt><dd>{selectedPublishedChargers.reduce((sum, charger) => sum + charger.todayEnergyKwh, 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} kWh</dd></div></dl></section> : null}
+    </aside> : null}
   </div>;
 }

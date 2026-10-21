@@ -12,7 +12,7 @@ export function normalizeAdminState(candidate: AdminState, fallback: AdminState)
   const fallbackChargers = new Map(fallback.chargers.map((item) => [item.id, item]));
   const chargers = (Array.isArray(candidate.chargers) ? candidate.chargers : fallback.chargers).map((item) => ({
     ...item,
-    commercialStatus: item.commercialStatus ?? fallbackChargers.get(item.id)?.commercialStatus ?? "PUBLISHED" as const
+    publicationStatus: item.publicationStatus ?? fallbackChargers.get(item.id)?.publicationStatus ?? "PUBLISHED" as const
   }));
   const chargerIds = new Set(chargers.map((item) => item.id));
   const fallbackEnergy = new Map(fallback.energy.map((item) => [item.establishmentId, item]));
@@ -37,7 +37,8 @@ export function normalizeAdminState(candidate: AdminState, fallback: AdminState)
     ...item,
     semsAccountType: item.semsAccountType ?? fallbackAccounts.get(item.id)?.semsAccountType ?? (item.profile === "GOODWE" ? "DISTRIBUTOR_INSTALLER" as const : "OWNER" as const),
     role: item.role === "GOODWE_ADMIN" ? "GOODWE_CENTRAL" as const : item.role ?? fallbackAccounts.get(item.id)?.role,
-    semsOrganizationFunction: item.semsOrganizationFunction ?? fallbackAccounts.get(item.id)?.semsOrganizationFunction
+    semsOrganizationFunction: item.semsOrganizationFunction ?? fallbackAccounts.get(item.id)?.semsOrganizationFunction,
+    technicalEstablishmentIds: item.technicalEstablishmentIds ?? fallbackAccounts.get(item.id)?.technicalEstablishmentIds
   }));
   const candidateAccountIds = new Set(candidateAccounts.map((item) => item.id));
   const accounts = [...candidateAccounts, ...fallback.accounts.filter((item) => !candidateAccountIds.has(item.id))];
@@ -77,8 +78,8 @@ export function normalizeAdminState(candidate: AdminState, fallback: AdminState)
     incidents: Array.isArray(candidate.incidents) ? candidate.incidents : fallback.incidents,
     incidentEvents: Array.isArray(candidate.incidentEvents) ? candidate.incidentEvents : fallback.incidentEvents,
     recommendations: Array.isArray(candidate.recommendations) ? candidate.recommendations : fallback.recommendations,
-    reportJobs: Array.isArray(candidate.reportJobs) ? candidate.reportJobs : fallback.reportJobs,
-    reportSubscriptions: Array.isArray(candidate.reportSubscriptions) ? candidate.reportSubscriptions : fallback.reportSubscriptions
+    reportJobs: (Array.isArray(candidate.reportJobs) ? candidate.reportJobs : fallback.reportJobs).filter((item) => item.establishmentIds.every((id) => id === "est_aurora_001")),
+    reportSubscriptions: (Array.isArray(candidate.reportSubscriptions) ? candidate.reportSubscriptions : fallback.reportSubscriptions).filter((item) => item.establishmentIds.every((id) => id === "est_aurora_001"))
   };
 }
 

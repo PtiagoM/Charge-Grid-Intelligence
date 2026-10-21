@@ -1,10 +1,19 @@
-# Relatório de validação do Dashboard Admin — M9
+# Relatório de validação do Dashboard Admin
+
+**Atualizado em:** 27 de agosto de 2026  
+**Cobertura:** histórico M9, fundação F0 e convergência visual/operacional consolidada na PR #16.
+
+As primeiras seções preservam a evidência histórica da rodada M9. A evidência corrente está consolidada na seção “Convergência visual e Operação ChargeGrid — 25 a 27/08/2026”.
+
+## Registro histórico M9
 
 **Data:** 23 de agosto de 2026  
-**Branch:** `chore/admin-release-hardening`  
+**Branch histórica:** `chore/admin-release-hardening`  
 **Escopo:** fechamento local dos marcos M0–M9, sem alterações no Driver PWA e sem integração na `main`.
 
 ## Resultado
+
+Este documento registra a rodada M9 anterior. A validação vigente da Fase 0 está no PR #9 e no plano `docs/admin-dashboard/NEXT_EXECUTION_PLAN.md`.
 
 O Admin está coerente com a arquitetura nativa vigente e pronto para servir de base ao próximo redesenho. O hardening removeu páginas paralelas que ainda simulavam carregadores, sessões, energia, financeiro, recomendações e relatórios, preservando apenas as verticais de domínio introduzidas em M3–M8. A participação contratual deixou de usar percentual fixo e agora deriva da política tarifária ativa.
 
@@ -67,7 +76,7 @@ A execução integral local foi interrompida por decisão explícita do produto.
 
 ## Consolidação de responsabilidades e fluxos — 23/08/2026
 
-**Branch de entrega:** `feature/admin-responsibility-flows`, baseada no HEAD já integrado pelo PR #4 e destinada a `develop/admin-web`.
+**Branch de entrega:** `feature/admin-responsibility-flows`, baseada no HEAD já integrado pelo PR #4. A entrega `7fe0205` foi integrada em `develop/admin-web` pelo PR #5 (`b7d3fea`).
 
 Esta rodada corrigiu o frontend para representar o modelo vigente sem simular segurança de backend. Conta SEMS+, função organizacional, vínculo ChargeGrid, papel, escopo e capacidade deixaram de ser tratados como uma única classificação. Uma conta SEMS+ comum autentica e preserva todas as superfícies técnicas sem receber qualquer conteúdo ChargeGrid. Revogar uma concessão comercial remove o papel, mas não desativa a identidade SEMS+.
 
@@ -83,4 +92,60 @@ Também foram concluídos:
 - janela de chamada da fila unificada em dez minutos;
 - resumos compactos adotados nas novas áreas de governança, preservando a decisão de não iniciar uma varredura visual integral.
 
-Validação executada nesta rodada: build e lint do Admin aprovados; 20 arquivos e 72 testes unitários aprovados; 8 E2E de navegação/responsabilidade aprovados; 11 dos 12 E2E adicionais de dispositivos, plantas, acesso e relatórios aprovados na primeira repetição, com o cenário restante corrigido e repetido separadamente. Nenhum snapshot ou baseline visual foi criado. O navegador integrado não ficou disponível para inspeção manual; a validação visual direta deve ser retomada quando a sessão de navegador estiver exposta.
+Validação executada nesta rodada: build e lint do Admin aprovados; 20 arquivos e 72 testes unitários aprovados; 20 cenários E2E focais aprovados entre navegação, responsabilidades, dispositivos, plantas, acesso e relatórios. Nenhum snapshot ou baseline visual foi criado. O navegador integrado não ficou disponível para inspeção manual; a validação visual direta deve ser retomada quando a sessão de navegador estiver exposta. O CI do PR #5 também aprovou lint, testes e build; a regressão E2E integral foi ignorada conforme a política de desenvolvimento.
+
+## Convergência visual e Operação ChargeGrid — 25 a 27/08/2026
+
+Esta rodada avançou da fundação de personas para as superfícies principais do proprietário comercial. As entregas foram publicadas como PRs empilhados para permitir revisão isolada e integração na ordem correta:
+
+| PR | Base | Escopo | Estado verificado em 27/08/2026 |
+| --- | --- | --- | --- |
+| #11 | `develop/admin-web` | Painel geral agregado | integrada, CI aprovado |
+| #12 | `feature/admin-dashboard-aggregate` | Lista de usinas | integrada na cadeia, CI aprovado |
+| #13 | `feature/admin-plants-reference` | Lista de dispositivos | integrada na cadeia, CI aprovado |
+| #14 | `feature/admin-devices-reference` | Operação ChargeGrid e detalhes | integrada na cadeia, CI aprovado |
+| #15 | `feature/admin-chargegrid-operations` | Consolidação documental | integrada na cadeia, CI aprovado |
+| #16 | `develop/admin-web` | Rollup da ponta atual | aberta para integração final |
+
+### Superfícies verificadas
+
+- Painel agregado com mapa, Economia e modos de monitoramento;
+- lista de usinas com pesquisa, filtros e contexto comercial somente onde aplicável;
+- lista de dispositivos agrupada por usina, filtro por planta e ações corretas;
+- Operação ChargeGrid com carrossel de vagas/veículos, seleção de carregador, alarmes, performance, gráfico e condição energética;
+- Fila automática e somente leitura;
+- detalhe do carregador com controles compactos de contingência;
+- detalhe da sessão com progresso, indicadores, energia, pagamento e linha do tempo operacional;
+- detalhe do pagamento com progresso financeiro, composição, referências, conciliação, reembolso e histórico auditável;
+- navegação sessão ↔ pagamento ↔ resumo financeiro e retorno de carregador fora do escopo.
+
+### Evidência automatizada
+
+| Verificação | Resultado |
+| --- | --- |
+| `npm run lint` | aprovado |
+| `npm test --workspace @chargegrid/admin-web -- --maxWorkers=1` | 20 arquivos e 76 testes aprovados |
+| `npm run build --workspace=apps/admin-web` | TypeScript e Vite aprovados; permanece apenas o aviso conhecido de chunk principal acima de 500 kB |
+| E2E focal de fila, carregador, sessões e financeiro | 13 de 13 cenários aprovados |
+| E2E focal após redesenho do pagamento | 5 de 5 cenários aprovados |
+| `git diff --check` | aprovado |
+
+### Evidência visual
+
+Playwright CLI foi usado em `1440 × 1000` para revisar Operação, Fila, detalhe do carregador, detalhe da sessão e detalhe do pagamento. Foram confirmados:
+
+- escala equivalente ao Painel para carros, fontes, indicadores e gráfico;
+- alarmes acima da performance comercial;
+- ausência de `Sessões recentes` e `Fila atual` no dashboard operacional;
+- ausência de ações manuais na fila;
+- alinhamento dos cards e integridade da linha do tempo da sessão;
+- fluxo funcional e hierarquia do detalhe do pagamento;
+- nenhum erro funcional no console; as mensagens observadas eram somente duas requisições 404 do `favicon.ico` no ambiente local.
+
+### Limites desta validação
+
+- a suíte E2E integral do Admin não foi executada localmente nesta rodada;
+- o job de regressão E2E integral permanece `skipped` no workflow automático, conforme a estratégia vigente;
+- não foram criados snapshots ou baselines visuais;
+- Driver PWA, API e contratos compartilhados não foram alterados nem revalidados, porque a rodada foi exclusiva do Admin;
+- integração em `develop/admin-web` e `main` continua dependente de revisão e decisão humana.

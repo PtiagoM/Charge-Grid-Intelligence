@@ -1,30 +1,50 @@
-import { demoScenarioD0 } from "@chargegrid/shared";
+import { randomUUID } from "node:crypto";
+import { PlantEnergyStatus } from "@chargegrid/shared";
 import type { GoodWeCommandResult, GoodWeCommandType, GoodWeProvider } from "./goodwe-provider.js";
 
-function createPendingCommand(type: GoodWeCommandType, chargerId: string): GoodWeCommandResult {
+function createSuccessfulCommand(type: GoodWeCommandType, chargerId: string): GoodWeCommandResult {
   return {
-    commandId: `demo_${type.toLowerCase()}_${chargerId}`,
+    commandId: randomUUID(),
     type,
     chargerId,
-    status: "PENDING",
-    requestedAt: demoScenarioD0.plant.observedAt
+    status: "SUCCESS",
+    requestedAt: new Date().toISOString()
   };
 }
 
 export class MockGoodWeProvider implements GoodWeProvider {
-  async getPlantTelemetry(plantId: string) {
-    return plantId === demoScenarioD0.plant.plantId ? demoScenarioD0.plant : null;
+  async getPlantTelemetry(plantId: string, simulation?: { online: boolean; pvKw: number; buildingLoadKw: number }) {
+    if (!simulation?.online) return null;
+    return {
+      id: "simulated-reading",
+      plantId,
+      observedAt: new Date().toISOString(),
+      source: "SIMULATED" as const,
+      quality: "FRESH" as const,
+      pvKw: simulation.pvKw,
+      buildingLoadKw: simulation.buildingLoadKw,
+      evLoadKw: 0,
+      gridImportKw: 0,
+      gridExportKw: 0,
+      batteryChargeKw: null,
+      batteryDischargeKw: null,
+      evWh: 0,
+      gridImportWh: 0,
+      gridExportWh: 0,
+      solarToEvWh: 0,
+      energyStatus: PlantEnergyStatus.NORMAL
+    };
   }
 
-  async getChargerTelemetry(chargerId: string) {
-    return demoScenarioD0.chargers.find((charger) => charger.id === chargerId) ?? null;
+  async getChargerTelemetry() {
+    return null;
   }
 
   async startCharge(chargerId: string) {
-    return createPendingCommand("START_CHARGE", chargerId);
+    return createSuccessfulCommand("START_CHARGE", chargerId);
   }
 
   async stopCharge(chargerId: string) {
-    return createPendingCommand("STOP_CHARGE", chargerId);
+    return createSuccessfulCommand("STOP_CHARGE", chargerId);
   }
 }

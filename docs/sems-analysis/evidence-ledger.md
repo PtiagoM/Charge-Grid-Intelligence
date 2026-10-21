@@ -55,6 +55,7 @@ Na Fase 1 não houve evidência `TESTED IN SANDBOX`. A Fase 2 acrescentou os tes
 | SEMS-USER-002 | `OBSERVED` | alta | Proprietário, configuração | 1210×1024, escuro | expandir Gestão da organização | submenu efetivo limitado a `Assinatura de mensagens`; Logs permaneceu acessível | nenhuma | normal |
 | SEMS-PERM-002 | `INFERRED` | média | EV compartilhado | 1210×1024, escuro | comparar detalhe, lista e ações | edição/exclusão aparecem na lista, mas edição não abriu formulário nem mudou rota; causa pode ser RBAC, estado ou defeito | nenhuma | normal |
 | SEMS-EXT-002 | `NOT TESTED — EXTERNAL IMPACT RISK` | alta | planta/EV compartilhados | 1210×1024, escuro | avaliar comandos e exclusão | nenhum comando, alteração ou exclusão foi executado em ativo preexistente | nenhuma | não capturar |
+| SEMS-USER-003 | `OBSERVED` | alta | Distribuidor/Instalador, usuário organizacional `Navegador` | não registrado | teste de gestão e ação sobre planta realizado pelo produto | gestão organizacional indisponível e exclusão de planta bloqueada; consulta à planta compartilhada permaneceu possível | nenhuma | normal; não extrapolar para dispositivos |
 
 ## Evidências de consolidação e planejamento
 

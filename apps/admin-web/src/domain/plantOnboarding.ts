@@ -103,7 +103,7 @@ export function publishPlantOnboarding(
         powerKw: charger.powerKw,
         installationDate: publishedAt.slice(0, 10),
         status: charger.technicalStatus === "ONLINE" ? "available" as const : "offline" as const,
-        commercialStatus: "ELIGIBLE" as const,
+        publicationStatus: "ELIGIBLE" as const,
         todayEnergyKwh: 0,
         revenueToday: 0
       }))],

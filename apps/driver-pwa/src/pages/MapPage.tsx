@@ -1,23 +1,15 @@
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useDriverApp } from "../app/DriverAppContext";
 import { AppIcon } from "../components/AppIcon";
 import { DriverDiscoveryMap, geocodeMapAddress } from "../components/DriverDiscoveryMap";
-import { commercialPlants } from "../data/commercialPlants";
-
-const mapPlaces = commercialPlants.map((plant) => ({
-  id: plant.id,
-  name: plant.name,
-  position: plant.position,
-  availableChargers: plant.availableChargerCount,
-  chargerCount: plant.chargerCount,
-  nominalPowerKw: plant.nominalPowerKw,
-  tariff: plant.tariffFrom?.amount ?? 0
-}));
+import { useCommercialPlants } from "../data/useCommercialPlants";
 
 export function MapPage() {
   const navigate = useNavigate();
   const { isAuthenticated, selectChargingPoint, theme } = useDriverApp();
+  const { plants, error: commercialError } = useCommercialPlants();
+  const mapPlaces = useMemo(() => plants.map((plant) => ({ id: plant.id, name: plant.name, position: plant.position, availableChargers: plant.availableChargerCount, chargerCount: plant.chargerCount, nominalPowerKw: plant.nominalPowerKw, tariff: plant.tariffFrom?.amount ?? 0 })), [plants]);
   const [query, setQuery] = useState("");
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [focusPosition, setFocusPosition] = useState<{ lat: number; lng: number } | null>(null);
@@ -27,7 +19,7 @@ export function MapPage() {
   if (!isAuthenticated) return <Navigate to="/" replace />;
 
   function selectPlace(placeId: string) {
-    const plant = commercialPlants.find((item) => item.id === placeId);
+    const plant = plants.find((item) => item.id === placeId);
     const charger = plant?.chargers[0];
     if (!plant || !charger) return;
     setSelectedPlaceId(placeId);
@@ -59,6 +51,7 @@ export function MapPage() {
       {searching ? <span className="map-search-spinner" aria-label="Pesquisando" /> : null}
     </form>
     {message ? <p className="map-search-message" role="status">{message}</p> : null}
+    {commercialError ? <p className="map-search-message" role="status">Não foi possível atualizar a disponibilidade do Hub Solar Aurora.</p> : null}
     <DriverDiscoveryMap places={mapPlaces} selectedPlaceId={selectedPlaceId} focusPosition={focusPosition} theme={theme} onSelectPlace={selectPlace} />
   </section>;
 }

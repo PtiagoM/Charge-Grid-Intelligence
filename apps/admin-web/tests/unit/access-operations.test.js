@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createInitialState } from '../../src/fixtures/adminDemo.js';
-import { activeGrantFor, grantAccess, revokeAccess } from '../../src/domain/accessOperations.js';
+import { activeGrantFor, accessibleEstablishmentIds, commercialAccessibleEstablishmentIds, grantAccess, hasOwnChargeGridOperation, revokeAccess, technicalAccessibleEstablishmentIds } from '../../src/domain/accessOperations.js';
 import { hasAdminCapability } from '../../src/domain/adminCapabilities.js';
 
 const NOW = '2026-08-22T12:00:00-03:00';
@@ -10,6 +10,20 @@ function account(state, id) {
 }
 
 describe('access operations', () => {
+  it('mantém escopo técnico e concessão comercial como dimensões independentes', () => {
+    const state = createInitialState();
+    const installer = account(state, 'acc-sems-installer');
+    const consultant = account(state, 'acc-goodwe-consultant');
+    const owner = account(state, 'acc-est-fiap');
+
+    expect(technicalAccessibleEstablishmentIds(installer)).toEqual(['est-fiap', 'est-mercadox']);
+    expect(commercialAccessibleEstablishmentIds(state, installer)).toEqual([]);
+    expect(accessibleEstablishmentIds(state, installer)).toEqual(['est-fiap', 'est-mercadox']);
+    expect(commercialAccessibleEstablishmentIds(state, consultant)).toEqual(['est-fiap', 'est-mercadox']);
+    expect(hasOwnChargeGridOperation(state, consultant)).toBe(false);
+    expect(hasOwnChargeGridOperation(state, owner)).toBe(true);
+  });
+
   it('concede papel e escopo e aposenta a concessao anterior', () => {
     const state = createInitialState();
     const result = grantAccess(state, account(state, 'acc-goodwe'), { accountId: 'acc-operator-fiap', role: 'REPORT_VIEWER', establishmentIds: ['est-fiap'] }, NOW);

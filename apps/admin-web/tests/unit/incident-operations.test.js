@@ -75,6 +75,7 @@ describe('incident and recommendation operations', () => {
     const state = createInitialState();
     const commandCount = state.chargerCommands.length;
     const chargerSnapshot = structuredClone(state.chargers);
+    expect(state.recommendations.find((item) => item.id === 'rec-energy-est-fiap')?.sourceType).toBe('DEMAND_REVIEW');
     const accepted = decideRecommendation(state, account(state), 'rec-energy-est-fiap', 'ACCEPTED', '', NOW);
     const repeated = decideRecommendation(accepted.state, account(accepted.state), 'rec-energy-est-fiap', 'REJECTED', 'Mudanca de decisao indevida', NOW);
 

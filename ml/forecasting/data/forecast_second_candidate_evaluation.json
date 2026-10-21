@@ -1,0 +1,167 @@
+{
+  "candidate": "LINEAR_LAGS_CALENDAR",
+  "candidateType": "standardized multiple linear regression (ridge, fixed alpha=1.0)",
+  "datasetClass": "SIMULATED_COMPOSITE",
+  "environment": {
+    "dependencies": "Python standard library only",
+    "pythonVersion": "3.14.7",
+    "randomness": "none; deterministic closed-form ridge regression"
+  },
+  "features": [
+    "gridImportKw_lag_0",
+    "gridImportKw_lag_15m",
+    "gridImportKw_lag_60m",
+    "previous_day_next_hour_peak_kw",
+    "hour_sin",
+    "hour_cos",
+    "weekday_sin",
+    "weekday_cos",
+    "year_day_sin",
+    "year_day_cos"
+  ],
+  "horizonMinutes": 60,
+  "limitations": [
+    "The model predicts the maximum import over the next hour and does not estimate which quarter-hour contains that maximum.",
+    "All inputs and targets are SIMULATED_COMPOSITE, not co-located measurements or Aurora telemetry.",
+    "Calendar features are naive local wall-clock encodings because source timezones are unavailable."
+  ],
+  "model": {
+    "coefficients": [
+      28.479831482733182,
+      1.562482116118559,
+      -2.311005212667876,
+      2.7756860167130926,
+      0.5836474230149037,
+      -4.404285435291047,
+      1.2026881659215811,
+      -0.69920929093132,
+      -0.44330880461024713,
+      -0.5137704698153357
+    ],
+    "featureMeans": [
+      64.85461674772522,
+      64.85353780308398,
+      64.84957490213239,
+      68.33710244418977,
+      2.7159800199099194e-05,
+      -0.00020629916406308501,
+      0.011453886571117842,
+      -0.008788876283268552,
+      0.21498146448358593,
+      -0.7128399170177162
+    ],
+    "featureScales": [
+      31.45468105288734,
+      31.455110228073796,
+      31.456522030821205,
+      32.58404073583017,
+      0.7071775332400544,
+      0.70703599143432,
+      0.707325992216425,
+      0.7067400546673036,
+      0.60667547070312,
+      0.27854460303839307
+    ],
+    "interceptKw": 68.76734537368895,
+    "ridgeAlpha": 1.0
+  },
+  "promoted": true,
+  "promotionRule": "validation MAE and RMSE must both beat the lowest-MAE baseline, and validation peak F1 must be no more than 0.02 lower",
+  "riskThreshold": {
+    "method": "training-only 90th percentile of future-hour peaks",
+    "operationalUse": false,
+    "valueKw": 117.524661
+  },
+  "selectedOnValidation": "LINEAR_LAGS_CALENDAR",
+  "status": "MODEL_PROMOTED",
+  "structuredSignal": {
+    "fields": [
+      "timestamp_local",
+      "predictedPeakGridImportKw",
+      "riskThresholdKw",
+      "riskState",
+      "datasetClass",
+      "forecastMethod"
+    ],
+    "horizonMinutes": 60,
+    "operationalUse": false,
+    "peakQuarterHourTimestampPredicted": false,
+    "statistic": "maximum over next hour",
+    "target": "gridImportKw"
+  },
+  "testEvaluated": true,
+  "testMetrics": {
+    "LINEAR_LAGS_CALENDAR": {
+      "maeKw": 5.626216121287289,
+      "n": 4595,
+      "peakDetection": {
+        "f1": 0.8348530901722391,
+        "falseNegatives": 101,
+        "falsePositives": 62,
+        "precision": 0.869198312236287,
+        "recall": 0.8031189083820662,
+        "thresholdKw": 117.524661,
+        "truePositives": 412
+      },
+      "rmseKw": 8.431892263410719
+    },
+    "PERSISTENCE": {
+      "maeKw": 5.322525316213276,
+      "n": 4595,
+      "peakDetection": {
+        "f1": 0.8144104803493449,
+        "falseNegatives": 140,
+        "falsePositives": 30,
+        "precision": 0.9255583126550868,
+        "recall": 0.7270955165692008,
+        "thresholdKw": 117.524661,
+        "truePositives": 373
+      },
+      "rmseKw": 9.76649057375682
+    }
+  },
+  "validationMetrics": {
+    "LINEAR_LAGS_CALENDAR": {
+      "maeKw": 5.63701727361371,
+      "n": 4892,
+      "peakDetection": {
+        "f1": 0.8883455582722086,
+        "falseNegatives": 73,
+        "falsePositives": 64,
+        "precision": 0.8949096880131363,
+        "recall": 0.8818770226537217,
+        "thresholdKw": 117.524661,
+        "truePositives": 545
+      },
+      "rmseKw": 8.542148685759608
+    },
+    "PERSISTENCE": {
+      "maeKw": 5.796446362837285,
+      "n": 4892,
+      "peakDetection": {
+        "f1": 0.8343777976723367,
+        "falseNegatives": 152,
+        "falsePositives": 33,
+        "precision": 0.9338677354709419,
+        "recall": 0.7540453074433657,
+        "thresholdKw": 117.524661,
+        "truePositives": 466
+      },
+      "rmseKw": 10.471495200066137
+    },
+    "SEASONAL_NAIVE_24H": {
+      "maeKw": 18.716676913327884,
+      "n": 4892,
+      "peakDetection": {
+        "f1": 0.5559055118110235,
+        "falseNegatives": 265,
+        "falsePositives": 299,
+        "precision": 0.5414110429447853,
+        "recall": 0.5711974110032363,
+        "thresholdKw": 117.524661,
+        "truePositives": 353
+      },
+      "rmseKw": 31.922922451585357
+    }
+  }
+}

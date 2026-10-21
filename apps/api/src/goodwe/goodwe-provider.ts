@@ -12,7 +12,7 @@ export interface GoodWeCommandResult {
 }
 
 export interface GoodWeProvider {
-  getPlantTelemetry(plantId: string): Promise<PlantEnergySnapshot | null>;
+  getPlantTelemetry(plantId: string, simulation?: { online: boolean; pvKw: number; buildingLoadKw: number }): Promise<PlantEnergySnapshot | null>;
   getChargerTelemetry(chargerId: string): Promise<ChargerSummary | null>;
   startCharge(chargerId: string): Promise<GoodWeCommandResult>;
   stopCharge(chargerId: string): Promise<GoodWeCommandResult>;

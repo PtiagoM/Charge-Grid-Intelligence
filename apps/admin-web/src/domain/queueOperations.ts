@@ -61,7 +61,7 @@ export function callNextDriver(state: AdminState, account: Account | null, estab
   if (!entry) return { ok: false, issues: ["Nao ha motoristas aguardando neste estabelecimento."], state };
 
   const charger = state.chargers
-    .filter((item) => item.establishmentId === establishmentId && item.status === "available" && item.commercialStatus === "PUBLISHED" && connectorForModel(item.model) === entry.requiredConnector)
+    .filter((item) => item.establishmentId === establishmentId && item.status === "available" && item.publicationStatus === "PUBLISHED" && connectorForModel(item.model) === entry.requiredConnector)
     .sort((a, b) => a.id.localeCompare(b.id))[0];
   if (!charger) return { ok: false, issues: ["Nao ha carregador compativel e disponivel para a proxima chamada."], state };
 
@@ -108,7 +108,8 @@ export function releaseQueueEntry(state: AdminState, account: Account | null, en
 }
 
 export function queuePosition(state: AdminState, entryId: string, averageWaitMinutes = 18) {
-  const waiting = state.queue.filter((item) => item.status === "waiting").sort((a, b) => a.joinedAt.localeCompare(b.joinedAt));
+  const establishmentId = state.queue.find((item) => item.id === entryId)?.establishmentId;
+  const waiting = state.queue.filter((item) => item.status === "waiting" && item.establishmentId === establishmentId).sort((a, b) => a.joinedAt.localeCompare(b.joinedAt));
   const index = waiting.findIndex((item) => item.id === entryId);
   return index < 0 ? null : { position: index + 1, estimatedWaitMinutes: (index + 1) * averageWaitMinutes };
 }

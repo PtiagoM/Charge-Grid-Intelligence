@@ -5,24 +5,14 @@ import { KpiCard, SectionHeader, number } from "../../components/AdminUi";
 import type { GoodWePlant, PlantOnboardingIssue } from "../../domain/admin";
 import { validatePlantOnboarding } from "../../domain/plantOnboarding";
 import { assets } from "../../constants/assets";
-import { mockGoodWePlantCatalogRepository } from "../../services/goodwePlantCatalogRepository";
+import { catalogWithCommercialPlants, mockGoodWePlantCatalogRepository } from "../../services/goodwePlantCatalogRepository";
 import { accessibleEstablishmentIds } from "../../domain/accessOperations";
 import { COMMERCIAL_PLANT_CONTRACTS } from "../../fixtures/commercialGovernance";
 import { hasAdminCapability } from "../../domain/adminCapabilities";
 
 function usePlantCatalog() {
-  const [plants, setPlants] = useState<GoodWePlant[]>([]);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    let active = true;
-    mockGoodWePlantCatalogRepository.list().then((result) => {
-      if (active) setPlants(result);
-    }).finally(() => {
-      if (active) setLoading(false);
-    });
-    return () => { active = false; };
-  }, []);
-  return { plants, loading };
+  const { state } = useAdminState();
+  return { plants: useMemo(() => catalogWithCommercialPlants(state), [state]), loading: false };
 }
 
 function technicalState(plant: GoodWePlant, linked: boolean) {
@@ -45,38 +35,130 @@ function PlantBreadcrumbs({ current }: { current: string }) {
 export function PlantsPortfolioPage() {
   const { state, account } = useAdminState();
   const { plants, loading } = usePlantCatalog();
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState("ALL");
-  const linkedIds = useMemo(() => new Set(state.commercialPlants.map((link) => link.goodwePlantId)), [state.commercialPlants]);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [searchDraft, setSearchDraft] = useState({ identity: "", address: "", email: "" });
+  const [search, setSearch] = useState(searchDraft);
+  const [plantType, setPlantType] = useState("ALL");
+  const [organization, setOrganization] = useState("ALL");
+  const [minimumPower, setMinimumPower] = useState("");
+  const [maximumPower, setMaximumPower] = useState("");
+  const [source, setSource] = useState("ALL");
+  const [commercialLayer, setCommercialLayer] = useState("ALL");
+  const [favoriteOnly, setFavoriteOnly] = useState(false);
+  const [favorites, setFavorites] = useState(() => new Set<string>());
+  const canViewCommercial = Boolean(account && hasAdminCapability(account, "commercial:read"));
+  const linkedIds = useMemo(() => new Set(canViewCommercial ? state.commercialPlants.map((link) => link.goodwePlantId) : []), [canViewCommercial, state.commercialPlants]);
   const actorScopeSet = new Set(accessibleEstablishmentIds(state, account));
+  const mustApplyCommercialScope = account?.role === "GOODWE_PORTFOLIO_MANAGER" || (account?.profile === "ESTABELECIMENTO" && Boolean(account.role));
   const scopedPlants = plants.filter((plant) => {
+    if (plant.authorization !== "AUTHORIZED") return false;
+    if (!mustApplyCommercialScope) return true;
     const linkedScope = state.commercialPlants.find((item) => item.goodwePlantId === plant.id)?.establishmentId;
     const contractScopes = COMMERCIAL_PLANT_CONTRACTS.filter((item) => item.goodwePlantId === plant.id).map((item) => item.establishmentId);
-    return Boolean(linkedScope && actorScopeSet.has(linkedScope)) || contractScopes.some((scope) => actorScopeSet.has(scope));
+    const plantScopes = [...contractScopes, ...(linkedScope ? [linkedScope] : [])];
+    return plantScopes.some((scopeId) => actorScopeSet.has(scopeId));
   });
-  const visiblePlants = scopedPlants.filter((plant) => {
-    const status = technicalState(plant, linkedIds.has(plant.id)).label;
-    const matchesQuery = `${plant.name} ${plant.organization} ${plant.city}`.toLowerCase().includes(query.trim().toLowerCase());
-    const matchesFilter = filter === "ALL" || status === filter;
-    return matchesQuery && matchesFilter;
-  });
-  const available = scopedPlants.filter((plant) => technicalState(plant, linkedIds.has(plant.id)).label === "Disponível").length;
-  const linkedVisible = scopedPlants.filter((plant) => linkedIds.has(plant.id)).length;
-  const blocked = scopedPlants.length - linkedVisible - available;
 
-  return <>
-    <section className="surface panel plant-portfolio sems-reference-list" data-testid="plants-portfolio">
-      <div className="sems-reference-actions"><div className="plant-toolbar"><button className="sems-filter-button" type="button">⌁ Filtro</button><label><span className="sr-only">Buscar usina</span><input aria-label="Buscar planta" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Nome da usina, organização ou cidade" /></label><label><span className="sr-only">Situação</span><select aria-label="Filtrar situação da planta" value={filter} onChange={(event) => setFilter(event.target.value)}><option value="ALL">Todos os status</option><option>Vinculada</option><option>Disponível</option><option>Dados incompletos</option><option>Sem EV</option><option>Sem autorização</option></select></label><button className="sems-icon-action" type="button" aria-label="Pesquisar">⌕</button><button className="sems-icon-action" type="button" aria-label="Atualizar">↻</button></div>{account && (hasAdminCapability(account, "network:onboard") || hasAdminCapability(account, "commercial:self-service")) ? <a className="sems-primary-action" href="#/mvp/access?section=contracts">Ativar planta comercial</a> : null}</div>
-      <nav className="sems-reference-status-tabs" aria-label="Status das usinas"><button className="is-active" type="button" onClick={() => setFilter("ALL")}>Todos <b>({scopedPlants.length})</b></button><button type="button" onClick={() => setFilter("Vinculada")}>Em operação <b>({linkedVisible})</b></button><button type="button" onClick={() => setFilter("Disponível")}>Aguardando <b>({available})</b></button><button type="button" onClick={() => setFilter("Dados incompletos")}>Em construção <b>({blocked})</b></button></nav>
-      {loading ? <div className="plant-loading" role="status">Consultando catálogo GoodWe…</div> : null}
-      {!loading && !visiblePlants.length ? <div className="empty-state">Nenhuma planta corresponde aos filtros.</div> : null}
-      <div className="table-wrap sems-table-wrap"><table className="data-table sems-reference-table"><thead><tr><th>Informações da usina</th><th>Status da usina</th><th>Geração de hoje</th><th>Geração total</th><th>Potência FV</th><th>Carregadores EV</th><th>Operação</th></tr></thead><tbody>{visiblePlants.map((plant) => {
-        const link = state.commercialPlants.find((candidate) => candidate.goodwePlantId === plant.id);
-        const establishment = state.establishments.find((item) => item.id === link?.establishmentId);
-        return <tr key={plant.id} data-testid={`plant-card-${plant.id}`}><td><div className="sems-plant-cell"><img src={assets.plant} alt="" /><div><strong>{link?.commercialName ?? plant.name}</strong><span>{plant.organization}</span><small>{plant.city}/{plant.state} · {establishment?.name ?? plant.id}</small></div></div></td><td><PlantState plant={plant} linked={Boolean(link)} /></td><td>{number(plant.capacityKwp * 0.48)} kWh</td><td>{number(plant.capacityKwp * 483.5)} kWh</td><td>{number(plant.capacityKwp)} kW</td><td>{plant.evChargers.length}</td><td><a className="sems-row-action" href={`#/mvp/plant?plant=${plant.id}`}>Abrir ›</a></td></tr>;
-      })}</tbody></table></div>
-    </section>
-  </>;
+  const plantStatus = (plant: GoodWePlant) => {
+    if (plant.catalogState === "OFFLINE") return { key: "OFFLINE", label: "Offline", tone: "muted", icon: "N" };
+    if (plant.catalogState === "EMPTY") return { key: "CONSTRUCTION", label: "Em construção", tone: "info", icon: "•••" };
+    if (!plant.lastSyncAt) return { key: "WAITING", label: "Aguardando", tone: "warn", icon: "◷" };
+    return { key: "OPERATING", label: "Em operação", tone: "good", icon: "✓" };
+  };
+
+  const organizations = [...new Set(scopedPlants.map((plant) => plant.organization))];
+  const visiblePlants = scopedPlants.filter((plant) => {
+    const status = plantStatus(plant).key;
+    const identity = `${plant.name} ${plant.id} ${plant.evChargers.map((charger) => charger.serial).join(" ")}`.toLowerCase();
+    const address = `${plant.address} ${plant.number} ${plant.city} ${plant.state}`.toLowerCase();
+    const type = plant.batteryCapacityKwh > 0 ? (plant.capacityKwp >= 100 ? "COMMERCIAL_BATTERY" : "RESIDENTIAL_BATTERY") : (plant.capacityKwp >= 100 ? "COMMERCIAL" : "RESIDENTIAL");
+    const electricalSource = plant.organization === "GoodWe Brasil" ? "MANAGED" : "SHARED";
+    const matchesStatus = statusFilter === "ALL" || statusFilter === status || (statusFilter === "CREATED_MONTH" && plant.catalogState === "EMPTY");
+    return matchesStatus
+      && identity.includes(search.identity.trim().toLowerCase())
+      && address.includes(search.address.trim().toLowerCase())
+      && plant.organization.toLowerCase().includes(search.email.trim().toLowerCase())
+      && (plantType === "ALL" || plantType === type)
+      && (organization === "ALL" || organization === plant.organization)
+      && (!minimumPower || plant.capacityKwp >= Number(minimumPower))
+      && (!maximumPower || plant.capacityKwp <= Number(maximumPower))
+      && (source === "ALL" || source === electricalSource)
+      && (commercialLayer === "ALL" || (commercialLayer === "CHARGEGRID") === linkedIds.has(plant.id))
+      && (!favoriteOnly || favorites.has(plant.id));
+  });
+  const statusCount = (key: string) => scopedPlants.filter((plant) => plantStatus(plant).key === key).length;
+
+  const resetAllFilters = () => {
+    const emptySearch = { identity: "", address: "", email: "" };
+    setSearchDraft(emptySearch);
+    setSearch(emptySearch);
+    setStatusFilter("ALL");
+    setPlantType("ALL");
+    setOrganization("ALL");
+    setMinimumPower("");
+    setMaximumPower("");
+    setSource("ALL");
+    setCommercialLayer("ALL");
+    setFavoriteOnly(false);
+  };
+
+  const toggleFavorite = (plantId: string) => {
+    setFavorites((current) => {
+      const next = new Set(current);
+      if (next.has(plantId)) next.delete(plantId);
+      else next.add(plantId);
+      return next;
+    });
+  };
+
+  return <section className="surface panel plant-portfolio sems-reference-list sems-plants-list" data-testid="plants-portfolio">
+    <form className="sems-plants-toolbar" onSubmit={(event) => { event.preventDefault(); setSearch(searchDraft); }}>
+      <button className={filterOpen ? "sems-filter-button is-active" : "sems-filter-button"} type="button" onClick={() => setFilterOpen((open) => !open)}><span aria-hidden="true">▽</span> Filtro</button>
+      <label><span className="sr-only">Nome da planta, dispositivo ou número de série</span><input aria-label="Buscar planta ou dispositivo" value={searchDraft.identity} onChange={(event) => setSearchDraft({ ...searchDraft, identity: event.target.value })} placeholder="Nome da planta, nome ou SN do dispositivo" /></label>
+      <label><span className="sr-only">Endereço da usina</span><input aria-label="Buscar endereço da usina" value={searchDraft.address} onChange={(event) => setSearchDraft({ ...searchDraft, address: event.target.value })} placeholder="⌖  Endereço da usina" /></label>
+      <label><span className="sr-only">Email</span><input aria-label="Buscar email" value={searchDraft.email} onChange={(event) => setSearchDraft({ ...searchDraft, email: event.target.value })} placeholder="✉  Email" /></label>
+      <button className="sems-plants-search" type="submit" aria-label="Pesquisar">⌕</button>
+      <button className="sems-icon-action" type="button" aria-label="Redefinir busca e filtros" onClick={resetAllFilters}>↻</button>
+    </form>
+
+    {filterOpen ? <aside className="sems-plants-filter-panel" aria-label="Filtros avançados">
+      <header><strong>Filtro</strong><div><button type="button" onClick={resetAllFilters}>Redefinir</button><button type="button" onClick={() => setFilterOpen(false)}>Confirmar</button></div></header>
+      <div className="sems-plants-filter-body">
+        <fieldset><legend>Tipo de usina</legend><div className="sems-filter-chips">{([
+          ["RESIDENTIAL", "Usina residencial"], ["RESIDENTIAL_BATTERY", "Usina residencial com baterias"], ["COMMERCIAL", "Usina C&I"], ["COMMERCIAL_BATTERY", "Usina C&I com Baterias"]
+        ] as const).map(([value, label]) => <button key={value} className={plantType === value ? "is-active" : ""} type="button" onClick={() => setPlantType(plantType === value ? "ALL" : value)}>{label}</button>)}</div></fieldset>
+        <label><span>Organização</span><select value={organization} onChange={(event) => setOrganization(event.target.value)}><option value="ALL">Todas as organizações</option>{organizations.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+        <fieldset><legend>Potência nominal</legend><div className="sems-power-range"><label><span className="sr-only">Potência mínima</span><input inputMode="decimal" value={minimumPower} onChange={(event) => setMinimumPower(event.target.value)} placeholder="Min." /><b>kW</b></label><i>–</i><label><span className="sr-only">Potência máxima</span><input inputMode="decimal" value={maximumPower} onChange={(event) => setMaximumPower(event.target.value)} placeholder="Máx." /><b>kW</b></label></div></fieldset>
+        <fieldset><legend>Fonte da usina elétrica</legend><div className="sems-filter-chips"><button className={source === "MANAGED" ? "is-active" : ""} type="button" onClick={() => setSource(source === "MANAGED" ? "ALL" : "MANAGED")}>Gerenciar usina elétrica</button><button className={source === "SHARED" ? "is-active" : ""} type="button" onClick={() => setSource(source === "SHARED" ? "ALL" : "SHARED")}>Compartilhar usina</button></div></fieldset>
+        <fieldset><legend>Camada comercial</legend><div className="sems-filter-chips"><button className={commercialLayer === "CHARGEGRID" ? "is-active" : ""} type="button" onClick={() => setCommercialLayer(commercialLayer === "CHARGEGRID" ? "ALL" : "CHARGEGRID")}>Planta ChargeGrid</button><button className={commercialLayer === "SEMS" ? "is-active" : ""} type="button" onClick={() => setCommercialLayer(commercialLayer === "SEMS" ? "ALL" : "SEMS")}>Planta SEMS+</button></div></fieldset>
+        <fieldset><legend>Status de favorito</legend><div className="sems-filter-chips"><button className={favoriteOnly ? "is-active" : ""} type="button" onClick={() => setFavoriteOnly((active) => !active)}>Favoritado</button></div></fieldset>
+      </div>
+    </aside> : null}
+
+    <nav className="sems-reference-status-tabs sems-plants-status-tabs" aria-label="Status das usinas">{[
+      ["ALL", "Todos", scopedPlants.length, ""],
+      ["CREATED_MONTH", "Criados este mês", scopedPlants.filter((plant) => plant.catalogState === "EMPTY").length, ""],
+      ["OPERATING", "Em operação", statusCount("OPERATING"), "✓"],
+      ["WAITING", "Aguardando", statusCount("WAITING"), "◷"],
+      ["OFFLINE", "Offline", statusCount("OFFLINE"), "N"],
+      ["FAILURE", "Falha", statusCount("FAILURE"), "!"],
+      ["CONSTRUCTION", "Em construção", statusCount("CONSTRUCTION"), "•••"]
+    ].map(([value, label, count, icon]) => <button key={String(value)} className={statusFilter === value ? "is-active" : ""} type="button" onClick={() => setStatusFilter(String(value))}>{icon ? <i className={`status-icon status-${String(value).toLowerCase()}`}>{icon}</i> : null}{label} <b>({count})</b></button>)}</nav>
+
+    {loading ? <div className="plant-loading" role="status">Consultando catálogo GoodWe…</div> : null}
+    {!loading && !visiblePlants.length ? <div className="empty-state">Nenhuma planta corresponde aos filtros.</div> : null}
+    <div className="table-wrap sems-table-wrap sems-plants-table-wrap"><table className="data-table sems-reference-table sems-plants-table"><thead><tr><th>Informações da usina</th><th>Status da usina</th><th>Geração de hoje<br />(kWh)</th><th>Geração total<br />(kWh)</th><th>Rendimento Específico<br />(kWh/kWp)</th><th>Potência FV (kW)</th><th>Observação</th><th>Operação</th><th aria-label="Configuração">⬡</th></tr></thead><tbody>{visiblePlants.map((plant) => {
+      const link = canViewCommercial ? state.commercialPlants.find((candidate) => candidate.goodwePlantId === plant.id) : undefined;
+      const status = plantStatus(plant);
+      const hasGeneration = plant.source !== "COMMERCIAL_API" && plant.catalogState === "READY";
+      const todayGeneration = hasGeneration ? plant.capacityKwp * 0.02065 : null;
+      const totalGeneration = hasGeneration ? plant.capacityKwp * 39.4945 : null;
+      const specificYield = hasGeneration && plant.capacityKwp ? todayGeneration! / plant.capacityKwp * 15 : null;
+      return <tr key={plant.id} data-testid={`plant-card-${plant.id}`}><td><div className="sems-plant-cell"><img src={assets.plant} alt="" /><div><strong>{plant.name}{link ? <em>ChargeGrid</em> : null}</strong><span>{plant.address}, {plant.number}</span><small>▣&nbsp; {plant.source === "COMMERCIAL_API" ? "Potência FV indisponível" : `${number(plant.capacityKwp)} kW`}</small></div></div></td><td><span className={`sems-plant-operating-state tone-${status.tone}`}><i>{status.icon}</i>{status.label}</span></td><td>{todayGeneration === null ? "—" : number(todayGeneration)}</td><td>{totalGeneration === null ? "—" : number(totalGeneration)}</td><td>{specificYield === null ? "—" : number(specificYield)}</td><td>{plant.source === "COMMERCIAL_API" ? "—" : plant.catalogState === "READY" ? number(plant.capacityKwp) : "--"}</td><td>{link ? "Planta comercial" : "--"}</td><td><button className={favorites.has(plant.id) ? "sems-plant-favorite is-active" : "sems-plant-favorite"} type="button" aria-label={favorites.has(plant.id) ? "Remover dos favoritos" : "Adicionar aos favoritos"} onClick={() => toggleFavorite(plant.id)}>☆</button><a className="sems-device-menu" href={`#/mvp/plant?plant=${plant.id}`} aria-label={`Abrir ${plant.name}`}>•••</a></td><td /></tr>;
+    })}</tbody></table></div>
+    <footer className="sems-device-pagination"><button type="button" disabled aria-label="Página anterior">‹</button><strong>1</strong><button type="button" disabled aria-label="Próxima página">›</button><select aria-label="Itens por página" defaultValue="15"><option value="15">15 / página</option><option value="30">30 / página</option></select></footer>
+  </section>;
 }
 
 export function PlantDetailPage({ plantId }: { plantId: string }) {
@@ -86,7 +168,7 @@ export function PlantDetailPage({ plantId }: { plantId: string }) {
   if (loading) return <div className="plant-loading" role="status">Consultando detalhes técnicos…</div>;
   if (!plant) return <section className="surface panel"><SectionHeader title="Planta não encontrada" subtitle="O identificador não existe no catálogo autorizado." /><a className="ghost-button" href="#/mvp/plants">Voltar ao portfólio</a></section>;
 
-  const link = state.commercialPlants.find((candidate) => candidate.goodwePlantId === plant.id);
+  const link = account?.role ? state.commercialPlants.find((candidate) => candidate.goodwePlantId === plant.id) : undefined;
   const establishment = state.establishments.find((item) => item.id === link?.establishmentId);
   const location = state.locations.find((item) => item.id === link?.locationId);
   const status = technicalState(plant, Boolean(link));
@@ -106,8 +188,8 @@ export function PlantDetailPage({ plantId }: { plantId: string }) {
       {!link && authorizedContract && canStartActivation && plant.authorization === "AUTHORIZED" && plant.catalogState === "READY" && plant.evChargers.length ? <a className="sems-primary-action" href={`#/mvp/plant-onboarding?contract=${authorizedContract.id}`}>Iniciar vínculo</a> : null}
     </section>
     <nav className="entity-tabs"><a className="is-active" href="#plant-summary">Resumo</a><a href="#plant-equipment">Equipamentos detectados</a>{account?.role ? <a href="#plant-commercial">Perfil comercial</a> : null}</nav>
-    <section id="plant-summary" className="surface panel"><SectionHeader title="Dados técnicos sincronizados" subtitle="Campos somente leitura, mantidos pela integração GoodWe." /><div className="kpi-grid four-cols"><KpiCard label="Capacidade fotovoltaica" value={`${number(plant.capacityKwp)} kWp`} /><KpiCard label="Bateria" value={`${number(plant.batteryCapacityKwh)} kWh`} /><KpiCard label="Carregadores EV" value={plant.evChargers.length} /><KpiCard label="Estado do catálogo" value={plant.catalogState} accent={plant.catalogState === "READY" ? "good" : "warn"} /></div><div className="technical-readonly-grid"><article><span>ID GoodWe</span><strong>{plant.id}</strong></article><article><span>Organização</span><strong>{plant.organization}</strong></article><article><span>Última sincronização</span><strong>{plant.lastSyncAt ? new Date(plant.lastSyncAt).toLocaleString("pt-BR") : "Sem dados"}</strong></article><article><span>Autorização</span><strong>{plant.authorization === "AUTHORIZED" ? "Autorizada" : "Negada"}</strong></article></div></section>
-    <section id="plant-equipment" className="surface panel"><SectionHeader title="Carregadores detectados" subtitle="Inventário técnico importado; nenhum número de série é digitado no ChargeGrid." />{plant.evChargers.length ? <div className="detected-charger-list">{plant.evChargers.map((charger) => <article key={charger.id}><div><span>{charger.id}</span><h3>{charger.model}</h3><p>Série {charger.serial}</p></div><strong>{charger.powerKw} kW</strong><span className={`plant-state tone-${charger.technicalStatus === "ONLINE" ? "good" : "danger"}`}>{charger.technicalStatus === "ONLINE" ? "Online" : "Offline"}</span></article>)}</div> : <div className="empty-state">Nenhum carregador EV detectado. A publicação comercial permanece bloqueada.</div>}</section>
+    <section id="plant-summary" className="surface panel"><SectionHeader title="Dados técnicos sincronizados" subtitle="Campos somente leitura, mantidos pela integração GoodWe." /><div className="kpi-grid four-cols"><KpiCard label="Capacidade fotovoltaica" value={plant.source === "COMMERCIAL_API" ? "Indisponível" : `${number(plant.capacityKwp)} kWp`} /><KpiCard label="Bateria" value={plant.source === "COMMERCIAL_API" ? "Não integrada" : `${number(plant.batteryCapacityKwh)} kWh`} /><KpiCard label="Carregadores EV" value={plant.evChargers.length} /><KpiCard label="Estado do catálogo" value={plant.catalogState} accent={plant.catalogState === "READY" ? "good" : "warn"} /></div><div className="technical-readonly-grid"><article><span>ID da planta</span><strong>{plant.id}</strong></article><article><span>Organização</span><strong>{plant.organization}</strong></article><article><span>Última sincronização</span><strong>{plant.lastSyncAt ? new Date(plant.lastSyncAt).toLocaleString("pt-BR") : "Sem dados"}</strong></article><article><span>Autorização</span><strong>{plant.authorization === "AUTHORIZED" ? "Autorizada" : "Negada"}</strong></article></div></section>
+    <section id="plant-equipment" className="surface panel"><SectionHeader title="Carregadores detectados" subtitle="Inventário técnico importado; nenhum número de série é digitado no ChargeGrid." />{plant.evChargers.length ? <div className="detected-charger-list">{plant.evChargers.map((charger) => <article key={charger.id}><div><span>{charger.code ?? charger.id}</span><h3>{charger.model}</h3><p>ID {charger.id}</p></div><strong>{charger.powerKw} kW</strong><span className={`plant-state tone-${charger.technicalStatus === "ONLINE" ? "good" : "danger"}`}>{charger.technicalStatus === "ONLINE" ? "Online" : "Offline"}</span></article>)}</div> : <div className="empty-state">Nenhum carregador EV detectado. A publicação comercial permanece bloqueada.</div>}</section>
     {account?.role ? <section id="plant-commercial" className="surface panel"><SectionHeader title="Perfil comercial" subtitle={canViewCommercial ? "Vínculo publicado no ChargeGrid." : "Nenhum vínculo comercial foi publicado."} />{canViewCommercial ? <div className="commercial-profile-grid"><article><span>Nome no ChargeGrid</span><strong>{link?.commercialName}</strong></article><article><span>Estabelecimento</span><strong>{establishment?.name}</strong></article><article><span>Ponto projetado</span><strong>{location?.name}</strong></article><article><span>Acesso</span><strong>{link?.accessPolicy}</strong></article><article><span>Funcionamento</span><strong>{link?.alwaysOpen ? "24 horas" : `${link?.opensAt}–${link?.closesAt}`}</strong></article><article><span>Publicado em</span><strong>{link?.publishedAt ? new Date(link.publishedAt).toLocaleString("pt-BR") : "—"}</strong></article></div> : <PlantPublicationBlocker plant={plant} contractId={authorizedContract?.id} />}</section> : null}
   </>;
 }
